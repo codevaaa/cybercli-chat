@@ -66,8 +66,8 @@ export default function ModelsPage() {
                     transition: `all 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${i * 80}ms`,
                   }}
                 >
-                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-5">
-                    <Icon className="w-6 h-6 text-accent" />
+                  <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center shadow-[0_0_15px_rgba(217,119,87,0.2)]">
+                    <Icon className="w-7 h-7 text-accent" />
                   </div>
                   <h3 className="text-lg font-semibold text-foreground-primary mb-1">{model.name}</h3>
                   <p className="text-sm text-foreground-muted mb-4">{model.models} models available</p>
