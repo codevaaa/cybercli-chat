@@ -66,7 +66,7 @@ If you are an EU/EEA resident, the data controller responsible for your personal
 
 **AI Model Providers**: Your conversation prompts are transmitted to third-party AI providers (OpenRouter, Google, Groq, Cerebras, Cloudflare, HuggingFace, Bytez, NVIDIA) to generate responses. These providers process your prompts under their own privacy policies. We select providers with strong privacy practices and data processing agreements where available.
 
-**Infrastructure Providers**: Supabase (authentication and PostgreSQL database), MongoDB Atlas (conversation storage), Render (backend hosting), and Netlify (frontend hosting). These providers process data under data processing agreements that comply with GDPR requirements.
+**Infrastructure Providers**: Supabase (authentication and PostgreSQL database), MongoDB Atlas (conversation storage), Render (backend hosting), and Vercel (frontend hosting). These providers process data under data processing agreements that comply with GDPR requirements.
 
 **Payment Processor**: Stripe processes payment information for paid plans. Stripe's privacy policy governs how it handles your payment data.
 

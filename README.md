@@ -21,7 +21,7 @@ The most powerful AI chat platform. Multi-model, uncensored, voice-enabled, and 
 | SQL DB | Supabase PostgreSQL |
 | NoSQL DB | MongoDB Atlas |
 | Cache | Redis |
-| Hosting | Netlify (frontend) + Render (backend) |
+| Hosting | Vercel (frontend) + Render (backend) |
 
 ## Quick Start
 

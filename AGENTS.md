@@ -12,7 +12,7 @@ CyberCli Chat is a full-stack AI chat platform that aims to surpass ChatGPT, Cla
 - **Databases**: Supabase PostgreSQL (users, billing, audit) + MongoDB Atlas (chats, messages, settings)
 - **AI Gateway**: Unified proxy with OpenRouter, Groq, Gemini, Cerebras, Cloudflare, HuggingFace, Bytez, NVIDIA
 - **TTS**: Gemini Flash TTS (server) + Puter.js ElevenLabs (client-side, unlimited)
-- **Hosting**: Netlify (frontend) + Render (backend)
+- **Hosting**: Vercel (frontend) + Render (backend)
 
 ## File Structure Conventions
 

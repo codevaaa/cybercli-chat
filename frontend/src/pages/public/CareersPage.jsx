@@ -41,7 +41,7 @@ const OPEN_ROLES = [
     location: 'Remote',
     salary: '$90K–$130K',
     color: '#10B981',
-    desc: 'Own our Render + Netlify deployment pipeline, MongoDB Atlas operations, Supabase administration, and CI/CD automation.',
+    desc: 'Own our Render + Vercel deployment pipeline, MongoDB Atlas operations, Supabase administration, and CI/CD automation.',
     skills: ['Docker', 'GitHub Actions', 'MongoDB', 'Redis'],
   },
 ]

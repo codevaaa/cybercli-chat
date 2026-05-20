@@ -11,7 +11,7 @@ services:
       - key: PORT
         value: 3000
       - key: FRONTEND_URL
-        value: https://cybercli.netlify.app
+        value: https://cybercli.vercel.app
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_KEY
