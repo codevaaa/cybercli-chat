@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MessageSquare, Plus, Settings, Mic, Send, Sparkles, Zap, Menu, X } from 'lucide-react'
+import { MessageSquare, Plus, Settings, Mic, Send, Sparkles, Zap, Menu, X, Volume2, VolumeX, Play } from 'lucide-react'
 import { streamChat } from '../../lib/api.js'
+import { useTTS } from '../../hooks/useTTS.js'
 
 const SAMPLE_THREADS = [
   { id: '1', title: 'Python async patterns', model: 'Groq', updated: '2m ago' },
@@ -15,6 +16,9 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
+  const [ttsEnabled, setTTSEnabled] = useState(false)
+  
+  const { speak, stop, isPlaying, isLoading: ttsLoading, apiKey } = useTTS()
 
   const handleSend = async (e) => {
     e.preventDefault()
@@ -41,6 +45,13 @@ export default function ChatPage() {
           return newMessages
         })
       })
+      
+      // Auto-speak the assistant message if TTS is enabled
+      if (ttsEnabled && apiKey) {
+        setTimeout(() => {
+          speak(assistantMessage.content)
+        }, 500)
+      }
     } catch (error) {
       setMessages(prev => {
         const newMessages = [...prev]
@@ -51,6 +62,18 @@ export default function ChatPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSpeak = async (content) => {
+    if (!apiKey) {
+      alert('Please add your ElevenLabs API key in Settings to use TTS')
+      return
+    }
+    await speak(content)
+  }
+
+  const handleStop = () => {
+    stop()
   }
 
   return (
@@ -115,6 +138,22 @@ export default function ChatPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTTSEnabled(!ttsEnabled)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                ttsEnabled && apiKey
+                  ? 'bg-accent/10 text-accent'
+                  : 'bg-background-tertiary text-foreground-muted'
+              }`}
+              title="Toggle TTS"
+            >
+              {ttsEnabled && apiKey ? (
+                <Volume2 className="w-3.5 h-3.5" />
+              ) : (
+                <VolumeX className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden sm:inline">TTS</span>
+            </button>
             <span className="text-xs text-foreground-muted bg-background-tertiary px-2.5 py-1 rounded-full">Free Tier</span>
           </div>
         </header>
@@ -132,7 +171,23 @@ export default function ChatPage() {
                   ? 'bg-accent text-white rounded-br-md'
                   : 'bg-background-secondary text-foreground-primary rounded-bl-md border border-border-subtle'
               }`}>
-                {msg.content}
+                <div className="flex items-start gap-2">
+                  <div className="flex-1">{msg.content}</div>
+                  {msg.role === 'assistant' && msg.content && (
+                    <button
+                      onClick={() => handleSpeak(msg.content)}
+                      disabled={ttsLoading}
+                      className="flex-shrink-0 p-1 rounded hover:bg-background-tertiary text-foreground-muted hover:text-accent transition-colors disabled:opacity-40"
+                      title="Speak"
+                    >
+                      {ttsLoading && isPlaying ? (
+                        <VolumeX className="w-4 h-4" onClick={(e) => { e.stopPropagation(); handleStop() }} />
+                      ) : (
+                        <Volume2 className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

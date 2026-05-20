@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Zap, Palette, Mic, Brain, Shield, CreditCard, Key, ChevronRight, Moon, Sun, Monitor, Type, Volume2, Gauge } from 'lucide-react'
+import { Zap, Palette, Mic, Brain, Shield, CreditCard, Key, ChevronRight, Moon, Sun, Monitor, Type, Volume2, VolumeX, Save, Check } from 'lucide-react'
 import api from '../../lib/api.js'
+import { useTTS } from '../../hooks/useTTS.js'
+import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from '../../lib/tts.js'
 
 const SETTINGS_SECTIONS = [
   {
@@ -25,6 +27,12 @@ const SETTINGS_SECTIONS = [
       { label: 'Speech Speed', value: '1.0x' },
       { label: 'Auto-send Voice', value: 'Off' },
     ],
+  },
+  {
+    id: 'tts',
+    title: 'ElevenLabs TTS',
+    icon: Volume2,
+    items: [],
   },
   {
     id: 'models',
@@ -53,6 +61,27 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState('appearance')
   const [settings, setSettings] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [saved, setSaved] = useState(false)
+
+  const {
+    apiKey,
+    currentModel,
+    currentVoice,
+    speed,
+    stability,
+    similarity,
+    voices,
+    models,
+    updateApiKey,
+    updateModel,
+    updateVoice,
+    updateSpeed,
+    updateStability,
+    updateSimilarity,
+    speak,
+  } = useTTS()
+
+  const [localApiKey, setLocalApiKey] = useState(apiKey || '')
 
   useEffect(() => {
     fetchSettings()
@@ -76,6 +105,20 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Failed to update setting:', error)
     }
+  }
+
+  const handleSaveTTS = () => {
+    updateApiKey(localApiKey)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  const handleTestVoice = async () => {
+    if (!localApiKey) {
+      alert('Please enter your ElevenLabs API key first')
+      return
+    }
+    await speak('This is a test of the ElevenLabs text to speech system.')
   }
 
   const activeSettings = SETTINGS_SECTIONS.find(s => s.id === activeSection)
@@ -120,7 +163,155 @@ export default function SettingsPage() {
             </nav>
 
             <div>
-              {loading ? (
+              {activeSection === 'tts' ? (
+                <div className="card p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                      <Volume2 className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground-primary">ElevenLabs TTS</h2>
+                      <p className="text-xs text-foreground-muted">Configure text-to-speech with best-in-class voices</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* API Key */}
+                    <div>
+                      <label className="block text-sm font-medium text-foreground-primary mb-2">
+                        ElevenLabs API Key
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="password"
+                          value={localApiKey}
+                          onChange={(e) => setLocalApiKey(e.target.value)}
+                          placeholder="sk-..."
+                          className="flex-1 text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:border-accent"
+                        />
+                        <button
+                          onClick={handleSaveTTS}
+                          className="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-light transition-colors"
+                        >
+                          {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                          {saved ? 'Saved' : 'Save'}
+                        </button>
+                      </div>
+                      <p className="text-xs text-foreground-muted mt-1">
+                        Get your free API key at <a href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">elevenlabs.io</a>
+                      </p>
+                    </div>
+
+                    {/* Model Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-foreground-primary mb-2">
+                        Model
+                      </label>
+                      <select
+                        value={currentModel}
+                        onChange={(e) => updateModel(e.target.value)}
+                        className="w-full text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:border-accent"
+                      >
+                        {Object.entries(ELEVENLABS_MODELS).map(([key, model]) => (
+                          <option key={key} value={key}>
+                            {model.name} - {model.description}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Voice Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-foreground-primary mb-2">
+                        Voice
+                      </label>
+                      <select
+                        value={currentVoice}
+                        onChange={(e) => updateVoice(e.target.value)}
+                        className="w-full text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:border-accent"
+                      >
+                        {Object.entries(ELEVENLABS_VOICES).map(([key, voice]) => (
+                          <option key={key} value={key}>
+                            {voice.name} ({voice.gender}, {voice.accent})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Speed */}
+                    <div>
+                      <label className="block text-sm font-medium text-foreground-primary mb-2">
+                        Speed: {speed}x
+                      </label>
+                      <input
+                        type="range"
+                        min="0.25"
+                        max="4.0"
+                        step="0.25"
+                        value={speed}
+                        onChange={(e) => updateSpeed(parseFloat(e.target.value))}
+                        className="w-full accent-accent"
+                      />
+                      <div className="flex justify-between text-xs text-foreground-muted mt-1">
+                        <span>0.25x</span>
+                        <span>4.0x</span>
+                      </div>
+                    </div>
+
+                    {/* Stability */}
+                    <div>
+                      <label className="block text-sm font-medium text-foreground-primary mb-2">
+                        Stability: {stability}
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={stability}
+                        onChange={(e) => updateStability(parseFloat(e.target.value))}
+                        className="w-full accent-accent"
+                      />
+                      <div className="flex justify-between text-xs text-foreground-muted mt-1">
+                        <span>Variable</span>
+                        <span>Stable</span>
+                      </div>
+                    </div>
+
+                    {/* Similarity */}
+                    <div>
+                      <label className="block text-sm font-medium text-foreground-primary mb-2">
+                        Similarity: {similarity}
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={similarity}
+                        onChange={(e) => updateSimilarity(parseFloat(e.target.value))}
+                        className="w-full accent-accent"
+                      />
+                      <div className="flex justify-between text-xs text-foreground-muted mt-1">
+                        <span>Low</span>
+                        <span>High</span>
+                      </div>
+                    </div>
+
+                    {/* Test Button */}
+                    <div className="pt-4 border-t border-border-subtle">
+                      <button
+                        onClick={handleTestVoice}
+                        disabled={!localApiKey}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-background-tertiary text-foreground-primary text-sm font-medium rounded-lg hover:bg-background-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <Play className="w-4 h-4" />
+                        Test Voice
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : loading ? (
                 <div className="card p-6 flex items-center justify-center">
                   <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                 </div>
