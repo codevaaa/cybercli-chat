@@ -22,12 +22,12 @@ export default function PricingPage() {
                 key={tier.name}
                 className={`relative p-7 rounded-2xl ${
                   tier.popular
-                    ? 'bg-background-elevated border-2 border-accent/50 shadow-lg shadow-accent/5'
+                    ? 'bg-background-elevated border-2 border-accent/50 shadow-lg shadow-accent/10'
                     : 'bg-background-secondary border border-border-subtle'
                 }`}
               >
                 {tier.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-accent text-white text-xs font-medium flex items-center gap-1">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-accent text-white text-xs font-medium flex items-center gap-1 shadow-[0_0_15px_rgba(217,119,87,0.3)]">
                     <Sparkles className="w-3 h-3" />
                     Most Popular
                   </div>
