@@ -20,6 +20,8 @@ import stripeRoutes from './routes/stripe.routes.js'
 import searchRoutes from './routes/search.routes.js'
 import webhookRoutes from './routes/webhook.routes.js'
 
+import connectMongoDB from './config/database.js'
+
 import { errorHandler } from './middleware/errorHandler.js'
 import { requestLogger } from './middleware/requestLogger.js'
 
@@ -119,9 +121,12 @@ app.use((req, res) => {
 // Error handler
 app.use(errorHandler)
 
-app.listen(PORT, () => {
-  console.log(`CyberCli API server running on port ${PORT}`)
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
+// Connect to MongoDB then listen
+connectMongoDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`CyberCli API server running on port ${PORT}`)
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
+  })
 })
 
 export default app

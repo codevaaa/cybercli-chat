@@ -1,173 +1,109 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import tts from '../lib/tts.js'
 
 export function useTTS() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [currentProvider, setCurrentProvider] = useState('puter')
   const [voiceSettings, setVoiceSettings] = useState({
-    provider: 'puter',
-    voice: 'default',
-    speed: 1.0,
-    pitch: 1.0,
+    provider: tts.currentProvider,
+    voice: tts.currentVoice,
+    speed: tts.currentSpeed,
+    pitch: tts.currentPitch
   })
-  const audioRef = useRef(null)
+  const [geminiApiKey, setGeminiApiKey] = useState(localStorage.getItem('gemini_api_key') || '')
 
   useEffect(() => {
-    // Load saved settings from localStorage
+    // Sync settings from local storage to tts service
     const savedProvider = localStorage.getItem('tts_provider')
     const savedVoice = localStorage.getItem('tts_voice')
     const savedSpeed = localStorage.getItem('tts_speed')
     const savedPitch = localStorage.getItem('tts_pitch')
 
     if (savedProvider) {
-      setVoiceSettings(prev => ({ ...prev, provider: savedProvider }))
-      setCurrentProvider(savedProvider)
+      tts.setProvider(savedProvider)
     }
     if (savedVoice) {
-      setVoiceSettings(prev => ({ ...prev, voice: savedVoice }))
+      tts.setVoice(savedVoice)
     }
     if (savedSpeed) {
-      setVoiceSettings(prev => ({ ...prev, speed: parseFloat(savedSpeed) }))
+      tts.setSpeed(parseFloat(savedSpeed))
     }
     if (savedPitch) {
-      setVoiceSettings(prev => ({ ...prev, pitch: parseFloat(savedPitch) }))
+      tts.setPitch(parseFloat(savedPitch))
     }
+
+    setVoiceSettings({
+      provider: tts.currentProvider,
+      voice: tts.currentVoice,
+      speed: tts.currentSpeed,
+      pitch: tts.currentPitch
+    })
   }, [])
 
-  const speak = async (text, provider = voiceSettings.provider) => {
+  const speak = async (text) => {
     if (!text || text.trim() === '') return
-
     setIsLoading(true)
     setIsPlaying(false)
-
     try {
-      if (provider === 'puter' && window.puter) {
-        // Use Puter.js for TTS (unlimited free tier)
-        const audioUrl = await window.puter.ai.voice.generate(text, {
-          voice: voiceSettings.voice,
-          speed: voiceSettings.speed,
-          pitch: voiceSettings.pitch,
-        })
-        
-        if (audioRef.current) {
-          audioRef.current.pause()
-          audioRef.current.currentTime = 0
-        }
-
-        audioRef.current = new Audio(audioUrl)
-        
-        audioRef.current.onplay = () => setIsPlaying(true)
-        audioRef.current.onended = () => setIsPlaying(false)
-        audioRef.current.onerror = () => {
-          setIsPlaying(false)
-          setIsLoading(false)
-        }
-
-        await audioRef.current.play()
-      } else if (provider === 'browser') {
-        // Fallback to browser speech synthesis
-        const utterance = new SpeechSynthesisUtterance(text)
-        utterance.rate = voiceSettings.speed
-        utterance.pitch = voiceSettings.pitch
-        utterance.onstart = () => setIsPlaying(true)
-        utterance.onend = () => setIsPlaying(false)
-        window.speechSynthesis.speak(utterance)
-      } else if (provider === 'gemini') {
-        // Gemini Flash TTS (server-side)
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/tts/gemini`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ text, voice: voiceSettings.voice }),
-        })
-
-        if (response.ok) {
-          const audioBlob = await response.blob()
-          const audioUrl = URL.createObjectURL(audioBlob)
-          
-          if (audioRef.current) {
-            audioRef.current.pause()
-            audioRef.current.currentTime = 0
-          }
-
-          audioRef.current = new Audio(audioUrl)
-          
-          audioRef.current.onplay = () => setIsPlaying(true)
-          audioRef.current.onended = () => setIsPlaying(false)
-          audioRef.current.onerror = () => {
-            setIsPlaying(false)
-            setIsLoading(false)
-          }
-
-          await audioRef.current.play()
-        }
-      } else {
-        throw new Error(`Unknown provider: ${provider}`)
-      }
+      setIsPlaying(true)
+      await tts.speak(text)
     } catch (error) {
-      console.error('TTS error:', error)
-      // Fallback to browser speech synthesis
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.rate = voiceSettings.speed
-      utterance.pitch = voiceSettings.pitch
-      utterance.onstart = () => setIsPlaying(true)
-      utterance.onend = () => setIsPlaying(false)
-      window.speechSynthesis.speak(utterance)
+      console.error('TTS Hook error:', error)
     } finally {
+      setIsPlaying(false)
       setIsLoading(false)
     }
   }
 
   const stop = () => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-    }
-    window.speechSynthesis.cancel()
+    tts.stop()
     setIsPlaying(false)
     setIsLoading(false)
   }
 
-  const updateVoiceSettings = (settings) => {
-    setVoiceSettings(prev => ({ ...prev, ...settings }))
-    if (settings.provider) {
-      setCurrentProvider(settings.provider)
-      localStorage.setItem('tts_provider', settings.provider)
-    }
-    if (settings.voice) {
-      localStorage.setItem('tts_voice', settings.voice)
-    }
-    if (settings.speed) {
-      localStorage.setItem('tts_speed', settings.speed.toString())
-    }
-    if (settings.pitch) {
-      localStorage.setItem('tts_pitch', settings.pitch.toString())
-    }
+  const updateProvider = (provider) => {
+    tts.setProvider(provider)
+    localStorage.setItem('tts_provider', provider)
+    setVoiceSettings(prev => ({ ...prev, provider }))
   }
 
-  const getAvailableProviders = () => [
-    { id: 'puter', name: 'Puter.js ElevenLabs', description: 'High quality, unlimited free' },
-    { id: 'gemini', name: 'Gemini Flash TTS', description: 'Fast, server-side' },
-    { id: 'browser', name: 'Browser TTS', description: 'Built-in, offline' },
-  ]
+  const updateVoice = (voice) => {
+    tts.setVoice(voice)
+    localStorage.setItem('tts_voice', voice)
+    setVoiceSettings(prev => ({ ...prev, voice }))
+  }
 
+  const updateSpeed = (speed) => {
+    tts.setSpeed(speed)
+    localStorage.setItem('tts_speed', speed.toString())
+    setVoiceSettings(prev => ({ ...prev, speed }))
+  }
+
+  const updatePitch = (pitch) => {
+    tts.setPitch(pitch)
+    localStorage.setItem('tts_pitch', pitch.toString())
+    setVoiceSettings(prev => ({ ...prev, pitch }))
+  }
+
+  const updateGeminiApiKey = (key) => {
+    localStorage.setItem('gemini_api_key', key)
+    setGeminiApiKey(key)
+  }
+
+  const getAvailableProviders = () => tts.getProviders()
   const getAvailableVoices = (provider) => {
-    if (provider === 'browser') {
-      return window.speechSynthesis.getVoices().map(voice => ({
-        id: voice.name,
-        name: voice.name,
-        lang: voice.lang,
-      }))
-    }
-    // Puter and Gemini voices (simplified list)
-    return [
-      { id: 'default', name: 'Default' },
-      { id: 'female-1', name: 'Female Voice 1' },
-      { id: 'female-2', name: 'Female Voice 2' },
-      { id: 'male-1', name: 'Male Voice 1' },
-      { id: 'male-2', name: 'Male Voice 2' },
-    ]
+    const originalProvider = tts.currentProvider
+    tts.setProvider(provider)
+    const voices = tts.getVoices()
+    tts.setProvider(originalProvider)
+    return voices
+  }
+
+  const updateVoiceSettings = (settings) => {
+    if (settings.provider) updateProvider(settings.provider)
+    if (settings.voice) updateVoice(settings.voice)
+    if (settings.speed) updateSpeed(settings.speed)
+    if (settings.pitch) updatePitch(settings.pitch)
   }
 
   return {
@@ -175,7 +111,18 @@ export function useTTS() {
     stop,
     isPlaying,
     isLoading,
-    currentProvider,
+    currentProvider: voiceSettings.provider,
+    currentVoice: voiceSettings.voice,
+    speed: voiceSettings.speed,
+    pitch: voiceSettings.pitch,
+    geminiApiKey,
+    voices: getAvailableVoices(voiceSettings.provider),
+    providers: getAvailableProviders(),
+    updateProvider,
+    updateVoice,
+    updateSpeed,
+    updatePitch,
+    updateGeminiApiKey,
     voiceSettings,
     updateVoiceSettings,
     getAvailableProviders,

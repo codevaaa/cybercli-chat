@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { useEffect } from 'react'
 import Navbar from '@components/layout/Navbar'
 import Footer from '@components/layout/Footer'
+import PublicLayout from '@components/layout/PublicLayout'
 import CookieConsent from '@components/legal/CookieConsent'
 import ProtectedRoute from '@components/auth/ProtectedRoute.jsx'
 
@@ -39,15 +40,26 @@ import VoicePage from '@pages/app/VoicePage'
 import VoiceChatPage from '@pages/app/VoiceChatPage'
 import VoiceSettingsPage from '@pages/app/VoiceSettingsPage'
 
+const PUBLIC_PATHS = [
+  '/', '/features', '/models', '/pricing', '/contact', '/about',
+  '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy',
+  '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr'
+]
+const AUTH_PATHS = [
+  '/auth/signup', '/auth/login', '/auth/forgot-password',
+  '/auth/reset-password', '/auth/magic-link', '/auth/verify'
+]
+
 function App() {
   useEffect(() => {
     document.documentElement.classList.add('dark')
   }, [])
 
   const isPublicRoute = () => {
-    const publicPaths = ['/', '/features', '/models', '/pricing', '/contact', '/about', '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy', '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr']
-    const authPaths = ['/auth/signup', '/auth/login', '/auth/forgot-password', '/auth/reset-password', '/auth/magic-link', '/auth/verify']
-    return publicPaths.includes(window.location.pathname) || authPaths.some(p => window.location.pathname.startsWith(p))
+    return PUBLIC_PATHS.includes(window.location.pathname)
+      || AUTH_PATHS.some(p => window.location.pathname.startsWith(p))
+      || window.location.pathname.startsWith('/blog/')
+      || window.location.pathname.startsWith('/docs/')
   }
 
   return (
@@ -55,24 +67,26 @@ function App() {
       <Navbar />
       <main>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/features" element={<FeaturesPage />} />
-          <Route path="/models" element={<ModelsPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/careers" element={<CareersPage />} />
-          <Route path="/affiliate" element={<AffiliatePage />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/blog/:slug" element={<BlogPostPage />} />
-          <Route path="/docs" element={<DocsPage />} />
-          <Route path="/docs/:slug" element={<DocsArticlePage />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-          <Route path="/terms-of-service" element={<TermsPage />} />
-          <Route path="/cookie-policy" element={<CookiePolicyPage />} />
-          <Route path="/acceptable-use" element={<AcceptableUsePage />} />
-          <Route path="/gdpr" element={<GDPRPage />} />
+          {/* ── Public Marketing Routes (with Lenis smooth scroll) ── */}
+          <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
+          <Route path="/features" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
+          <Route path="/models" element={<PublicLayout><ModelsPage /></PublicLayout>} />
+          <Route path="/pricing" element={<PublicLayout><PricingPage /></PublicLayout>} />
+          <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
+          <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
+          <Route path="/careers" element={<PublicLayout><CareersPage /></PublicLayout>} />
+          <Route path="/affiliate" element={<PublicLayout><AffiliatePage /></PublicLayout>} />
+          <Route path="/blog" element={<PublicLayout><BlogPage /></PublicLayout>} />
+          <Route path="/blog/:slug" element={<PublicLayout><BlogPostPage /></PublicLayout>} />
+          <Route path="/docs" element={<PublicLayout><DocsPage /></PublicLayout>} />
+          <Route path="/docs/:slug" element={<PublicLayout><DocsArticlePage /></PublicLayout>} />
+          <Route path="/privacy-policy" element={<PublicLayout><PrivacyPolicyPage /></PublicLayout>} />
+          <Route path="/terms-of-service" element={<PublicLayout><TermsPage /></PublicLayout>} />
+          <Route path="/cookie-policy" element={<PublicLayout><CookiePolicyPage /></PublicLayout>} />
+          <Route path="/acceptable-use" element={<PublicLayout><AcceptableUsePage /></PublicLayout>} />
+          <Route path="/gdpr" element={<PublicLayout><GDPRPage /></PublicLayout>} />
 
+          {/* ── Auth Routes ── */}
           <Route path="/auth/signup" element={<SignupPage />} />
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
@@ -80,6 +94,7 @@ function App() {
           <Route path="/auth/magic-link" element={<MagicLinkPage />} />
           <Route path="/auth/verify" element={<VerifyEmailPage />} />
 
+          {/* ── Protected App Routes (no Lenis — native scroll for chat) ── */}
           <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
           <Route path="/chat/:threadId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

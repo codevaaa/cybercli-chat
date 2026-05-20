@@ -1,26 +1,66 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
+import Folder from '../models/Folder.js'
 
 const router = Router()
 
-router.get('/', requireAuth, (req, res) => {
-  res.json({ folders: [
-    { id: '1', name: 'Coding', color: '#7C3AED', parent_id: null },
-    { id: '2', name: 'Business', color: '#F59E0B', parent_id: null },
-    { id: '3', name: 'Personal', color: '#10B981', parent_id: null },
-  ]})
+// Get all folders for user
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const folders = await Folder.find({ user_id: req.user.id })
+    res.json({ folders })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 })
 
-router.post('/', requireAuth, (req, res) => {
-  res.json({ id: 'folder_' + Date.now(), ...req.body })
+// Create new folder
+router.post('/', requireAuth, async (req, res) => {
+  try {
+    const { name, color, parent_id } = req.body
+    const folder = new Folder({
+      user_id: req.user.id,
+      name,
+      color: color || '#7C3AED',
+      parent_id: parent_id || null,
+    })
+    await folder.save()
+    res.json(folder)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 })
 
-router.patch('/:id', requireAuth, (req, res) => {
-  res.json({ id: req.params.id, ...req.body })
+// Update folder
+router.patch('/:id', requireAuth, async (req, res) => {
+  try {
+    const folder = await Folder.findOneAndUpdate(
+      { _id: req.params.id, user_id: req.user.id },
+      { $set: req.body },
+      { new: true }
+    )
+    if (!folder) {
+      return res.status(404).json({ error: 'Folder not found' })
+    }
+    res.json(folder)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 })
 
-router.delete('/:id', requireAuth, (req, res) => {
-  res.json({ deleted: req.params.id })
+// Delete folder
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const result = await Folder.findOneAndDelete({ _id: req.params.id, user_id: req.user.id })
+    if (!result) {
+      return res.status(404).json({ error: 'Folder not found' })
+    }
+    // Clean up parent_ids referencing this folder
+    await Folder.updateMany({ parent_id: req.params.id }, { $set: { parent_id: null } })
+    res.json({ deleted: req.params.id })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 })
 
 export default router

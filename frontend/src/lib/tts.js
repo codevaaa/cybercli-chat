@@ -103,17 +103,29 @@ class TTSService {
         await this.loadPuter()
       }
 
+      const voice = this.currentVoice || 'ava'
+      
+      // Call the real puter.ai.txt2speech endpoint
+      const audio = await window.puter.ai.txt2speech(text, voice)
+      
       return new Promise((resolve, reject) => {
-        window.puter.ai.chat(text)
-          .then(response => {
-            // Puter.js doesn't have direct TTS, so we'll use browser fallback
-            // or you can use Puter's media features
-            this.speakWithBrowser(text).then(resolve).catch(reject)
-          })
-          .catch(err => {
-            // Fallback to browser TTS
-            this.speakWithBrowser(text).then(resolve).catch(reject)
-          })
+        // Handle stopping
+        this.activePuterAudio = audio
+        
+        audio.onended = () => {
+          this.activePuterAudio = null
+          resolve()
+        }
+        audio.onerror = (err) => {
+          this.activePuterAudio = null
+          console.warn('Puter Audio error, falling back to Browser SpeechSynthesis', err)
+          this.speakWithBrowser(text).then(resolve).catch(reject)
+        }
+        audio.play().catch((err) => {
+          this.activePuterAudio = null
+          console.warn('Puter play error, falling back to Browser SpeechSynthesis', err)
+          this.speakWithBrowser(text).then(resolve).catch(reject)
+        })
       })
     } catch (error) {
       console.error('Puter TTS error:', error)
@@ -240,6 +252,12 @@ class TTSService {
   }
 
   stop() {
+    if (this.activePuterAudio) {
+      try {
+        this.activePuterAudio.pause()
+        this.activePuterAudio = null
+      } catch (e) {}
+    }
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel()
     }

@@ -1,26 +1,77 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
+import Snippet from '../models/Snippet.js'
 
 const router = Router()
 
-router.get('/', requireAuth, (req, res) => {
-  res.json({ snippets: [
-    { id: '1', title: 'Debug my code', content: 'Find and fix bugs in the following code...', shortcut: '/debug' },
-    { id: '2', title: 'Explain like I am 5', content: 'Explain the following concept in simple terms...', shortcut: '/eli5' },
-    { id: '3', title: 'Write a tweet thread', content: 'Create a Twitter thread about...', shortcut: '/tweet' },
-  ]})
+// Default fallback snippets if DB is empty
+const DEFAULT_SNIPPETS = [
+  { title: 'Debug my code', content: 'Find and fix bugs in the following code. Highlight optimizations and write clean corrections.', shortcut: '/debug' },
+  { title: 'Explain like I am 5', content: 'Explain the following complex concept in very simple, easy-to-understand terms suitable for a 5-year old.', shortcut: '/eli5' },
+  { title: 'Write a tweet thread', content: 'Draft an engaging, educational Twitter thread based on the following content.', shortcut: '/tweet' }
+]
+
+// Get all snippets for user
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    let snippets = await Snippet.find({ user_id: req.user.id })
+    
+    // Seed default public/system ones if the user has no snippets
+    if (snippets.length === 0) {
+      snippets = await Snippet.insertMany(DEFAULT_SNIPPETS.map(s => ({ ...s, user_id: req.user.id })))
+    }
+    
+    res.json({ snippets })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 })
 
-router.post('/', requireAuth, (req, res) => {
-  res.json({ id: 'snippet_' + Date.now(), ...req.body })
+// Create new custom snippet
+router.post('/', requireAuth, async (req, res) => {
+  try {
+    const { title, content, shortcut } = req.body
+    const snippet = new Snippet({
+      user_id: req.user.id,
+      title,
+      content,
+      shortcut: shortcut || null,
+    })
+    await snippet.save()
+    res.json(snippet)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 })
 
-router.patch('/:id', requireAuth, (req, res) => {
-  res.json({ id: req.params.id, ...req.body })
+// Update custom snippet
+router.patch('/:id', requireAuth, async (req, res) => {
+  try {
+    const snippet = await Snippet.findOneAndUpdate(
+      { _id: req.params.id, user_id: req.user.id },
+      { $set: req.body },
+      { new: true }
+    )
+    if (!snippet) {
+      return res.status(404).json({ error: 'Snippet not found' })
+    }
+    res.json(snippet)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 })
 
-router.delete('/:id', requireAuth, (req, res) => {
-  res.json({ deleted: req.params.id })
+// Delete custom snippet
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const result = await Snippet.findOneAndDelete({ _id: req.params.id, user_id: req.user.id })
+    if (!result) {
+      return res.status(404).json({ error: 'Snippet not found or unauthorized' })
+    }
+    res.json({ deleted: req.params.id })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 })
 
 export default router

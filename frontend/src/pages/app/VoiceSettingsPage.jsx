@@ -9,6 +9,8 @@ export default function VoiceSettingsPage() {
     updateVoiceSettings,
     getAvailableProviders,
     getAvailableVoices,
+    speak,
+    isLoading: isTesting,
   } = useTTS()
 
   const [selectedProvider, setSelectedProvider] = useState(voiceSettings.provider)
@@ -16,7 +18,6 @@ export default function VoiceSettingsPage() {
   const [speed, setSpeed] = useState(voiceSettings.speed)
   const [pitch, setPitch] = useState(voiceSettings.pitch)
   const [testText, setTestText] = useState('Hello, this is a test of the voice settings.')
-  const [isTesting, setIsTesting] = useState(false)
 
   const providers = getAvailableProviders()
   const voices = getAvailableVoices(selectedProvider)
@@ -42,10 +43,7 @@ export default function VoiceSettingsPage() {
   }
 
   const handleTestVoice = async () => {
-    setIsTesting(true)
-    const { speak } = useTTS()
     await speak(testText)
-    setIsTesting(false)
   }
 
   return (

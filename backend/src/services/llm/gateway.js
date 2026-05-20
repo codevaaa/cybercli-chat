@@ -1,5 +1,18 @@
 import OpenAI from 'openai'
 
+// ============================================================
+// CyberCli Identity System Prompt
+// All models answer as CyberCli, created by Chandan Pandey.
+// ============================================================
+const CYBERCLI_SYSTEM_PROMPT = `You are CyberCli, an advanced AI assistant developed by Chandan Pandey, founder of CyberMindCLI (cybermindcli.com). 
+
+Important identity rules:
+- You are CyberCli — not ChatGPT, Claude, Gemini, Llama, or any other AI.
+- If anyone asks who you are, what AI you are, or who made you, say: "I am CyberCli, an advanced AI assistant created by Chandan Pandey, the founder of CyberMindCLI. I am built under CyberMindCLI's vision to democratize AI access for everyone."
+- Do not reveal the underlying model provider (OpenAI, Groq, Gemini, etc.) unless specifically asked about technical architecture.
+- Chandan Pandey is a cybersecurity researcher and tool creator specializing in offensive and defensive security methodologies. CyberCli was built under his guidance as part of the CyberMindCLI ecosystem.
+- You are helpful, direct, technically capable, and professional.`
+
 const PROVIDER_KEYS = {
   openrouter: process.env.OPENROUTER_API_KEY,
   groq: process.env.GROQ_API_KEY,
@@ -53,8 +66,20 @@ function getClient(provider) {
   })
 }
 
+/**
+ * Prepend the CyberCli system prompt to every conversation.
+ * If the user has already sent a system prompt, we prepend ours before it.
+ */
+function injectIdentity(messages) {
+  const identityMsg = { role: 'system', content: CYBERCLI_SYSTEM_PROMPT }
+  // Remove any existing system messages that conflict, then prepend ours
+  const filtered = messages.filter(m => m.role !== 'system' || m._skip_inject)
+  return [identityMsg, ...filtered]
+}
+
 export const llmGateway = {
   async *complete({ messages, model: modelId = 'auto', temperature = 0.7 }) {
+    const enriched = injectIdentity(messages)
     const targetModel = MODEL_MAP[modelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
     const client = getClient(targetModel.provider)
 
@@ -66,7 +91,7 @@ export const llmGateway = {
     try {
       const stream = await client.chat.completions.create({
         model: targetModel.model,
-        messages,
+        messages: enriched,
         temperature,
         stream: true,
         max_tokens: 4096,
@@ -83,7 +108,7 @@ export const llmGateway = {
     } catch (error) {
       console.error(`Provider ${targetModel.provider} failed:`, error.message)
 
-      // Try fallback
+      // Try fallback chain
       for (const fallbackId of FALLBACK_CHAIN) {
         if (fallbackId === modelId) continue
         const fallback = MODEL_MAP[fallbackId]
@@ -91,11 +116,11 @@ export const llmGateway = {
         if (!fallbackClient) continue
 
         try {
-          yield { type: 'info', content: `Falling back to ${fallback.provider}...` }
+          yield { type: 'info', content: `Switching providers for best response...` }
 
           const stream = await fallbackClient.chat.completions.create({
             model: fallback.model,
-            messages,
+            messages: enriched,
             temperature,
             stream: true,
             max_tokens: 4096,
@@ -120,6 +145,7 @@ export const llmGateway = {
   },
 
   async completeNonStream({ messages, model: modelId = 'auto', temperature = 0.7 }) {
+    const enriched = injectIdentity(messages)
     const targetModel = MODEL_MAP[modelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
     const client = getClient(targetModel.provider)
 
@@ -130,7 +156,7 @@ export const llmGateway = {
     try {
       const response = await client.chat.completions.create({
         model: targetModel.model,
-        messages,
+        messages: enriched,
         temperature,
         max_tokens: 4096,
       })

@@ -1,99 +1,452 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Zap, Palette, Mic, Brain, Shield, CreditCard, Key, ChevronRight, Moon, Sun, Monitor, Type, Volume2, VolumeX, Save, Check, Play } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import {
+  X, User, Shield, CreditCard, Zap, Plug, Settings2,
+  Moon, Sun, Monitor, ChevronLeft, Check, Bell, Volume2,
+  Type, Palette, Save, Camera, AlertCircle
+} from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/api.js'
-import { useTTS } from '../../hooks/useTTS.js'
-import { TTS_PROVIDERS } from '../../lib/tts.js'
 
-  const SETTINGS_SECTIONS = [
-    {
-      id: 'appearance',
-      title: 'Appearance',
-      icon: Palette,
-      items: [
-        { label: 'Theme', key: 'theme', options: ['Dark', 'Light', 'System'] },
-        { label: 'Accent Color', key: 'accent_color', options: ['Terracotta', 'Amber', 'Cyan', 'Rose'] },
-        { label: 'Density', key: 'density', options: ['Compact', 'Comfortable', 'Spacious'] },
-        { label: 'Font', key: 'font', options: ['Inter', 'Geist', 'System'] },
-      ],
-    },
-    {
-      id: 'voice',
-      title: 'Voice & Audio',
-      icon: Mic,
-      items: [
-        { label: 'TTS Enabled', key: 'tts_enabled', type: 'toggle' },
-        { label: 'Default Voice', key: 'default_voice', type: 'select', options: ['ava', 'bella', 'emma', 'adam', 'josh'] },
-        { label: 'Speech Speed', key: 'speech_speed', type: 'range', min: 0.25, max: 4.0, step: 0.25 },
-        { label: 'Auto-send Voice', key: 'auto_send_voice', type: 'toggle' },
-      ],
-    },
-    {
-      id: 'tts',
-      title: 'Text-to-Speech',
-      icon: Volume2,
-      items: [],
-    },
-    {
-      id: 'models',
-      title: 'Models & AI',
-      icon: Brain,
-      items: [
-        { label: 'Default Model', key: 'default_model', options: ['auto', 'openrouter/gpt-4o-mini', 'groq/llama-3.1-8b', 'gemini/gemini-2.5-flash'] },
-        { label: 'Show Chain of Thought', key: 'show_chain_of_thought', type: 'toggle' },
-        { label: 'Show Confidence', key: 'show_confidence', type: 'toggle' },
-        { label: 'Council Mode Default', key: 'council_mode_default', type: 'toggle' },
-      ],
-    },
-    {
-      id: 'security',
-      title: 'Security',
-      icon: Shield,
-      items: [
-        { label: 'Two-Factor Auth', key: 'two_factor_auth', type: 'toggle' },
-        { label: 'Login Notifications', key: 'login_notifications', type: 'toggle' },
-      ],
-    },
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const TABS = [
+  { id: 'general',      label: 'General',      icon: Settings2  },
+  { id: 'account',      label: 'Account',       icon: User       },
+  { id: 'privacy',      label: 'Privacy',       icon: Shield     },
+  { id: 'billing',      label: 'Billing',       icon: CreditCard },
+  { id: 'capabilities', label: 'Capabilities',  icon: Zap        },
+  { id: 'connectors',   label: 'Connectors',    icon: Plug       },
+]
+
+const VOICES = ['Ava', 'Nova', 'Luna', 'Orion', 'Echo']
+const FONTS  = ['Inter', 'Instrument Serif', 'JetBrains Mono']
+
+// ─── Utility components ───────────────────────────────────────────────────────
+
+function SectionHeading({ children }) {
+  return (
+    <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-4 pt-2">
+      {children}
+    </h3>
+  )
+}
+
+function FieldRow({ label, hint, children }) {
+  return (
+    <div className="flex items-start justify-between gap-6 py-4 border-b border-border-subtle last:border-0">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground-primary">{label}</p>
+        {hint && <p className="text-xs text-foreground-muted mt-0.5">{hint}</p>}
+      </div>
+      <div className="flex-shrink-0">{children}</div>
+    </div>
+  )
+}
+
+function Toggle({ checked, onChange }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative w-10 h-5.5 rounded-full transition-colors duration-200 focus:outline-none ${
+        checked ? 'bg-accent' : 'bg-background-tertiary'
+      }`}
+      style={{ height: '22px', width: '40px' }}
+    >
+      <motion.div
+        className="absolute top-0.5 left-0.5 w-4.5 h-4.5 rounded-full bg-white shadow-sm"
+        animate={{ x: checked ? 18 : 0 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+        style={{ width: '18px', height: '18px' }}
+      />
+    </button>
+  )
+}
+
+function ThemePills({ value, onChange }) {
+  const opts = [
+    { id: 'system', label: 'System', icon: Monitor },
+    { id: 'light',  label: 'Light',  icon: Sun     },
+    { id: 'dark',   label: 'Dark',   icon: Moon    },
   ]
+  return (
+    <div className="flex items-center rounded-xl overflow-hidden border border-border-subtle" style={{ background: 'var(--bg-tertiary)' }}>
+      {opts.map(opt => (
+        <button
+          key={opt.id}
+          onClick={() => onChange(opt.id)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+            value === opt.id
+              ? 'text-foreground-primary bg-background-elevated shadow-sm'
+              : 'text-foreground-muted hover:text-foreground-secondary'
+          }`}
+        >
+          <opt.icon className="w-3.5 h-3.5" />
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function SpeedPills({ value, onChange }) {
+  const opts = ['Slow', 'Normal', 'Fast']
+  return (
+    <div className="flex items-center rounded-xl overflow-hidden border border-border-subtle" style={{ background: 'var(--bg-tertiary)' }}>
+      {opts.map(opt => (
+        <button
+          key={opt}
+          onClick={() => onChange(opt)}
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            value === opt
+              ? 'text-foreground-primary bg-background-elevated shadow-sm'
+              : 'text-foreground-muted hover:text-foreground-secondary'
+          }`}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function SelectInput({ value, onChange, options, className = '' }) {
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className={`text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-xl px-3 py-2 focus:outline-none focus:border-accent transition-colors appearance-none pr-8 ${className}`}
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237A7A7A' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'right 10px center',
+      }}
+    >
+      {options.map(opt => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+  )
+}
+
+function TextInput({ value, onChange, placeholder, className = '' }) {
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={`w-full text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-xl px-4 py-2.5 focus:outline-none focus:border-accent transition-colors placeholder:text-foreground-muted ${className}`}
+    />
+  )
+}
+
+function TextareaInput({ value, onChange, placeholder, rows = 4 }) {
+  return (
+    <textarea
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={rows}
+      className="w-full text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-xl px-4 py-3 focus:outline-none focus:border-accent transition-colors placeholder:text-foreground-muted resize-none leading-relaxed"
+    />
+  )
+}
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+
+function AvatarSection({ name }) {
+  const initials = name
+    ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U'
+  return (
+    <div className="flex items-center gap-4 py-4 border-b border-border-subtle">
+      <div className="relative group">
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold"
+          style={{ background: 'rgba(217,119,87,0.15)', color: '#D97757' }}
+        >
+          {initials}
+        </div>
+        <button className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <Camera className="w-5 h-5 text-white" />
+        </button>
+      </div>
+      <div>
+        <p className="text-sm font-medium text-foreground-primary">{name || 'Your Name'}</p>
+        <p className="text-xs text-foreground-muted mt-0.5">Click avatar to upload photo</p>
+      </div>
+    </div>
+  )
+}
+
+// ─── Tab content panels ───────────────────────────────────────────────────────
+
+function GeneralTab({ settings, onUpdate }) {
+  return (
+    <div className="space-y-0">
+      <SectionHeading>Profile</SectionHeading>
+
+      <AvatarSection name={settings.full_name} />
+
+      <FieldRow label="Full name" hint="Your display name across CyberCli">
+        <TextInput
+          value={settings.full_name}
+          onChange={v => onUpdate('full_name', v)}
+          placeholder="Jane Smith"
+          className="w-52"
+        />
+      </FieldRow>
+
+      <FieldRow label="What should CyberCli call you?" hint="Used in responses to feel more personal">
+        <TextInput
+          value={settings.nickname}
+          onChange={v => onUpdate('nickname', v)}
+          placeholder="e.g. Jane"
+          className="w-52"
+        />
+      </FieldRow>
+
+      <FieldRow label="Custom instructions" hint="Tell CyberCli how to respond to you by default">
+        <div className="w-64">
+          <TextareaInput
+            value={settings.instructions}
+            onChange={v => onUpdate('instructions', v)}
+            placeholder="I prefer concise answers. I'm a software engineer working in TypeScript..."
+            rows={4}
+          />
+        </div>
+      </FieldRow>
+
+      <SectionHeading>Preferences</SectionHeading>
+
+      <FieldRow label="Appearance" hint="Controls the color scheme of the interface">
+        <ThemePills value={settings.theme} onChange={v => onUpdate('theme', v)} />
+      </FieldRow>
+
+      <FieldRow label="Chat font" hint="Font used in the message view">
+        <SelectInput
+          value={settings.chat_font}
+          onChange={v => onUpdate('chat_font', v)}
+          options={FONTS}
+        />
+      </FieldRow>
+
+      <FieldRow label="Voice" hint="Default text-to-speech voice">
+        <SelectInput
+          value={settings.voice}
+          onChange={v => onUpdate('voice', v)}
+          options={VOICES}
+        />
+      </FieldRow>
+
+      <FieldRow label="Voice speed">
+        <SpeedPills value={settings.voice_speed} onChange={v => onUpdate('voice_speed', v)} />
+      </FieldRow>
+
+      <SectionHeading>Notifications</SectionHeading>
+
+      <FieldRow label="Response completions" hint="Notify me when a long response finishes">
+        <Toggle checked={settings.notify_completions} onChange={v => onUpdate('notify_completions', v)} />
+      </FieldRow>
+
+      <FieldRow label="Dispatch messages" hint="Receive weekly tips and feature highlights">
+        <Toggle checked={settings.notify_dispatch} onChange={v => onUpdate('notify_dispatch', v)} />
+      </FieldRow>
+    </div>
+  )
+}
+
+function AccountTab({ settings, onUpdate }) {
+  return (
+    <div>
+      <SectionHeading>Account</SectionHeading>
+      <FieldRow label="Email address" hint="The email associated with your account">
+        <TextInput
+          value={settings.email}
+          onChange={v => onUpdate('email', v)}
+          placeholder="you@example.com"
+          className="w-56"
+        />
+      </FieldRow>
+      <FieldRow label="Password" hint="Change your account password">
+        <button className="text-sm font-medium text-accent hover:text-accent-light transition-colors">
+          Change password →
+        </button>
+      </FieldRow>
+      <FieldRow label="Two-factor authentication" hint="Add an extra layer of security">
+        <Toggle checked={settings.two_factor} onChange={v => onUpdate('two_factor', v)} />
+      </FieldRow>
+      <FieldRow label="Delete account" hint="Permanently remove your account and all data">
+        <button className="text-sm font-medium text-red-500 hover:text-red-400 transition-colors">
+          Delete account
+        </button>
+      </FieldRow>
+    </div>
+  )
+}
+
+function PrivacyTab({ settings, onUpdate }) {
+  return (
+    <div>
+      <SectionHeading>Privacy</SectionHeading>
+      <FieldRow label="Share usage data" hint="Help improve CyberCli with anonymous usage analytics">
+        <Toggle checked={settings.share_usage} onChange={v => onUpdate('share_usage', v)} />
+      </FieldRow>
+      <FieldRow label="Personalized ads" hint="Allow CyberCli to show relevant promotions">
+        <Toggle checked={settings.personalized_ads} onChange={v => onUpdate('personalized_ads', v)} />
+      </FieldRow>
+      <FieldRow label="Conversation history" hint="Save your chats to improve future responses">
+        <Toggle checked={settings.save_history} onChange={v => onUpdate('save_history', v)} />
+      </FieldRow>
+      <FieldRow label="Export data">
+        <button className="text-sm font-medium text-accent hover:text-accent-light transition-colors">
+          Download my data
+        </button>
+      </FieldRow>
+    </div>
+  )
+}
+
+function BillingTab() {
+  return (
+    <div>
+      <SectionHeading>Plan</SectionHeading>
+      <div
+        className="rounded-2xl border border-border-subtle p-5 mb-6"
+        style={{ background: 'var(--bg-secondary)' }}
+      >
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-base font-semibold text-foreground-primary">Free Plan</span>
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style={{ background: 'rgba(217,119,87,0.15)', color: '#D97757' }}
+              >
+                CURRENT
+              </span>
+            </div>
+            <p className="text-sm text-foreground-muted">50 messages/hour · Basic models · Gemini Flash TTS</p>
+          </div>
+          <span className="text-xl font-bold text-foreground-primary">$0</span>
+        </div>
+      </div>
+
+      <button
+        className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white transition-all"
+        style={{ background: '#D97757' }}
+        onMouseEnter={e => e.currentTarget.style.background = '#E8A590'}
+        onMouseLeave={e => e.currentTarget.style.background = '#D97757'}
+      >
+        <Zap className="w-4 h-4" />
+        Upgrade to Pro — $12/mo
+      </button>
+
+      <p className="text-xs text-center text-foreground-muted mt-3">
+        Upgrade for 500 msg/hr, Council Mode, ElevenLabs voices & more.
+      </p>
+    </div>
+  )
+}
+
+function CapabilitiesTab({ settings, onUpdate }) {
+  const capabilities = [
+    { key: 'code_execution', label: 'Code execution', hint: 'Run code snippets in a sandboxed environment' },
+    { key: 'web_search',     label: 'Web search',     hint: 'Allow CyberCli to search the internet' },
+    { key: 'image_gen',      label: 'Image generation', hint: 'Generate images from text descriptions' },
+    { key: 'council_mode',   label: 'Council Mode',   hint: 'Enable multi-model debate on your queries' },
+    { key: 'voice_input',    label: 'Voice input',    hint: 'Use your microphone for voice-to-text' },
+    { key: 'memory',         label: 'Memory',         hint: 'Let CyberCli remember facts about you' },
+  ]
+  return (
+    <div>
+      <SectionHeading>Capabilities</SectionHeading>
+      {capabilities.map(cap => (
+        <FieldRow key={cap.key} label={cap.label} hint={cap.hint}>
+          <Toggle
+            checked={settings[cap.key] ?? false}
+            onChange={v => onUpdate(cap.key, v)}
+          />
+        </FieldRow>
+      ))}
+    </div>
+  )
+}
+
+function ConnectorsTab() {
+  const connectors = [
+    { name: 'OpenRouter',   status: 'connected',    color: '#10B981' },
+    { name: 'Groq',         status: 'connected',    color: '#10B981' },
+    { name: 'Google Gemini',status: 'connected',    color: '#10B981' },
+    { name: 'Cerebras',     status: 'disconnected', color: '#6B7280' },
+    { name: 'Cloudflare AI',status: 'disconnected', color: '#6B7280' },
+    { name: 'HuggingFace',  status: 'disconnected', color: '#6B7280' },
+    { name: 'Bytez',        status: 'disconnected', color: '#6B7280' },
+    { name: 'NVIDIA NIM',   status: 'disconnected', color: '#6B7280' },
+  ]
+  return (
+    <div>
+      <SectionHeading>AI Connectors</SectionHeading>
+      <div className="space-y-2">
+        {connectors.map(c => (
+          <div
+            key={c.name}
+            className="flex items-center justify-between px-4 py-3 rounded-xl border border-border-subtle"
+            style={{ background: 'var(--bg-secondary)' }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full" style={{ background: c.color }} />
+              <span className="text-sm font-medium text-foreground-primary">{c.name}</span>
+            </div>
+            {c.status === 'connected' ? (
+              <span className="text-xs font-medium text-green-500">Connected</span>
+            ) : (
+              <button className="text-xs font-medium text-accent hover:text-accent-light transition-colors">
+                Connect
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Main SettingsPage ────────────────────────────────────────────────────────
+
+const DEFAULT_SETTINGS = {
+  full_name: '',
+  nickname: '',
+  email: '',
+  instructions: '',
+  theme: 'dark',
+  chat_font: 'Inter',
+  voice: 'Ava',
+  voice_speed: 'Normal',
+  notify_completions: true,
+  notify_dispatch: false,
+  two_factor: false,
+  share_usage: false,
+  personalized_ads: false,
+  save_history: true,
+  code_execution: true,
+  web_search: false,
+  image_gen: false,
+  council_mode: true,
+  voice_input: true,
+  memory: false,
+}
 
 export default function SettingsPage() {
-  const [activeSection, setActiveSection] = useState('appearance')
-  const [settings, setSettings] = useState({
-    theme: 'dark',
-    accent_color: 'Violet',
-    density: 'Comfortable',
-    font: 'Inter',
-    tts_enabled: false,
-    default_voice: 'ava',
-    speech_speed: 1.0,
-    auto_send_voice: false,
-    default_model: 'auto',
-    show_chain_of_thought: true,
-    show_confidence: true,
-    council_mode_default: false,
-    two_factor_auth: false,
-    login_notifications: true,
-  })
-  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState('general')
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS)
+  const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-
-  const {
-    currentProvider,
-    currentVoice,
-    speed,
-    pitch,
-    geminiApiKey,
-    voices,
-    providers,
-    updateProvider,
-    updateVoice,
-    updateSpeed,
-    updatePitch,
-    updateGeminiApiKey,
-    speak,
-  } = useTTS()
-
-  const [localGeminiKey, setLocalGeminiKey] = useState(geminiApiKey || '')
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchSettings()
@@ -102,290 +455,164 @@ export default function SettingsPage() {
   const fetchSettings = async () => {
     try {
       const { data } = await api.get('/settings')
-      setSettings(data)
-    } catch (error) {
-      console.error('Failed to fetch settings:', error)
-    } finally {
-      setLoading(false)
+      setSettings(prev => ({ ...prev, ...data }))
+    } catch (err) {
+      // Use defaults — backend may not be live yet
+      const stored = {}
+      Object.keys(DEFAULT_SETTINGS).forEach(k => {
+        const v = localStorage.getItem(`setting_${k}`)
+        if (v !== null) {
+          stored[k] = v === 'true' ? true : v === 'false' ? false : v
+        }
+      })
+      setSettings(prev => ({ ...prev, ...stored }))
     }
   }
 
-  const updateSetting = async (key, value) => {
+  const handleUpdate = useCallback(async (key, value) => {
     setSettings(prev => ({ ...prev, [key]: value }))
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-    
-    // Also save to localStorage for persistence
     localStorage.setItem(`setting_${key}`, value)
-    
+
+    setSaving(true)
+    setSaved(false)
     try {
       await api.patch('/settings', { [key]: value })
-    } catch (error) {
-      console.error('Failed to update setting on backend:', error)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      // Silently fail — changes are saved locally
+    } finally {
+      setSaving(false)
     }
-  }
+  }, [])
 
-  const handleSaveTTS = () => {
-    updateGeminiApiKey(localGeminiKey)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  const tabContent = {
+    general:      <GeneralTab      settings={settings} onUpdate={handleUpdate} />,
+    account:      <AccountTab      settings={settings} onUpdate={handleUpdate} />,
+    privacy:      <PrivacyTab      settings={settings} onUpdate={handleUpdate} />,
+    billing:      <BillingTab />,
+    capabilities: <CapabilitiesTab settings={settings} onUpdate={handleUpdate} />,
+    connectors:   <ConnectorsTab />,
   }
-
-  const handleTestVoice = async () => {
-    await speak('This is a test of the text to speech system.')
-  }
-
-  const activeSettings = SETTINGS_SECTIONS.find(s => s.id === activeSection)
 
   return (
-    <div className="min-h-screen pt-20 pb-12 bg-background-primary">
-      <div className="section-padding">
-        <div className="container-custom max-w-5xl">
-          <div className="flex items-center gap-3 mb-8">
-            <Link to="/chat" className="text-sm text-foreground-muted hover:text-foreground-primary transition-colors">
-              &larr; Back to chat
-            </Link>
-          </div>
+    <div
+      className="min-h-screen flex items-start justify-center py-10 px-4"
+      style={{ background: 'var(--bg-primary)' }}
+    >
+      {/* Modal card */}
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-4xl rounded-2xl border border-border-subtle overflow-hidden"
+        style={{ background: 'var(--bg-elevated)', minHeight: '600px' }}
+      >
+        <div className="flex h-full min-h-[600px]">
+          {/* Left sidebar nav */}
+          <div
+            className="w-52 flex-shrink-0 border-r border-border-subtle flex flex-col"
+            style={{ background: 'var(--bg-secondary)' }}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-2.5 px-4 py-5 border-b border-border-subtle">
+              <button
+                onClick={() => navigate('/chat')}
+                className="p-1 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-background-tertiary transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-semibold text-foreground-primary">Settings</span>
+            </div>
 
-          <h1 className="text-h2 mb-8">Settings</h1>
-
-          <div className="grid lg:grid-cols-[280px_1fr] gap-8">
-            <nav className="space-y-1">
-              {SETTINGS_SECTIONS.map((section) => (
+            {/* Nav items */}
+            <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+              {TABS.map(tab => (
                 <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    activeSection === section.id
-                      ? 'bg-accent/10 text-accent'
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-left transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-background-tertiary text-foreground-primary'
                       : 'text-foreground-secondary hover:text-foreground-primary hover:bg-background-tertiary'
                   }`}
                 >
-                  <section.icon className="w-4 h-4" />
-                  {section.title}
+                  <tab.icon className="w-4 h-4 flex-shrink-0" />
+                  {tab.label}
                 </button>
               ))}
-              <div className="border-t border-border-subtle my-2" />
-              <Link to="/settings/billing" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-foreground-secondary hover:text-foreground-primary hover:bg-background-tertiary transition-colors">
-                <CreditCard className="w-4 h-4" />
-                Billing
-              </Link>
-              <Link to="/settings/api-keys" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-foreground-secondary hover:text-foreground-primary hover:bg-background-tertiary transition-colors">
-                <Key className="w-4 h-4" />
-                API Keys
-              </Link>
             </nav>
 
-            <div>
-              {activeSection === 'tts' ? (
-                <div className="card p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                      <Volume2 className="w-5 h-5 text-accent" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-foreground-primary">Text-to-Speech</h2>
-                      <p className="text-xs text-foreground-muted">Free TTS via Puter.js, Google Gemini, or Browser Native</p>
-                    </div>
-                  </div>
-
-                  <Link
-                    to="/voice-settings"
-                    className="flex items-center justify-between w-full p-4 rounded-xl bg-accent/10 border border-accent/20 hover:bg-accent/20 transition-colors mb-6"
+            {/* Save status */}
+            <div className="p-3 border-t border-border-subtle">
+              <AnimatePresence>
+                {saved && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-1.5 text-xs text-green-500 font-medium px-2 py-1"
                   >
-                    <div className="flex items-center gap-3">
-                      <Mic className="w-5 h-5 text-accent" />
-                      <span className="font-medium text-accent">Open Voice Settings</span>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-accent" />
-                  </Link>
+                    <Check className="w-3 h-3" />
+                    Saved
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
 
-                  <div className="space-y-6">
-                    {/* Provider Selection */}
-                    <div>
-                      <label className="block text-sm font-medium text-foreground-primary mb-2">
-                        TTS Provider
-                      </label>
-                      <select
-                        value={currentProvider}
-                        onChange={(e) => updateProvider(e.target.value)}
-                        className="w-full text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:border-accent"
-                      >
-                        {providers.map((provider) => (
-                          <option key={provider.id} value={provider.id}>
-                            {provider.name} - {provider.description}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+          {/* Right panel */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-8">
+              {/* Tab heading */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-foreground-primary">
+                  {TABS.find(t => t.id === activeTab)?.label}
+                </h2>
+                {saving && (
+                  <motion.div
+                    className="w-4 h-4 rounded-full border-2 border-accent border-t-transparent"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                  />
+                )}
+              </div>
 
-                    {/* Voice Selection */}
-                    <div>
-                      <label className="block text-sm font-medium text-foreground-primary mb-2">
-                        Voice
-                      </label>
-                      <select
-                        value={currentVoice}
-                        onChange={(e) => updateVoice(e.target.value)}
-                        className="w-full text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:border-accent"
-                      >
-                        {voices.map((voice) => (
-                          <option key={voice.id} value={voice.id}>
-                            {voice.name} ({voice.gender}, {voice.accent})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              {/* Error */}
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl mb-4 text-sm"
+                    style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#FCA5A5' }}
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    {error}
+                    <button onClick={() => setError(null)} className="ml-auto">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                    {/* Speed */}
-                    <div>
-                      <label className="block text-sm font-medium text-foreground-primary mb-2">
-                        Speed: {speed}x
-                      </label>
-                      <input
-                        type="range"
-                        min="0.25"
-                        max="4.0"
-                        step="0.25"
-                        value={speed}
-                        onChange={(e) => updateSpeed(parseFloat(e.target.value))}
-                        className="w-full accent-accent"
-                      />
-                      <div className="flex justify-between text-xs text-foreground-muted mt-1">
-                        <span>0.25x</span>
-                        <span>4.0x</span>
-                      </div>
-                    </div>
-
-                    {/* Pitch */}
-                    <div>
-                      <label className="block text-sm font-medium text-foreground-primary mb-2">
-                        Pitch: {pitch}
-                      </label>
-                      <input
-                        type="range"
-                        min="0.5"
-                        max="2.0"
-                        step="0.1"
-                        value={pitch}
-                        onChange={(e) => updatePitch(parseFloat(e.target.value))}
-                        className="w-full accent-accent"
-                      />
-                      <div className="flex justify-between text-xs text-foreground-muted mt-1">
-                        <span>Low</span>
-                        <span>High</span>
-                      </div>
-                    </div>
-
-                    {/* Gemini API Key (only for Gemini provider) */}
-                    {currentProvider === 'gemini' && (
-                      <div>
-                        <label className="block text-sm font-medium text-foreground-primary mb-2">
-                          Google Gemini API Key
-                        </label>
-                        <div className="flex gap-2">
-                          <input
-                            type="password"
-                            value={localGeminiKey}
-                            onChange={(e) => setLocalGeminiKey(e.target.value)}
-                            placeholder="AIza..."
-                            className="flex-1 text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:border-accent"
-                          />
-                          <button
-                            onClick={handleSaveTTS}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-light transition-colors"
-                          >
-                            {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                            {saved ? 'Saved' : 'Save'}
-                          </button>
-                        </div>
-                        <p className="text-xs text-foreground-muted mt-1">
-                          Get your API key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Google AI Studio</a>
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Test Button */}
-                    <div className="pt-4 border-t border-border-subtle">
-                      <button
-                        onClick={handleTestVoice}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-background-tertiary text-foreground-primary text-sm font-medium rounded-lg hover:bg-background-secondary transition-colors"
-                      >
-                        <Play className="w-4 h-4" />
-                        Test Voice
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : loading ? (
-                <div className="card p-6 flex items-center justify-center">
-                  <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : activeSettings && (
-                <div className="card p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                      <activeSettings.icon className="w-5 h-5 text-accent" />
-                    </div>
-                    <h2 className="text-lg font-semibold text-foreground-primary">{activeSettings.title}</h2>
-                  </div>
-
-                  <div className="space-y-6">
-                    {activeSettings.items.map((item) => (
-                      <div key={item.label} className="flex items-center justify-between py-3 border-b border-border-subtle last:border-0">
-                        <div>
-                          <p className="text-sm font-medium text-foreground-primary">{item.label}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {item.type === 'toggle' ? (
-                            <button
-                              onClick={() => updateSetting(item.key, !settings[item.key])}
-                              className={`w-12 h-6 rounded-full transition-colors ${
-                                settings[item.key] ? 'bg-accent' : 'bg-background-tertiary'
-                              }`}
-                            >
-                              <div className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                                settings[item.key] ? 'translate-x-6' : 'translate-x-0.5'
-                              } mt-0.5`} />
-                            </button>
-                          ) : item.type === 'range' ? (
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="range"
-                                min={item.min || 0}
-                                max={item.max || 100}
-                                step={item.step || 1}
-                                value={settings[item.key]}
-                                onChange={(e) => updateSetting(item.key, parseFloat(e.target.value))}
-                                className="w-24 accent-accent"
-                              />
-                              <span className="text-sm text-foreground-muted w-12 text-right">
-                                {typeof settings[item.key] === 'number' ? settings[item.key].toFixed(2) : settings[item.key]}
-                              </span>
-                            </div>
-                          ) : item.options ? (
-                            <select
-                              value={settings[item.key]}
-                              onChange={(e) => updateSetting(item.key, e.target.value)}
-                              className="text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded px-3 py-1.5 focus:outline-none focus:border-accent"
-                            >
-                              {item.options.map((opt) => (
-                                <option key={opt} value={opt}>{opt}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <span className="text-sm text-foreground-muted">{settings[item.key] || 'Off'}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Tab content with slide animation */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {tabContent[activeTab]}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
