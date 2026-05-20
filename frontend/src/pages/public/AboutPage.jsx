@@ -1,282 +1,260 @@
 import { motion } from 'framer-motion'
-import { Shield, Zap, Globe, Heart, Users, Code, Lock, Cpu } from 'lucide-react'
-import ScrollReveal from '@components/ui/ScrollReveal'
+import { Link } from 'react-router-dom'
+import { ArrowRight, Shield, Target, Heart, Zap, Globe, Award, Code2, Lock } from 'lucide-react'
+import ScrollReveal, { ScrollRevealGroup } from '@components/ui/ScrollReveal'
 
 const VALUES = [
   {
-    icon: Shield,
-    title: 'Security First',
-    desc: 'Every feature, every API call, every data point is designed with zero-trust principles. We\'re cybersecurity people building AI — security is not an afterthought.',
-    gradient: 'from-violet-600 to-indigo-600',
-  },
-  {
-    icon: Globe,
-    title: 'Democratized Intelligence',
-    desc: 'Enterprise-grade AI should not require an enterprise budget. We unite 8+ free AI providers under one roof so every researcher, developer, and analyst has the same power.',
-    gradient: 'from-orange-500 to-red-500',
-  },
-  {
-    icon: Code,
-    title: 'Radical Transparency',
-    desc: 'We show you which model answered, its confidence score, its reasoning chain, and which provider served the request. No black boxes.',
-    gradient: 'from-emerald-500 to-teal-500',
+    icon: Target,
+    title: 'Truth First',
+    desc: 'We believe AI should tell you the truth, not the version that passed corporate review. Our uncensored model access comes with ethical guardrails, not censorship.',
+    color: '#D97757',
   },
   {
     icon: Heart,
-    title: 'Community Driven',
-    desc: 'We build in public. Feature requests from our community become roadmap priorities. Your feedback shapes the future of CyberCli Chat.',
-    gradient: 'from-pink-500 to-rose-500',
+    title: 'User Ownership',
+    desc: 'Your data, your conversations, your choice. Export everything. Delete everything. We do not train on your data. Ever.',
+    color: '#7C3AED',
+  },
+  {
+    icon: Lock,
+    title: 'Privacy by Design',
+    desc: 'End-to-end encrypted conversations. Zero-logging policy. Your intelligence belongs to you — not to advertisers, not to our servers.',
+    color: '#06B6D4',
+  },
+  {
+    icon: Zap,
+    title: 'Speed & Access',
+    desc: 'Free tier that actually works. We route to the best available free model so you never pay for what you do not need. 8+ providers, zero lock-in.',
+    color: '#10B981',
   },
 ]
 
 const TEAM = [
-  {
-    initials: 'CP',
-    name: 'Chandan Pandey',
-    role: 'Founder & CEO',
-    bg: 'from-violet-600 to-indigo-700',
-    badges: ['Cybersecurity', 'Ethical Hacking', 'AI Engineering'],
-  },
-  {
-    initials: 'AI',
-    name: 'AI Research Team',
-    role: 'Model Engineering',
-    bg: 'from-orange-500 to-red-600',
-    badges: ['LLM Integration', 'Gateway Architecture', 'Benchmarking'],
-  },
-  {
-    initials: 'SE',
-    name: 'Security Engineers',
-    role: 'Infrastructure Security',
-    bg: 'from-emerald-500 to-teal-600',
-    badges: ['Penetration Testing', 'Zero Trust', 'SIEM'],
-  },
+  { name: 'Chandan Pandey', role: 'Founder & CEO', initials: 'CP', color: '#D97757' },
+  { name: 'Lead Engineer', role: 'Backend & AI Gateway', initials: 'LE', color: '#7C3AED' },
+  { name: 'Design Lead', role: 'UX & Frontend', initials: 'DL', color: '#06B6D4' },
+  { name: 'DevOps Lead', role: 'Infrastructure & Security', initials: 'DO', color: '#10B981' },
+]
+
+const STATS = [
+  { label: 'AI Providers', value: '8+' },
+  { label: 'Models Available', value: '200K+' },
+  { label: 'Security Tools Built', value: '15+' },
+  { label: 'Uptime SLA', value: '99.9%' },
 ]
 
 export default function AboutPage() {
   return (
-    <div className="pt-28 pb-20 bg-[#0A0A0F]">
-      {/* Hero Section */}
-      <section className="section-padding mb-24 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-violet-600/10 rounded-full blur-[120px]" />
-        </div>
-        <div className="container-custom text-center relative z-10 max-w-4xl mx-auto">
+    <div className="pt-28 pb-20">
+
+      {/* ── Hero ── */}
+      <div className="section-padding mb-20">
+        <div className="container-custom">
           <ScrollReveal>
-            <span className="inline-block text-xs font-semibold text-accent tracking-widest uppercase mb-5 px-3 py-1 rounded-full bg-accent/10 border border-accent/20">
-              About CyberMindCLI
-            </span>
+            <span className="text-sm font-medium text-accent tracking-widest uppercase mb-4 block">About CyberCli</span>
           </ScrollReveal>
-          <ScrollReveal delay={0.1}>
-            <h1 className="text-[clamp(2.5rem,5vw,4.5rem)] font-extrabold tracking-tight leading-[1.1] mb-6">
-              Built by a{' '}
-              <span
-                className="bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent"
-                style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-              >
-                cybersecurity researcher
-              </span>{' '}
-              who got tired of paying for AI
+          <ScrollReveal delay={0.08}>
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-serif font-light text-foreground-primary leading-tight mb-6">
+              Built for those who<br />
+              <span className="text-gradient-accent italic">demand more</span>
             </h1>
           </ScrollReveal>
-          <ScrollReveal delay={0.2}>
-            <p className="text-lg text-foreground-muted max-w-2xl mx-auto leading-relaxed">
-              CyberCli Chat was born from a conviction that intelligence tools should be free,
-              transparent, and powerful — not locked behind paywalls or surveillance capitalism.
+          <ScrollReveal delay={0.16}>
+            <p className="text-lg text-foreground-muted max-w-2xl leading-relaxed">
+              CyberCli was born from a simple belief: AI should be powerful, accessible, and honest.
+              We are building the platform we wished existed — combining every major AI provider,
+              respecting your privacy, and giving you tools that the big platforms still refuse to build.
             </p>
           </ScrollReveal>
         </div>
-      </section>
+      </div>
 
-      {/* Founder Spotlight */}
-      <section className="section-padding mb-24">
+      {/* ── Stats Bar ── */}
+      <div className="section-padding mb-24">
         <div className="container-custom">
           <ScrollReveal>
-            <div className="relative rounded-3xl overflow-hidden border border-white/[0.06] bg-[#0D0D14]">
-              {/* Gradient orb */}
-              <div className="absolute -top-24 -left-24 w-96 h-96 bg-violet-600/15 rounded-full blur-[100px] pointer-events-none" />
-              <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-border-subtle rounded-2xl overflow-hidden">
+              {STATS.map((stat, i) => (
+                <motion.div
+                  key={stat.label}
+                  className="bg-background-secondary p-8 text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5, ease: [0.16,1,0.3,1] }}
+                >
+                  <div className="text-4xl font-bold text-gradient-accent mb-1">{stat.value}</div>
+                  <div className="text-sm text-foreground-muted">{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
+          </ScrollReveal>
+        </div>
+      </div>
 
-              <div className="relative z-10 p-8 md:p-14 grid md:grid-cols-[auto_1fr] gap-10 md:gap-14 items-start">
-                {/* Avatar */}
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-28 h-28 md:w-36 md:h-36 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-[0_0_60px_rgba(124,58,237,0.4)]">
-                    <span className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">CP</span>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-base font-semibold text-white">Chandan Pandey</p>
-                    <p className="text-sm text-violet-400 font-medium">Founder & CEO</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 justify-center max-w-[180px]">
-                    {['Cybersecurity', 'Ethical Hacker', 'Tool Creator', 'AI Engineer'].map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-xs px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+      {/* ── Founder Spotlight ── */}
+      <div className="section-padding mb-24">
+        <div className="container-custom">
+          <ScrollReveal>
+            <span className="text-xs font-semibold tracking-widest uppercase text-accent mb-3 block">Founder Spotlight</span>
+            <h2 className="text-4xl font-serif font-light text-foreground-primary mb-16">The mind behind CyberCli</h2>
+          </ScrollReveal>
+
+          <div className="grid lg:grid-cols-5 gap-12 items-start">
+            {/* Left — Photo Card */}
+            <ScrollReveal direction="right" className="lg:col-span-2">
+              <div className="card-glass p-8 text-center">
+                <motion.div
+                  className="w-28 h-28 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl font-bold text-white"
+                  style={{ background: 'linear-gradient(135deg, #D97757, #C4613A)' }}
+                  whileHover={{ scale: 1.05, rotate: 2 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                >
+                  CP
+                </motion.div>
+                <h3 className="text-2xl font-semibold text-foreground-primary mb-1">Chandan Pandey</h3>
+                <p className="text-accent text-sm font-medium mb-4">Founder & CEO · CyberMindCLI</p>
+                <div className="flex flex-wrap gap-2 justify-center mb-6">
+                  {['Ethical Hacker', 'Tool Creator', 'AI Researcher', 'Security Engineer'].map(tag => (
+                    <span key={tag} className="text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">{tag}</span>
+                  ))}
                 </div>
+                <div className="flex gap-3 justify-center">
+                  <a href="https://cybermindcli.com" target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-sm text-foreground-muted hover:text-accent transition-colors">
+                    <Globe className="w-4 h-4" />
+                    cybermindcli.com
+                  </a>
+                </div>
+              </div>
+            </ScrollReveal>
 
-                {/* Bio */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-semibold text-accent tracking-widest uppercase">Founder Spotlight</span>
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
-                    The Architect of CyberMindCLI
-                  </h2>
-                  <div className="space-y-4 text-[15px] leading-[1.8] text-[#9CA3AF]">
-                    <p>
-                      Chandan Pandey is a cybersecurity researcher, ethical hacker, and tool creator with deep
-                      expertise in both offensive and defensive security methodologies. He has engineered multiple
-                      cybersecurity tools used across penetration testing, vulnerability assessment, network
-                      reconnaissance, and digital forensics.
-                    </p>
-                    <p>
-                      As the founder of <span className="text-violet-400 font-medium">CyberMindCLI</span>{' '}
-                      (<a
-                        href="https://cybermindcli.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-violet-400 hover:text-violet-300 underline underline-offset-2"
-                      >
-                        cybermindcli.com
-                      </a>
-                      ), Chandan's vision is to democratize access to advanced AI and security intelligence
-                      tools — making enterprise-grade capabilities available to every researcher, analyst,
-                      and developer.
-                    </p>
-                    <p>
-                      <span className="text-white font-medium">CyberCli Chat</span> is the flagship AI product
-                      of CyberMindCLI, combining 8+ AI providers, a unified intelligent gateway, voice
-                      conversation, and advanced multi-model council mode into one powerful platform. It represents
-                      the belief that access to the most capable AI tools should never be gated by geography,
-                      budget, or institutional affiliation.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 pt-2">
-                    {[
-                      { label: 'Security Tools Built', value: '20+' },
-                      { label: 'AI Providers Integrated', value: '8+' },
-                      { label: 'Models Available', value: '200K+' },
-                    ].map((stat) => (
-                      <div key={stat.label} className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.06] text-center">
-                        <div className="text-xl font-bold text-white">{stat.value}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{stat.label}</div>
+            {/* Right — Bio */}
+            <ScrollReveal direction="left" delay={0.1} className="lg:col-span-3">
+              <div className="space-y-5 text-foreground-secondary leading-relaxed">
+                <p className="text-lg">
+                  <strong className="text-foreground-primary">Chandan Pandey</strong> is a cybersecurity researcher, ethical hacker,
+                  and prolific tool creator with deep expertise spanning both offensive and defensive security methodologies.
+                  Over the course of his career, he has engineered more than fifteen cybersecurity tools deployed across
+                  penetration testing workflows, vulnerability assessment pipelines, network reconnaissance operations,
+                  and digital forensics investigations.
+                </p>
+                <p>
+                  His work in <strong className="text-foreground-primary">offensive security</strong> includes building
+                  custom exploitation frameworks, automated reconnaissance tools, payload crafting utilities, and
+                  network enumeration engines that are used by security professionals in real-world red team engagements.
+                  On the <strong className="text-foreground-primary">defensive side</strong>, Chandan has developed
+                  SIEM integration utilities, log correlation engines, threat hunting scripts, and incident response
+                  automation tools that help blue teams respond faster and with greater precision.
+                </p>
+                <p>
+                  As the <strong className="text-foreground-primary">Founder of CyberMindCLI</strong> (cybermindcli.com),
+                  Chandan's central vision is to democratize access to advanced AI and security intelligence tools —
+                  making enterprise-grade capabilities available to every researcher, analyst, student, and developer,
+                  regardless of budget or institutional affiliation.
+                </p>
+                <p>
+                  <strong className="text-foreground-primary">CyberCli Chat</strong> is the flagship AI product of
+                  CyberMindCLI — combining 8+ AI providers, a unified intelligent routing gateway, voice conversation
+                  powered by ElevenLabs and Gemini Flash TTS, multi-model Council Mode debate synthesis, and advanced
+                  conversation management into one cohesive, privacy-first platform.
+                </p>
+
+                {/* Achievements */}
+                <div className="grid sm:grid-cols-3 gap-4 pt-4">
+                  {[
+                    { icon: Code2, label: '15+ Security Tools', sub: 'Built & maintained' },
+                    { icon: Shield, label: 'Offensive + Defensive', sub: 'Full-spectrum security' },
+                    { icon: Award, label: 'CyberMindCLI', sub: 'Founder & Visionary' },
+                  ].map(({ icon: Icon, label, sub }) => (
+                    <div key={label} className="flex items-start gap-3 p-4 rounded-xl bg-background-secondary border border-border-subtle">
+                      <Icon className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground-primary">{label}</p>
+                        <p className="text-xs text-foreground-muted">{sub}</p>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          </ScrollReveal>
+            </ScrollReveal>
+          </div>
         </div>
-      </section>
+      </div>
 
-      {/* Mission */}
-      <section className="section-padding mb-24">
-        <div className="container-custom max-w-4xl text-center">
-          <ScrollReveal>
-            <span className="text-xs font-semibold text-accent tracking-widest uppercase mb-4 block">Our Mission</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Democratize the{' '}
-              <span
-                className="bg-gradient-to-r from-orange-400 to-violet-400 bg-clip-text text-transparent"
-                style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-              >
-                intelligence layer
-              </span>
-            </h2>
-            <p className="text-lg text-[#9CA3AF] leading-relaxed">
-              We exist at the intersection of cybersecurity and artificial intelligence. Our mission
-              is simple: build the most capable, transparent, and accessible AI platform on the planet —
-              where every researcher, developer, and security professional can harness the full power of
-              modern AI without compromise.
-            </p>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* Values Grid */}
-      <section className="section-padding mb-24">
+      {/* ── Values ── */}
+      <div className="section-padding mb-24">
         <div className="container-custom">
           <ScrollReveal>
-            <div className="text-center mb-12">
-              <span className="text-xs font-semibold text-accent tracking-widest uppercase mb-4 block">What We Stand For</span>
-              <h2 className="text-3xl md:text-4xl font-bold text-white">Our core values</h2>
-            </div>
+            <span className="text-xs font-semibold tracking-widest uppercase text-accent mb-3 block">Our Values</span>
+            <h2 className="text-4xl font-serif font-light text-foreground-primary mb-12">What we stand for</h2>
           </ScrollReveal>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {VALUES.map((val, i) => (
-              <ScrollReveal key={val.title} delay={i * 0.08}>
-                <div className="group relative rounded-2xl border border-white/[0.06] bg-[#0D0D14] p-6 h-full transition-all duration-500 hover:border-white/[0.12] hover:-translate-y-1">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${val.gradient} flex items-center justify-center mb-4 transition-transform duration-300 group-hover:rotate-[10deg]`}>
-                    <val.icon className="w-6 h-6 text-white" />
+          <div className="grid md:grid-cols-2 gap-5">
+            {VALUES.map((v, i) => (
+              <ScrollReveal key={v.title} delay={i * 0.08}>
+                <motion.div
+                  className="card-glass p-7 h-full"
+                  whileHover={{ y: -4 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                >
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+                    style={{ background: `${v.color}18`, border: `1px solid ${v.color}30` }}>
+                    <v.icon className="w-6 h-6" style={{ color: v.color }} />
                   </div>
-                  <h3 className="text-base font-semibold text-white mb-2">{val.title}</h3>
-                  <p className="text-sm text-[#9CA3AF] leading-relaxed">{val.desc}</p>
-                </div>
+                  <h3 className="text-lg font-semibold text-foreground-primary mb-2">{v.title}</h3>
+                  <p className="text-sm text-foreground-muted leading-relaxed">{v.desc}</p>
+                </motion.div>
               </ScrollReveal>
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Team Section */}
-      <section className="section-padding mb-16">
+      {/* ── Team ── */}
+      <div className="section-padding mb-20">
         <div className="container-custom">
           <ScrollReveal>
-            <div className="text-center mb-12">
-              <span className="text-xs font-semibold text-accent tracking-widest uppercase mb-4 block">The Team</span>
-              <h2 className="text-3xl md:text-4xl font-bold text-white">People behind the platform</h2>
-            </div>
+            <span className="text-xs font-semibold tracking-widest uppercase text-accent mb-3 block">The Team</span>
+            <h2 className="text-4xl font-serif font-light text-foreground-primary mb-12">Built by believers</h2>
           </ScrollReveal>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {TEAM.map((member, i) => (
-              <ScrollReveal key={member.name} delay={i * 0.1}>
-                <div className="group rounded-2xl border border-white/[0.06] bg-[#0D0D14] p-6 text-center hover:border-white/[0.12] transition-all duration-300 hover:-translate-y-1">
-                  <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${member.bg} flex items-center justify-center mx-auto mb-4 shadow-lg`}>
-                    <span className="text-2xl font-extrabold text-white">{member.initials}</span>
+              <ScrollReveal key={member.name} delay={i * 0.08}>
+                <motion.div
+                  className="card-glass p-6 text-center"
+                  whileHover={{ y: -5, scale: 1.02 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+                >
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-lg font-bold text-white"
+                    style={{ background: `linear-gradient(135deg, ${member.color}, ${member.color}88)` }}>
+                    {member.initials}
                   </div>
-                  <h3 className="text-base font-semibold text-white mb-1">{member.name}</h3>
-                  <p className="text-sm text-violet-400 mb-3">{member.role}</p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {member.badges.map((badge) => (
-                      <span key={badge} className="text-xs px-2 py-0.5 rounded-full bg-white/[0.04] text-gray-400 border border-white/[0.06]">
-                        {badge}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                  <h3 className="text-sm font-semibold text-foreground-primary mb-1">{member.name}</h3>
+                  <p className="text-xs text-foreground-muted">{member.role}</p>
+                </motion.div>
               </ScrollReveal>
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* CTA */}
-      <section className="section-padding">
-        <div className="container-custom max-w-2xl text-center">
+      {/* ── CTA ── */}
+      <div className="section-padding">
+        <div className="container-custom">
           <ScrollReveal>
-            <div className="rounded-3xl border border-white/[0.06] bg-gradient-to-br from-violet-900/20 to-indigo-900/10 p-12">
-              <h2 className="text-3xl font-bold text-white mb-4">Ready to experience it?</h2>
-              <p className="text-[#9CA3AF] mb-8">
-                Join thousands of researchers, developers, and security professionals already using CyberCli Chat.
-              </p>
-              <div className="flex flex-wrap gap-4 justify-center">
-                <a href="/auth/signup" className="btn-primary">
-                  Get Started Free
-                </a>
-                <a href="/contact" className="btn-secondary">
-                  Contact the Team
-                </a>
-              </div>
+            <div className="card-glass p-12 text-center max-w-3xl mx-auto">
+              <h2 className="text-3xl font-serif font-light text-foreground-primary mb-4">
+                Ready to experience the future of AI?
+              </h2>
+              <p className="text-foreground-muted mb-8">Join thousands of researchers, developers, and creators already using CyberCli.</p>
+              <Link to="/auth/signup" className="btn-primary inline-flex">
+                Get started for free <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
           </ScrollReveal>
         </div>
-      </section>
+      </div>
     </div>
   )
 }

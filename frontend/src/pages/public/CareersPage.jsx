@@ -1,219 +1,166 @@
 import { motion } from 'framer-motion'
-import { MapPin, Clock, ArrowRight, Briefcase, Globe, Zap, Shield, Code } from 'lucide-react'
+import { MapPin, Clock, DollarSign, Briefcase, ArrowRight, Users, Zap, Heart } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
 
-const JOBS = [
+const OPEN_ROLES = [
   {
-    id: 1,
     title: 'Senior Frontend Engineer',
-    department: 'Engineering',
-    location: 'Remote (Worldwide)',
+    team: 'Engineering',
     type: 'Full-time',
-    icon: Code,
-    color: '#7C3AED',
-    bg: 'rgba(124,58,237,0.08)',
-    border: 'rgba(124,58,237,0.2)',
-    desc: 'Build pixel-perfect, performant React interfaces with Framer Motion animations and TailwindCSS. Own the UX of CyberCli Chat\'s core product.',
-    requirements: ['React 19 + TypeScript', 'Framer Motion / GSAP', 'TailwindCSS v4', 'Performance optimization', 'WebSockets / SSE streaming'],
+    location: 'Remote',
+    salary: '$80K–$120K',
+    color: '#D97757',
+    desc: 'Lead the development of CyberCli\'s React/Vite frontend. Expertise in Framer Motion, TailwindCSS, and SSE streaming required.',
+    skills: ['React', 'TypeScript', 'Framer Motion', 'TailwindCSS'],
   },
   {
-    id: 2,
     title: 'AI/ML Engineer',
-    department: 'AI Research',
-    location: 'Remote (Worldwide)',
+    team: 'AI Gateway',
     type: 'Full-time',
-    icon: Zap,
-    color: '#F59E0B',
-    bg: 'rgba(245,158,11,0.08)',
-    border: 'rgba(245,158,11,0.2)',
-    desc: 'Design and maintain the AI Gateway that routes 200K+ models. Research Council Mode consensus algorithms. Optimize inference pipelines for latency and cost.',
-    requirements: ['LLM API integrations', 'Node.js / Python', 'Vector databases (pgvector, Pinecone)', 'Prompt engineering', 'Benchmarking & eval frameworks'],
+    location: 'Remote',
+    salary: '$100K–$150K',
+    color: '#7C3AED',
+    desc: 'Design and optimize our multi-provider LLM routing system. Work on Council Mode inference, embedding pipelines, and fine-tuning.',
+    skills: ['Python', 'LangChain', 'Node.js', 'Vector DBs'],
   },
   {
-    id: 3,
-    title: 'Security Researcher',
-    department: 'Security',
-    location: 'Remote (Worldwide)',
+    title: 'Cybersecurity Researcher',
+    team: 'Security',
+    type: 'Contract/Full-time',
+    location: 'Remote',
+    salary: '$70K–$110K',
+    color: '#06B6D4',
+    desc: 'Conduct security research, write technical blog content, develop internal security tooling, and help shape our threat intelligence capabilities.',
+    skills: ['Penetration Testing', 'OSINT', 'Python', 'CVE Research'],
+  },
+  {
+    title: 'DevOps & Infrastructure Engineer',
+    team: 'Infrastructure',
     type: 'Full-time',
-    icon: Shield,
+    location: 'Remote',
+    salary: '$90K–$130K',
     color: '#10B981',
-    bg: 'rgba(16,185,129,0.08)',
-    border: 'rgba(16,185,129,0.2)',
-    desc: 'Conduct penetration testing, threat modeling, and vulnerability research. Help build security tooling that our users rely on. Write technical research for our blog.',
-    requirements: ['Penetration testing (OSCP/PNPT preferred)', 'Web application security', 'OSINT & reconnaissance', 'CVE research & disclosure', 'Security tool development'],
-  },
-  {
-    id: 4,
-    title: 'DevOps / Platform Engineer',
-    department: 'Infrastructure',
-    location: 'Remote (Worldwide)',
-    type: 'Full-time',
-    icon: Globe,
-    color: '#3B82F6',
-    bg: 'rgba(59,130,246,0.08)',
-    border: 'rgba(59,130,246,0.2)',
-    desc: 'Own the infrastructure powering CyberCli Chat\'s backend on Render, Netlify, and Supabase. Implement zero-downtime deployments, monitoring, and observability.',
-    requirements: ['Docker / Kubernetes', 'CI/CD (GitHub Actions)', 'Render / Railway / Fly.io', 'PostgreSQL + MongoDB Atlas', 'Observability (Grafana, Loki, OpenTelemetry)'],
+    desc: 'Own our Render + Netlify deployment pipeline, MongoDB Atlas operations, Supabase administration, and CI/CD automation.',
+    skills: ['Docker', 'GitHub Actions', 'MongoDB', 'Redis'],
   },
 ]
 
-const VALUES = [
-  { title: 'Remote-first, async by default', icon: '🌍' },
-  { title: 'Competitive salary + equity', icon: '💰' },
-  { title: 'Learning & conference budget', icon: '📚' },
-  { title: 'Flexible working hours', icon: '🕐' },
-  { title: 'Health & wellness stipend', icon: '🏃' },
-  { title: 'Top-tier hardware setup', icon: '💻' },
+const BENEFITS = [
+  { icon: DollarSign, title: 'Competitive Pay', desc: 'Market-rate salaries with equity available for full-time roles' },
+  { icon: Heart, title: 'Health & Wellness', desc: 'Health coverage and mental wellness stipend' },
+  { icon: Users, title: 'Remote-First', desc: 'Work from anywhere. No mandatory office hours ever.' },
+  { icon: Zap, title: 'Equipment Allowance', desc: '$1,500 annual equipment and software allowance' },
 ]
 
 export default function CareersPage() {
   return (
-    <div className="pt-28 pb-20 bg-[#0A0A0F]">
-      {/* Hero */}
-      <section className="section-padding mb-20 relative">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/3 w-[500px] h-[300px] bg-violet-600/8 rounded-full blur-[100px]" />
-        </div>
-        <div className="container-custom text-center relative z-10 max-w-3xl mx-auto">
+    <div className="pt-28 pb-20">
+      {/* Header */}
+      <div className="section-padding mb-16">
+        <div className="container-custom">
           <ScrollReveal>
-            <span className="inline-block text-xs font-semibold text-accent tracking-widest uppercase mb-5 px-3 py-1 rounded-full bg-accent/10 border border-accent/20">
-              Careers
-            </span>
+            <span className="text-sm font-medium text-accent tracking-widest uppercase mb-4 block">Careers</span>
           </ScrollReveal>
-          <ScrollReveal delay={0.1}>
-            <h1 className="text-[clamp(2.2rem,5vw,4rem)] font-extrabold tracking-tight leading-[1.1] text-white mb-5">
-              Build the future of{' '}
-              <span
-                className="bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent"
-                style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-              >
-                AI security
-              </span>
+          <ScrollReveal delay={0.08}>
+            <h1 className="text-5xl sm:text-6xl font-serif font-light text-foreground-primary mb-5">
+              Build the future of AI<br />
+              <span className="text-gradient-accent italic">with us</span>
             </h1>
           </ScrollReveal>
-          <ScrollReveal delay={0.2}>
-            <p className="text-lg text-[#9CA3AF] leading-relaxed">
-              We are a small, talented team building something the world needs. Join us at the
-              intersection of cybersecurity and artificial intelligence.
+          <ScrollReveal delay={0.15}>
+            <p className="text-lg text-foreground-muted max-w-2xl leading-relaxed">
+              CyberMindCLI is a small, remote-first team building tools that matter. We move fast,
+              care deeply about security and privacy, and believe that the best products come from people
+              who are also users of what they build.
             </p>
           </ScrollReveal>
         </div>
-      </section>
+      </div>
 
       {/* Benefits */}
-      <section className="section-padding mb-20">
+      <div className="section-padding mb-20">
         <div className="container-custom">
-          <ScrollReveal>
-            <h2 className="text-2xl font-bold text-white text-center mb-10">Why join CyberMindCLI?</h2>
-          </ScrollReveal>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
-            {VALUES.map((v, i) => (
-              <ScrollReveal key={v.title} delay={i * 0.07}>
-                <div className="rounded-xl border border-white/[0.06] bg-[#0D0D14] p-4 flex items-center gap-3">
-                  <span className="text-2xl">{v.icon}</span>
-                  <span className="text-sm text-[#9CA3AF]">{v.title}</span>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {BENEFITS.map((benefit, i) => (
+              <ScrollReveal key={benefit.title} delay={i * 0.08}>
+                <div className="card-glass p-6">
+                  <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center mb-4">
+                    <benefit.icon className="w-5 h-5 text-accent" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-foreground-primary mb-1">{benefit.title}</h3>
+                  <p className="text-xs text-foreground-muted leading-relaxed">{benefit.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Open Positions */}
-      <section className="section-padding">
+      {/* Open Roles */}
+      <div className="section-padding">
         <div className="container-custom">
           <ScrollReveal>
-            <h2 className="text-2xl font-bold text-white mb-2">Open Positions</h2>
-            <p className="text-sm text-[#6B7280] mb-10">4 roles · All Remote</p>
+            <h2 className="text-3xl font-serif font-light text-foreground-primary mb-10">Open Positions</h2>
           </ScrollReveal>
-
-          <div className="space-y-4 max-w-4xl">
-            {JOBS.map((job, i) => (
-              <ScrollReveal key={job.id} delay={i * 0.1}>
+          <div className="space-y-5">
+            {OPEN_ROLES.map((role, i) => (
+              <ScrollReveal key={role.title} delay={i * 0.08}>
                 <motion.div
-                  className="group rounded-2xl border border-white/[0.06] bg-[#0D0D14] p-6 md:p-8"
-                  whileHover={{
-                    borderColor: job.border,
-                    boxShadow: `0 0 30px ${job.bg}`,
-                    transition: { duration: 0.3 },
-                  }}
+                  className="card-glass p-7 group"
+                  whileHover={{ y: -3, borderColor: `${role.color}30` }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
-                  <div className="flex flex-col md:flex-row md:items-start gap-5">
-                    {/* Icon */}
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: job.bg, border: `1px solid ${job.border}` }}
-                    >
-                      <job.icon className="w-6 h-6" style={{ color: job.color }} />
-                    </div>
-
-                    {/* Content */}
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
                     <div className="flex-1">
-                      <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
-                        <div>
-                          <h3 className="text-lg font-semibold text-white group-hover:text-white/90">{job.title}</h3>
-                          <div className="flex flex-wrap gap-3 mt-1.5">
-                            <span
-                              className="text-xs px-2.5 py-0.5 rounded-full font-medium"
-                              style={{ color: job.color, background: job.bg, border: `1px solid ${job.border}` }}
-                            >
-                              {job.department}
-                            </span>
-                            <div className="flex items-center gap-1 text-xs text-[#6B7280]">
-                              <MapPin className="w-3 h-3" />
-                              {job.location}
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-[#6B7280]">
-                              <Clock className="w-3 h-3" />
-                              {job.type}
-                            </div>
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-3 mb-3 flex-wrap">
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full border"
+                          style={{ color: role.color, borderColor: `${role.color}40`, background: `${role.color}12` }}>
+                          {role.team}
+                        </span>
+                        <span className="text-xs text-foreground-muted flex items-center gap-1">
+                          <Clock className="w-3 h-3" />{role.type}
+                        </span>
+                        <span className="text-xs text-foreground-muted flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />{role.location}
+                        </span>
+                        <span className="text-xs text-foreground-muted flex items-center gap-1">
+                          <DollarSign className="w-3 h-3" />{role.salary}
+                        </span>
                       </div>
-
-                      <p className="text-sm text-[#9CA3AF] leading-relaxed mb-4">{job.desc}</p>
-
-                      <div className="flex flex-wrap gap-2 mb-5">
-                        {job.requirements.map(req => (
-                          <span key={req} className="text-xs px-2.5 py-1 rounded-full bg-white/[0.04] text-[#6B7280] border border-white/[0.06]">
-                            {req}
+                      <h3 className="text-xl font-semibold text-foreground-primary mb-2 group-hover:text-accent transition-colors">{role.title}</h3>
+                      <p className="text-sm text-foreground-muted leading-relaxed mb-4">{role.desc}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {role.skills.map(skill => (
+                          <span key={skill} className="text-xs px-2.5 py-1 rounded-md bg-background-secondary border border-border-subtle text-foreground-muted">
+                            {skill}
                           </span>
                         ))}
                       </div>
-
-                      <motion.a
-                        href={`mailto:careers@cybermindcli.com?subject=Application: ${encodeURIComponent(job.title)}`}
-                        className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-lg text-white transition-all duration-300"
-                        style={{ background: job.bg, border: `1px solid ${job.border}`, color: job.color }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        Apply for this role
-                        <ArrowRight className="w-4 h-4" />
-                      </motion.a>
                     </div>
+                    <Link
+                      to="/contact"
+                      className="btn-secondary text-sm whitespace-nowrap flex items-center gap-2 flex-shrink-0"
+                    >
+                      Apply now <ArrowRight className="w-4 h-4" />
+                    </Link>
                   </div>
                 </motion.div>
               </ScrollReveal>
             ))}
           </div>
 
-          <ScrollReveal delay={0.5}>
-            <div className="mt-10 max-w-4xl p-6 rounded-2xl border border-white/[0.06] bg-[#0D0D14] flex flex-col md:flex-row items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-white mb-1">Don't see your role?</p>
-                <p className="text-sm text-[#6B7280]">We always want to hear from exceptional people. Send us your story.</p>
-              </div>
-              <a
-                href="mailto:hello@cybermindcli.com?subject=Open Application"
-                className="btn-secondary whitespace-nowrap flex-shrink-0"
-              >
-                Open Application
-              </a>
+          <ScrollReveal delay={0.2}>
+            <div className="mt-12 text-center card-glass p-10 max-w-2xl mx-auto">
+              <h3 className="text-xl font-semibold text-foreground-primary mb-2">Don't see your role?</h3>
+              <p className="text-sm text-foreground-muted mb-6">We're always looking for exceptional people. Send us a note about what you'd love to work on.</p>
+              <Link to="/contact" className="btn-primary inline-flex">
+                Get in touch <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
           </ScrollReveal>
         </div>
-      </section>
+      </div>
     </div>
   )
 }
