@@ -78,7 +78,7 @@ export default function DocsPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {DOC_SECTIONS.map((section) => (
               <div key={section.title} className="card p-6">
-                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center mb-4">
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center mb-4 shadow-[0_0_15px_rgba(217,119,87,0.2)]">
                   <section.icon className="w-5 h-5 text-accent" />
                 </div>
                 <h2 className="text-lg font-semibold text-foreground-primary mb-4">{section.title}</h2>
