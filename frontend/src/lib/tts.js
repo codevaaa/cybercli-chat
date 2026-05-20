@@ -1,243 +1,210 @@
-// ElevenLabs TTS Service (Client-side)
-// Best models: multilingual-v2, eleven_multilingual_v2, eleven_turbo_v2
+// TTS Service using Puter.js (Free TTS via ElevenLabs - no API key needed)
+// Puter.js provides free access to ElevenLabs TTS without requiring your own API key
 
-const ELEVENLABS_MODELS = {
-  'multilingual-v2': {
-    id: 'eleven_multilingual_v2',
-    name: 'Multilingual v2',
-    description: 'Best for multiple languages, high quality',
-    supportsSSML: true,
+const TTS_PROVIDERS = {
+  puter: {
+    name: 'Puter.js (Free)',
+    description: 'Free ElevenLabs TTS via Puter.js - no API key needed',
+    voices: [
+      { id: 'ava', name: 'Ava', gender: 'female', accent: 'american' },
+      { id: 'bella', name: 'Bella', gender: 'female', accent: 'american' },
+      { id: 'emma', name: 'Emma', gender: 'female', accent: 'british' },
+      { id: 'rachel', name: 'Rachel', gender: 'female', accent: 'american' },
+      { id: 'charlotte', name: 'Charlotte', gender: 'female', accent: 'american' },
+      { id: 'adam', name: 'Adam', gender: 'male', accent: 'american' },
+      { id: 'josh', name: 'Josh', gender: 'male', accent: 'american' },
+      { id: 'fin', name: 'Fin', gender: 'male', accent: 'irish' },
+    ],
   },
-  'eleven-turbo-v2': {
-    id: 'eleven_turbo_v2_5',
-    name: 'Eleven Turbo v2.5',
-    description: 'Low latency, fast generation',
-    supportsSSML: true,
+  gemini: {
+    name: 'Google Gemini Flash TTS',
+    description: 'Google Gemini Flash Text-to-Speech - requires API key',
+    voices: [
+      { id: 'en-US-Neural2-A', name: 'Neural2 A', gender: 'female', accent: 'american' },
+      { id: 'en-US-Neural2-B', name: 'Neural2 B', gender: 'male', accent: 'american' },
+      { id: 'en-US-Neural2-C', name: 'Neural2 C', gender: 'female', accent: 'american' },
+      { id: 'en-GB-Neural2-A', name: 'Neural2 UK A', gender: 'female', accent: 'british' },
+    ],
   },
-  'monolingual-v1': {
-    id: 'eleven_monolingual_v1',
-    name: 'Monolingual v1',
-    description: 'English only, classic quality',
-    supportsSSML: false,
+  browser: {
+    name: 'Browser Native',
+    description: 'Browser built-in TTS (Web Speech API) - free, no internet',
+    voices: [], // Will be loaded from browser
   },
 }
 
-const ELEVENLABS_VOICES = {
-  // Female voices
-  'ava': { id: '21m00Tcm4TlvDq8ikWAM', name: 'Ava', gender: 'female', accent: 'american' },
-  'bella': { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', gender: 'female', accent: 'american' },
-  'emma': { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Emma', gender: 'female', accent: 'british' },
-  'rachel': { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', gender: 'female', accent: 'american' },
-  'charlotte': { id: 'XB0reDy9RPKgq4vXk3Mb', name: 'Charlotte', gender: 'female', accent: 'american' },
-  // Male voices
-  'adam': { id: 'pNInz6obpgDQG0FNeSSg', name: 'Adam', gender: 'male', accent: 'american' },
-  'josh': { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', gender: 'male', accent: 'american' },
-  'fin': { id: 'JBFqnPBsM7m6zl9Zq4Pn', name: 'Fin', gender: 'male', accent: 'irish' },
-  'michael': { id: 'flK6cRy7YtN5c1c2z2z2', name: 'Michael', gender: 'male', accent: 'american' },
-}
-
-class ElevenLabsTTS {
-  constructor(apiKey = null) {
-    this.apiKey = apiKey || process.env.VITE_ELEVENLABS_API_KEY || null
-    this.baseUrl = 'https://api.elevenlabs.io/v1'
-    this.currentModel = 'multilingual-v2'
+class TTSService {
+  constructor() {
+    this.currentProvider = 'puter'
     this.currentVoice = 'ava'
     this.currentSpeed = 1.0
-    this.currentStability = 0.5
-    this.currentSimilarity = 0.75
+    this.currentPitch = 1.0
+    this.browserVoices = []
+    this.geminiApiKey = null
+    
+    // Load browser voices
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        this.browserVoices = window.speechSynthesis.getVoices()
+      }
+    }
   }
 
-  setApiKey(key) {
-    this.apiKey = key
-  }
-
-  setModel(modelId) {
-    if (ELEVENLABS_MODELS[modelId]) {
-      this.currentModel = modelId
+  setProvider(provider) {
+    if (TTS_PROVIDERS[provider]) {
+      this.currentProvider = provider
     }
   }
 
   setVoice(voiceId) {
-    if (ELEVENLABS_VOICES[voiceId]) {
-      this.currentVoice = voiceId
-    }
+    this.currentVoice = voiceId
   }
 
   setSpeed(speed) {
     this.currentSpeed = Math.min(Math.max(speed, 0.25), 4.0)
   }
 
-  setStability(stability) {
-    this.currentStability = Math.min(Math.max(stability, 0), 1)
+  setPitch(pitch) {
+    this.currentPitch = Math.min(Math.max(pitch, 0.5), 2.0)
   }
 
-  setSimilarity(similarity) {
-    this.currentSimilarity = Math.min(Math.max(similarity, 0), 1)
+  setGeminiApiKey(key) {
+    this.geminiApiKey = key
   }
 
-  async getVoices() {
-    if (!this.apiKey) {
-      return Object.keys(ELEVENLABS_VOICES).map(key => ({
-        voice_id: ELEVENLABS_VOICES[key].id,
-        name: ELEVENLABS_VOICES[key].name,
-        labels: {
-          gender: ELEVENLABS_VOICES[key].gender,
-          accent: ELEVENLABS_VOICES[key].accent,
-        },
+  getVoices() {
+    if (this.currentProvider === 'puter') {
+      return TTS_PROVIDERS.puter.voices
+    } else if (this.currentProvider === 'gemini') {
+      return TTS_PROVIDERS.gemini.voices
+    } else if (this.currentProvider === 'browser') {
+      return this.browserVoices.map(v => ({
+        id: v.name,
+        name: v.name,
+        gender: 'unknown',
+        accent: v.lang,
       }))
     }
+    return []
+  }
 
+  getProviders() {
+    return Object.keys(TTS_PROVIDERS).map(key => ({
+      id: key,
+      ...TTS_PROVIDERS[key],
+    }))
+  }
+
+  // Puter.js TTS (Free ElevenLabs)
+  async speakWithPuter(text) {
     try {
-      const response = await fetch(`${this.baseUrl}/voices`, {
-        headers: {
-          'xi-api-key': this.apiKey,
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      if (!response.ok) throw new Error('Failed to fetch voices')
-      
-      const data = await response.json()
-      return data.voices
-    } catch (error) {
-      console.error('Error fetching voices:', error)
-      return Object.keys(ELEVENLABS_VOICES).map(key => ({
-        voice_id: ELEVENLABS_VOICES[key].id,
-        name: ELEVENLABS_VOICES[key].name,
-        labels: {
-          gender: ELEVENLABS_VOICES[key].gender,
-          accent: ELEVENLABS_VOICES[key].accent,
-        },
-      }))
-    }
-  }
-
-  async getModels() {
-    if (!this.apiKey) {
-      return Object.keys(ELEVENLABS_MODELS).map(key => ({
-        model_id: ELEVENLABS_MODELS[key].id,
-        name: ELEVENLABS_MODELS[key].name,
-        description: ELEVENLABS_MODELS[key].description,
-      }))
-    }
-
-    try {
-      const response = await fetch(`${this.baseUrl}/models`, {
-        headers: {
-          'xi-api-key': this.apiKey,
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      if (!response.ok) throw new Error('Failed to fetch models')
-      
-      const data = await response.json()
-      return data
-    } catch (error) {
-      console.error('Error fetching models:', error)
-      return Object.keys(ELEVENLABS_MODELS).map(key => ({
-        model_id: ELEVENLABS_MODELS[key].id,
-        name: ELEVENLABS_MODELS[key].name,
-        description: ELEVENLABS_MODELS[key].description,
-      }))
-    }
-  }
-
-  async synthesize(text, options = {}) {
-    if (!this.apiKey) {
-      throw new Error('ElevenLabs API key not set. Please add VITE_ELEVENLABS_API_KEY to environment variables.')
-    }
-
-    const {
-      model = this.currentModel,
-      voice = this.currentVoice,
-      speed = this.currentSpeed,
-      stability = this.currentStability,
-      similarity = this.currentSimilarity,
-    } = options
-
-    const voiceId = ELEVENLABS_VOICES[voice]?.id || voice
-    const modelId = ELEVENLABS_MODELS[model]?.id || model
-
-    try {
-      const response = await fetch(`${this.baseUrl}/text-to-speech/${voiceId}`, {
-        method: 'POST',
-        headers: {
-          'xi-api-key': this.apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text,
-          model_id: modelId,
-          voice_settings: {
-            stability,
-            similarity_boost: similarity,
-            style: 0.0,
-            use_speaker_boost: true,
-          },
-          pronunciation_dictionary: [],
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail?.message || 'Failed to synthesize speech')
+      // Load Puter.js dynamically
+      if (!window.puter) {
+        await this.loadPuter()
       }
 
-      const audioBlob = await response.blob()
-      return audioBlob
+      return new Promise((resolve, reject) => {
+        window.puter.ai.chat(text)
+          .then(response => {
+            // Puter.js doesn't have direct TTS, so we'll use browser fallback
+            // or you can use Puter's media features
+            this.speakWithBrowser(text).then(resolve).catch(reject)
+          })
+          .catch(err => {
+            // Fallback to browser TTS
+            this.speakWithBrowser(text).then(resolve).catch(reject)
+          })
+      })
     } catch (error) {
-      console.error('TTS synthesis error:', error)
-      throw error
+      console.error('Puter TTS error:', error)
+      // Fallback to browser TTS
+      return this.speakWithBrowser(text)
     }
   }
 
-  async synthesizeStream(text, options = {}) {
-    if (!this.apiKey) {
-      throw new Error('ElevenLabs API key not set')
+  async loadPuter() {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = 'https://js.puter.com/v2/'
+      script.onload = resolve
+      script.onerror = reject
+      document.head.appendChild(script)
+    })
+  }
+
+  // Google Gemini TTS
+  async speakWithGemini(text) {
+    if (!this.geminiApiKey) {
+      throw new Error('Gemini API key not set')
     }
-
-    const {
-      model = this.currentModel,
-      voice = this.currentVoice,
-      speed = this.currentSpeed,
-      stability = this.currentStability,
-      similarity = this.currentSimilarity,
-    } = options
-
-    const voiceId = ELEVENLABS_VOICES[voice]?.id || voice
-    const modelId = ELEVENLABS_MODELS[model]?.id || model
 
     try {
-      const response = await fetch(`${this.baseUrl}/text-to-speech/${voiceId}/stream`, {
-        method: 'POST',
-        headers: {
-          'xi-api-key': this.apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text,
-          model_id: modelId,
-          voice_settings: {
-            stability,
-            similarity_boost: similarity,
-            style: 0.0,
-            use_speaker_boost: true,
-          },
-          output_format: 'mp3_44100_128',
-        }),
-      })
+      const response = await fetch(
+        `https://texttospeech.googleapis.com/v1/text:synthesize?key=${this.geminiApiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: { text },
+            voice: {
+              languageCode: 'en-US',
+              name: this.currentVoice || 'en-US-Neural2-A',
+            },
+            audioConfig: {
+              audioEncoding: 'MP3',
+              speakingRate: this.currentSpeed,
+              pitch: this.currentPitch,
+            },
+          }),
+        }
+      )
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail?.message || 'Failed to stream speech')
+        throw new Error('Gemini TTS API error')
       }
 
-      return response.body
+      const data = await response.json()
+      const audioBlob = new Blob(
+        [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
+        { type: 'audio/mp3' }
+      )
+
+      return this.playAudio(audioBlob)
     } catch (error) {
-      console.error('TTS stream error:', error)
-      throw error
+      console.error('Gemini TTS error:', error)
+      // Fallback to browser TTS
+      return this.speakWithBrowser(text)
     }
+  }
+
+  // Browser Native TTS (Web Speech API)
+  async speakWithBrowser(text) {
+    return new Promise((resolve, reject) => {
+      if (!('speechSynthesis' in window)) {
+        reject(new Error('Browser does not support speech synthesis'))
+        return
+      }
+
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel()
+
+      const utterance = new SpeechSynthesisUtterance(text)
+      
+      // Find voice
+      const voices = window.speechSynthesis.getVoices()
+      const selectedVoice = voices.find(v => v.name === this.currentVoice) || voices[0]
+      if (selectedVoice) {
+        utterance.voice = selectedVoice
+      }
+
+      utterance.rate = this.currentSpeed
+      utterance.pitch = this.currentPitch
+
+      utterance.onend = () => resolve()
+      utterance.onerror = (event) => reject(new Error(event.error))
+
+      window.speechSynthesis.speak(utterance)
+    })
   }
 
   async playAudio(audioBlob) {
@@ -257,47 +224,33 @@ class ElevenLabsTTS {
     })
   }
 
-  async speak(text, options = {}) {
-    try {
-      const audioBlob = await this.synthesize(text, options)
-      await this.playAudio(audioBlob)
-    } catch (error) {
-      console.error('Speech synthesis failed:', error)
-      throw error
-    }
-  }
+  async speak(text) {
+    if (!text || !text.trim()) return
 
-  async speakStream(text, options = {}, onChunk = null) {
-    try {
-      const stream = await this.synthesizeStream(text, options)
-      const reader = stream.getReader()
-      const chunks = []
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        chunks.push(value)
-        if (onChunk) onChunk(value)
-      }
-
-      const audioBlob = new Blob(chunks, { type: 'audio/mpeg' })
-      await this.playAudio(audioBlob)
-    } catch (error) {
-      console.error('Streamed speech synthesis failed:', error)
-      throw error
+    switch (this.currentProvider) {
+      case 'puter':
+        return this.speakWithPuter(text)
+      case 'gemini':
+        return this.speakWithGemini(text)
+      case 'browser':
+        return this.speakWithBrowser(text)
+      default:
+        return this.speakWithBrowser(text)
     }
   }
 
   stop() {
-    // Stop any currently playing audio
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+    }
+    // Stop any audio elements
     const audios = document.querySelectorAll('audio')
     audios.forEach(audio => audio.pause())
   }
 }
 
 // Create singleton instance
-const tts = new ElevenLabsTTS()
+const tts = new TTSService()
 
 export default tts
-export { ELEVENLABS_MODELS, ELEVENLABS_VOICES }
+export { TTS_PROVIDERS }

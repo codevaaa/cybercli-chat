@@ -79,9 +79,21 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 // Request logging
 app.use(requestLogger)
 
-// Health check
+// Health check and root endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '1.0.0' })
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'CyberCli API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      api: '/api/v1',
+      docs: '/api/v1/docs'
+    }
+  })
 })
 
 // API routes

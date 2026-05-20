@@ -1,24 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { MessageSquare, Plus, Settings, Mic, Send, Sparkles, Zap, Menu, X, Volume2, VolumeX, Play } from 'lucide-react'
 import { streamChat } from '../../lib/api.js'
+import api from '../../lib/api.js'
 import { useTTS } from '../../hooks/useTTS.js'
-
-const SAMPLE_THREADS = [
-  { id: '1', title: 'Python async patterns', model: 'Groq', updated: '2m ago' },
-  { id: '2', title: 'Startup idea validation', model: 'Council', updated: '1h ago' },
-  { id: '3', title: 'Travel itinerary Japan', model: 'Gemini', updated: '3h ago' },
-  { id: '4', title: 'Research: Quantum computing', model: 'Cerebras', updated: '1d ago' },
-]
 
 export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([])
+  const [threads, setThreads] = useState([])
   const [loading, setLoading] = useState(false)
   const [ttsEnabled, setTTSEnabled] = useState(false)
   
-  const { speak, stop, isPlaying, isLoading: ttsLoading, apiKey } = useTTS()
+  const { speak, stop, isPlaying, isLoading: ttsLoading, currentProvider } = useTTS()
+
+  // Load chat history from backend
+  useEffect(() => {
+    loadThreads()
+  }, [])
+
+  const loadThreads = async () => {
+    try {
+      const { data } = await api.get('/chat')
+      setThreads(data.threads || [])
+    } catch (error) {
+      console.error('Failed to load threads:', error)
+      setThreads([])
+    }
+  }
 
   const handleSend = async (e) => {
     e.preventDefault()
@@ -47,7 +57,7 @@ export default function ChatPage() {
       })
       
       // Auto-speak the assistant message if TTS is enabled
-      if (ttsEnabled && apiKey) {
+      if (ttsEnabled) {
         setTimeout(() => {
           speak(assistantMessage.content)
         }, 500)
@@ -65,10 +75,6 @@ export default function ChatPage() {
   }
 
   const handleSpeak = async (content) => {
-    if (!apiKey) {
-      alert('Please add your ElevenLabs API key in Settings to use TTS')
-      return
-    }
     await speak(content)
   }
 
@@ -101,20 +107,26 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto px-3 py-2">
           <p className="text-xs font-medium text-foreground-muted uppercase tracking-wider mb-2 px-2">Recent</p>
           <div className="space-y-1">
-            {SAMPLE_THREADS.map((thread) => (
-              <button
-                key={thread.id}
-                className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-background-tertiary transition-colors group"
-              >
-                <div className="flex items-start gap-2.5">
-                  <MessageSquare className="w-4 h-4 text-foreground-muted mt-0.5 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm text-foreground-primary truncate">{thread.title}</p>
-                    <p className="text-xs text-foreground-muted">{thread.model} &middot; {thread.updated}</p>
+            {threads.length === 0 ? (
+              <div className="px-3 py-4 text-sm text-foreground-muted text-center">
+                No recent chats
+              </div>
+            ) : (
+              threads.map((thread) => (
+                <button
+                  key={thread.id}
+                  className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-background-tertiary transition-colors group"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <MessageSquare className="w-4 h-4 text-foreground-muted mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-foreground-primary truncate">{thread.title || 'Untitled Chat'}</p>
+                      <p className="text-xs text-foreground-muted">{thread.model || 'Auto'} &middot; {thread.updated || 'Just now'}</p>
+                    </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))
+            )}
           </div>
         </div>
 
@@ -141,13 +153,13 @@ export default function ChatPage() {
             <button
               onClick={() => setTTSEnabled(!ttsEnabled)}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                ttsEnabled && apiKey
+                ttsEnabled
                   ? 'bg-accent/10 text-accent'
                   : 'bg-background-tertiary text-foreground-muted'
               }`}
               title="Toggle TTS"
             >
-              {ttsEnabled && apiKey ? (
+              {ttsEnabled ? (
                 <Volume2 className="w-3.5 h-3.5" />
               ) : (
                 <VolumeX className="w-3.5 h-3.5" />

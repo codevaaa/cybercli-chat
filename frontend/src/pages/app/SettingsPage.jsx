@@ -1,87 +1,99 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Zap, Palette, Mic, Brain, Shield, CreditCard, Key, ChevronRight, Moon, Sun, Monitor, Type, Volume2, VolumeX, Save, Check } from 'lucide-react'
+import { Zap, Palette, Mic, Brain, Shield, CreditCard, Key, ChevronRight, Moon, Sun, Monitor, Type, Volume2, VolumeX, Save, Check, Play } from 'lucide-react'
 import api from '../../lib/api.js'
 import { useTTS } from '../../hooks/useTTS.js'
-import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from '../../lib/tts.js'
+import { TTS_PROVIDERS } from '../../lib/tts.js'
 
-const SETTINGS_SECTIONS = [
-  {
-    id: 'appearance',
-    title: 'Appearance',
-    icon: Palette,
-    items: [
-      { label: 'Theme', value: 'Dark', options: ['Dark', 'Light', 'System'] },
-      { label: 'Accent Color', value: 'Violet', options: ['Violet', 'Amber', 'Cyan', 'Rose'] },
-      { label: 'Density', value: 'Comfortable', options: ['Compact', 'Comfortable', 'Spacious'] },
-      { label: 'Font', value: 'Inter', options: ['Inter', 'Geist', 'System'] },
-    ],
-  },
-  {
-    id: 'voice',
-    title: 'Voice & Audio',
-    icon: Mic,
-    items: [
-      { label: 'TTS Enabled', value: 'On' },
-      { label: 'Default Voice', value: 'Ava (Gemini)' },
-      { label: 'Speech Speed', value: '1.0x' },
-      { label: 'Auto-send Voice', value: 'Off' },
-    ],
-  },
-  {
-    id: 'tts',
-    title: 'ElevenLabs TTS',
-    icon: Volume2,
-    items: [],
-  },
-  {
-    id: 'models',
-    title: 'Models & AI',
-    icon: Brain,
-    items: [
-      { label: 'Default Model', value: 'Auto-select' },
-      { label: 'Show Chain of Thought', value: 'On' },
-      { label: 'Show Confidence', value: 'On' },
-      { label: 'Council Mode Default', value: 'Off' },
-    ],
-  },
-  {
-    id: 'security',
-    title: 'Security',
-    icon: Shield,
-    items: [
-      { label: 'Two-Factor Auth', value: 'Off' },
-      { label: 'Active Sessions', value: '3 devices' },
-      { label: 'Login Notifications', value: 'On' },
-    ],
-  },
-]
+  const SETTINGS_SECTIONS = [
+    {
+      id: 'appearance',
+      title: 'Appearance',
+      icon: Palette,
+      items: [
+        { label: 'Theme', key: 'theme', options: ['Dark', 'Light', 'System'] },
+        { label: 'Accent Color', key: 'accent_color', options: ['Violet', 'Amber', 'Cyan', 'Rose'] },
+        { label: 'Density', key: 'density', options: ['Compact', 'Comfortable', 'Spacious'] },
+        { label: 'Font', key: 'font', options: ['Inter', 'Geist', 'System'] },
+      ],
+    },
+    {
+      id: 'voice',
+      title: 'Voice & Audio',
+      icon: Mic,
+      items: [
+        { label: 'TTS Enabled', key: 'tts_enabled', type: 'toggle' },
+        { label: 'Default Voice', key: 'default_voice', type: 'select', options: ['ava', 'bella', 'emma', 'adam', 'josh'] },
+        { label: 'Speech Speed', key: 'speech_speed', type: 'range', min: 0.25, max: 4.0, step: 0.25 },
+        { label: 'Auto-send Voice', key: 'auto_send_voice', type: 'toggle' },
+      ],
+    },
+    {
+      id: 'tts',
+      title: 'Text-to-Speech',
+      icon: Volume2,
+      items: [],
+    },
+    {
+      id: 'models',
+      title: 'Models & AI',
+      icon: Brain,
+      items: [
+        { label: 'Default Model', key: 'default_model', options: ['auto', 'openrouter/gpt-4o-mini', 'groq/llama-3.1-8b', 'gemini/gemini-2.5-flash'] },
+        { label: 'Show Chain of Thought', key: 'show_chain_of_thought', type: 'toggle' },
+        { label: 'Show Confidence', key: 'show_confidence', type: 'toggle' },
+        { label: 'Council Mode Default', key: 'council_mode_default', type: 'toggle' },
+      ],
+    },
+    {
+      id: 'security',
+      title: 'Security',
+      icon: Shield,
+      items: [
+        { label: 'Two-Factor Auth', key: 'two_factor_auth', type: 'toggle' },
+        { label: 'Login Notifications', key: 'login_notifications', type: 'toggle' },
+      ],
+    },
+  ]
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState('appearance')
-  const [settings, setSettings] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [settings, setSettings] = useState({
+    theme: 'dark',
+    accent_color: 'Violet',
+    density: 'Comfortable',
+    font: 'Inter',
+    tts_enabled: false,
+    default_voice: 'ava',
+    speech_speed: 1.0,
+    auto_send_voice: false,
+    default_model: 'auto',
+    show_chain_of_thought: true,
+    show_confidence: true,
+    council_mode_default: false,
+    two_factor_auth: false,
+    login_notifications: true,
+  })
+  const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const {
-    apiKey,
-    currentModel,
+    currentProvider,
     currentVoice,
     speed,
-    stability,
-    similarity,
+    pitch,
+    geminiApiKey,
     voices,
-    models,
-    updateApiKey,
-    updateModel,
+    providers,
+    updateProvider,
     updateVoice,
     updateSpeed,
-    updateStability,
-    updateSimilarity,
+    updatePitch,
+    updateGeminiApiKey,
     speak,
   } = useTTS()
 
-  const [localApiKey, setLocalApiKey] = useState(apiKey || '')
+  const [localGeminiKey, setLocalGeminiKey] = useState(geminiApiKey || '')
 
   useEffect(() => {
     fetchSettings()
@@ -99,26 +111,28 @@ export default function SettingsPage() {
   }
 
   const updateSetting = async (key, value) => {
+    setSettings(prev => ({ ...prev, [key]: value }))
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+    
+    // Also save to localStorage for persistence
+    localStorage.setItem(`setting_${key}`, value)
+    
     try {
       await api.patch('/settings', { [key]: value })
-      setSettings(prev => ({ ...prev, [key]: value }))
     } catch (error) {
-      console.error('Failed to update setting:', error)
+      console.error('Failed to update setting on backend:', error)
     }
   }
 
   const handleSaveTTS = () => {
-    updateApiKey(localApiKey)
+    updateGeminiApiKey(localGeminiKey)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
   const handleTestVoice = async () => {
-    if (!localApiKey) {
-      alert('Please enter your ElevenLabs API key first')
-      return
-    }
-    await speak('This is a test of the ElevenLabs text to speech system.')
+    await speak('This is a test of the text to speech system.')
   }
 
   const activeSettings = SETTINGS_SECTIONS.find(s => s.id === activeSection)
@@ -170,51 +184,25 @@ export default function SettingsPage() {
                       <Volume2 className="w-5 h-5 text-accent" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-semibold text-foreground-primary">ElevenLabs TTS</h2>
-                      <p className="text-xs text-foreground-muted">Configure text-to-speech with best-in-class voices</p>
+                      <h2 className="text-lg font-semibold text-foreground-primary">Text-to-Speech</h2>
+                      <p className="text-xs text-foreground-muted">Free TTS via Puter.js, Google Gemini, or Browser Native</p>
                     </div>
                   </div>
 
                   <div className="space-y-6">
-                    {/* API Key */}
+                    {/* Provider Selection */}
                     <div>
                       <label className="block text-sm font-medium text-foreground-primary mb-2">
-                        ElevenLabs API Key
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="password"
-                          value={localApiKey}
-                          onChange={(e) => setLocalApiKey(e.target.value)}
-                          placeholder="sk-..."
-                          className="flex-1 text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:border-accent"
-                        />
-                        <button
-                          onClick={handleSaveTTS}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-light transition-colors"
-                        >
-                          {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                          {saved ? 'Saved' : 'Save'}
-                        </button>
-                      </div>
-                      <p className="text-xs text-foreground-muted mt-1">
-                        Get your free API key at <a href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">elevenlabs.io</a>
-                      </p>
-                    </div>
-
-                    {/* Model Selection */}
-                    <div>
-                      <label className="block text-sm font-medium text-foreground-primary mb-2">
-                        Model
+                        TTS Provider
                       </label>
                       <select
-                        value={currentModel}
-                        onChange={(e) => updateModel(e.target.value)}
+                        value={currentProvider}
+                        onChange={(e) => updateProvider(e.target.value)}
                         className="w-full text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:border-accent"
                       >
-                        {Object.entries(ELEVENLABS_MODELS).map(([key, model]) => (
-                          <option key={key} value={key}>
-                            {model.name} - {model.description}
+                        {providers.map((provider) => (
+                          <option key={provider.id} value={provider.id}>
+                            {provider.name} - {provider.description}
                           </option>
                         ))}
                       </select>
@@ -230,8 +218,8 @@ export default function SettingsPage() {
                         onChange={(e) => updateVoice(e.target.value)}
                         className="w-full text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:border-accent"
                       >
-                        {Object.entries(ELEVENLABS_VOICES).map(([key, voice]) => (
-                          <option key={key} value={key}>
+                        {voices.map((voice) => (
+                          <option key={voice.id} value={voice.id}>
                             {voice.name} ({voice.gender}, {voice.accent})
                           </option>
                         ))}
@@ -258,38 +246,18 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    {/* Stability */}
+                    {/* Pitch */}
                     <div>
                       <label className="block text-sm font-medium text-foreground-primary mb-2">
-                        Stability: {stability}
+                        Pitch: {pitch}
                       </label>
                       <input
                         type="range"
-                        min="0"
-                        max="1"
+                        min="0.5"
+                        max="2.0"
                         step="0.1"
-                        value={stability}
-                        onChange={(e) => updateStability(parseFloat(e.target.value))}
-                        className="w-full accent-accent"
-                      />
-                      <div className="flex justify-between text-xs text-foreground-muted mt-1">
-                        <span>Variable</span>
-                        <span>Stable</span>
-                      </div>
-                    </div>
-
-                    {/* Similarity */}
-                    <div>
-                      <label className="block text-sm font-medium text-foreground-primary mb-2">
-                        Similarity: {similarity}
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        value={similarity}
-                        onChange={(e) => updateSimilarity(parseFloat(e.target.value))}
+                        value={pitch}
+                        onChange={(e) => updatePitch(parseFloat(e.target.value))}
                         className="w-full accent-accent"
                       />
                       <div className="flex justify-between text-xs text-foreground-muted mt-1">
@@ -298,12 +266,39 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
+                    {/* Gemini API Key (only for Gemini provider) */}
+                    {currentProvider === 'gemini' && (
+                      <div>
+                        <label className="block text-sm font-medium text-foreground-primary mb-2">
+                          Google Gemini API Key
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="password"
+                            value={localGeminiKey}
+                            onChange={(e) => setLocalGeminiKey(e.target.value)}
+                            placeholder="AIza..."
+                            className="flex-1 text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:border-accent"
+                          />
+                          <button
+                            onClick={handleSaveTTS}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-light transition-colors"
+                          >
+                            {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                            {saved ? 'Saved' : 'Save'}
+                          </button>
+                        </div>
+                        <p className="text-xs text-foreground-muted mt-1">
+                          Get your API key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Google AI Studio</a>
+                        </p>
+                      </div>
+                    )}
+
                     {/* Test Button */}
                     <div className="pt-4 border-t border-border-subtle">
                       <button
                         onClick={handleTestVoice}
-                        disabled={!localApiKey}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-background-tertiary text-foreground-primary text-sm font-medium rounded-lg hover:bg-background-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-background-tertiary text-foreground-primary text-sm font-medium rounded-lg hover:bg-background-secondary transition-colors"
                       >
                         <Play className="w-4 h-4" />
                         Test Voice
@@ -331,10 +326,36 @@ export default function SettingsPage() {
                           <p className="text-sm font-medium text-foreground-primary">{item.label}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          {item.options ? (
+                          {item.type === 'toggle' ? (
+                            <button
+                              onClick={() => updateSetting(item.key, !settings[item.key])}
+                              className={`w-12 h-6 rounded-full transition-colors ${
+                                settings[item.key] ? 'bg-accent' : 'bg-background-tertiary'
+                              }`}
+                            >
+                              <div className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                                settings[item.key] ? 'translate-x-6' : 'translate-x-0.5'
+                              } mt-0.5`} />
+                            </button>
+                          ) : item.type === 'range' ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="range"
+                                min={item.min || 0}
+                                max={item.max || 100}
+                                step={item.step || 1}
+                                value={settings[item.key]}
+                                onChange={(e) => updateSetting(item.key, parseFloat(e.target.value))}
+                                className="w-24 accent-accent"
+                              />
+                              <span className="text-sm text-foreground-muted w-12 text-right">
+                                {typeof settings[item.key] === 'number' ? settings[item.key].toFixed(2) : settings[item.key]}
+                              </span>
+                            </div>
+                          ) : item.options ? (
                             <select
-                              value={settings?.[item.label.toLowerCase().replace(' ', '_')] || item.value}
-                              onChange={(e) => updateSetting(item.label.toLowerCase().replace(' ', '_'), e.target.value)}
+                              value={settings[item.key]}
+                              onChange={(e) => updateSetting(item.key, e.target.value)}
                               className="text-sm text-foreground-primary bg-background-tertiary border border-border-subtle rounded px-3 py-1.5 focus:outline-none focus:border-accent"
                             >
                               {item.options.map((opt) => (
@@ -342,10 +363,7 @@ export default function SettingsPage() {
                               ))}
                             </select>
                           ) : (
-                            <>
-                              <span className="text-sm text-foreground-muted">{settings?.[item.label.toLowerCase().replace(' ', '_')] || item.value}</span>
-                              <ChevronRight className="w-4 h-4 text-foreground-muted" />
-                            </>
+                            <span className="text-sm text-foreground-muted">{settings[item.key] || 'Off'}</span>
                           )}
                         </div>
                       </div>

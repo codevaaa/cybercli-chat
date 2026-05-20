@@ -5,33 +5,27 @@ export function useTTS() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [apiKey, setApiKey] = useState(null)
-  const [currentModel, setCurrentModel] = useState('multilingual-v2')
+  const [currentProvider, setCurrentProvider] = useState('puter')
   const [currentVoice, setCurrentVoice] = useState('ava')
   const [speed, setSpeed] = useState(1.0)
-  const [stability, setStability] = useState(0.5)
-  const [similarity, setSimilarity] = useState(0.75)
+  const [pitch, setPitch] = useState(1.0)
+  const [geminiApiKey, setGeminiApiKey] = useState(null)
   const [voices, setVoices] = useState([])
-  const [models, setModels] = useState([])
+  const [providers, setProviders] = useState([])
   
   const audioRef = useRef(null)
 
   useEffect(() => {
     // Load saved settings from localStorage
-    const savedApiKey = localStorage.getItem('elevenlabs_api_key')
-    const savedModel = localStorage.getItem('tts_model')
+    const savedProvider = localStorage.getItem('tts_provider')
     const savedVoice = localStorage.getItem('tts_voice')
     const savedSpeed = localStorage.getItem('tts_speed')
-    const savedStability = localStorage.getItem('tts_stability')
-    const savedSimilarity = localStorage.getItem('tts_similarity')
+    const savedPitch = localStorage.getItem('tts_pitch')
+    const savedGeminiKey = localStorage.getItem('gemini_api_key')
 
-    if (savedApiKey) {
-      setApiKey(savedApiKey)
-      tts.setApiKey(savedApiKey)
-    }
-    if (savedModel) {
-      setCurrentModel(savedModel)
-      tts.setModel(savedModel)
+    if (savedProvider) {
+      setCurrentProvider(savedProvider)
+      tts.setProvider(savedProvider)
     }
     if (savedVoice) {
       setCurrentVoice(savedVoice)
@@ -41,39 +35,31 @@ export function useTTS() {
       setSpeed(parseFloat(savedSpeed))
       tts.setSpeed(parseFloat(savedSpeed))
     }
-    if (savedStability) {
-      setStability(parseFloat(savedStability))
-      tts.setStability(parseFloat(savedStability))
+    if (savedPitch) {
+      setPitch(parseFloat(savedPitch))
+      tts.setPitch(parseFloat(savedPitch))
     }
-    if (savedSimilarity) {
-      setSimilarity(parseFloat(savedSimilarity))
-      tts.setSimilarity(parseFloat(savedSimilarity))
+    if (savedGeminiKey) {
+      setGeminiApiKey(savedGeminiKey)
+      tts.setGeminiApiKey(savedGeminiKey)
     }
 
-    // Load voices and models
+    // Load voices and providers
     loadVoices()
-    loadModels()
+    loadProviders()
   }, [])
 
-  const loadVoices = useCallback(async () => {
-    try {
-      const voicesData = await tts.getVoices()
-      setVoices(voicesData)
-    } catch (err) {
-      console.error('Failed to load voices:', err)
-    }
+  const loadVoices = useCallback(() => {
+    const voicesData = tts.getVoices()
+    setVoices(voicesData)
   }, [])
 
-  const loadModels = useCallback(async () => {
-    try {
-      const modelsData = await tts.getModels()
-      setModels(modelsData)
-    } catch (err) {
-      console.error('Failed to load models:', err)
-    }
+  const loadProviders = useCallback(() => {
+    const providersData = tts.getProviders()
+    setProviders(providersData)
   }, [])
 
-  const speak = useCallback(async (text, options = {}) => {
+  const speak = useCallback(async (text) => {
     if (!text || !text.trim()) return
 
     setIsLoading(true)
@@ -81,13 +67,7 @@ export function useTTS() {
     setIsPlaying(true)
 
     try {
-      await tts.speak(text, {
-        model: options.model || currentModel,
-        voice: options.voice || currentVoice,
-        speed: options.speed || speed,
-        stability: options.stability || stability,
-        similarity: options.similarity || similarity,
-      })
+      await tts.speak(text)
     } catch (err) {
       setError(err.message)
       console.error('TTS error:', err)
@@ -95,7 +75,7 @@ export function useTTS() {
       setIsLoading(false)
       setIsPlaying(false)
     }
-  }, [currentModel, currentVoice, speed, stability, similarity])
+  }, [])
 
   const stop = useCallback(() => {
     tts.stop()
@@ -103,21 +83,12 @@ export function useTTS() {
     setIsLoading(false)
   }, [])
 
-  const updateApiKey = useCallback((key) => {
-    setApiKey(key)
-    tts.setApiKey(key)
-    localStorage.setItem('elevenlabs_api_key', key)
-    
-    // Reload voices and models with new key
+  const updateProvider = useCallback((provider) => {
+    setCurrentProvider(provider)
+    tts.setProvider(provider)
+    localStorage.setItem('tts_provider', provider)
     loadVoices()
-    loadModels()
-  }, [loadVoices, loadModels])
-
-  const updateModel = useCallback((model) => {
-    setCurrentModel(model)
-    tts.setModel(model)
-    localStorage.setItem('tts_model', model)
-  }, [])
+  }, [loadVoices])
 
   const updateVoice = useCallback((voice) => {
     setCurrentVoice(voice)
@@ -132,18 +103,17 @@ export function useTTS() {
     localStorage.setItem('tts_speed', speedValue.toString())
   }, [])
 
-  const updateStability = useCallback((newStability) => {
-    const stabilityValue = Math.min(Math.max(parseFloat(newStability), 0), 1)
-    setStability(stabilityValue)
-    tts.setStability(stabilityValue)
-    localStorage.setItem('tts_stability', stabilityValue.toString())
+  const updatePitch = useCallback((newPitch) => {
+    const pitchValue = Math.min(Math.max(parseFloat(newPitch), 0.5), 2.0)
+    setPitch(pitchValue)
+    tts.setPitch(pitchValue)
+    localStorage.setItem('tts_pitch', pitchValue.toString())
   }, [])
 
-  const updateSimilarity = useCallback((newSimilarity) => {
-    const similarityValue = Math.min(Math.max(parseFloat(newSimilarity), 0), 1)
-    setSimilarity(similarityValue)
-    tts.setSimilarity(similarityValue)
-    localStorage.setItem('tts_similarity', similarityValue.toString())
+  const updateGeminiApiKey = useCallback((key) => {
+    setGeminiApiKey(key)
+    tts.setGeminiApiKey(key)
+    localStorage.setItem('gemini_api_key', key)
   }, [])
 
   return {
@@ -151,25 +121,23 @@ export function useTTS() {
     isPlaying,
     isLoading,
     error,
-    apiKey,
-    currentModel,
+    currentProvider,
     currentVoice,
     speed,
-    stability,
-    similarity,
+    pitch,
+    geminiApiKey,
     voices,
-    models,
+    providers,
 
     // Actions
     speak,
     stop,
-    updateApiKey,
-    updateModel,
+    updateProvider,
     updateVoice,
     updateSpeed,
-    updateStability,
-    updateSimilarity,
+    updatePitch,
+    updateGeminiApiKey,
     loadVoices,
-    loadModels,
+    loadProviders,
   }
 }
