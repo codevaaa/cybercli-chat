@@ -59,7 +59,7 @@ export default function CareersPage() {
                 <ul className="space-y-4">
                   {BENEFITS.map((benefit) => (
                     <li key={benefit} className="flex items-center gap-3 text-sm text-foreground-secondary">
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0 shadow-[0_0_8px_rgba(217,119,87,0.3)]" />
                       {benefit}
                     </li>
                   ))}
