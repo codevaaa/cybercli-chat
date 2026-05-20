@@ -30,7 +30,7 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-2 gap-6 mb-20">
             {VALUES.map((v) => (
               <div key={v.title} className="card p-7">
-                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center mb-4">
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center mb-4 shadow-[0_0_15px_rgba(217,119,87,0.2)]">
                   <v.icon className="w-5 h-5 text-accent" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground-primary mb-2">{v.title}</h3>
@@ -43,7 +43,7 @@ export default function AboutPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {TEAM.map((member) => (
               <div key={member.name} className="card p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(217,119,87,0.2)]">
                   <span className="text-lg font-bold text-accent">{member.initials}</span>
                 </div>
                 <h3 className="text-base font-semibold text-foreground-primary mb-1">{member.name}</h3>
