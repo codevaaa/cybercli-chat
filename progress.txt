@@ -90,23 +90,29 @@ Phase 3: API Integration — COMPLETE
 [✅] Wire ProfilePage to auth user data
 [✅] LibraryPage, AgentsPage, VoicePage have UI scaffolds (backend wiring optional)
 
-Phase 4: Infrastructure Setup — PENDING
+Phase 4: Infrastructure Setup — IN PROGRESS
 ---------------------------------------
-[ ] Connect backend to real MongoDB Atlas
-[ ] Connect backend to real Supabase
-[ ] Add Redis caching
-[ ] Connect AI Gateway to real API keys
+[✅] Connect backend to real MongoDB Atlas (credentials added)
+[✅] Connect backend to real Supabase (credentials added)
+[✅] Add AI API keys (6 providers: OpenRouter, Groq, Gemini, NVIDIA, HuggingFace, Mistral)
+[✅] Backend server running successfully on port 3000
+[✅] Frontend dev server running successfully on port 5173
+[ ] Test end-to-end: signup → login → chat streaming
+[ ] Redis caching
 [ ] Build TTS integration (client-side Puter.js)
 [ ] Add Council Mode UI
 [ ] Add conversation branching UI
 [ ] Stripe checkout integration
 [ ] PWA support
 
+Current Status
+-------------
+✅ Backend: http://localhost:3000 (running)
+✅ Frontend: http://localhost:5173 (running)
+✅ Browser preview available for testing
+
 Next Session Focus
 ------------------
-1. Set up Supabase project and add credentials to frontend/.env
-2. Set up MongoDB Atlas and add MONGODB_URI to backend/.env
-3. Add at least one AI API key (OpenRouter, Groq, or Gemini) to backend/.env
-4. Start backend server: `cd backend && npm run dev`
-5. Start frontend dev server: `cd frontend && npm run dev`
-6. Test end-to-end: signup → login → chat streaming
+1. Test end-to-end auth flow (signup → login → protected routes)
+2. Test chat streaming with AI providers
+3. Fix any bugs found during testing

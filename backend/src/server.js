@@ -28,6 +28,10 @@ const __dirname = path.dirname(__filename)
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') })
 
+console.log('Supabase URL:', process.env.SUPABASE_URL ? 'SET' : 'NOT SET')
+console.log('Supabase Key:', process.env.SUPABASE_SERVICE_KEY ? 'SET' : 'NOT SET')
+console.log('MongoDB URI:', process.env.MONGODB_URI ? 'SET' : 'NOT SET')
+
 const app = express()
 const PORT = process.env.PORT || 3000
 

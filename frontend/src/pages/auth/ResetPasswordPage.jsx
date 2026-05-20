@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Lock, ArrowRight, Zap, Check } from 'lucide-react'
-import { useAuthStore } from '../stores/authStore.js'
+import { useAuthStore } from '../../stores/authStore.js'
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Mail, Lock, ArrowRight, Zap, Github } from 'lucide-react'
-import { useAuthStore } from '../stores/authStore.js'
+import { useAuthStore } from '../../stores/authStore.js'
 
 export default function LoginPage() {
   const navigate = useNavigate()

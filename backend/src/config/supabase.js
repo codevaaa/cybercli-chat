@@ -1,18 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY
+const supabaseUrl = process.env.SUPABASE_URL || ''
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || ''
 
 if (!supabaseUrl || !supabaseKey) {
   console.warn('Supabase credentials not configured. Auth features will be degraded.')
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseKey || '', {
+export const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: false,
   },
-})
+}) : null
 
 export const verifyJWT = async (token) => {
   if (!supabaseUrl || !supabaseKey) {
