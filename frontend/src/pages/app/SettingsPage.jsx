@@ -12,7 +12,7 @@ import { TTS_PROVIDERS } from '../../lib/tts.js'
       icon: Palette,
       items: [
         { label: 'Theme', key: 'theme', options: ['Dark', 'Light', 'System'] },
-        { label: 'Accent Color', key: 'accent_color', options: ['Violet', 'Amber', 'Cyan', 'Rose'] },
+        { label: 'Accent Color', key: 'accent_color', options: ['Terracotta', 'Amber', 'Cyan', 'Rose'] },
         { label: 'Density', key: 'density', options: ['Compact', 'Comfortable', 'Spacious'] },
         { label: 'Font', key: 'font', options: ['Inter', 'Geist', 'System'] },
       ],

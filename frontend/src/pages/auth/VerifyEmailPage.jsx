@@ -5,7 +5,7 @@ export default function VerifyEmailPage() {
   return (
     <div className="min-h-screen flex items-center justify-center section-padding pt-24 pb-12">
       <div className="w-full max-w-md text-center">
-        <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center mx-auto mb-4">
+        <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(217,119,87,0.3)]">
           <Zap className="w-6 h-6 text-white" />
         </div>
         <h1 className="text-2xl font-bold text-foreground-primary mb-2">Verify your email</h1>
