@@ -43,7 +43,7 @@ export default function Navbar() {
       <div className="section-padding">
         <nav className="container-custom flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(124,58,237,0.3)]">
+            <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(217,119,87,0.3)]">
               <Zap className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight">

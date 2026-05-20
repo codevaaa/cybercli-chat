@@ -33,10 +33,10 @@ export default function HeroSection() {
         <ParticleBackground />
         <div className="absolute inset-0 bg-gradient-radial from-accent/5 via-transparent to-transparent opacity-40" />
         {/* Subtle grid pattern */}
-        <div 
-          className="absolute inset-0 opacity-[0.015]"
+        <div
+          className="absolute inset-0 opacity-30"
           style={{
-            backgroundImage: 'linear-gradient(rgba(124,58,237,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.3) 1px, transparent 1px)',
+            backgroundImage: 'linear-gradient(rgba(217,119,87,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(217,119,87,0.15) 1px, transparent 1px)',
             backgroundSize: '80px 80px'
           }}
         />
@@ -46,6 +46,9 @@ export default function HeroSection() {
         <div className="container-custom text-center max-w-5xl mx-auto">
           {/* Badge */}
           <div ref={badgeRef} className="mb-8">
+            <div className="inline-block text-xs font-semibold text-accent tracking-[0.2em] uppercase mb-4 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 animate-fade-up">
+              AI-Powered
+            </div>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/8 border border-accent/15 backdrop-blur-sm">
               <Sparkles className="w-4 h-4 text-accent" />
               <span className="text-sm font-medium text-accent">

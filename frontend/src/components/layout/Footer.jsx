@@ -11,9 +11,14 @@ const SOCIAL_LINKS = [
 
 export default function Footer() {
   return (
-    <footer className="relative overflow-hidden bg-[#0f0f12] border-t border-white/[0.04]">
+    <footer className="bg-[#1A1A1A] text-white relative overflow-hidden border-t border-white/[0.04]">
+      {/* Watermark */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+        <span className="text-[15vw] font-bold tracking-tight leading-none">CYBERCLI</span>
+      </div>
+
       {/* Main footer content */}
-      <div className="section-padding pt-16 pb-8 lg:pt-24 lg:pb-12">
+      <div className="section-padding pt-16 pb-8 lg:pt-24 lg:pb-12 relative z-10">
         <div className="container-custom">
           {/* Top row: Contact + Social */}
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-12 lg:gap-20 mb-20">
@@ -81,20 +86,6 @@ export default function Footer() {
                 </ul>
               </div>
             ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Giant watermark */}
-      <div className="relative overflow-hidden pb-4">
-        <div className="container-custom">
-          <div className="relative">
-            <span
-              className="block text-[12vw] sm:text-[10vw] lg:text-[8vw] font-black tracking-tighter leading-none text-white/[0.03] select-none whitespace-nowrap"
-              style={{ fontFamily: "'Inter', sans-serif" }}
-            >
-              CYBERCLI
-            </span>
           </div>
         </div>
       </div>

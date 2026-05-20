@@ -7,7 +7,7 @@ export default function CTASection() {
       <div className="container-custom">
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-accent/15 via-accent/5 to-background-secondary border border-accent/10 p-10 md:p-16 lg:p-20 text-center">
           {/* Background glow */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/8 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-accent/5 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
           <div className="relative z-10 max-w-2xl mx-auto">

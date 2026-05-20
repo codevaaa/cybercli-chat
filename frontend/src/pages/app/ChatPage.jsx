@@ -125,12 +125,12 @@ export default function ChatPage() {
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-background-secondary border-r border-border-subtle transform transition-transform duration-300 lg:relative lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between p-4 border-b border-border-subtle">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-foreground-primary">CyberCli</span>
-          </Link>
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
+                <Zap className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-bold text-foreground-primary">CyberCli</span>
+            </Link>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1.5 rounded-lg hover:bg-background-tertiary">
             <X className="w-4 h-4" />
           </button>
@@ -288,7 +288,7 @@ export default function ChatPage() {
           )}
           {loading && (
             <div className="flex gap-4 justify-start">
-              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center flex-shrink-0 mt-1">
                 <Zap className="w-4 h-4 text-white" />
               </div>
               <div className="bg-background-secondary border border-border-subtle rounded-2xl px-4 py-3">
