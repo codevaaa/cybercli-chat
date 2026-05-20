@@ -114,7 +114,7 @@ export default function VoiceChatPage() {
             <ArrowLeft className="w-5 h-5 text-foreground-primary" />
           </Link>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center shadow-[0_0_20px_rgba(217,119,87,0.3)]">
               <Mic className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -154,7 +154,7 @@ export default function VoiceChatPage() {
             
             {/* Center orb */}
             <div className={`absolute inset-12 rounded-full bg-gradient-to-br from-accent to-accent-light transition-all duration-300 ${
-              isListening ? 'scale-110 shadow-[0_0_60px_rgba(124,58,237,0.5)]' : 'scale-100 shadow-[0_0_30px_rgba(124,58,237,0.3)]'
+              isListening ? 'scale-110 shadow-[0_0_60px_rgba(217,119,87,0.5)]' : 'scale-100 shadow-[0_0_30px_rgba(217,119,87,0.3)]'
             } flex items-center justify-center`}>
               {isListening ? (
                 <Mic className="w-12 h-12 text-white animate-pulse" />
@@ -222,7 +222,7 @@ export default function VoiceChatPage() {
             className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
               isListening
                 ? 'bg-red-500 text-white shadow-[0_0_40px_rgba(239,68,68,0.5)] hover:scale-105'
-                : 'bg-accent text-white shadow-[0_0_40px_rgba(124,58,237,0.5)] hover:scale-105'
+                : 'bg-accent text-white shadow-[0_0_40px_rgba(217,119,87,0.5)] hover:scale-105'
             }`}
           >
             {isListening ? (

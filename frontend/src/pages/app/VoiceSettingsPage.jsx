@@ -58,7 +58,7 @@ export default function VoiceSettingsPage() {
               <ArrowLeft className="w-5 h-5 text-foreground-primary" />
             </Link>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shadow-[0_0_15px_rgba(217,119,87,0.2)]">
                 <Volume2 className="w-5 h-5 text-accent" />
               </div>
               <div>
