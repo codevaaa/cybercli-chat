@@ -36,6 +36,8 @@ import ProfilePage from '@pages/app/ProfilePage'
 import LibraryPage from '@pages/app/LibraryPage'
 import AgentsPage from '@pages/app/AgentsPage'
 import VoicePage from '@pages/app/VoicePage'
+import VoiceChatPage from '@pages/app/VoiceChatPage'
+import VoiceSettingsPage from '@pages/app/VoiceSettingsPage'
 
 function App() {
   useEffect(() => {
@@ -89,6 +91,8 @@ function App() {
           <Route path="/library" element={<ProtectedRoute><LibraryPage /></ProtectedRoute>} />
           <Route path="/agents" element={<ProtectedRoute><AgentsPage /></ProtectedRoute>} />
           <Route path="/voice" element={<ProtectedRoute><VoicePage /></ProtectedRoute>} />
+          <Route path="/voice-chat" element={<ProtectedRoute><VoiceChatPage /></ProtectedRoute>} />
+          <Route path="/voice-settings" element={<ProtectedRoute><VoiceSettingsPage /></ProtectedRoute>} />
         </Routes>
       </main>
       {isPublicRoute() && <Footer />}

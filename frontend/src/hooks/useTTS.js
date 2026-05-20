@@ -1,18 +1,15 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-import tts from '../lib/tts.js'
+import { useState, useRef, useEffect } from 'react'
 
 export function useTTS() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState(null)
   const [currentProvider, setCurrentProvider] = useState('puter')
-  const [currentVoice, setCurrentVoice] = useState('ava')
-  const [speed, setSpeed] = useState(1.0)
-  const [pitch, setPitch] = useState(1.0)
-  const [geminiApiKey, setGeminiApiKey] = useState(null)
-  const [voices, setVoices] = useState([])
-  const [providers, setProviders] = useState([])
-  
+  const [voiceSettings, setVoiceSettings] = useState({
+    provider: 'puter',
+    voice: 'default',
+    speed: 1.0,
+    pitch: 1.0,
+  })
   const audioRef = useRef(null)
 
   useEffect(() => {
@@ -21,123 +18,167 @@ export function useTTS() {
     const savedVoice = localStorage.getItem('tts_voice')
     const savedSpeed = localStorage.getItem('tts_speed')
     const savedPitch = localStorage.getItem('tts_pitch')
-    const savedGeminiKey = localStorage.getItem('gemini_api_key')
 
     if (savedProvider) {
+      setVoiceSettings(prev => ({ ...prev, provider: savedProvider }))
       setCurrentProvider(savedProvider)
-      tts.setProvider(savedProvider)
     }
     if (savedVoice) {
-      setCurrentVoice(savedVoice)
-      tts.setVoice(savedVoice)
+      setVoiceSettings(prev => ({ ...prev, voice: savedVoice }))
     }
     if (savedSpeed) {
-      setSpeed(parseFloat(savedSpeed))
-      tts.setSpeed(parseFloat(savedSpeed))
+      setVoiceSettings(prev => ({ ...prev, speed: parseFloat(savedSpeed) }))
     }
     if (savedPitch) {
-      setPitch(parseFloat(savedPitch))
-      tts.setPitch(parseFloat(savedPitch))
+      setVoiceSettings(prev => ({ ...prev, pitch: parseFloat(savedPitch) }))
     }
-    if (savedGeminiKey) {
-      setGeminiApiKey(savedGeminiKey)
-      tts.setGeminiApiKey(savedGeminiKey)
-    }
-
-    // Load voices and providers
-    loadVoices()
-    loadProviders()
   }, [])
 
-  const loadVoices = useCallback(() => {
-    const voicesData = tts.getVoices()
-    setVoices(voicesData)
-  }, [])
-
-  const loadProviders = useCallback(() => {
-    const providersData = tts.getProviders()
-    setProviders(providersData)
-  }, [])
-
-  const speak = useCallback(async (text) => {
-    if (!text || !text.trim()) return
+  const speak = async (text, provider = voiceSettings.provider) => {
+    if (!text || text.trim() === '') return
 
     setIsLoading(true)
-    setError(null)
-    setIsPlaying(true)
+    setIsPlaying(false)
 
     try {
-      await tts.speak(text)
-    } catch (err) {
-      setError(err.message)
-      console.error('TTS error:', err)
+      if (provider === 'puter' && window.puter) {
+        // Use Puter.js for TTS (unlimited free tier)
+        const audioUrl = await window.puter.ai.voice.generate(text, {
+          voice: voiceSettings.voice,
+          speed: voiceSettings.speed,
+          pitch: voiceSettings.pitch,
+        })
+        
+        if (audioRef.current) {
+          audioRef.current.pause()
+          audioRef.current.currentTime = 0
+        }
+
+        audioRef.current = new Audio(audioUrl)
+        
+        audioRef.current.onplay = () => setIsPlaying(true)
+        audioRef.current.onended = () => setIsPlaying(false)
+        audioRef.current.onerror = () => {
+          setIsPlaying(false)
+          setIsLoading(false)
+        }
+
+        await audioRef.current.play()
+      } else if (provider === 'browser') {
+        // Fallback to browser speech synthesis
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.rate = voiceSettings.speed
+        utterance.pitch = voiceSettings.pitch
+        utterance.onstart = () => setIsPlaying(true)
+        utterance.onend = () => setIsPlaying(false)
+        window.speechSynthesis.speak(utterance)
+      } else if (provider === 'gemini') {
+        // Gemini Flash TTS (server-side)
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/tts/gemini`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text, voice: voiceSettings.voice }),
+        })
+
+        if (response.ok) {
+          const audioBlob = await response.blob()
+          const audioUrl = URL.createObjectURL(audioBlob)
+          
+          if (audioRef.current) {
+            audioRef.current.pause()
+            audioRef.current.currentTime = 0
+          }
+
+          audioRef.current = new Audio(audioUrl)
+          
+          audioRef.current.onplay = () => setIsPlaying(true)
+          audioRef.current.onended = () => setIsPlaying(false)
+          audioRef.current.onerror = () => {
+            setIsPlaying(false)
+            setIsLoading(false)
+          }
+
+          await audioRef.current.play()
+        }
+      } else {
+        throw new Error(`Unknown provider: ${provider}`)
+      }
+    } catch (error) {
+      console.error('TTS error:', error)
+      // Fallback to browser speech synthesis
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.rate = voiceSettings.speed
+      utterance.pitch = voiceSettings.pitch
+      utterance.onstart = () => setIsPlaying(true)
+      utterance.onend = () => setIsPlaying(false)
+      window.speechSynthesis.speak(utterance)
     } finally {
       setIsLoading(false)
-      setIsPlaying(false)
     }
-  }, [])
+  }
 
-  const stop = useCallback(() => {
-    tts.stop()
+  const stop = () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+    window.speechSynthesis.cancel()
     setIsPlaying(false)
     setIsLoading(false)
-  }, [])
+  }
 
-  const updateProvider = useCallback((provider) => {
-    setCurrentProvider(provider)
-    tts.setProvider(provider)
-    localStorage.setItem('tts_provider', provider)
-    loadVoices()
-  }, [loadVoices])
+  const updateVoiceSettings = (settings) => {
+    setVoiceSettings(prev => ({ ...prev, ...settings }))
+    if (settings.provider) {
+      setCurrentProvider(settings.provider)
+      localStorage.setItem('tts_provider', settings.provider)
+    }
+    if (settings.voice) {
+      localStorage.setItem('tts_voice', settings.voice)
+    }
+    if (settings.speed) {
+      localStorage.setItem('tts_speed', settings.speed.toString())
+    }
+    if (settings.pitch) {
+      localStorage.setItem('tts_pitch', settings.pitch.toString())
+    }
+  }
 
-  const updateVoice = useCallback((voice) => {
-    setCurrentVoice(voice)
-    tts.setVoice(voice)
-    localStorage.setItem('tts_voice', voice)
-  }, [])
+  const getAvailableProviders = () => [
+    { id: 'puter', name: 'Puter.js ElevenLabs', description: 'High quality, unlimited free' },
+    { id: 'gemini', name: 'Gemini Flash TTS', description: 'Fast, server-side' },
+    { id: 'browser', name: 'Browser TTS', description: 'Built-in, offline' },
+  ]
 
-  const updateSpeed = useCallback((newSpeed) => {
-    const speedValue = Math.min(Math.max(parseFloat(newSpeed), 0.25), 4.0)
-    setSpeed(speedValue)
-    tts.setSpeed(speedValue)
-    localStorage.setItem('tts_speed', speedValue.toString())
-  }, [])
-
-  const updatePitch = useCallback((newPitch) => {
-    const pitchValue = Math.min(Math.max(parseFloat(newPitch), 0.5), 2.0)
-    setPitch(pitchValue)
-    tts.setPitch(pitchValue)
-    localStorage.setItem('tts_pitch', pitchValue.toString())
-  }, [])
-
-  const updateGeminiApiKey = useCallback((key) => {
-    setGeminiApiKey(key)
-    tts.setGeminiApiKey(key)
-    localStorage.setItem('gemini_api_key', key)
-  }, [])
+  const getAvailableVoices = (provider) => {
+    if (provider === 'browser') {
+      return window.speechSynthesis.getVoices().map(voice => ({
+        id: voice.name,
+        name: voice.name,
+        lang: voice.lang,
+      }))
+    }
+    // Puter and Gemini voices (simplified list)
+    return [
+      { id: 'default', name: 'Default' },
+      { id: 'female-1', name: 'Female Voice 1' },
+      { id: 'female-2', name: 'Female Voice 2' },
+      { id: 'male-1', name: 'Male Voice 1' },
+      { id: 'male-2', name: 'Male Voice 2' },
+    ]
+  }
 
   return {
-    // State
-    isPlaying,
-    isLoading,
-    error,
-    currentProvider,
-    currentVoice,
-    speed,
-    pitch,
-    geminiApiKey,
-    voices,
-    providers,
-
-    // Actions
     speak,
     stop,
-    updateProvider,
-    updateVoice,
-    updateSpeed,
-    updatePitch,
-    updateGeminiApiKey,
-    loadVoices,
-    loadProviders,
+    isPlaying,
+    isLoading,
+    currentProvider,
+    voiceSettings,
+    updateVoiceSettings,
+    getAvailableProviders,
+    getAvailableVoices,
   }
 }

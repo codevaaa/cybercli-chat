@@ -4,6 +4,7 @@ import { MessageSquare, Plus, Settings, Mic, Send, Sparkles, Zap, Menu, X, Volum
 import { streamChat } from '../../lib/api.js'
 import api from '../../lib/api.js'
 import { useTTS } from '../../hooks/useTTS.js'
+import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
 
 export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -13,6 +14,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false)
   const [ttsEnabled, setTTSEnabled] = useState(false)
   const [copied, setCopied] = useState(null)
+  const [showVoiceModal, setShowVoiceModal] = useState(false)
   const textareaRef = useRef(null)
   const messagesEndRef = useRef(null)
   
@@ -109,6 +111,15 @@ export default function ChatPage() {
     setSidebarOpen(false)
   }
 
+  const handleVoiceMessage = (text) => {
+    setInput(text)
+    setShowVoiceModal(false)
+    // Auto-submit after a short delay
+    setTimeout(() => {
+      handleSend(new Event('submit'))
+    }, 100)
+  }
+
   return (
     <div className="h-screen flex bg-background-primary">
       {/* Sidebar */}
@@ -182,6 +193,14 @@ export default function ChatPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowVoiceModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20 hover:bg-accent/20 transition-colors"
+              title="Voice Chat"
+            >
+              <Mic className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Voice</span>
+            </button>
+            <button
               onClick={() => setTTSEnabled(!ttsEnabled)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 ttsEnabled
@@ -197,7 +216,7 @@ export default function ChatPage() {
               )}
               <span className="hidden sm:inline">TTS</span>
             </button>
-            <span className="text-xs text-foreground-muted bg-background-tertiary px-2.5 py-1 rounded-full">Free Tier</span>
+            <span className="text-xs text-foreground-muted bg-background-tertiary px-2.5 py-1 rounded-full hidden sm:inline">Free Tier</span>
           </div>
         </header>
 
@@ -319,6 +338,13 @@ export default function ChatPage() {
           </form>
         </div>
       </main>
+
+      {/* Voice Chat Modal */}
+      <VoiceChatModal
+        isOpen={showVoiceModal}
+        onClose={() => setShowVoiceModal(false)}
+        onSendMessage={handleVoiceMessage}
+      />
     </div>
   )
 }

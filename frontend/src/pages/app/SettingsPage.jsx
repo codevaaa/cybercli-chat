@@ -189,6 +189,17 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
+                  <Link
+                    to="/voice-settings"
+                    className="flex items-center justify-between w-full p-4 rounded-xl bg-accent/10 border border-accent/20 hover:bg-accent/20 transition-colors mb-6"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Mic className="w-5 h-5 text-accent" />
+                      <span className="font-medium text-accent">Open Voice Settings</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-accent" />
+                  </Link>
+
                   <div className="space-y-6">
                     {/* Provider Selection */}
                     <div>
