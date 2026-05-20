@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
+import { llmGateway } from '../services/llm/gateway.js'
 
 const router = Router()
 
@@ -27,19 +28,35 @@ router.post('/:id/fork', requireAuth, (req, res) => {
   res.json({ original_id: req.params.id, forked_id: 'thread_fork_' + Date.now() })
 })
 
-router.post('/:id/messages', requireAuth, (req, res) => {
+router.post('/:id/messages', requireAuth, async (req, res) => {
+  const { messages, model, temperature } = req.body
+  
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
-  res.write('data: {"type":"start"}\n\n')
-  setTimeout(() => {
-    res.write('data: {"type":"token","content":"Demo "}\n\n')
-    setTimeout(() => {
-      res.write('data: {"type":"token","content":"response."}\n\n')
-      res.write('data: {"type":"done"}\n\n')
-      res.end()
-    }, 300)
-  }, 300)
+
+  try {
+    const generator = await llmGateway.complete({ messages, model, temperature })
+    
+    for await (const chunk of generator) {
+      if (chunk.type === 'token') {
+        res.write(`data: ${JSON.stringify({ type: 'token', content: chunk.content })}\n\n`)
+      } else if (chunk.type === 'error') {
+        res.write(`data: ${JSON.stringify({ type: 'error', content: chunk.content })}\n\n`)
+        res.end()
+        return
+      } else if (chunk.type === 'info') {
+        res.write(`data: ${JSON.stringify({ type: 'info', content: chunk.content })}\n\n`)
+      } else if (chunk.type === 'done') {
+        res.write('data: [DONE]\n\n')
+        res.end()
+        return
+      }
+    }
+  } catch (error) {
+    res.write(`data: ${JSON.stringify({ type: 'error', content: error.message })}\n\n`)
+    res.end()
+  }
 })
 
 router.get('/:id/messages', requireAuth, (req, res) => {

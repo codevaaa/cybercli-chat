@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Zap, Palette, Mic, Brain, Shield, CreditCard, Key, ChevronRight, Moon, Sun, Monitor, Type, Volume2, Gauge } from 'lucide-react'
-import api from '@lib/api.js'
+import api from '../../lib/api.js'
 
 const SETTINGS_SECTIONS = [
   {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MessageSquare, Plus, Settings, Mic, Send, Sparkles, Zap, Menu, X } from 'lucide-react'
-import { streamChat } from '@lib/api.js'
+import { streamChat } from '../../lib/api.js'
 
 const SAMPLE_THREADS = [
   { id: '1', title: 'Python async patterns', model: 'Groq', updated: '2m ago' },
