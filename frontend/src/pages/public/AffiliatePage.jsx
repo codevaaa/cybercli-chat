@@ -28,7 +28,7 @@ export default function AffiliatePage() {
               { icon: TrendingUp, stat: '90d', label: 'Cookie Duration' },
             ].map((item) => (
               <div key={item.label} className="card p-8 text-center">
-                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-4 shadow-[0_0_15px_rgba(217,119,87,0.2)]">
                   <item.icon className="w-6 h-6 text-accent" />
                 </div>
                 <div className="text-3xl font-bold text-foreground-primary mb-2">{item.stat}</div>
