@@ -1,0 +1,31 @@
+{
+  "name": "cybercli-chat-backend",
+  "version": "1.0.0",
+  "description": "CyberCli Chat - AI Gateway & API Server",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test src/**/*.test.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "helmet": "^8.0.0",
+    "express-rate-limit": "^7.5.0",
+    "dotenv": "^16.4.5",
+    "@supabase/supabase-js": "^2.47.0",
+    "mongoose": "^8.9.0",
+    "ioredis": "^5.4.2",
+    "zod": "^3.24.0",
+    "stripe": "^17.5.0",
+    "openai": "^4.77.0",
+    "@google/genai": "^0.7.0",
+    "axios": "^1.7.9",
+    "winston": "^3.17.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
