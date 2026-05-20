@@ -110,8 +110,8 @@ export default function FeaturesPage() {
                       transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
                     }}
                   >
-                    <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center mb-4">
-                      <item.icon className="w-5 h-5 text-accent" />
+                    <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center shadow-[0_0_20px_rgba(217,119,87,0.3)]">
+                      <item.icon className="w-6 h-6 text-white" />
                     </div>
                     <h3 className="text-base font-semibold text-foreground-primary mb-2">{item.title}</h3>
                     <p className="text-sm text-foreground-muted leading-relaxed">{item.desc}</p>
