@@ -103,7 +103,7 @@ function FloatingCard({ card, mouseX, mouseY }) {
       <div
         className={`rounded-xl border p-3 backdrop-blur-sm max-w-[220px] text-xs ${
           card.council
-            ? 'border-violet-500/30 bg-violet-900/20 shadow-[0_0_20px_rgba(124,58,237,0.15)]'
+            ? 'border-orange-500/30 bg-orange-950/20 shadow-[0_0_20px_rgba(217,119,87,0.15)]'
             : card.role === 'ai'
             ? 'border-white/[0.08] bg-[#0D0D14]/80 shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
             : 'border-accent/30 bg-accent/10'
@@ -111,8 +111,8 @@ function FloatingCard({ card, mouseX, mouseY }) {
       >
         {card.model && (
           <div className="flex items-center gap-1.5 mb-1.5">
-            <span className={`w-1.5 h-1.5 rounded-full ${card.council ? 'bg-violet-400' : 'bg-emerald-400'}`} />
-            <span className={`text-[10px] font-medium ${card.council ? 'text-violet-400' : 'text-emerald-400'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${card.council ? 'bg-orange-400' : 'bg-emerald-400'}`} />
+            <span className={`text-[10px] font-medium ${card.council ? 'text-orange-400' : 'text-emerald-400'}`}>
               {card.model}
             </span>
           </div>
@@ -132,7 +132,7 @@ function TypingDots() {
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
-          className="w-1.5 h-1.5 rounded-full bg-violet-400"
+          className="w-1.5 h-1.5 rounded-full bg-orange-400"
           animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
           transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
         />
@@ -169,7 +169,7 @@ function MockChatPanel({ mouseX, mouseY }) {
       {/* Glow behind panel */}
       <div
         className="absolute -inset-6 rounded-3xl blur-[60px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.18) 0%, rgba(217,119,87,0.08) 60%, transparent 100%)' }}
+        style={{ background: 'radial-gradient(ellipse, rgba(217,119,87,0.22) 0%, rgba(217,119,87,0.08) 60%, transparent 100%)' }}
       />
 
       {/* Card */}
@@ -204,15 +204,15 @@ function MockChatPanel({ mouseX, mouseY }) {
                 </div>
               ) : msg.role === 'council' ? (
                 <div className="flex gap-2">
-                  <div className="w-6 h-6 rounded-full bg-violet-900/60 border border-violet-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-[8px] font-bold text-violet-400">3×</span>
+                  <div className="w-6 h-6 rounded-full bg-orange-950/60 border border-orange-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-[8px] font-bold text-orange-400">3×</span>
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-1.5 mb-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-                      <span className="text-[10px] font-semibold text-violet-400">{msg.model}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                      <span className="text-[10px] font-semibold text-orange-400">{msg.model}</span>
                     </div>
-                    <div className="bg-violet-900/20 border border-violet-500/20 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-[#C4B5FD]">
+                    <div className="bg-orange-950/20 border border-orange-500/20 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-orange-200">
                       {msg.text}
                     </div>
                   </div>
@@ -255,7 +255,7 @@ function MockChatPanel({ mouseX, mouseY }) {
         {/* Input bar */}
         <div className="mx-4 mb-4 flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2.5">
           <span className="text-xs text-[#374151] flex-1">Ask the Council...</span>
-          <div className="w-6 h-6 rounded-lg bg-violet-600/80 flex items-center justify-center">
+          <div className="w-6 h-6 rounded-lg bg-orange-600/80 flex items-center justify-center">
             <ArrowRight className="w-3 h-3 text-white" />
           </div>
         </div>
@@ -328,7 +328,7 @@ export default function HeroSection() {
         <motion.div
           className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] rounded-full blur-[130px]"
           style={{
-            background: 'radial-gradient(ellipse, rgba(124,58,237,0.18) 0%, rgba(217,119,87,0.09) 55%, transparent 100%)',
+            background: 'radial-gradient(ellipse, rgba(217,119,87,0.25) 0%, rgba(217,119,87,0.05) 55%, transparent 100%)',
             x: orbX,
             y: orbY,
           }}
@@ -341,7 +341,7 @@ export default function HeroSection() {
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse 60% 50% at 25% 50%, rgba(124,58,237,0.06) 0%, transparent 70%),' +
+              'radial-gradient(ellipse 60% 50% at 25% 50%, rgba(217,119,87,0.06) 0%, transparent 70%),' +
               'radial-gradient(ellipse 40% 40% at 75% 50%, rgba(217,119,87,0.06) 0%, transparent 70%)',
           }}
         />
@@ -394,7 +394,7 @@ export default function HeroSection() {
                   <span
                     className="block mt-1"
                     style={{
-                      background: 'linear-gradient(135deg, #F4A37A 0%, #D97757 40%, #A78BFA 80%, #818CF8 100%)',
+                      background: 'linear-gradient(135deg, #F4A37A 0%, #D97757 40%, #E8A590 80%, #B85D3D 100%)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',
@@ -428,8 +428,8 @@ export default function HeroSection() {
                     to="/auth/signup"
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white"
                     style={{
-                      background: 'linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)',
-                      boxShadow: '0 8px 28px rgba(124,58,237,0.35)',
+                      background: 'linear-gradient(135deg, #D97757 0%, #B85D3D 100%)',
+                      boxShadow: '0 8px 28px rgba(217,119,87,0.35)',
                     }}
                   >
                     Start for Free

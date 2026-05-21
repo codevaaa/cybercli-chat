@@ -20,7 +20,7 @@ export default function ParticleBackground() {
           density: { enable: true, value_area: 800 },
         },
         color: {
-          value: ['#7C3AED', '#A78BFA', '#5B21B6', '#C4B5FD'],
+          value: ['#D97757', '#E8896A', '#B85D3D', '#F4A37A'],
         },
         shape: {
           type: 'circle',
@@ -48,7 +48,7 @@ export default function ParticleBackground() {
         line_linked: {
           enable: true,
           distance: 150,
-          color: '#7C3AED',
+          color: '#D97757',
           opacity: 0.08,
           width: 1,
         },

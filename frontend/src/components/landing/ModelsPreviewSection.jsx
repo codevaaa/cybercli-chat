@@ -35,7 +35,7 @@ const HIGHLIGHTS = [
     icon: Layers,
     title: 'Maximum Choice',
     description: 'Hundreds of open-source & proprietary models, always free, always expanding.',
-    color: '#7C3AED',
+    color: '#D97757',
   },
 ]
 

@@ -15,9 +15,25 @@ export const useAuthStore = create(
 
         try {
           const { data: { session } } = await supabase.auth.getSession()
+          if (session?.access_token) {
+            localStorage.setItem('sb-access-token', session.access_token)
+            localStorage.setItem('user_name', session.user?.user_metadata?.name || session.user?.email || '')
+            localStorage.setItem('user_email', session.user?.email || '')
+          } else {
+            localStorage.removeItem('sb-access-token')
+          }
           set({ session, user: session?.user || null, loading: false })
 
           supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.access_token) {
+              localStorage.setItem('sb-access-token', session.access_token)
+              localStorage.setItem('user_name', session.user?.user_metadata?.name || session.user?.email || '')
+              localStorage.setItem('user_email', session.user?.email || '')
+            } else {
+              localStorage.removeItem('sb-access-token')
+              localStorage.removeItem('user_name')
+              localStorage.removeItem('user_email')
+            }
             set({ session, user: session?.user || null })
           })
         } catch (error) {
@@ -32,6 +48,11 @@ export const useAuthStore = create(
           const { data, error } = await supabase.auth.signInWithPassword({ email, password })
           if (error) throw error
 
+          if (data.session?.access_token) {
+            localStorage.setItem('sb-access-token', data.session.access_token)
+            localStorage.setItem('user_name', data.user?.user_metadata?.name || data.user?.email || '')
+            localStorage.setItem('user_email', data.user?.email || '')
+          }
           set({ session: data.session, user: data.user, loading: false })
           return { success: true }
         } catch (error) {
@@ -54,6 +75,11 @@ export const useAuthStore = create(
           })
           if (error) throw error
 
+          if (data.session?.access_token) {
+            localStorage.setItem('sb-access-token', data.session.access_token)
+            localStorage.setItem('user_name', data.user?.user_metadata?.name || data.user?.email || '')
+            localStorage.setItem('user_email', data.user?.email || '')
+          }
           set({ session: data.session, user: data.user, loading: false })
           return { success: true, needsVerification: !data.session }
         } catch (error) {
@@ -96,6 +122,9 @@ export const useAuthStore = create(
 
         try {
           await supabase.auth.signOut()
+          localStorage.removeItem('sb-access-token')
+          localStorage.removeItem('user_name')
+          localStorage.removeItem('user_email')
           set({ user: null, session: null, loading: false })
           return { success: true }
         } catch (error) {

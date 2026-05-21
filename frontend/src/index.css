@@ -130,7 +130,7 @@
     position: absolute;
     inset: -2px;
     border-radius: inherit;
-    background: conic-gradient(from var(--angle, 0deg), #D97757, #7C3AED, #06B6D4, #D97757);
+    background: conic-gradient(from var(--angle, 0deg), #D97757, #B85D3D, #E8A590, #D97757);
     animation: border-spin 4s linear infinite;
     z-index: -1;
   }
@@ -149,31 +149,33 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px 24px;
-    background: var(--accent);
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #D97757 0%, #B85D3D 100%);
     color: white;
-    font-weight: 500;
+    font-weight: 600;
     font-size: 0.875rem;
     border-radius: 8px;
-    transition: all 0.2s ease;
-    border: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 4px 15px rgba(217, 119, 87, 0.2);
   }
   .btn-primary::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+    background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
     transform: translateX(-100%);
-    transition: transform 0.5s ease;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .btn-primary:hover::after { transform: translateX(100%); }
   .btn-primary:hover {
-    background: var(--accent-light);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(217,119,87,0.35);
+    background: linear-gradient(135deg, #E8A590 0%, #D97757 100%);
+    transform: translateY(-1.5px);
+    box-shadow: 0 8px 25px rgba(217, 119, 87, 0.4);
+    border-color: rgba(255, 255, 255, 0.15);
   }
 
   .btn-secondary {
@@ -209,8 +211,8 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .text-gradient-purple {
-    background: linear-gradient(135deg, #A78BFA 0%, #7C3AED 50%, #5B21B6 100%);
+  .text-gradient-terracotta {
+    background: linear-gradient(135deg, #F4A37A 0%, #D97757 50%, #B85D3D 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -308,7 +310,7 @@
     top: 0;
     left: 0;
     height: 3px;
-    background: linear-gradient(to right, #D97757, #7C3AED);
+    background: linear-gradient(to right, #D97757, #B85D3D);
     transform-origin: left;
     z-index: 1000;
     transition: width 0.1s linear;

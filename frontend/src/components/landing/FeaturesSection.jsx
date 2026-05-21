@@ -18,8 +18,8 @@ const FEATURES = [
     title: 'Council Mode',
     description:
       'Three AI models deliberate simultaneously on your question. Watch them debate and synthesise a consensus — see every perspective at once.',
-    color: '#7C3AED',
-    colorMuted: 'rgba(124,58,237,0.12)',
+    color: '#D97757',
+    colorMuted: 'rgba(217,119,87,0.12)',
   },
   {
     slug: 'voice-chat',
@@ -63,8 +63,8 @@ const FEATURES = [
     title: 'Privacy First',
     description:
       'Field-level encryption in MongoDB, Supabase RLS policies, and zero third-party tracking. Your data stays yours — always.',
-    color: '#8B5CF6',
-    colorMuted: 'rgba(139,92,246,0.12)',
+    color: '#D97757',
+    colorMuted: 'rgba(217,119,87,0.12)',
   },
 ]
 

@@ -1,8 +1,14 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
-import { sendActionToDaemon } from '../utils/daemonBridge.js'
+import { sendActionToDaemon, getDaemon } from '../utils/daemonBridge.js'
 
 const router = Router()
+
+// GET /api/v1/daemon/status
+router.get('/status', requireAuth, (req, res) => {
+  const ws = getDaemon(req.user.id)
+  res.json({ connected: !!ws })
+})
 
 router.post('/action', requireAuth, async (req, res, next) => {
   try {

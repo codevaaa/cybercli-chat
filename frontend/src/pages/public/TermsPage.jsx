@@ -130,11 +130,11 @@ function LegalSidebar({ sections, activeId }) {
               href={`#${s.id}`}
               className={`flex items-center gap-2 text-xs py-1.5 px-2 rounded-lg transition-all duration-200 leading-snug ${
                 activeId === s.id
-                  ? 'text-white bg-violet-500/10 border-l-2 border-violet-500 pl-3'
+                  ? 'text-white bg-orange-500/10 border-l-2 border-orange-500 pl-3'
                   : 'text-[#6B7280] hover:text-white hover:bg-white/[0.03]'
               }`}
             >
-              <ChevronRight className={`w-3 h-3 flex-shrink-0 transition-colors ${activeId === s.id ? 'text-violet-400' : 'text-[#374151]'}`} />
+              <ChevronRight className={`w-3 h-3 flex-shrink-0 transition-colors ${activeId === s.id ? 'text-orange-400' : 'text-[#374151]'}`} />
               {s.title}
             </a>
           ))}
@@ -195,7 +195,7 @@ export default function TermsPage() {
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-white/[0.06] bg-[#0D0D14] p-8 mb-6">
                 <p className="text-[#9CA3AF] text-sm leading-relaxed">
-                  Please read these Terms of Service carefully before using CyberCli Chat. These Terms govern your access to and use of the Service. By using the Service, you agree to these Terms. If you have questions, contact us at <a href="mailto:legal@cybermindcli.com" className="text-violet-400 hover:text-violet-300">legal@cybermindcli.com</a>.
+                  Please read these Terms of Service carefully before using CyberCli Chat. These Terms govern your access to and use of the Service. By using the Service, you agree to these Terms. If you have questions, contact us at <a href="mailto:legal@cybermindcli.com" className="text-orange-400 hover:text-orange-300">legal@cybermindcli.com</a>.
                 </p>
               </div>
 
@@ -219,7 +219,7 @@ export default function TermsPage() {
                           <ul key={j} className="space-y-2 pl-2">
                             {para.split('\n').map((item, k) => (
                               <li key={k} className="flex items-start gap-2 text-sm text-[#9CA3AF] leading-relaxed">
-                                <span className="text-violet-400 flex-shrink-0 mt-0.5">•</span>
+                                <span className="text-orange-400 flex-shrink-0 mt-0.5">•</span>
                                 <span>{formatContent(item.replace('• ', ''))}</span>
                               </li>
                             ))}
@@ -238,7 +238,7 @@ export default function TermsPage() {
               <div className="mt-12 p-6 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                 <p className="text-xs text-[#6B7280] leading-relaxed">
                   These Terms of Service were last updated on {LAST_UPDATED} and supersede all previous versions.
-                  For legal inquiries, contact <a href="mailto:legal@cybermindcli.com" className="text-violet-400">legal@cybermindcli.com</a>.
+                  For legal inquiries, contact <a href="mailto:legal@cybermindcli.com" className="text-orange-400">legal@cybermindcli.com</a>.
                 </p>
               </div>
             </main>

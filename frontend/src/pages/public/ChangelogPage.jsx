@@ -111,11 +111,11 @@ function ChangelogEntry({ entry, index }) {
       </div>
 
       {/* Timeline dot */}
-      <div className="hidden md:block absolute left-[200px] top-2 w-3 h-3 rounded-full bg-[#7C3AED] border-2 border-[#0A0A0F] shadow-[0_0_10px_rgba(124,58,237,0.6)]" style={{ transform: 'translateX(-6px)' }} />
+      <div className="hidden md:block absolute left-[200px] top-2 w-3 h-3 rounded-full bg-[#D97757] border-2 border-[#0A0A0F] shadow-[0_0_10px_rgba(217,119,87,0.6)]" style={{ transform: 'translateX(-6px)' }} />
 
       {/* Mobile header */}
       <div className="flex items-center gap-3 mb-4 md:hidden">
-        <div className="w-2 h-2 rounded-full bg-[#7C3AED] shadow-[0_0_8px_rgba(124,58,237,0.7)] flex-shrink-0 -ml-5" />
+        <div className="w-2 h-2 rounded-full bg-[#D97757] shadow-[0_0_8px_rgba(217,119,87,0.7)] flex-shrink-0 -ml-5" />
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${vColor}`}>
           v{entry.label || entry.version}
         </span>
@@ -181,7 +181,7 @@ export default function ChangelogPage() {
           </p>
           <div className="flex items-center justify-center gap-4 mt-8">
             <Link to="/docs"
-              className="inline-flex items-center gap-2 text-sm text-[#7C3AED] hover:text-[#a78bfa] transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-[#D97757] hover:text-[#E8896A] transition-colors"
             >
               Read the docs <ArrowRight className="w-4 h-4" />
             </Link>
@@ -219,7 +219,7 @@ export default function ChangelogPage() {
           <p className="text-[#64748b] text-sm mb-6">Get notified about new features and updates.</p>
           <Link to="/auth/signup"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, #7C3AED, #D97757)' }}
+            style={{ background: 'linear-gradient(135deg, #D97757, #B85D3D)' }}
           >
             Start for free <ArrowRight className="w-4 h-4" />
           </Link>

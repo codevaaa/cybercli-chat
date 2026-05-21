@@ -9,7 +9,7 @@ const STEPS = [
     title: 'Create Account', 
     desc: 'Register as an partner in our affiliate portal. It takes less than a minute and approval is instant.',
     icon: User,
-    color: '#7C3AED'
+    color: '#D97757'
   },
   { 
     num: '02', 
@@ -101,7 +101,7 @@ export default function AffiliatePage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { icon: DollarSign, stat: 'Up to 40%', label: 'Recurring Commission', color: '#10B981' },
-              { icon: Clock, stat: '120 Days', label: 'Cookie Lifetime Window', color: '#7C3AED' },
+              { icon: Clock, stat: '120 Days', label: 'Cookie Lifetime Window', color: '#D97757' },
               { icon: Users, stat: '$280+', label: 'Average Commission per Paid User', color: '#D97757' },
             ].map((item, i) => (
               <ScrollReveal key={item.label} delay={i * 0.08}>

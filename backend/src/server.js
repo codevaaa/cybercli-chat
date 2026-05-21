@@ -1,8 +1,9 @@
+import './config/env.js'
+import connectMongoDB from './config/database.js'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
-import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -21,20 +22,18 @@ import searchRoutes from './routes/search.routes.js'
 import webhookRoutes from './routes/webhook.routes.js'
 import apiKeysRoutes from './routes/apiKeys.routes.js'
 import daemonRoutes from './routes/daemon.routes.js'
+import executeRoutes from './routes/execute.routes.js'
 import http from 'http'
 import { WebSocketServer } from 'ws'
 import ApiKey from './models/ApiKey.js'
 import { registerDaemon, removeDaemon, handleDaemonResponse } from './utils/daemonBridge.js'
 
-import connectMongoDB from './config/database.js'
 
 import { errorHandler } from './middleware/errorHandler.js'
 import { requestLogger } from './middleware/requestLogger.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-
-dotenv.config({ path: path.join(__dirname, '..', '.env') })
 
 console.log('Supabase URL:', process.env.SUPABASE_URL ? 'SET' : 'NOT SET')
 console.log('Supabase Key:', process.env.SUPABASE_SERVICE_KEY ? 'SET' : 'NOT SET')
@@ -120,6 +119,7 @@ app.use('/api/v1/search', searchRoutes)
 app.use('/api/v1/webhook', webhookRoutes)
 app.use('/api/v1/api-keys', apiKeysRoutes)
 app.use('/api/v1/daemon', daemonRoutes)
+app.use('/api/v1/execute', executeRoutes)
 
 // 404 handler
 app.use((req, res) => {

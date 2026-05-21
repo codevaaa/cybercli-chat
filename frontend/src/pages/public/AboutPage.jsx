@@ -14,7 +14,7 @@ const VALUES = [
     icon: Heart,
     title: 'User Ownership',
     desc: 'Your data, your conversations, your choice. Export everything. Delete everything. We do not train on your data. Ever.',
-    color: '#7C3AED',
+    color: '#D97757',
   },
   {
     icon: Lock,
@@ -32,7 +32,7 @@ const VALUES = [
 
 const TEAM = [
   { name: 'Chandan Pandey', role: 'Founder & CEO', initials: 'CP', color: '#D97757' },
-  { name: 'Lead Engineer', role: 'Backend & AI Gateway', initials: 'LE', color: '#7C3AED' },
+  { name: 'Lead Engineer', role: 'Backend & AI Gateway', initials: 'LE', color: '#D97757' },
   { name: 'Design Lead', role: 'UX & Frontend', initials: 'DL', color: '#06B6D4' },
   { name: 'DevOps Lead', role: 'Infrastructure & Security', initials: 'DO', color: '#10B981' },
 ]

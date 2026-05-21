@@ -10,7 +10,7 @@ export default function CTASection() {
       <div className="absolute inset-0 pointer-events-none">
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full blur-[140px] opacity-20"
-          style={{ background: 'radial-gradient(ellipse, #7C3AED 0%, #D97757 50%, transparent 100%)' }}
+          style={{ background: 'radial-gradient(ellipse, #D97757 0%, #B85D3D 50%, transparent 100%)' }}
         />
       </div>
 
@@ -19,7 +19,7 @@ export default function CTASection() {
         <div
           className="relative rounded-[2rem] p-px overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, rgba(217,119,87,0.35) 0%, rgba(124,58,237,0.2) 40%, rgba(255,255,255,0.05) 100%)',
+            background: 'linear-gradient(135deg, rgba(217,119,87,0.35) 0%, rgba(184,93,61,0.2) 40%, rgba(255,255,255,0.05) 100%)',
           }}
         >
           {/* Inner card */}
@@ -27,7 +27,7 @@ export default function CTASection() {
             {/* Animated orb behind text */}
             <motion.div
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] rounded-full blur-[100px] pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.18) 0%, rgba(217,119,87,0.1) 60%, transparent 100%)' }}
+              style={{ background: 'radial-gradient(ellipse, rgba(217,119,87,0.18) 0%, rgba(184,93,61,0.1) 60%, transparent 100%)' }}
               animate={{ scale: [1, 1.08, 1], opacity: [0.7, 1, 0.7] }}
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
             />

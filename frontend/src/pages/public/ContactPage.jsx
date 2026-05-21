@@ -19,7 +19,7 @@ const CONTACT_CHANNELS = [
     value: 'Join our Discord',
     link: 'https://discord.gg/cybercli',
     external: true,
-    color: '#7C3AED',
+    color: '#D97757',
   },
   {
     icon: Globe,

@@ -6,7 +6,7 @@ import ScrollReveal, { ScrollRevealGroup } from '@components/ui/ScrollReveal'
 const ALL_FEATURES = [
   {
     category: 'Intelligence',
-    color: '#7C3AED',
+    color: '#D97757',
     items: [
       { slug: 'council-mode', icon: Users, title: 'Council Mode', desc: 'Three AI models debate your question and synthesize the best possible answer. No other platform offers multi-model deliberation.' },
       { slug: 'chain-of-thought', icon: Brain, title: 'Chain-of-Thought Viewer', desc: 'See exactly how the AI is reasoning, step by step. Collapsible reasoning chains for full transparency.' },

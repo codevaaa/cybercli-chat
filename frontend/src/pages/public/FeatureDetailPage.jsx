@@ -6,13 +6,13 @@ import { useState, useEffect } from 'react'
 const FEATURE_DATA = {
   'council-mode': {
     icon: Users,
-    iconColor: '#7C3AED',
-    gradient: 'from-[#1a0a2e] via-[#16082a] to-[#0D0D12]',
+    iconColor: '#D97757',
+    gradient: 'from-[#1a0f06] via-[#130c04] to-[#0D0D12]',
     title: 'Council Mode',
     tagline: 'Three minds are better than one.',
     description: 'Council Mode puts three elite CyberCli models in simultaneous debate over your query — Cyber-Smart, Cyber-Balanced, and Cyber-Mini — then synthesizes their perspectives into a consensus answer no single model could produce alone.',
     badge: 'Intelligence',
-    badgeColor: '#7C3AED',
+    badgeColor: '#D97757',
     stats: [
       { label: 'AI Models Debating', value: '3' },
       { label: 'Accuracy Improvement', value: '+47%' },
@@ -246,13 +246,13 @@ const FEATURE_DATA = {
   },
   'chain-of-thought': {
     icon: Brain,
-    iconColor: '#8B5CF6',
-    gradient: 'from-[#0f0a1e] via-[#0d0918] to-[#0D0D12]',
+    iconColor: '#D97757',
+    gradient: 'from-[#1a0f06] via-[#130c04] to-[#0D0D12]',
     title: 'Chain-of-Thought Viewer',
     tagline: 'See the thinking. Trust the answer.',
     description: "Collapsible reasoning chains reveal exactly how the AI arrived at its answer — step by step. Full transparency into the model's internal logic, assumptions, and inference path.",
     badge: 'Intelligence',
-    badgeColor: '#8B5CF6',
+    badgeColor: '#D97757',
     stats: [
       { label: 'Reasoning Steps Visible', value: 'All' },
       { label: 'Collapsible UI', value: 'Yes' },

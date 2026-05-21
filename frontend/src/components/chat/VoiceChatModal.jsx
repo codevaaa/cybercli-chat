@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Mic, MicOff, Volume2, VolumeX, ChevronDown, Check, Sparkles } from 'lucide-react'
+import { X, Mic, MicOff, Volume2, VolumeX, ChevronDown, Check, Sparkles, Send } from 'lucide-react'
 import { useTTS } from '../../hooks/useTTS.js'
 
 const VOICE_MODELS = [
-  { id: 'eleven_ava', label: 'Ava', desc: 'Warm & Natural', provider: 'elevenlabs', gender: 'female', color: '#D97757' },
-  { id: 'eleven_nova', label: 'Nova', desc: 'Clear & Professional', provider: 'elevenlabs', gender: 'female', color: '#7C3AED' },
-  { id: 'eleven_luna', label: 'Luna', desc: 'Soft & Soothing', provider: 'elevenlabs', gender: 'female', color: '#06B6D4' },
-  { id: 'eleven_orion', label: 'Orion', desc: 'Deep & Authoritative', provider: 'elevenlabs', gender: 'male', color: '#10B981' },
-  { id: 'eleven_echo', label: 'Echo', desc: 'Energetic & Dynamic', provider: 'elevenlabs', gender: 'male', color: '#F59E0B' },
-  { id: 'gemini_flash', label: 'Gemini', desc: 'AI Native Voice', provider: 'gemini', gender: 'neutral', color: '#4285F4' },
+  { id: 'eleven_ava',   label: 'Ava',    desc: 'Warm & Natural',         provider: 'elevenlabs', gender: 'female',  color: '#D97757' },
+  { id: 'eleven_nova',  label: 'Nova',   desc: 'Clear & Professional',   provider: 'elevenlabs', gender: 'female',  color: '#06B6D4' },
+  { id: 'eleven_luna',  label: 'Luna',   desc: 'Soft & Soothing',        provider: 'elevenlabs', gender: 'female',  color: '#10B981' },
+  { id: 'eleven_orion', label: 'Orion',  desc: 'Deep & Authoritative',   provider: 'elevenlabs', gender: 'male',    color: '#F59E0B' },
+  { id: 'eleven_echo',  label: 'Echo',   desc: 'Energetic & Dynamic',    provider: 'elevenlabs', gender: 'male',    color: '#EF4444' },
+  { id: 'gemini_flash', label: 'Gemini', desc: 'AI Native Voice',        provider: 'gemini',     gender: 'neutral', color: '#4285F4' },
 ]
 
 const BAR_COUNT = 40
@@ -21,7 +21,6 @@ function WaveformBars({ isActive, color = '#D97757', intensity = 1 }) {
       {bars.map((_, i) => {
         const delay = (i / BAR_COUNT) * 0.6
         const baseH = 6 + Math.sin(i * 0.4) * 4
-        const activeH = isActive ? 8 + Math.abs(Math.sin(i * 0.8 + Date.now() * 0.001)) * 50 * intensity : baseH
         return (
           <motion.div
             key={i}
@@ -103,16 +102,94 @@ function VoiceModelSelector({ selectedVoice, onSelect }) {
   )
 }
 
-export default function VoiceChatModal({ isOpen, onClose, onSendMessage }) {
+export default function VoiceChatModal({
+  isOpen,
+  onClose,
+  onSendMessage,
+  isPlaying,
+  isProcessing,
+  speak,
+  stop,
+  updateProvider,
+  updateVoice
+}) {
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [selectedVoice, setSelectedVoice] = useState('eleven_ava')
   const [status, setStatus] = useState('idle') // idle | listening | processing | speaking
+  const [countdown, setCountdown] = useState(null) // null | number (seconds left)
   const recognitionRef = useRef(null)
   const finalTranscriptRef = useRef('')
-  const { speak, stop, isPlaying } = useTTS()
+  const silenceTimerRef = useRef(null)
+  const wasListeningRef = useRef(false) // track if user was listening before TTS played
+  const countdownRef = useRef(null)
+
+  useEffect(() => {
+    const savedProvider = localStorage.getItem('tts_provider') || 'puter'
+    const savedVoice = localStorage.getItem('tts_voice') || 'ava'
+    const mappedId = savedProvider === 'gemini' ? 'gemini_flash' : `eleven_${savedVoice}`
+    if (VOICE_MODELS.some(v => v.id === mappedId)) setSelectedVoice(mappedId)
+  }, [])
+
+  useEffect(() => {
+    const model = VOICE_MODELS.find(v => v.id === selectedVoice)
+    if (model) {
+      const provider = model.provider === 'elevenlabs' ? 'puter' : model.provider === 'gemini' ? 'gemini' : 'browser'
+      const voice = model.id.replace('eleven_', '').replace('gemini_', '')
+      updateProvider(provider)
+      updateVoice(voice)
+    }
+  }, [selectedVoice, updateProvider, updateVoice])
+
+  // Auto-mute mic during TTS and auto-resume after
+  useEffect(() => {
+    if (isPlaying) {
+      // TTS starting — pause recognition
+      wasListeningRef.current = isListening
+      if (recognitionRef.current && isListening) {
+        try { recognitionRef.current.stop() } catch {}
+      }
+      clearTimeout(silenceTimerRef.current)
+      clearInterval(countdownRef.current)
+      setCountdown(null)
+    } else {
+      // TTS ended — resume if was listening before
+      if (wasListeningRef.current && recognitionRef.current) {
+        setTimeout(() => {
+          finalTranscriptRef.current = ''
+          setTranscript('')
+          try { recognitionRef.current.start() } catch {}
+        }, 300)
+      }
+    }
+  }, [isPlaying])
 
   const selectedVoiceModel = VOICE_MODELS.find(v => v.id === selectedVoice) || VOICE_MODELS[0]
+
+  const startSilenceTimer = useCallback(() => {
+    clearTimeout(silenceTimerRef.current)
+    clearInterval(countdownRef.current)
+    setCountdown(1.5)
+    // Countdown visual
+    let remaining = 1.5
+    countdownRef.current = setInterval(() => {
+      remaining -= 0.1
+      setCountdown(Math.max(0, remaining))
+    }, 100)
+    silenceTimerRef.current = setTimeout(() => {
+      clearInterval(countdownRef.current)
+      setCountdown(null)
+      // auto-submit
+      if (finalTranscriptRef.current.trim()) {
+        const text = finalTranscriptRef.current.trim()
+        onSendMessage(text)
+        finalTranscriptRef.current = ''
+        setTranscript('')
+        setIsListening(false)
+        try { recognitionRef.current?.stop() } catch {}
+      }
+    }, 1500)
+  }, [onSendMessage])
 
   const initRecognition = useCallback(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -126,24 +203,53 @@ export default function VoiceChatModal({ isOpen, onClose, onSendMessage }) {
       let final = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const t = event.results[i][0].transcript
-        if (event.results[i].isFinal) { final += t; finalTranscriptRef.current += t }
-        else interim += t
+        if (event.results[i].isFinal) {
+          final += t
+          finalTranscriptRef.current += t
+          // Reset silence timer on new final result
+          startSilenceTimer()
+        } else {
+          interim += t
+          // Cancel silence countdown on interim speech
+          clearTimeout(silenceTimerRef.current)
+          clearInterval(countdownRef.current)
+          setCountdown(null)
+        }
       }
       setTranscript((finalTranscriptRef.current + interim).trim())
     }
-    rec.onerror = () => setIsListening(false)
-    rec.onend = () => { if (isListening) rec.start() }
+    rec.onerror = () => {
+      setIsListening(false)
+      clearTimeout(silenceTimerRef.current)
+      clearInterval(countdownRef.current)
+      setCountdown(null)
+    }
+    rec.onend = () => {
+      // Only restart if still supposed to be listening and not playing TTS
+      if (wasListeningRef.current && !isPlaying) {
+        try { rec.start() } catch {}
+      }
+    }
     return rec
-  }, [isListening])
+  }, [startSilenceTimer])
 
   useEffect(() => {
     recognitionRef.current = initRecognition()
-    return () => { recognitionRef.current?.stop() }
+    return () => {
+      recognitionRef.current?.stop()
+      clearTimeout(silenceTimerRef.current)
+      clearInterval(countdownRef.current)
+    }
   }, [])
 
   useEffect(() => {
-    setStatus(isListening ? 'listening' : isPlaying ? 'speaking' : 'idle')
-  }, [isListening, isPlaying])
+    setStatus(
+      isPlaying ? 'speaking' :
+      isListening ? 'listening' :
+      isProcessing ? 'processing' :
+      'idle'
+    )
+  }, [isListening, isProcessing, isPlaying])
 
   const toggleListening = () => {
     if (!recognitionRef.current) {
@@ -153,9 +259,14 @@ export default function VoiceChatModal({ isOpen, onClose, onSendMessage }) {
     if (isListening) {
       recognitionRef.current.stop()
       setIsListening(false)
+      wasListeningRef.current = false
+      clearTimeout(silenceTimerRef.current)
+      clearInterval(countdownRef.current)
+      setCountdown(null)
     } else {
       finalTranscriptRef.current = ''
       setTranscript('')
+      wasListeningRef.current = true
       recognitionRef.current.start()
       setIsListening(true)
     }
@@ -163,23 +274,28 @@ export default function VoiceChatModal({ isOpen, onClose, onSendMessage }) {
 
   const handleSend = () => {
     if (transcript.trim()) {
+      clearTimeout(silenceTimerRef.current)
+      clearInterval(countdownRef.current)
+      setCountdown(null)
       onSendMessage(transcript)
       setTranscript('')
       finalTranscriptRef.current = ''
       setIsListening(false)
+      wasListeningRef.current = false
       recognitionRef.current?.stop()
     }
   }
 
   const handleInterrupt = () => {
     stop()
-    setIsListening(false)
-    recognitionRef.current?.stop()
+    clearTimeout(silenceTimerRef.current)
+    clearInterval(countdownRef.current)
+    setCountdown(null)
   }
 
   const statusLabel = {
     idle: 'Tap the mic to speak',
-    listening: 'Listening…',
+    listening: countdown !== null ? `Auto-sending in ${countdown.toFixed(1)}s…` : 'Listening…',
     processing: 'Thinking…',
     speaking: 'Speaking — tap to interrupt',
   }[status]
@@ -218,27 +334,47 @@ export default function VoiceChatModal({ isOpen, onClose, onSendMessage }) {
             <div className="w-full">
               <WaveformBars
                 isActive={status === 'listening' || status === 'speaking'}
-                color={status === 'speaking' ? '#7C3AED' : selectedVoiceModel.color}
+                color={status === 'speaking' ? '#B85D3D' : selectedVoiceModel.color}
                 intensity={status === 'speaking' ? 0.7 : 1}
               />
             </div>
 
             {/* Status */}
-            <motion.div
-              key={status}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
-              className="text-center"
-            >
-              <p className="text-lg font-medium text-white/80">{statusLabel}</p>
-              {transcript && (
-                <p className="mt-2 text-sm text-white/40 max-w-md leading-relaxed">
-                  &ldquo;{transcript}&rdquo;
-                </p>
-              )}
-            </motion.div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={status + (countdown !== null ? 'cd' : '')}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="text-center"
+              >
+                <motion.p
+                  className="text-lg font-medium"
+                  style={{ color: status === 'speaking' ? '#D97757' : status === 'listening' ? selectedVoiceModel.color : 'rgba(255,255,255,0.8)' }}
+                  animate={status === 'speaking' ? { opacity: [1, 0.7, 1] } : {}}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  {statusLabel}
+                </motion.p>
+                {transcript && (
+                  <p className="mt-2 text-sm text-white/40 max-w-md leading-relaxed">
+                    &ldquo;{transcript}&rdquo;
+                  </p>
+                )}
+                {countdown !== null && (
+                  <div className="mt-2 mx-auto w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ background: selectedVoiceModel.color }}
+                      initial={{ width: '100%' }}
+                      animate={{ width: `${(countdown / 1.5) * 100}%` }}
+                      transition={{ duration: 0.1, ease: 'linear' }}
+                    />
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
 
             {/* Mic Button */}
             <div className="flex flex-col items-center gap-4">
@@ -255,7 +391,6 @@ export default function VoiceChatModal({ isOpen, onClose, onSendMessage }) {
                 whileTap={{ scale: 0.92 }}
                 whileHover={{ scale: 1.05 }}
               >
-                {/* Pulse ring when listening */}
                 {isListening && (
                   <motion.div
                     className="absolute inset-0 rounded-full"
@@ -272,7 +407,7 @@ export default function VoiceChatModal({ isOpen, onClose, onSendMessage }) {
                 }
               </motion.button>
 
-              {/* Send button */}
+              {/* Manual send */}
               <AnimatePresence>
                 {transcript && !isListening && (
                   <motion.button
@@ -281,10 +416,11 @@ export default function VoiceChatModal({ isOpen, onClose, onSendMessage }) {
                     exit={{ opacity: 0, scale: 0.9, y: 10 }}
                     transition={{ duration: 0.2 }}
                     onClick={handleSend}
-                    className="px-6 py-2.5 rounded-full text-sm font-medium text-white transition-all"
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium text-white transition-all"
                     style={{ background: selectedVoiceModel.color, boxShadow: `0 4px 20px ${selectedVoiceModel.color}40` }}
                   >
-                    Send Message →
+                    <Send className="w-4 h-4" />
+                    Send Message
                   </motion.button>
                 )}
               </AnimatePresence>

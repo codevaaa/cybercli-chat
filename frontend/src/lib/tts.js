@@ -106,7 +106,7 @@ class TTSService {
       const voice = this.currentVoice || 'ava'
       
       // Call the real puter.ai.txt2speech endpoint
-      const audio = await window.puter.ai.txt2speech(text, voice)
+      const audio = await window.puter.ai.txt2speech(text, { provider: 'elevenlabs', voice: voice })
       
       return new Promise((resolve, reject) => {
         // Handle stopping

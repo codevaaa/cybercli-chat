@@ -160,8 +160,17 @@ router.get('/:id/messages', requireAuth, async (req, res) => {
 })
 
 // Stream response and persist message history
+// Stream response and persist message history
 router.post('/:id/messages', requireAuth, async (req, res) => {
-  const { messages, model, temperature } = req.body
+  const { 
+    messages, 
+    model, 
+    temperature,
+    webSearchEnabled = false,
+    codeExecutionEnabled = false,
+    imageGenerationEnabled = false,
+    memoryEnabled = false
+  } = req.body
   
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages array is required' })
@@ -188,8 +197,112 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     })
     await userMsg.save()
 
-    // 2. Call LLM Gateway
-    const generator = await llmGateway.complete({ messages, model: model || thread.model_id, temperature })
+    // 2. Fetch UserSettings and construct system prompt additions
+    let extraSystemContent = ""
+    try {
+      const UserSettings = (await import('../models/UserSettings.js')).default
+      const settings = await UserSettings.findOne({ user_id: req.user.id })
+      if (settings) {
+        if (settings.custom_instructions) {
+          extraSystemContent += `\n\n[USER CUSTOM INSTRUCTIONS]\nYou must follow these instructions:\n${settings.custom_instructions}`
+        }
+        if (memoryEnabled && settings.memories && settings.memories.length > 0) {
+          extraSystemContent += `\n\n[USER PROFILE & MEMORIES]\nYou must remember these facts about the user:\n` + settings.memories.map(m => `- ${m}`).join('\n')
+        }
+      }
+    } catch (settingsErr) {
+      console.error('Error fetching settings for chat system prompt:', settingsErr)
+    }
+
+    // 3. Handle Web Search
+    if (webSearchEnabled) {
+      try {
+        const { performWebSearch } = await import('../utils/webSearch.js')
+        const results = await performWebSearch(lastUserMsg.content)
+        if (results && results.length > 0) {
+          extraSystemContent += `\n\n[WEB SEARCH RESULTS for "${lastUserMsg.content}"]\n` + 
+            results.map((r, i) => `${i+1}. Title: ${r.title}\n   Link: ${r.link}\n   Snippet: ${r.snippet}`).join('\n\n') +
+            `\n\nUse the search results above to provide up-to-date and accurate information. You must cite the links directly (e.g. [Title](url)) when using them.`
+        }
+      } catch (searchErr) {
+        console.error('Web search error during chat:', searchErr)
+      }
+    }
+
+    // 4. Handle Image Generation Instructions
+    if (imageGenerationEnabled) {
+      extraSystemContent += `\n\n[IMAGE GENERATION CAPABILITY]\nYou have the real power to generate images. If the user asks you to generate, draw, or paint an image, you MUST formulate a detailed, high-quality, English image prompt and output it inside a markdown image tag using Pollinations AI, exactly like this:
+![description](https://image.pollinations.ai/p/{detailed_url_encoded_prompt}?width=512&height=512&nologo=true)
+Do not use placeholders. Generate a real descriptive prompt.`
+    }
+
+    // 5. Handle Code Execution Instructions
+    if (codeExecutionEnabled) {
+      extraSystemContent += `\n\n[CODE EXECUTION CAPABILITY]\nJavaScript code execution is enabled. The user can execute JavaScript code blocks directly. If they ask you to run a calculation, verify some code, or write JavaScript, write standard JavaScript code blocks and remind them they can click the "Run" button on the top-right of your code blocks to execute the code in a sandboxed environment.`
+    }
+
+    // 6. Enrich messages history
+    const history = messages.map(m => ({ role: m.role, content: m.content }))
+    if (extraSystemContent) {
+      history.push({ role: 'system', content: extraSystemContent, _skip_inject: true })
+    }
+
+    // 7. Call LLM Gateway
+    let generator
+    if (model === 'council') {
+      const councilModels = [
+        { id: 'openrouter/gpt-4o-mini', label: 'GPT-4o Mini' },
+        { id: 'groq/llama-3.1-8b', label: 'Llama 3.1 8B' },
+        { id: 'gemini/gemini-2.5-flash', label: 'Gemini 2.5 Flash' }
+      ]
+      
+      let replies = {
+        'openrouter/gpt-4o-mini': '',
+        'groq/llama-3.1-8b': '',
+        'gemini/gemini-2.5-flash': ''
+      }
+
+      await Promise.all(councilModels.map(async ({ id }) => {
+        try {
+          const gen = await llmGateway.complete({ messages: history, model: id, temperature: 0.7 })
+          for await (const chunk of gen) {
+            if (chunk.type === 'token') {
+              replies[id] += chunk.content
+            }
+          }
+        } catch (err) {
+          console.error(`Council model ${id} failed:`, err)
+        }
+      }))
+
+      const debateTranscript = `
+Here is the debate transcript from three expert models on the user's query:
+
+Model 1 (GPT-4o Mini):
+"${replies['openrouter/gpt-4o-mini']}"
+
+Model 2 (Llama 3.1 8B):
+"${replies['groq/llama-3.1-8b']}"
+
+Model 3 (Gemini 2.5 Flash):
+"${replies['gemini/gemini-2.5-flash']}"
+
+Please analyze their responses, identify areas of consensus, resolve contradictions, and synthesize the single best comprehensive answer. Make sure it directly addresses the user query.
+`
+      const synthesisMessages = [
+        ...history,
+        { role: 'system', content: 'You are the Synthesis Engine of the AI Council. Your job is to read a debate between three models, combine their strengths, resolve any contradictions, and produce a single definitive response.' },
+        { role: 'user', content: debateTranscript }
+      ]
+
+      generator = await llmGateway.complete({
+        messages: synthesisMessages,
+        model: 'gemini/gemini-2.5-flash',
+        temperature: 0.5
+      })
+    } else {
+      generator = await llmGateway.complete({ messages: history, model: model || thread.model_id, temperature })
+    }
     
     let assistantReply = ''
     let chosenProvider = ''

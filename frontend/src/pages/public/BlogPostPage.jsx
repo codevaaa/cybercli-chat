@@ -751,7 +751,7 @@ export default function BlogPostPage() {
       {/* Read progress bar */}
       <motion.div
         className="fixed top-0 left-0 h-0.5 z-50"
-        style={{ background: 'linear-gradient(to right, #D97757, #7C3AED)', width: `${readProgress}%` }}
+        style={{ background: 'linear-gradient(to right, #D97757, #B85D3D)', width: `${readProgress}%` }}
       />
 
       <div className="section-padding">

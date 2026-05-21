@@ -13,6 +13,14 @@ const userSettingsSchema = new mongoose.Schema({
   show_chain_of_thought: { type: Boolean, default: true },
   show_confidence: { type: Boolean, default: true },
   language: { type: String, default: 'en' },
+  
+  // Custom power capabilities
+  memories: { type: [String], default: [] },
+  custom_instructions: { type: String, default: '' },
+  web_search_enabled: { type: Boolean, default: false },
+  code_execution_enabled: { type: Boolean, default: false },
+  image_generation_enabled: { type: Boolean, default: false },
+  council_mode_enabled: { type: Boolean, default: false },
 }, { timestamps: true })
 
 export default mongoose.model('UserSettings', userSettingsSchema)

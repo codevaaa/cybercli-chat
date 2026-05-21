@@ -54,7 +54,7 @@ const MODEL_CARDS = [
     providerBorder: 'rgba(249,115,22,0.2)',
     description: 'The full high-parameter meta reasoning core. Powerful logic processing and code generation at sub-second latency — unmatched in its class.',
     capabilities: ['Reasoning', 'Powerful', 'Fast'],
-    capColors: { Reasoning: '#7C3AED', Powerful: '#EC4899', Fast: '#F59E0B' },
+    capColors: { Reasoning: '#D97757', Powerful: '#EC4899', Fast: '#F59E0B' },
     contextWindow: '131K tokens',
     latency: '~0.7s',
     tier: 'Free',
@@ -88,7 +88,7 @@ const MODEL_CARDS = [
     providerBorder: 'rgba(66,133,244,0.2)',
     description: 'Cyber\'s most capable model with state-of-the-art performance across reasoning, coding, and creative tasks. Supports up to 1M token context.',
     capabilities: ['Most Capable', 'Reasoning', 'Multimodal'],
-    capColors: { 'Most Capable': '#4285F4', Reasoning: '#7C3AED', Multimodal: '#EA4335' },
+    capColors: { 'Most Capable': '#4285F4', Reasoning: '#D97757', Multimodal: '#EA4335' },
     contextWindow: '1M tokens',
     latency: '~1.5s',
     tier: 'Free',
@@ -139,7 +139,7 @@ const MODEL_CARDS = [
     providerBorder: 'rgba(118,185,0,0.2)',
     description: 'A research-grade model fine-tuned on synthetic data for superior reasoning and alignment. State-of-the-art on complex math and code logic.',
     capabilities: ['Research-grade', 'Reasoning', 'RLHF'],
-    capColors: { 'Research-grade': '#76B900', Reasoning: '#7C3AED', RLHF: '#F97316' },
+    capColors: { 'Research-grade': '#76B900', Reasoning: '#D97757', RLHF: '#F97316' },
     contextWindow: '128K tokens',
     latency: '~1.8s',
     tier: 'Free',
@@ -295,16 +295,16 @@ function ModelCard({ model, index }) {
 function CouncilBanner() {
   return (
     <ScrollReveal>
-      <div className="relative rounded-2xl overflow-hidden border border-violet-500/20 bg-gradient-to-r from-violet-900/20 via-purple-900/10 to-indigo-900/20 p-6 md:p-8 mb-10">
+      <div className="relative rounded-2xl overflow-hidden border border-orange-500/20 bg-gradient-to-r from-orange-950/20 via-orange-900/10 to-orange-950/10 p-6 md:p-8 mb-10">
         {/* Glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 to-transparent pointer-events-none" />
-        <div className="absolute top-0 right-0 w-64 h-64 bg-violet-600/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 to-transparent pointer-events-none" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-orange-600/10 rounded-full blur-[80px] pointer-events-none" />
 
         <div className="relative flex flex-col md:flex-row items-start md:items-center gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <div className="flex -space-x-2">
-                {['#7C3AED', '#F97316', '#3B82F6'].map((c, i) => (
+                {['#D97757', '#F97316', '#3B82F6'].map((c, i) => (
                   <div
                     key={i}
                     className="w-6 h-6 rounded-full border-2 border-[#0A0A0F] flex items-center justify-center"
@@ -314,8 +314,8 @@ function CouncilBanner() {
                   </div>
                 ))}
               </div>
-              <span className="text-xs font-semibold text-violet-400 uppercase tracking-widest">Council Mode</span>
-              <span className="text-[10px] bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full border border-violet-500/30 font-medium">
+              <span className="text-xs font-semibold text-orange-400 uppercase tracking-widest">Council Mode</span>
+              <span className="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full border border-orange-500/30 font-medium">
                 Exclusive
               </span>
             </div>
@@ -330,14 +330,14 @@ function CouncilBanner() {
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
             <Link
               to="/chat"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-all duration-200 hover:shadow-[0_0_20px_rgba(124,58,237,0.4)]"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-sm font-semibold transition-all duration-200 hover:shadow-[0_0_20px_rgba(217,119,87,0.4)]"
             >
               <Users className="w-4 h-4" />
               Try Council Mode
             </Link>
             <Link
               to="/docs/council-mode-deep-dive"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-violet-500/25 text-violet-400 hover:bg-violet-500/10 text-sm font-medium transition-all duration-200"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-orange-500/25 text-orange-400 hover:bg-orange-500/10 text-sm font-medium transition-all duration-200"
             >
               <BookOpen className="w-4 h-4" />
               Learn more
@@ -363,12 +363,12 @@ export default function ModelsPage() {
       {/* Hero */}
       <section className="section-padding mb-10 relative">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-[500px] h-[300px] bg-violet-600/6 rounded-full blur-[120px]" />
+          <div className="absolute top-0 left-1/4 w-[500px] h-[300px] bg-orange-600/6 rounded-full blur-[120px]" />
           <div className="absolute top-0 right-1/4 w-[400px] h-[250px] bg-orange-500/5 rounded-full blur-[100px]" />
         </div>
         <div className="container-custom text-center relative z-10">
           <ScrollReveal>
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-400 tracking-widest uppercase mb-5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-400 tracking-widest uppercase mb-5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
               <Cpu className="w-3 h-3" />
               AI Models
             </span>
@@ -377,7 +377,7 @@ export default function ModelsPage() {
             <h1 className="text-[clamp(2.5rem,5vw,4.5rem)] font-extrabold tracking-tight leading-[1.1] text-white mb-5">
               Every model,{' '}
               <span
-                className="bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent"
+                className="bg-gradient-to-r from-orange-400 via-orange-300 to-orange-500 bg-clip-text text-transparent"
                 style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
               >
                 one platform
@@ -422,9 +422,9 @@ export default function ModelsPage() {
                     onClick={() => setActiveFilter(f.id)}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200"
                     style={{
-                      background: isActive ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.03)',
-                      border: isActive ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.07)',
-                      color: isActive ? '#A78BFA' : '#6B7280',
+                      background: isActive ? 'rgba(217,119,87,0.15)' : 'rgba(255,255,255,0.03)',
+                      border: isActive ? '1px solid rgba(217,119,87,0.4)' : '1px solid rgba(255,255,255,0.07)',
+                      color: isActive ? '#F4A37A' : '#6B7280',
                     }}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -432,7 +432,7 @@ export default function ModelsPage() {
                     {isActive && (
                       <motion.span
                         layoutId="filter-count"
-                        className="text-xs bg-violet-500/20 text-violet-300 px-1.5 py-0.5 rounded-full"
+                        className="text-xs bg-orange-500/20 text-orange-300 px-1.5 py-0.5 rounded-full"
                       >
                         {filteredModels.length}
                       </motion.span>
@@ -468,7 +468,7 @@ export default function ModelsPage() {
             <div className="mt-16 rounded-3xl border border-white/[0.06] bg-[#0D0D14] p-8 md:p-12">
               <div className="grid md:grid-cols-2 gap-10 items-center">
                 <div>
-                  <span className="text-xs font-semibold text-violet-400 tracking-widest uppercase mb-4 block">
+                  <span className="text-xs font-semibold text-orange-400 tracking-widest uppercase mb-4 block">
                     Intelligent Routing
                   </span>
                   <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 leading-tight">

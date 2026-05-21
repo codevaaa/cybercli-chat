@@ -10,7 +10,7 @@ const TESTIMONIALS = [
     role: 'Senior Security Researcher',
     company: 'Trail of Bits',
     stars: 5,
-    accentColor: '#7C3AED',
+    accentColor: '#D97757',
   },
   {
     quote:
@@ -60,7 +60,7 @@ const TESTIMONIALS = [
     role: 'Full-Stack Developer',
     company: 'Freelance',
     stars: 5,
-    accentColor: '#8B5CF6',
+    accentColor: '#D97757',
   },
 ]
 

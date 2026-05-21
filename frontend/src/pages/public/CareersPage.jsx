@@ -20,7 +20,7 @@ const OPEN_ROLES = [
     type: 'Full-time',
     location: 'Remote',
     salary: '$100K–$150K',
-    color: '#7C3AED',
+    color: '#D97757',
     desc: 'Design and optimize our multi-provider LLM routing system. Work on Council Mode inference, embedding pipelines, and fine-tuning.',
     skills: ['Python', 'LangChain', 'Node.js', 'Vector DBs'],
   },
