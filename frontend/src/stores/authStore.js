@@ -49,6 +49,7 @@ export const useAuthStore = create(
             password,
             options: {
               data: { name },
+              emailRedirectTo: `${window.location.origin}/chat`,
             },
           })
           if (error) throw error

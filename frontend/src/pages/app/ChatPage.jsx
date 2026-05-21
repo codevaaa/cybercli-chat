@@ -990,7 +990,7 @@ export default function ChatPage() {
                     onClick={() => setSettingsOpen(true)}
                     className="p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors"
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    <Settings className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>

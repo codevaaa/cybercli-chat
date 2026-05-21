@@ -51,7 +51,7 @@ const PUBLIC_PATHS = [
 ]
 const AUTH_PATHS = [
   '/auth/signup', '/auth/login', '/auth/forgot-password',
-  '/auth/reset-password', '/auth/magic-link', '/auth/verify'
+  '/auth/reset-password', '/auth/magic-link', '/auth/verify-email'
 ]
 
 function App() {
@@ -100,7 +100,7 @@ function App() {
           <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
           <Route path="/auth/magic-link" element={<MagicLinkPage />} />
-          <Route path="/auth/verify" element={<VerifyEmailPage />} />
+          <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
 
           {/* ── Protected App Routes (no Lenis — native scroll for chat) ── */}
           <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
@@ -118,7 +118,7 @@ function App() {
           <Route path="/voice-settings" element={<ProtectedRoute><VoiceSettingsPage /></ProtectedRoute>} />
         </Routes>
       </main>
-      {isPublicRoute() && <Footer />}
+      {isPublicRoute() && !window.location.pathname.startsWith('/auth') && <Footer />}
       <CookieConsent />
     </div>
   )

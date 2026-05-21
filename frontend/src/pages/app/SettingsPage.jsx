@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import {
   X, User, Shield, CreditCard, Zap, Plug, Settings2,
   Moon, Sun, Monitor, ChevronLeft, Check, Bell, Volume2,
@@ -17,7 +17,7 @@ const TABS = [
   { id: 'billing',      label: 'Billing',       icon: CreditCard },
   { id: 'capabilities', label: 'Capabilities',  icon: Zap        },
   { id: 'connectors',   label: 'Connectors',    icon: Plug       },
-  { id: 'developer',    label: 'Developer Options', icon: Code2       },
+  { id: 'api-keys',     label: 'API Keys',      icon: Code2       },
 ]
 
 const VOICES = ['Ava', 'Nova', 'Luna', 'Orion', 'Echo']
@@ -613,11 +613,36 @@ const DEFAULT_SETTINGS = {
 
 export default function SettingsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [activeTab, setActiveTab] = useState('general')
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const path = location.pathname
+    if (path.endsWith('/api-keys')) {
+      setActiveTab('api-keys')
+    } else if (path.endsWith('/billing')) {
+      setActiveTab('billing')
+    } else if (path.endsWith('/security') || path.endsWith('/privacy')) {
+      setActiveTab('privacy')
+    } else if (path.endsWith('/personas')) {
+      setActiveTab('capabilities')
+    } else {
+      setActiveTab('general')
+    }
+  }, [location.pathname])
+
+  const handleTabChange = (tabId) => {
+    if (tabId === 'general') navigate('/settings')
+    else if (tabId === 'api-keys') navigate('/settings/api-keys')
+    else if (tabId === 'billing') navigate('/settings/billing')
+    else if (tabId === 'privacy') navigate('/settings/security')
+    else if (tabId === 'capabilities') navigate('/settings/personas')
+    else navigate(`/settings/${tabId}`)
+  }
 
   useEffect(() => {
     fetchSettings()
@@ -664,7 +689,7 @@ export default function SettingsPage() {
     billing:      <BillingTab />,
     capabilities: <CapabilitiesTab settings={settings} onUpdate={handleUpdate} />,
     connectors:   <ConnectorsTab />,
-    developer:    <DeveloperTab />,
+    'api-keys':   <DeveloperTab />,
   }
 
   return (
@@ -702,7 +727,7 @@ export default function SettingsPage() {
               {TABS.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-left transition-colors ${
                     activeTab === tab.id
                       ? 'bg-background-tertiary text-foreground-primary'

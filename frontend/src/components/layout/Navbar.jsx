@@ -37,7 +37,9 @@ export default function Navbar() {
     location.pathname.startsWith('/agents') ||
     location.pathname.startsWith('/voice')
 
-  if (isAppRoute) return null
+  const isAuthRoute = location.pathname.startsWith('/auth')
+
+  if (isAppRoute || isAuthRoute) return null
 
   return (
     <header
