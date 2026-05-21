@@ -130,12 +130,12 @@ const GROUPS = [
         description: 'Create a new conversation thread.',
         request: {
           title: 'New chat',
-          model: 'gpt-4o',
+          model: 'gemini/gemini-2.5-pro',
         },
         response: {
           id: 'thr_01ABC...',
           title: 'New chat',
-          model: 'gpt-4o',
+          model: 'gemini/gemini-2.5-pro',
           created_at: '2026-05-21T10:00:00Z',
         },
         notes: 'Omit title to auto-generate from first message.',
@@ -147,7 +147,7 @@ const GROUPS = [
         description: 'Send a message and stream the AI response via Server-Sent Events (SSE).',
         request: {
           content: 'Explain quantum computing in simple terms.',
-          model: 'gpt-4o',
+          model: 'gemini/gemini-2.5-pro',
           stream: true,
         },
         response: {
@@ -171,13 +171,13 @@ const GROUPS = [
         description: 'Council Mode — query multiple models simultaneously and receive a synthesized response.',
         request: {
           content: 'What is the best programming language for AI?',
-          models: ['gpt-4o', 'claude-3-5-sonnet', 'gemini-2.0-flash'],
+          models: ['gemini/gemini-2.5-pro', 'groq/llama-3.1-70b', 'gemini/gemini-2.5-flash'],
           synthesize: true,
         },
         response: {
           individual: [
-            { model: 'gpt-4o', content: 'Python is the most...' },
-            { model: 'claude-3-5-sonnet', content: 'Python excels due to...' },
+            { model: 'gemini/gemini-2.5-pro', content: 'Python is the most...' },
+            { model: 'groq/llama-3.1-70b', content: 'Python excels due to...' },
           ],
           synthesis: 'All models agree that Python is the dominant language...',
           consensus_score: 0.87,
@@ -199,9 +199,9 @@ const GROUPS = [
         request: null,
         response: {
           models: [
-            { id: 'gpt-4o', provider: 'openrouter', context: 128000, available: true },
-            { id: 'claude-3-5-sonnet', provider: 'openrouter', context: 200000, available: true },
-            { id: 'gemini-2.0-flash', provider: 'gemini', context: 1000000, available: true },
+            { id: 'gemini/gemini-2.5-pro', provider: 'Cyber Intelligence Hub', context: 1000000, available: true },
+            { id: 'groq/llama-3.1-70b', provider: 'Cyber Reasoning Engine', context: 131000, available: true },
+            { id: 'gemini/gemini-2.5-flash', provider: 'Cyber Distributed Core', context: 1000000, available: true },
           ],
         },
         notes: 'No authentication required for this endpoint.',
@@ -221,7 +221,7 @@ const GROUPS = [
         request: null,
         response: {
           theme: 'dark',
-          default_model: 'gpt-4o',
+          default_model: 'gemini/gemini-2.5-pro',
           tts_enabled: true,
           tts_voice: 'aria',
           council_mode: false,

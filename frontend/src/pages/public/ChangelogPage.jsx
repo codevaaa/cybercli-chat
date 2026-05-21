@@ -67,7 +67,7 @@ const ENTRIES = [
     date: 'April 15, 2026',
     headline: 'Initial launch — 8 AI providers & folder organization',
     changes: [
-      { type: 'New', text: '8 AI providers: OpenRouter, Groq, Gemini, Cerebras, Cloudflare, HuggingFace, Bytez, NVIDIA' },
+      { type: 'New', text: 'Proprietary multi-cluster AI gateway containing 8 distributed high-performance computing clusters' },
       { type: 'New', text: 'Basic chat with streaming responses and markdown rendering' },
       { type: 'New', text: 'Folder organization for conversation history' },
       { type: 'New', text: 'Supabase auth with JWT and Row Level Security' },

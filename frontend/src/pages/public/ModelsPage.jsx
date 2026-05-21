@@ -12,13 +12,13 @@ import ScrollReveal from '@components/ui/ScrollReveal'
 const MODEL_CARDS = [
   {
     id: 'gpt-4o-mini',
-    name: 'GPT-4o Mini',
-    provider: 'OpenAI via OpenRouter',
+    name: 'Cyber-Mini',
+    provider: 'Cyber Distributed Core',
     providerKey: 'openrouter',
     providerColor: '#8B5CF6',
     providerBg: 'rgba(139,92,246,0.08)',
     providerBorder: 'rgba(139,92,246,0.2)',
-    description: 'OpenAI\'s efficient multimodal model. Excellent at coding, reasoning, and following complex instructions with a massive context window.',
+    description: 'Cyber\'s efficient multimodal model. Excellent at coding, reasoning, and following complex instructions with a massive context window.',
     capabilities: ['Capable', 'Fast', 'Coding'],
     capColors: { Capable: '#8B5CF6', Fast: '#F59E0B', Coding: '#3B82F6' },
     contextWindow: '128K tokens',
@@ -29,13 +29,13 @@ const MODEL_CARDS = [
   },
   {
     id: 'llama-3.1-8b-groq',
-    name: 'LLaMA 3.1 8B',
-    provider: 'Groq',
+    name: 'Cyber-Fast',
+    provider: 'Cyber Speed Cluster',
     providerKey: 'groq',
     providerColor: '#F97316',
     providerBg: 'rgba(249,115,22,0.08)',
     providerBorder: 'rgba(249,115,22,0.2)',
-    description: 'Sub-500ms inference thanks to Groq\'s custom Language Processing Unit. Ideal for tasks where speed is the top priority.',
+    description: 'Sub-500ms inference thanks to Cyber\'s custom Speed Cluster architecture. Ideal for tasks where speed is the top priority.',
     capabilities: ['Ultra-fast', 'Efficient', 'Free'],
     capColors: { 'Ultra-fast': '#F97316', Efficient: '#10B981', Free: '#6B7280' },
     contextWindow: '131K tokens',
@@ -46,13 +46,13 @@ const MODEL_CARDS = [
   },
   {
     id: 'llama-3.1-70b-groq',
-    name: 'LLaMA 3.1 70B',
-    provider: 'Groq',
+    name: 'Cyber-Smart',
+    provider: 'Cyber Reasoning Engine',
     providerKey: 'groq',
     providerColor: '#F97316',
     providerBg: 'rgba(249,115,22,0.08)',
     providerBorder: 'rgba(249,115,22,0.2)',
-    description: 'The full 70B parameter Meta model served at Groq speed. Powerful reasoning and coding at sub-second latency — unmatched in its class.',
+    description: 'The full high-parameter meta reasoning core. Powerful logic processing and code generation at sub-second latency — unmatched in its class.',
     capabilities: ['Reasoning', 'Powerful', 'Fast'],
     capColors: { Reasoning: '#7C3AED', Powerful: '#EC4899', Fast: '#F59E0B' },
     contextWindow: '131K tokens',
@@ -63,13 +63,13 @@ const MODEL_CARDS = [
   },
   {
     id: 'gemini-2.5-flash',
-    name: 'Gemini 2.5 Flash',
-    provider: 'Google',
+    name: 'Cyber-Balanced',
+    provider: 'Cyber Distributed Core',
     providerKey: 'gemini',
     providerColor: '#4285F4',
     providerBg: 'rgba(66,133,244,0.08)',
     providerBorder: 'rgba(66,133,244,0.2)',
-    description: 'Google\'s balanced multimodal model with best-in-class speed. Supports images, audio, and long documents in a single prompt.',
+    description: 'Cyber\'s balanced multimodal model with best-in-class versatility. Supports images, audio, and long documents in a single prompt.',
     capabilities: ['Balanced', 'Multimodal', 'Long Context'],
     capColors: { Balanced: '#4285F4', Multimodal: '#EA4335', 'Long Context': '#34A853' },
     contextWindow: '1M tokens',
@@ -80,13 +80,13 @@ const MODEL_CARDS = [
   },
   {
     id: 'gemini-2.5-pro',
-    name: 'Gemini 2.5 Pro',
-    provider: 'Google',
+    name: 'Cyber-Pro',
+    provider: 'Cyber Intelligence Hub',
     providerKey: 'gemini',
     providerColor: '#4285F4',
     providerBg: 'rgba(66,133,244,0.08)',
     providerBorder: 'rgba(66,133,244,0.2)',
-    description: 'Google\'s most capable model with state-of-the-art performance across reasoning, coding, and creative tasks. Supports up to 1M token context.',
+    description: 'Cyber\'s most capable model with state-of-the-art performance across reasoning, coding, and creative tasks. Supports up to 1M token context.',
     capabilities: ['Most Capable', 'Reasoning', 'Multimodal'],
     capColors: { 'Most Capable': '#4285F4', Reasoning: '#7C3AED', Multimodal: '#EA4335' },
     contextWindow: '1M tokens',
@@ -97,13 +97,13 @@ const MODEL_CARDS = [
   },
   {
     id: 'llama-3.1-8b-cerebras',
-    name: 'LLaMA 3.1 8B',
-    provider: 'Cerebras',
+    name: 'Cyber-UltraFast',
+    provider: 'Cyber Edge Core',
     providerKey: 'cerebras',
     providerColor: '#EC4899',
     providerBg: 'rgba(236,72,153,0.08)',
     providerBorder: 'rgba(236,72,153,0.2)',
-    description: 'Cerebras Wafer-Scale Engines deliver the world\'s fastest AI inference at over 2,000 tokens/second. Built for latency-critical applications.',
+    description: 'Wafer-scale speed delivering over 2,000 tokens/second. Designed for latency-critical and high-throughput operations.',
     capabilities: ['Fastest Inference', 'Edge', 'Free'],
     capColors: { 'Fastest Inference': '#EC4899', Edge: '#F59E0B', Free: '#6B7280' },
     contextWindow: '8K tokens',
@@ -114,13 +114,13 @@ const MODEL_CARDS = [
   },
   {
     id: 'llama-3.1-8b-cloudflare',
-    name: 'LLaMA 3.1 8B',
-    provider: 'Cloudflare',
+    name: 'Cyber-Edge',
+    provider: 'Cyber Geo-Network',
     providerKey: 'cloudflare',
     providerColor: '#F59E0B',
     providerBg: 'rgba(245,158,11,0.08)',
     providerBorder: 'rgba(245,158,11,0.2)',
-    description: 'Deployed across 300+ global data centers via Cloudflare Workers AI. Ultra-low latency for geographically distributed users worldwide.',
+    description: 'Edge-based inference routed through 300+ global datacenters. Extremely low latency for geographically distributed users worldwide.',
     capabilities: ['Edge Inference', 'Global CDN', 'Free'],
     capColors: { 'Edge Inference': '#F59E0B', 'Global CDN': '#10B981', Free: '#6B7280' },
     contextWindow: '8K tokens',
@@ -131,13 +131,13 @@ const MODEL_CARDS = [
   },
   {
     id: 'nemotron-70b-nvidia',
-    name: 'Llama Nemotron 70B',
-    provider: 'NVIDIA',
+    name: 'Cyber-Quantum',
+    provider: 'Cyber Quantum Lab',
     providerKey: 'nvidia',
     providerColor: '#76B900',
     providerBg: 'rgba(118,185,0,0.08)',
     providerBorder: 'rgba(118,185,0,0.2)',
-    description: 'NVIDIA\'s research-grade model fine-tuned on synthetic data for superior reasoning and alignment. State-of-the-art on MMLU and GPQA benchmarks.',
+    description: 'A research-grade model fine-tuned on synthetic data for superior reasoning and alignment. State-of-the-art on complex math and code logic.',
     capabilities: ['Research-grade', 'Reasoning', 'RLHF'],
     capColors: { 'Research-grade': '#76B900', Reasoning: '#7C3AED', RLHF: '#F97316' },
     contextWindow: '128K tokens',
@@ -386,7 +386,7 @@ export default function ModelsPage() {
           </ScrollReveal>
           <ScrollReveal delay={0.15}>
             <p className="text-lg text-[#9CA3AF] max-w-2xl mx-auto leading-relaxed mb-6">
-              Access 200,000+ AI models from 8+ providers — all free. Our AI gateway automatically
+              Access our custom suite of advanced AI models — all free. Our AI gateway automatically
               routes to the best model for your task with intelligent failover.
             </p>
           </ScrollReveal>
@@ -397,7 +397,7 @@ export default function ModelsPage() {
                 <span className="absolute w-3 h-3 rounded-full bg-emerald-500/30 animate-ping" />
                 <span className="relative w-2 h-2 rounded-full bg-emerald-400" />
               </span>
-              <span className="text-sm text-emerald-400 font-medium">All 8 providers operational</span>
+              <span className="text-sm text-emerald-400 font-medium">All compute clusters operational</span>
               <span className="text-xs text-[#4B5563]">· Updated just now</span>
             </div>
           </ScrollReveal>
@@ -476,8 +476,8 @@ export default function ModelsPage() {
                   </h2>
                   <p className="text-[#9CA3AF] leading-relaxed mb-6">
                     CyberCli's AI Gateway automatically selects the optimal model based on your query type.
-                    Coding → Groq for speed. Reasoning → NVIDIA for depth. Creative → Gemini for flair.
-                    If a provider fails, we instantly failover to the next best.
+                    Coding → Cyber-Fast for speed. Reasoning → Cyber-Quantum for depth. Creative → Cyber-Balanced for flair.
+                    If a computing cluster fails, we instantly failover to the next best.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {['Speed Routing', 'Auto-Failover', 'Cost Optimization', 'Context Awareness'].map(f => (
@@ -489,10 +489,10 @@ export default function ModelsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { label: 'Coding', provider: 'Groq', why: 'Sub-500ms responses', color: '#F97316' },
-                    { label: 'Reasoning', provider: 'NVIDIA', why: 'Research-grade depth', color: '#76B900' },
-                    { label: 'Creative', provider: 'Gemini', why: 'Multimodal flair', color: '#4285F4' },
-                    { label: 'Research', provider: 'OpenRouter', why: 'Widest model access', color: '#8B5CF6' },
+                    { label: 'Coding', provider: 'Cyber Speed Cluster', why: 'Sub-500ms responses', color: '#F97316' },
+                    { label: 'Reasoning', provider: 'Cyber Quantum Lab', why: 'Research-grade depth', color: '#76B900' },
+                    { label: 'Creative', provider: 'Cyber Distributed Core', why: 'Multimodal flair', color: '#4285F4' },
+                    { label: 'Research', provider: 'Cyber Intelligence Hub', why: 'Widest model access', color: '#8B5CF6' },
                   ].map(route => (
                     <div
                       key={route.label}

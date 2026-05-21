@@ -360,6 +360,228 @@ CyberCli Chat is at the forefront of this shift. With Council Mode, we have prov
 By moving away from monolithic AI, we build tools that are more accurate, more transparent, and ultimately more aligned with human ways of thinking.
 `,
   },
+  'cybercli-ecosystem-security-tools': {
+    content: `
+## The Vision of Unified Offense and Defense in Cybersecurity
+
+Security has historically been fragmented. Red teams use adversary emulation kits and custom exploit payloads, while blue teams configure firewalls, intrusion detection systems, and write log rules. Developers, caught in the middle, are expected to produce secure code while relying on static analyzers that flag false positives.
+
+At CyberMindCLI, founder **Chandan Pandey** envisioned a unified ecosystem. Chandan Pandey is a cybersecurity researcher, ethical hacker, and security tools developer with years of experience engineering defensive and offensive systems. Under his guidance, CyberCli Chat and the broader CyberMindCLI suite are designed to bridge these gaps, offering developers and security analysts a powerful suite of security tools.
+
+The CyberMindCLI ecosystem addresses both offensive vulnerability hunting and defensive threat auditing. In this article, we outline the architecture, capabilities, and defensive methodologies of the tools that compose this advanced security ecosystem.
+
+## Core Modules of the CyberMindCLI Ecosystem
+
+The ecosystem is built as a set of modular, high-performance engines that integrate seamlessly. Whether run locally via the CLI daemon or managed through the CyberCli web interface, these tools provide robust auditing and threat modeling.
+
+### 1. DVS (Digital Vulnerability Scanner)
+The Digital Vulnerability Scanner (DVS) is the primary static and dynamic analysis engine in our suite. Unlike generic linters, DVS scans source code and application configurations to look for structural security issues, including:
+- Insecure storage of secrets and credentials.
+- Broken access control patterns in routing.
+- Insecure deserialization and injection vectors.
+- Configuration drifts (such as misconfigured CORS headers or missing security cookies).
+
+DVS processes files in parallel, creating an abstract syntax tree (AST) and mapping data flows to trace tainted inputs from entry point to execution sink.
+
+### 2. POH (Proof of Concept Handler)
+Discovering a vulnerability is only the first step. To verify its impact and confirm it is not a false positive, security teams write Proof of Concept (PoC) exploits. The Proof of Concept Handler (POH) is a secure, sandboxed execution runtime designed to test and validate these payloads.
+- **Execution Sandbox**: POH runs payloads in lightweight, ephemeral containers with restricted system privileges and isolated network spaces.
+- **Automated Verification**: It monitors memory states, system calls, and network packets to confirm whether an exploit succeeded.
+- **Safety Guardrails**: POH prevents payloads from executing destructive actions or communicating with unauthorized external hosts, keeping testing safe and ethical.
+
+### 3. AVS (Agentic Vulnerability Scanner)
+The Agentic Vulnerability Scanner (AVS) is an autonomous, AI-driven scanner that mimics the exploratory behavior of a human pentester. Using the multi-model intelligence of CyberCli, AVS crawls target web applications, maps API endpoints, and identifies logic flaws.
+AVS does not just run static vulnerability checks. It dynamically generates test cases based on what it discovers. For example, if it finds a registration form, it tries to create accounts with special characters, bypass email validation, or exploit IDOR (Insecure Direct Object Reference) vulnerabilities on the profile dashboard.
+
+### 4. Log Sentinel
+Log Sentinel is our real-time defensive monitoring tool. It ingests logs from operating systems, web servers, database instances, and network firewalls. 
+Using behavioral models, Log Sentinel detects indicators of compromise:
+- **Lateral Movement**: Tracking users logging in from unusual devices and executing administrative commands.
+- **Brute Force Detection**: Monitoring high-frequency login failures followed by a successful login.
+- **Data Exfiltration**: Detecting outbound connections transfering abnormally large volumes of data.
+
+Log Sentinel integrates with CyberCli Chat, allowing security teams to query log anomalies in natural language.
+
+### 5. SDA (Secure Dependency Analyzer)
+Supply chain compromises are a significant threat vectors. Attackers poison popular open-source packages to deliver malware to thousands of downstream applications. 
+SDA scans package lock files (\`package-lock.json\`, \`Cargo.lock\`, \`go.sum\`, etc.) and imports to build a complete software bill of materials (SBOM). It cross-references every dependency with real-time vulnerability databases, checking for:
+- Outdated packages with known CVEs.
+- Typosquatting (malicious packages named similarly to popular ones).
+- Licensing risks and structural compromises.
+
+### 6. CyberVault (Advanced Memory & Knowledge Base RAG)
+CyberVault is the central knowledge base of the ecosystem. It uses a Retrieval-Augmented Generation (RAG) architecture to store and query security intelligence. CyberVault houses:
+- Regulatory frameworks and compliance standards (OWASP Top 10, NIST, PCI-DSS).
+- Custom security policies and coding guidelines defined by the organization.
+- Historical audit logs and patch histories.
+
+When a user asks CyberCli Chat a security question, the AI retrieves relevant documentation from CyberVault, ensuring answers conform to the team's specific security rules.
+
+## Local CLI Daemon: The Bridge to Your Local Workstation
+
+One of the most powerful features of the CyberCli ecosystem is the **Local CLI Daemon**. 
+
+Security analysts and developers often work with local files, run local compilers, and execute test scripts. Traditional AI chat interfaces are isolated in the browser, forcing users to copy-paste code back and forth. 
+
+The Local CLI Daemon solves this by creating a secure WebSocket bridge between the CyberCli web interface and the user's local terminal. When running, the daemon securely listens for command payloads from the web agent, allowing the AI to:
+- **Read Files**: Retrieve local source code and configurations for instant security analysis.
+- **Write Files**: Apply security patches and updates directly to the codebase.
+- **Run Commands**: Execute local test suites, build commands, and diagnostic scripts.
+
+### Human-in-the-Loop: The Security Prompt
+We believe that AI must operate with guardrails. Allowing an AI to run commands on a local machine without verification is a massive security risk.
+
+To prevent unauthorized actions, the CyberCli Local CLI Daemon implements a **strict human-in-the-loop validation constraint**. The daemon operates on a sequential readline prompt. When the web agent requests a file edit or command execution:
+1. The daemon intercepts the request.
+2. It prints the exact details of the action to the local terminal screen (e.g., \`AI requests run_command "npm run test".\`).
+3. The daemon pauses execution and waits for manual user approval \`(y/n)\`.
+4. The action is executed *only* if the user enters \`y\`. If the user inputs \`n\` or cancels, the request is rejected, ensuring the user retains absolute control.
+
+## A Legacy of Security Research
+
+Chandan Pandey's offensive and defensive security research has demonstrated that securing digital systems requires continuous, active verification. The CyberMindCLI ecosystem is built around this principle.
+
+By combining the speed of automated static tools, the adaptability of autonomous AI agents, and the safety of the human-in-the-loop CLI daemon, we provide developers with the tools they need to defend their systems against modern threats. As the threat landscape evolves, our tools continue to adapt, offering advanced intelligence to secure the code of tomorrow.
+`,
+  },
+  'ai-ide-comparison-cursor-windsurf-copilot-cybercli': {
+    content: `
+## The Rise of AI-Native Development Environments
+
+The developer experience is undergoing a profound transformation. What started as simple code completion has evolved into fully autonomous agents capable of writing, refactoring, compiling, and debugging complex applications. 
+
+Today, developers can choose between several AI-enabled tools, each offering different paradigms of collaboration. In this article, we compare the four leading AI developer platforms in 2026: **GitHub Copilot**, **Cursor**, **Windsurf**, and **CyberCli** (leveraging our secure Local CLI Daemon). We evaluate their architectures, agentic execution limits, security frameworks, and cost, helping you select the best tool for your development workflow.
+
+## Detailed Comparison Matrix
+
+To understand the core differences between these environments, we evaluate their features in the following comparison table.
+
+| Feature | GitHub Copilot | Cursor | Windsurf | CyberCli |
+| :--- | :--- | :--- | :--- | :--- |
+| **Autocompletion** | Excellent | Very Good | Very Good | Good / Real-time |
+| **Agentic Mode** | Limited / Beta | Excellent (Composer) | Excellent (Flow) | Outstanding (Multi-Agent) |
+| **Local CLI Daemon** | No | No | No | Yes (Secure WebSocket Bridge) |
+| **Security Prompts** | N/A | No | No | Yes (Readline y/n Confirmation) |
+| **Multi-Model Consensus** | No | No | No | Yes (Council Mode) |
+| **API Key Integration** | No | Partially | No | Yes (sk\\_cyber\\_ keys) |
+| **Pricing** | $10/mo | $20/mo | $15/mo | Free / Flexible tiers |
+
+## Evaluating the Contenders
+
+Let's dive into the architecture and workflow of each tool to understand their strengths and limitations.
+
+### GitHub Copilot: The Autocomplete Standard
+GitHub Copilot is the pioneer of AI coding. Built directly into Visual Studio Code, JetBrains, and other IDEs, Copilot excels at inline code suggestions and comments-to-code generation.
+- **Strengths**: Highly optimized, low-latency autocomplete suggestions. It feels like an extension of the developer's thought process, autocompleting lines of code with high accuracy.
+- **Weaknesses**: Copilot is largely passive. While it recently added chat panels and basic command tools, it lacks a true workspace agent. It cannot autonomously explore a codebase, resolve errors across multiple files, or compile and test code locally.
+- **Best For**: Developers who want high-speed autocomplete assistance without changing their existing editor workflow.
+
+### Cursor: The Agentic Pioneer
+Cursor is a fork of VS Code built from the ground up for AI-first development. It introduces advanced workspace indexing and the "Composer" interface, which allows the AI to coordinate edits across multiple files simultaneously.
+- **Strengths**: Superior workspace understanding. Cursor indexes your entire codebase using vector embeddings, allowing you to ask queries about high-level architecture. Its Composer mode can write and edit multiple files concurrently.
+- **Weaknesses**: Cursor's execution is largely silent and cloud-centered. When it executes commands, it runs them directly on the system, requiring the developer to closely monitor the editor terminal.
+- **Best For**: Developers who want a full-featured, AI-native editor with powerful codebase-wide refactoring capabilities.
+
+### Windsurf: Collaborative AI Flow
+Windsurf, created by Codeium, focuses on what they call the "AI Flow"—a collaborative coding experience where the AI and developer switch off editing tasks seamlessly. It uses a custom-built editor interface designed for continuous context tracking.
+- **Strengths**: Deep context tracking and fast response times. Windsurf maintains a running model of your workspace state, minimizing context loading delays during edits.
+- **Weaknesses**: Like Cursor, Windsurf is tied to its custom editor app. It does not easily integrate with external security suites or allow direct API key access for external developers.
+- **Best For**: Developers who prefer an integrated editor environment focused on smooth, continuous AI collaboration.
+
+### CyberCli: Secure Multi-Agent Collaboration
+CyberCli Chat approaches developer assistance from a security-first perspective. Instead of forcing developers into a proprietary editor fork, CyberCli runs in the browser and connects to your existing environment using the **Local CLI Daemon**.
+- **Strengths**:
+  - **Council Mode**: CyberCli uses three independent AI models to debate and generate code, reducing bugs and security exploits by up to 50% compared to single-model systems.
+  - **Secure WebSocket Bridge**: The local daemon connects the browser interface to your workspace. The AI can read files, write patches, and run commands.
+  - **Human-in-the-Loop Prompts**: Every command execution or file modification must be confirmed manually \`(y/n)\` in the developer's terminal, preventing silent code injection or unauthorized changes.
+  - **API Key Management**: Supports custom API keys (\`sk_cyber_\`) for external scripting and automation.
+- **Weaknesses**: Lacks inline ghost-text autocomplete inside the editor (focuses on chat and agentic workflows instead).
+- **Best For**: Security-conscious developers, analysts, and teams who want multi-model reasoning, secure local execution, and audit logging.
+
+## The Security Factor: Why Local Control Matters
+
+As AI tools gain the ability to run commands and write files, they present new security challenges. An AI model that makes a mistake or falls victim to prompt injection can delete database records, overwrite files, or introduce security backdoors into production codebases.
+
+Cursor and Windsurf rely on the developer noticing changes within their editor panels. If the AI writes a file in the background, it can be easy to miss among hundreds of lines of code.
+
+CyberCli's Local CLI Daemon addresses this by enforcing **explicit terminal verification**. By requiring a manual \`(y/n)\` entry for every file modification and command execution, CyberCli ensures that the developer remains the final authority on their system, combining AI-driven speed with absolute safety.
+
+## Conclusion
+
+Choosing the right AI IDE depends on your priorities. If you want simple autocomplete, GitHub Copilot is a solid choice. If you want a complete editor application with workspace embeddings, Cursor and Windsurf offer excellent features. 
+
+However, if you require multi-model consensus, robust security guardrails, and flexible API key integrations, CyberCli provides a powerful, secure alternative. Under the guidance of founder Chandan Pandey, CyberCli continues to push the boundaries of secure, agentic software engineering.
+`,
+  },
+  'autonomous-security-agents-vs-cobalt-strike': {
+    content: `
+## The Evolution of Threat Emulation
+
+For over a decade, **Cobalt Strike** has been the industry standard for adversary emulation and red teaming. Developed to simulate advanced persistent threats (APTs), Cobalt Strike's beacon architecture and malleable Command and Control (C2) profiles allowed security operators to test their organization's detection and response capabilities.
+
+However, the security landscape of 2026 is experiencing a paradigm shift. The rise of autonomous AI systems has introduced a new class of offensive security tools: **Autonomous Security Agents**. 
+
+In this article, we compare Cobalt Strike, traditional manual penetration testing, and autonomous security agents (such as CyberCli's AVS) in real-world scenarios, exploring their architectures, capabilities, limitations, and future outlooks.
+
+## Comparative Dimension Matrix
+
+To understand how these methodologies compare across key operational metrics, we evaluate them in the table below.
+
+| Dimension | Cobalt Strike | Manual Pentesting | Autonomous Security Agents |
+| :--- | :--- | :--- | :--- |
+| **Primary Focus** | Adversary Emulation / Post-Exploitation | Creative Vulnerability Hunting | Automated Scanning & Auto-Exploitation |
+| **Operation Mode** | Operator-Driven (Manual) | Human-Led (Creative) | Agent-Driven (Autonomous) |
+| **Scalability** | Medium (Requires operator skill) | Low (Time-consuming) | Infinite (Runs concurrently) |
+| **Evasion Ability** | High (Malleable C2 profiles) | High (Custom manual payloads) | Medium / Dynamic (Generates on-the-fly) |
+| **Cost** | High ($3,540+ per user/yr) | Very High ($15k - $100k per engagement) | Low (Pay-per-use / Subscription) |
+| **Vulnerability Discovery** | Limited (Mainly lateral movement) | Comprehensive (Finds logic flaws) | High (Rapid mapping & scanning) |
+| **Safety & Control** | High (Controlled by operator) | High (Guided by rules of engagement) | Medium (Needs guardrails / Sandbox) |
+
+## Evaluating Cobalt Strike
+
+Cobalt Strike is a commercial post-exploitation tool designed for red teaming. It works on a client-server architecture: the **Teamserver** acts as the central command node, while **Beacons** are payload agents deployed on compromised target hosts.
+- **Strengths**:
+  - **Malleability**: Operators can modify beacon behaviors, network traffic signatures, and memory profiles to match specific threat actors, bypassing signature-based detection.
+  - **Post-Exploitation Toolkit**: Contains robust modules for lateral movement, credential dumping (using Mimikatz integrations), port forwarding, and user token manipulation.
+- **Weaknesses**:
+  - **Requires Skilled Operators**: Cobalt Strike is not automated. It is a console that must be operated by a highly skilled human red teamer.
+  - **Signature Proliferation**: Because of its popularity among legitimate testers and ransomware groups alike, EDR vendors have developed thousands of detection rules specifically targeting Cobalt Strike beacons, making evasion increasingly difficult.
+
+## Evaluating Manual Penetration Testing
+
+Manual penetration testing is the traditional process of employing security experts to discover and exploit vulnerabilities in an organization's network and applications.
+- **Strengths**:
+  - **Creative Reasoning**: Humans excel at identifying complex logic flaws—such as business logic bypasses—that automated tools cannot easily detect.
+  - **Targeted Context**: A human pentester understands the business context of an application, allowing them to focus on high-value targets.
+- **Weaknesses**:
+  - **Poor Scalability**: Manual tests are slow and expensive, typically performed only once or twice a year.
+  - **Inconsistent Quality**: The results depend heavily on the skill and experience of the individual tester.
+
+## The Rise of Autonomous Security Agents
+
+Autonomous Security Agents represent the integration of AI with offensive testing. These agents use LLMs to coordinate security scans, analyze web page structures, write exploits, and execute post-exploitation commands autonomously.
+- **Strengths**:
+  - **Continuous Scanning**: Unlike annual manual tests, autonomous agents run 24/7, scanning systems immediately after new code deployments.
+  - **Dynamic Exploit Generation**: Instead of relying on pre-written exploit templates, autonomous agents analyze vulnerability outputs and write custom, on-the-fly exploit payloads tailored to the target system.
+  - **Unified Operations**: Agents can correlate data across multiple stages of an engagement, from reconnaissance and mapping to exploitation and reporting.
+- **Weaknesses**:
+  - **Safety Guardrails**: Autonomous agents can cause stability issues or data loss if allowed to run uncontrolled exploits on production servers, necessitating strict sandboxing.
+
+## Safety and the CyberMindCLI Paradigm
+
+At CyberMindCLI, founder **Chandan Pandey** has championed a balanced approach to autonomous security. While AVS (Agentic Vulnerability Scanner) can discover and map complex vulnerability paths, we enforce strict controls when executing exploits:
+- **Sandbox Testing**: Exploit validation is routed to the POH (Proof of Concept Handler) sandbox, preventing disruption to active systems.
+- **Authorization Prompts**: The Local CLI Daemon ensures that any local command execution or file modification must be verified by a human operator, keeping the agent safely bounded.
+
+By combining the speed of AI agents with the control of human validation, we build a platform that delivers continuous offensive testing without risking operational disruption.
+
+## The Future Outlook
+
+Cobalt Strike will remain a valuable tool for specialized threat emulation, and skilled human testers will always be needed for complex engagements. 
+
+However, the scale of modern development requires continuous, automated testing. Autonomous security agents are filling this gap, providing organizations with continuous visibility into their security posture. The future of security is collaborative, combining AI agility with human oversight to defend against evolving threats.
+`,
+  },
 }
 
 export default function BlogPostPage() {
@@ -394,35 +616,134 @@ export default function BlogPostPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Parse markdown-style content into JSX
+  // Parse markdown-style content into JSX, including table parsing
   const renderContent = (content) => {
-    return content.split('\n').map((line, i) => {
-      if (line.startsWith('## ')) {
-        return <h2 key={i} className="text-3xl font-serif font-medium text-foreground-primary mt-12 mb-5">{line.slice(3)}</h2>
+    const lines = content.split('\n')
+    const elements = []
+    let inTable = false
+    let tableRows = []
+
+    const flushTable = (key) => {
+      if (tableRows.length === 0) return null
+      
+      const parseCells = (rowText) => {
+        return rowText
+          .split('|')
+          .slice(1, -1) // remove empty first and last elements since row starts and ends with '|'
+          .map(cell => cell.trim())
       }
-      if (line.startsWith('### ')) {
-        return <h3 key={i} className="text-xl font-semibold text-foreground-primary mt-8 mb-3">{line.slice(4)}</h3>
-      }
-      if (line.startsWith('**') && line.endsWith('**')) {
-        return <p key={i} className="font-semibold text-foreground-primary mb-1">{line.slice(2, -2)}</p>
-      }
-      if (line.startsWith('- ')) {
-        return <li key={i} className="text-foreground-secondary leading-relaxed mb-2 ml-4 list-disc">{line.slice(2).replace(/\*\*(.*?)\*\*/g, '$1')}</li>
-      }
-      if (line.startsWith('1. ') || line.match(/^\d+\. /)) {
-        return <li key={i} className="text-foreground-secondary leading-relaxed mb-2 ml-4 list-decimal">{line.replace(/^\d+\. /, '').replace(/\*\*(.*?)\*\*/g, '$1')}</li>
-      }
-      if (line.trim() === '') return <div key={i} className="h-2" />
+
+      const headers = parseCells(tableRows[0])
+      const alignRow = tableRows[1] ? parseCells(tableRows[1]) : []
+      const alignments = alignRow.map(cell => {
+        if (cell.startsWith(':') && cell.endsWith(':')) return 'center'
+        if (cell.endsWith(':')) return 'right'
+        return 'left'
+      })
+
+      const dataRows = tableRows.slice(2).map(row => parseCells(row))
+
+      tableRows = []
+      inTable = false
+
       return (
-        <p key={i} className="text-foreground-secondary leading-relaxed mb-4"
-          dangerouslySetInnerHTML={{
-            __html: line
-              .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground-primary">$1</strong>')
-              .replace(/`(.*?)`/g, '<code class="font-mono text-sm bg-white/5 border border-white/8 rounded px-1.5 py-0.5 text-accent">$1</code>')
-          }}
-        />
+        <div key={key} className="overflow-x-auto my-8 border border-border-subtle rounded-xl shadow-sm">
+          <table className="w-full text-sm text-left border-collapse overflow-hidden">
+            <thead>
+              <tr className="bg-background-tertiary border-b border-border-subtle">
+                {headers.map((h, idx) => (
+                  <th key={idx} className="px-5 py-3.5 font-semibold text-foreground-primary text-xs uppercase tracking-wider" style={{ textAlign: alignments[idx] || 'left' }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle bg-background-elevated">
+              {dataRows.map((row, rowIdx) => (
+                <tr key={rowIdx} className="hover:bg-background-tertiary/40 transition-colors">
+                  {row.map((cell, cellIdx) => (
+                    <td key={cellIdx} className="px-5 py-3 text-foreground-secondary" style={{ textAlign: alignments[cellIdx] || 'left' }}
+                        dangerouslySetInnerHTML={{
+                          __html: cell
+                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground-primary">$1</strong>')
+                            .replace(/`(.*?)`/g, '<code class="font-mono text-xs bg-white/5 border border-white/8 rounded px-1.5 py-0.5 text-accent">$1</code>')
+                        }}
+                    />
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )
-    })
+    }
+
+    let i = 0
+    while (i < lines.length) {
+      const line = lines[i]
+      
+      // Check if line is a table line
+      if (line.trim().startsWith('|')) {
+        inTable = true
+        tableRows.push(line)
+        i++
+        continue
+      }
+
+      // If we were in a table and this line is not part of the table, flush it
+      if (inTable) {
+        elements.push(flushTable(`table-${i}`))
+      }
+
+      // Process normal line
+      if (line.startsWith('## ')) {
+        elements.push(<h2 key={`h2-${i}`} className="text-3xl font-serif font-medium text-foreground-primary mt-12 mb-5">{line.slice(3)}</h2>)
+      } else if (line.startsWith('### ')) {
+        elements.push(<h3 key={`h3-${i}`} className="text-xl font-semibold text-foreground-primary mt-8 mb-3">{line.slice(4)}</h3>)
+      } else if (line.startsWith('**') && line.endsWith('**')) {
+        elements.push(<p key={`strong-${i}`} className="font-semibold text-foreground-primary mb-1">{line.slice(2, -2)}</p>)
+      } else if (line.startsWith('- ')) {
+        elements.push(
+          <li key={`li-${i}`} className="text-foreground-secondary leading-relaxed mb-2 ml-4 list-disc">
+            <span dangerouslySetInnerHTML={{
+              __html: line.slice(2)
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground-primary">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="font-mono text-xs bg-white/5 border border-white/8 rounded px-1.5 py-0.5 text-accent">$1</code>')
+            }} />
+          </li>
+        )
+      } else if (line.startsWith('1. ') || line.match(/^\d+\. /)) {
+        elements.push(
+          <li key={`ol-${i}`} className="text-foreground-secondary leading-relaxed mb-2 ml-4 list-decimal">
+            <span dangerouslySetInnerHTML={{
+              __html: line.replace(/^\d+\. /, '')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground-primary">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="font-mono text-xs bg-white/5 border border-white/8 rounded px-1.5 py-0.5 text-accent">$1</code>')
+            }} />
+          </li>
+        )
+      } else if (line.trim() === '') {
+        elements.push(<div key={`space-${i}`} className="h-2" />)
+      } else {
+        elements.push(
+          <p key={`p-${i}`} className="text-foreground-secondary leading-relaxed mb-4"
+            dangerouslySetInnerHTML={{
+              __html: line
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground-primary">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="font-mono text-sm bg-white/5 border border-white/8 rounded px-1.5 py-0.5 text-accent">$1</code>')
+            }}
+          />
+        )
+      }
+
+      i++
+    }
+
+    if (inTable) {
+      elements.push(flushTable(`table-${i}`))
+    }
+
+    return elements
   }
 
   return (

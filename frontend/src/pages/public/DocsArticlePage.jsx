@@ -55,7 +55,7 @@ const ARTICLE_CONTENT = {
       {
         id: 'choosing-models',
         heading: 'Choosing Your Council',
-        content: `By default, CyberCli auto-selects the best three models for your query. You can manually pick models from the Council Configuration panel. We recommend combining a reasoning model (LLaMA 70B), a creative model (Gemini Pro), and a fast model (Groq) for general use.`,
+        content: `By default, CyberCli auto-selects the best three models for your query. You can manually pick models from the Council Configuration panel. We recommend combining a reasoning model (Cyber-Smart), a creative model (Cyber-Pro), and a fast model (Cyber-Fast) for general use.`,
       },
       {
         id: 'when-to-use',

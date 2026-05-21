@@ -58,17 +58,17 @@ export const SOCIAL_LINKS = [
 
 export const HERO_FEATURES = [
   {
-    title: '8+ AI Providers',
-    description: 'OpenRouter, Groq, Gemini, Cerebras, Cloudflare, HuggingFace, Bytez, NVIDIA — all in one platform.',
+    title: 'Multi-Cluster Network',
+    description: 'High-speed edge nodes, reasoning engines, and quantum simulation clusters in a single platform.',
     icon: 'cpu',
   },
   {
-    title: 'Council Mode',
-    description: 'Three models debate your question and synthesize the best answer. No other platform does this.',
+    title: 'Cyber-Council Mode',
+    description: 'Three models debate your question in parallel and synthesize the best comprehensive answer.',
     icon: 'users',
   },
   {
-    title: 'Uncensored & Ethical',
+    title: 'Secure & Ethical',
     description: 'Access truth-seeking open-source models with ethical guardrails and transparency.',
     icon: 'shield',
   },
@@ -83,8 +83,8 @@ export const HERO_FEATURES = [
     icon: 'git-branch',
   },
   {
-    title: 'In-Browser Local AI',
-    description: 'Run models entirely in your browser with WebGPU. Zero latency, total privacy.',
+    title: 'Secure Local Integration',
+    description: 'Run the CyberCli daemon locally to read/write project files and execute commands securely.',
     icon: 'globe',
   },
 ]
@@ -99,7 +99,7 @@ export const PRICING_TIERS = [
       'Access to all free-tier models',
       '50 messages per hour',
       'Basic text chat',
-      'Gemini Flash TTS',
+      'Standard voice output',
       '3 custom personas',
       'Community support',
     ],
@@ -114,9 +114,11 @@ export const PRICING_TIERS = [
     features: [
       'Everything in Free',
       '500 messages per hour',
-      'Council Mode (3-model debate)',
-      'ElevenLabs voices via Puter',
+      'Cyber-Council Debate Mode',
+      'Premium voice synthesis engine',
       'Conversation branching',
+      'API Keys management',
+      'Secure local CLI Daemon bridge',
       'Unlimited personas',
       'Image generation',
       'Priority support',
@@ -134,8 +136,8 @@ export const PRICING_TIERS = [
       'Unlimited messages',
       'Team workspaces',
       'SSO & SAML',
-      'API access',
-      'Custom model integration',
+      'API key integrations',
+      'Custom model clusters',
       'Dedicated support',
       'SLA guarantee',
     ],
@@ -166,12 +168,10 @@ export const TESTIMONIALS = [
 ]
 
 export const MODELS = [
-  { id: 'openrouter', name: 'OpenRouter', models: '200+', status: 'active', latency: '< 2s' },
-  { id: 'gemini', name: 'Google Gemini', models: '15+', status: 'active', latency: '< 1.5s' },
-  { id: 'groq', name: 'Groq Cloud', models: '10+', status: 'active', latency: '< 0.5s' },
-  { id: 'cerebras', name: 'Cerebras', models: '5+', status: 'active', latency: '< 1s' },
-  { id: 'cloudflare', name: 'Cloudflare AI', models: '50+', status: 'active', latency: '< 1s' },
-  { id: 'huggingface', name: 'HuggingFace', models: '100K+', status: 'active', latency: '< 3s' },
-  { id: 'bytez', name: 'Bytez', models: '220K+', status: 'active', latency: '< 2s' },
-  { id: 'nvidia', name: 'NVIDIA NIM', models: '42+', status: 'active', latency: '< 2s' },
+  { id: 'distributed-core', name: 'Cyber Distributed Core', models: '50+', status: 'active', latency: '< 1.5s' },
+  { id: 'intelligence-hub', name: 'Cyber Intelligence Hub', models: '25+', status: 'active', latency: '< 2.0s' },
+  { id: 'speed-cluster', name: 'Cyber Speed Cluster', models: '10+', status: 'active', latency: '< 0.5s' },
+  { id: 'reasoning-engine', name: 'Cyber Reasoning Engine', models: '12+', status: 'active', latency: '< 1.2s' },
+  { id: 'quantum-lab', name: 'Cyber Quantum Lab', models: '8+', status: 'active', latency: '< 2.0s' },
+  { id: 'edge-network', name: 'Cyber Geo-Network', models: '30+', status: 'active', latency: '< 1.0s' },
 ]

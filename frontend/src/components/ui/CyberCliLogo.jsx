@@ -83,7 +83,7 @@ export function CyberCliWordmark({ size = 28, className = '', textClassName = ''
     >
       <CyberCliMark size={size} />
       <span
-        className={`font-semibold tracking-tight text-white ${textClassName}`}
+        className={`font-semibold tracking-tight text-foreground-primary ${textClassName}`}
         style={{
           fontFamily: "'Inter', system-ui, sans-serif",
           fontWeight: 600,

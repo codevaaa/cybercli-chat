@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import {
   X, User, Shield, CreditCard, Zap, Plug, Settings2,
   Moon, Sun, Monitor, ChevronLeft, Check, Bell, Volume2,
-  Type, Palette, Save, Camera, AlertCircle
+  Type, Palette, Save, Camera, AlertCircle, Code2, Copy
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/api.js'
@@ -17,6 +17,7 @@ const TABS = [
   { id: 'billing',      label: 'Billing',       icon: CreditCard },
   { id: 'capabilities', label: 'Capabilities',  icon: Zap        },
   { id: 'connectors',   label: 'Connectors',    icon: Plug       },
+  { id: 'developer',    label: 'Developer Options', icon: Code2       },
 ]
 
 const VOICES = ['Ava', 'Nova', 'Luna', 'Orion', 'Echo']
@@ -415,6 +416,176 @@ function ConnectorsTab() {
   )
 }
 
+function DeveloperTab() {
+  const [keys, setKeys] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [keyName, setKeyName] = useState('')
+  const [newKey, setNewKey] = useState(null)
+  const [error, setError] = useState(null)
+  const [copySuccess, setCopySuccess] = useState(false)
+
+  const fetchKeys = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const { data } = await api.get('/api-keys')
+      setKeys(data)
+    } catch (err) {
+      setError('Failed to fetch API keys.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchKeys()
+  }, [])
+
+  const handleCreate = async (e) => {
+    e.preventDefault()
+    if (!keyName.trim()) return
+    setError(null)
+    try {
+      const { data } = await api.post('/api-keys', { name: keyName.trim() })
+      setNewKey(data.key)
+      setKeyName('')
+      fetchKeys()
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to create API key.')
+    }
+  }
+
+  const handleRevoke = async (id) => {
+    if (!confirm('Are you sure you want to revoke this API key? This cannot be undone.')) return
+    setError(null)
+    try {
+      await api.delete(`/api-keys/${id}`)
+      fetchKeys()
+    } catch (err) {
+      setError('Failed to revoke API key.')
+    }
+  }
+
+  const handleCopy = () => {
+    if (!newKey) return
+    navigator.clipboard.writeText(newKey)
+    setCopySuccess(true)
+    setTimeout(() => setCopySuccess(false), 2000)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="text-sm text-foreground-muted mb-4 leading-relaxed">
+          API keys allow you to integrate CyberCli completions programmatically into your scripts, CLI tools, and development workflows. Keep your keys secret.
+        </p>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 p-3 rounded-xl text-sm border" style={{ background: 'rgba(220,38,38,0.08)', borderColor: 'rgba(220,38,38,0.2)', color: '#FCA5A5' }}>
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* New Key Display Box */}
+      <AnimatePresence>
+        {newKey && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="rounded-2xl border p-5 relative overflow-hidden mb-4"
+            style={{ borderColor: 'rgba(217,119,87,0.25)', background: 'rgba(217,119,87,0.05)' }}
+          >
+            <div className="relative z-10">
+              <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5" style={{ color: '#D97757' }}>
+                <Zap className="w-4 h-4" />
+                API Key Generated Successfully
+              </h4>
+              <p className="text-xs text-foreground-muted mb-3">
+                Make sure to copy your API key now. You won't be able to see it again!
+              </p>
+              <div className="flex items-center gap-2 bg-background-tertiary border border-border-subtle rounded-xl p-2.5">
+                <code className="text-xs font-mono text-foreground-primary flex-1 break-all select-all">
+                  {newKey}
+                </code>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-colors shrink-0"
+                  style={{ background: '#D97757' }}
+                >
+                  {copySuccess ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copySuccess ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+              <button
+                onClick={() => setNewKey(null)}
+                className="mt-3 text-xs text-foreground-muted hover:text-foreground-secondary underline"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Create Key Form */}
+      <form onSubmit={handleCreate} className="flex gap-2 items-center">
+        <TextInput
+          value={keyName}
+          onChange={setKeyName}
+          placeholder="Key name (e.g. Local CLI Daemon)"
+          className="flex-1"
+        />
+        <button
+          type="submit"
+          disabled={!keyName.trim()}
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors shrink-0 disabled:opacity-50"
+          style={{ background: '#D97757' }}
+        >
+          Create key
+        </button>
+      </form>
+
+      {/* Keys List */}
+      <div className="space-y-3 mt-6">
+        <SectionHeading>Active Keys</SectionHeading>
+        {loading ? (
+          <p className="text-sm text-foreground-muted">Loading keys...</p>
+        ) : keys.length === 0 ? (
+          <p className="text-sm text-foreground-muted italic">No active API keys found.</p>
+        ) : (
+          <div className="space-y-2">
+            {keys.map(k => (
+              <div
+                key={k._id}
+                className="flex items-center justify-between p-4 rounded-xl border border-border-subtle"
+                style={{ background: 'var(--bg-secondary)' }}
+              >
+                <div>
+                  <p className="text-sm font-medium text-foreground-primary">{k.name}</p>
+                  <code className="text-xs font-mono text-foreground-muted">{k.key}</code>
+                  <p className="text-[10px] text-foreground-muted mt-1">
+                    Created {new Date(k.created_at).toLocaleDateString()}
+                    {k.last_used_at && ` · Last used ${new Date(k.last_used_at).toLocaleDateString()}`}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleRevoke(k._id)}
+                  className="text-xs font-medium text-red-500 hover:text-red-400 transition-colors px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10"
+                >
+                  Revoke
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main SettingsPage ────────────────────────────────────────────────────────
 
 const DEFAULT_SETTINGS = {
@@ -493,6 +664,7 @@ export default function SettingsPage() {
     billing:      <BillingTab />,
     capabilities: <CapabilitiesTab settings={settings} onUpdate={handleUpdate} />,
     connectors:   <ConnectorsTab />,
+    developer:    <DeveloperTab />,
   }
 
   return (

@@ -18,11 +18,11 @@ import { useTTS } from '../../hooks/useTTS.js'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
 
 const MODELS = [
-  { id: 'groq/llama-3.1-8b',        name: 'Llama 3.1 8B',       tag: 'Fast',     color: '#10B981' },
-  { id: 'gemini/gemini-2.5-flash',  name: 'Gemini 2.5 Flash',   tag: 'Balanced', color: '#3B82F6' },
-  { id: 'openrouter/gpt-4o-mini',   name: 'GPT-4o Mini',        tag: 'Capable',  color: '#8B5CF6' },
-  { id: 'groq/llama-3.1-70b',       name: 'Llama 3.1 70B',      tag: 'Smart',    color: '#F59E0B' },
-  { id: 'council',                  name: 'Council Mode',       tag: 'Debate',   color: '#D97757' },
+  { id: 'groq/llama-3.1-8b',        name: 'Cyber-Fast',       tag: 'Fast',     color: '#10B981' },
+  { id: 'gemini/gemini-2.5-flash',  name: 'Cyber-Balanced',   tag: 'Balanced', color: '#3B82F6' },
+  { id: 'openrouter/gpt-4o-mini',   name: 'Cyber-Mini',        tag: 'Capable',  color: '#8B5CF6' },
+  { id: 'groq/llama-3.1-70b',       name: 'Cyber-Smart',      tag: 'Smart',    color: '#F59E0B' },
+  { id: 'council',                  name: 'Cyber-Council',    tag: 'Debate',   color: '#D97757' },
 ]
 
 const QUICK_ACTIONS = [

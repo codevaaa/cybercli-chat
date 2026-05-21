@@ -10,7 +10,7 @@ const FEATURE_DATA = {
     gradient: 'from-[#1a0a2e] via-[#16082a] to-[#0D0D12]',
     title: 'Council Mode',
     tagline: 'Three minds are better than one.',
-    description: 'Council Mode puts three elite AI models in simultaneous debate over your query — GPT-4o, Claude 3.5, and Gemini Pro — then synthesizes their perspectives into a consensus answer no single model could produce alone.',
+    description: 'Council Mode puts three elite CyberCli models in simultaneous debate over your query — Cyber-Smart, Cyber-Balanced, and Cyber-Mini — then synthesizes their perspectives into a consensus answer no single model could produce alone.',
     badge: 'Intelligence',
     badgeColor: '#7C3AED',
     stats: [
@@ -38,7 +38,7 @@ const FEATURE_DATA = {
     ],
     faq: [
       { q: 'Does Council Mode cost extra?', a: 'Council Mode is available on all tiers. Free users get 5 Council sessions per day. Pro users get unlimited.' },
-      { q: 'Which models participate in Council Mode?', a: 'By default: GPT-4o (OpenRouter), Claude 3.5 Sonnet (OpenRouter), and Gemini 1.5 Pro. You can customize which models participate in Settings → Agents.' },
+      { q: 'Which models participate in Council Mode?', a: 'By default: Cyber-Smart, Cyber-Balanced, and Cyber-Mini. You can customize which models participate in Settings → Agents.' },
       { q: 'How long does a Council response take?', a: 'Roughly 2-4x a standard response (parallel processing). We run all three requests concurrently — total time is limited by the slowest model, not the sum.' },
       { q: "Can I see each model's individual response?", a: "Yes. Click the \"Expand Council\" button on any Council response to see each model's raw answer before synthesis." },
     ],
@@ -73,7 +73,7 @@ const FEATURE_DATA = {
       },
       {
         title: 'Server-Side TTS Fallback',
-        content: "When Puter.js is unavailable, CyberCli falls back to Gemini Flash TTS on the server — also free, with excellent prosody and natural speech patterns. You're never left without voice.",
+        content: "When Puter.js is unavailable, CyberCli falls back to server-side TTS — also free, with excellent prosody and natural speech patterns. You're never left without voice.",
       },
     ],
     faq: [
@@ -170,7 +170,7 @@ const FEATURE_DATA = {
     gradient: 'from-[#14100a] via-[#110d07] to-[#0D0D12]',
     title: 'Multi-Provider Gateway',
     tagline: 'Never locked in. Always online.',
-    description: '8+ AI providers unified under one interface. OpenRouter, Groq, Gemini, Cerebras, Cloudflare Workers AI, HuggingFace, Bytez, and NVIDIA — with automatic fallback when any provider has an outage.',
+    description: 'A distributed multi-cluster gateway unified under one interface — with automatic routing and fallback when any computing node has an outage.',
     badge: 'Infrastructure',
     badgeColor: '#F59E0B',
     stats: [
@@ -188,8 +188,8 @@ const FEATURE_DATA = {
         content: "Our AI gateway selects the optimal provider based on: current provider health, your tier's rate limits, the specific model requested, estimated response latency, and cost efficiency. If your primary choice is degraded, we silently fail over — you see the same interface either way.",
       },
       {
-        title: 'Speed Optimization via Groq',
-        content: 'For speed-sensitive use cases (voice chat, quick queries), CyberCli routes to Groq — which runs Llama 3.1 70B at 500+ tokens/second on dedicated LPU hardware. This is 10x faster than standard GPU-based inference, making voice interactions feel instantaneous.',
+        title: 'Speed Optimization via Cyber Speed Cluster',
+        content: 'For speed-sensitive use cases (voice chat, quick queries), CyberCli routes to the Cyber Speed Cluster — which runs Llama 3.1 70B at 500+ tokens/second on dedicated hardware. This is 10x faster than standard GPU-based inference, making voice interactions feel instantaneous.',
       },
       {
         title: 'Cost Optimization',
@@ -238,7 +238,7 @@ const FEATURE_DATA = {
     ],
     faq: [
       { q: 'Is CyberCli GDPR compliant?', a: 'Yes. We are a UK-registered entity complying with UK GDPR. See our GDPR page for the full DPA.' },
-      { q: 'Do the AI providers see my messages?', a: 'Your messages are transmitted to the AI providers (OpenRouter, Groq, etc.) to generate responses — this is unavoidable for AI to work. Check each provider\'s data policy. We pass no PII beyond the message content.' },
+      { q: 'Do the AI providers see my messages?', a: 'Your messages are transmitted to the distributed computing nodes to generate responses — this is unavoidable for AI to work. We pass no PII beyond the message content.' },
       { q: 'Can I use CyberCli for sensitive work?', a: 'For classified or highly sensitive work, we recommend our Enterprise tier with private cloud deployment. For standard professional use, CyberCli is appropriate.' },
       { q: 'How do I delete my account?', a: 'Settings → Account → Delete Account. All data is removed within 24 hours. We will email you confirmation.' },
     ],
@@ -265,7 +265,7 @@ const FEATURE_DATA = {
       },
       {
         title: 'How It Works',
-        content: 'When using models that support extended thinking (Claude 3.5 Extended Thinking, Gemini 2.0 Flash Thinking, o1/o3 reasoning), CyberCli captures the reasoning trace and displays it in an expandable panel above the final answer. Each reasoning step is timestamped and can be referenced.',
+        content: 'When using models that support extended thinking, CyberCli captures the reasoning trace and displays it in an expandable panel above the final answer. Each reasoning step is timestamped and can be referenced.',
       },
       {
         title: 'Catching Errors Early',
@@ -277,7 +277,7 @@ const FEATURE_DATA = {
       },
     ],
     faq: [
-      { q: 'Which models show Chain-of-Thought?', a: 'Claude 3.5 Sonnet (Extended Thinking), Gemini 2.0 Flash Thinking, OpenAI o1, o3, and o4-mini. Models without native CoT show a simplified reasoning summary.' },
+      { q: 'Which models show Chain-of-Thought?', a: 'Our reasoning-enabled models, including Cyber-Quantum and Cyber-Pro. Models without native reasoning show a simplified summary.' },
       { q: 'Can I hide the reasoning by default?', a: 'Yes. Settings → Chat → Hide reasoning by default. You can still expand it per-response with a single click.' },
       { q: 'Is the reasoning authentic?', a: "The reasoning shown is the actual model output from extended thinking mode — not a post-hoc rationalization. What you see is what the model actually computed." },
       { q: 'Does it slow down responses?', a: 'Yes, reasoning models are slower. You can choose non-reasoning model variants for speed-sensitive tasks.' },
