@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X, Zap, ChevronDown, LogOut, User } from 'lucide-react'
+import { Menu, X, ChevronDown, LogOut, User } from 'lucide-react'
 import { NAV_LINKS } from '@lib/constants'
 import { useAuthStore } from '@stores/authStore.js'
+import { CyberCliWordmark } from '@components/ui/CyberCliLogo'
 
 export default function Navbar() {
   const navigate = useNavigate()
@@ -28,7 +29,13 @@ export default function Navbar() {
     navigate('/')
   }
 
-  const isAppRoute = location.pathname.startsWith('/chat') || location.pathname.startsWith('/settings') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/library') || location.pathname.startsWith('/agents') || location.pathname.startsWith('/voice')
+  const isAppRoute =
+    location.pathname.startsWith('/chat') ||
+    location.pathname.startsWith('/settings') ||
+    location.pathname.startsWith('/profile') ||
+    location.pathname.startsWith('/library') ||
+    location.pathname.startsWith('/agents') ||
+    location.pathname.startsWith('/voice')
 
   if (isAppRoute) return null
 
@@ -42,16 +49,16 @@ export default function Navbar() {
     >
       <div className="section-padding">
         <nav className="container-custom flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(217,119,87,0.3)]">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">
-              Cyber<span className="text-accent">Cli</span>
-              <span className="text-[10px] font-medium text-foreground-muted ml-1 align-top tracking-wide">CHAT</span>
-            </span>
+          {/* ── Logo ── */}
+          <Link
+            to="/"
+            className="group transition-opacity hover:opacity-90"
+            aria-label="CyberCli – go to homepage"
+          >
+            <CyberCliWordmark size={24} />
           </Link>
 
+          {/* ── Desktop nav links ── */}
           <div className="hidden lg:flex items-center gap-1">
             {NAV_LINKS.map((link) => (
               <Link
@@ -68,13 +75,11 @@ export default function Navbar() {
             ))}
           </div>
 
+          {/* ── Desktop auth buttons ── */}
           <div className="hidden lg:flex items-center gap-3">
             {user ? (
               <>
-                <Link
-                  to="/chat"
-                  className="btn-primary text-sm"
-                >
+                <Link to="/chat" className="btn-primary text-sm">
                   Go to Chat
                 </Link>
                 <div className="relative">
@@ -105,7 +110,7 @@ export default function Navbar() {
                       </Link>
                       <hr className="border-border-subtle" />
                       <button
-                        onClick={() => { handleSignOut(); setDropdownOpen(false); }}
+                        onClick={() => { handleSignOut(); setDropdownOpen(false) }}
                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
@@ -123,16 +128,14 @@ export default function Navbar() {
                 >
                   Log in
                 </Link>
-                <Link
-                  to="/auth/signup"
-                  className="btn-primary text-sm"
-                >
+                <Link to="/auth/signup" className="btn-primary text-sm">
                   Get Started
                 </Link>
               </>
             )}
           </div>
 
+          {/* ── Mobile hamburger ── */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="lg:hidden p-2 rounded-lg hover:bg-background-tertiary transition-colors"
@@ -143,9 +146,15 @@ export default function Navbar() {
         </nav>
       </div>
 
+      {/* ── Mobile drawer ── */}
       {mobileOpen && (
         <div className="lg:hidden glass border-b border-border-subtle">
           <div className="section-padding py-4 space-y-1">
+            {/* Logo in mobile menu */}
+            <div className="px-4 py-2 mb-2">
+              <CyberCliWordmark size={22} />
+            </div>
+
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -159,13 +168,11 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+
             <div className="pt-3 border-t border-border-subtle space-y-2">
               {user ? (
                 <>
-                  <Link
-                    to="/chat"
-                    className="block btn-primary text-center text-sm"
-                  >
+                  <Link to="/chat" className="block btn-primary text-center text-sm">
                     Go to Chat
                   </Link>
                   <Link
@@ -175,7 +182,7 @@ export default function Navbar() {
                     Profile
                   </Link>
                   <button
-                    onClick={() => { handleSignOut(); setMobileOpen(false); }}
+                    onClick={() => { handleSignOut(); setMobileOpen(false) }}
                     className="w-full flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
@@ -190,10 +197,7 @@ export default function Navbar() {
                   >
                     Log in
                   </Link>
-                  <Link
-                    to="/auth/signup"
-                    className="block btn-primary text-center text-sm"
-                  >
+                  <Link to="/auth/signup" className="block btn-primary text-center text-sm">
                     Get Started
                   </Link>
                 </>

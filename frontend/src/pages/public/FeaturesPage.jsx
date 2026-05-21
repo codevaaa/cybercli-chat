@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { Cpu, Users, Shield, Mic, GitBranch, Globe, MessageSquare, Brain, Clock, Lock, Zap, Sparkles, BarChart3, Code, FileText, Image, Layers, Palette, Keyboard, Share2, BookOpen, Bell, Terminal } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Cpu, Users, Shield, Mic, GitBranch, Globe, MessageSquare, Brain, Clock, Lock, Zap, Sparkles, BarChart3, Code, FileText, Image, Layers, Palette, Keyboard, Share2, BookOpen, Bell, Terminal, ArrowRight } from 'lucide-react'
 import ScrollReveal, { ScrollRevealGroup } from '@components/ui/ScrollReveal'
 
 const ALL_FEATURES = [
@@ -7,51 +8,56 @@ const ALL_FEATURES = [
     category: 'Intelligence',
     color: '#7C3AED',
     items: [
-      { icon: Users, title: 'Council Mode', desc: 'Three AI models debate your question and synthesize the best possible answer. No other platform offers multi-model deliberation.' },
-      { icon: Brain, title: 'Chain-of-Thought Viewer', desc: 'See exactly how the AI is reasoning, step by step. Collapsible reasoning chains for full transparency.' },
-      { icon: BarChart3, title: 'Confidence Score', desc: 'Every answer includes a self-rated confidence score (0–100%). Know when to verify and when to trust.' },
-      { icon: Sparkles, title: 'Auto-Fact-Check', desc: 'Flag uncertain claims automatically. One click to verify via integrated web search.' },
-      { icon: BookOpen, title: 'Research Mode', desc: 'Generate full PDF-ready reports with table of contents, citations, and structured sections.' },
-      { icon: Clock, title: 'Persistent Memory', desc: 'CyberCli remembers facts from all your past chats, not just the current thread.' },
+      { slug: 'council-mode', icon: Users, title: 'Council Mode', desc: 'Three AI models debate your question and synthesize the best possible answer. No other platform offers multi-model deliberation.' },
+      { slug: 'chain-of-thought', icon: Brain, title: 'Chain-of-Thought Viewer', desc: 'See exactly how the AI is reasoning, step by step. Collapsible reasoning chains for full transparency.' },
+      { slug: 'council-mode', icon: BarChart3, title: 'Confidence Score', desc: 'Every answer includes a self-rated confidence score (0–100%). Know when to verify and when to trust.' },
+      { slug: 'research-mode', icon: Sparkles, title: 'Auto-Fact-Check', desc: 'Flag uncertain claims automatically. One click to verify via integrated web search.' },
+      { slug: 'research-mode', icon: BookOpen, title: 'Research Mode', desc: 'Generate full PDF-ready reports with table of contents, citations, and structured sections.' },
+      { slug: 'privacy-first', icon: Clock, title: 'Persistent Memory', desc: 'CyberCli remembers facts from all your past chats, not just the current thread.' },
     ],
   },
   {
     category: 'Voice & Multimodal',
     color: '#D97757',
     items: [
-      { icon: Mic, title: 'Walkie-Talkie Voice Chat', desc: 'Hold Spacebar to talk. CyberCli hears, thinks, and responds automatically via natural TTS.' },
-      { icon: Zap, title: 'Voice Interruption', desc: 'Cut CyberCli mid-sentence. It stops and listens immediately. True conversational flow.' },
-      { icon: Palette, title: '5 Unique AI Voices', desc: 'Ava, Nova, Luna, Orion, Echo. 3 female, 2 male voices via ElevenLabs and Gemini Flash.' },
-      { icon: Image, title: 'Image Understanding', desc: 'Upload any image. Vision-capable models analyze, describe, and reason about visual content.' },
-      { icon: Layers, title: 'Image Generation', desc: 'Use /generate to create images from text prompts via free image generation APIs.' },
-      { icon: Terminal, title: 'Voice Model Selection', desc: 'Choose your preferred voice model — ElevenLabs voices via Puter or Gemini Flash TTS.' },
+      { slug: 'voice-chat', icon: Mic, title: 'Walkie-Talkie Voice Chat', desc: 'Hold Spacebar to talk. CyberCli hears, thinks, and responds automatically via natural TTS.' },
+      { slug: 'voice-chat', icon: Zap, title: 'Voice Interruption', desc: 'Cut CyberCli mid-sentence. It stops and listens immediately. True conversational flow.' },
+      { slug: 'voice-chat', icon: Palette, title: '5 Unique AI Voices', desc: 'Ava, Nova, Luna, Orion, Echo. 3 female, 2 male voices via ElevenLabs and Gemini Flash.' },
+      { slug: 'voice-chat', icon: Image, title: 'Image Understanding', desc: 'Upload any image. Vision-capable models analyze, describe, and reason about visual content.' },
+      { slug: 'voice-chat', icon: voiceChatGen(), iconName: 'Image Generation', title: 'Image Generation', desc: 'Use /generate to create images from text prompts via free image generation APIs.' },
+      { slug: 'voice-chat', icon: Terminal, title: 'Voice Model Selection', desc: 'Choose your preferred voice model — ElevenLabs voices via Puter or Gemini Flash TTS.' },
     ],
   },
   {
     category: 'Organization',
     color: '#06B6D4',
     items: [
-      { icon: GitBranch, title: 'Conversation Branching', desc: 'Fork any message into a new thread. Explore multiple paths without losing context.' },
-      { icon: Layers, title: 'Chat Folders', desc: 'Organize threads into nested folders. Color-coded for quick identification.' },
-      { icon: FileText, title: 'Chat Summaries', desc: 'Auto-generated 3-line summaries for every thread. Scan your library at a glance.' },
-      { icon: MessageSquare, title: 'Thread Search', desc: 'Full-text search across all your chats, messages, and snippets instantly.' },
-      { icon: Shield, title: 'Pinned Messages', desc: 'Pin critical answers in long threads for instant reference.' },
-      { icon: Globe, title: 'Public Share Links', desc: 'Share any chat as a read-only public page. Control visibility per thread.' },
+      { slug: 'conversation-branching', icon: GitBranch, title: 'Conversation Branching', desc: 'Fork any message into a new thread. Explore multiple paths without losing context.' },
+      { slug: 'conversation-branching', icon: Layers, title: 'Chat Folders', desc: 'Organize threads into nested folders. Color-coded for quick identification.' },
+      { slug: 'conversation-branching', icon: FileText, title: 'Chat Summaries', desc: 'Auto-generated 3-line summaries for every thread. Scan your library at a glance.' },
+      { slug: 'conversation-branching', icon: MessageSquare, title: 'Thread Search', desc: 'Full-text search across all your chats, messages, and snippets instantly.' },
+      { slug: 'conversation-branching', icon: Shield, title: 'Pinned Messages', desc: 'Pin critical answers in long threads for instant reference.' },
+      { slug: 'conversation-branching', icon: Globe, title: 'Public Share Links', desc: 'Share any chat as a read-only public page. Control visibility per thread.' },
     ],
   },
   {
     category: 'Power User',
     color: '#10B981',
     items: [
-      { icon: Keyboard, title: 'Slash Commands', desc: '/summarize, /translate, /code, /research, /brainstorm. Instant actions from the input bar.' },
-      { icon: Code, title: 'Keyboard Shortcuts', desc: 'Ctrl+K command palette, Ctrl+N new chat. Built for speed, designed for flow.' },
-      { icon: BookOpen, title: 'Snippets Library', desc: 'Save reusable prompt templates. Insert them with a shortcut in any chat.' },
-      { icon: Lock, title: 'Privacy First', desc: 'No training on your data. Export or delete everything at any time. GDPR compliant.' },
-      { icon: Bell, title: 'Scheduled Chats', desc: 'Automated recurring AI sessions. Every Monday at 9 AM: your weekly goals brief.' },
-      { icon: Cpu, title: 'Custom Agents', desc: 'Build and deploy specialized AI personas with custom system prompts, temperature, and icons.' },
+      { slug: 'custom-agents', icon: Keyboard, title: 'Slash Commands', desc: '/summarize, /translate, /code, /research, /brainstorm. Instant actions from the input bar.' },
+      { slug: 'custom-agents', icon: Code, title: 'Keyboard Shortcuts', desc: 'Ctrl+K command palette, Ctrl+N new chat. Built for speed, designed for flow.' },
+      { slug: 'custom-agents', icon: BookOpen, title: 'Snippets Library', desc: 'Save reusable prompt templates. Insert them with a shortcut in any chat.' },
+      { slug: 'privacy-first', icon: Lock, title: 'Privacy First', desc: 'No training on your data. Export or delete everything at any time. GDPR compliant.' },
+      { slug: 'custom-agents', icon: Bell, title: 'Scheduled Chats', desc: 'Automated recurring AI sessions. Every Monday at 9 AM: your weekly goals brief.' },
+      { slug: 'custom-agents', icon: Cpu, title: 'Custom Agents', desc: 'Build and deploy specialized AI personas with custom system prompts, temperature, and icons.' },
     ],
   },
 ]
+
+// Helper for generating conditional icons or custom styles if needed, but we keep lucide components
+function voiceChatGen() {
+  return Layers;
+}
 
 export default function FeaturesPage() {
   return (
@@ -93,30 +99,40 @@ export default function FeaturesPage() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {category.items.map((item, i) => (
                   <ScrollReveal key={item.title} delay={i * 0.07}>
-                    <motion.div
-                      className="card-glass p-6 h-full group cursor-default"
-                      whileHover={{ y: -5, scale: 1.01 }}
-                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    >
-                      {/* Icon */}
+                    <Link to={`/features/${item.slug}`} className="block h-full">
                       <motion.div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                        style={{ background: `${category.color}18`, border: `1px solid ${category.color}30` }}
-                        whileHover={{ rotate: 8, scale: 1.1 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                        className="card-glass p-6 h-full group cursor-pointer flex flex-col justify-between"
+                        whileHover={{ y: -5, scale: 1.01 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                       >
-                        <item.icon className="w-6 h-6" style={{ color: category.color }} />
+                        <div>
+                          {/* Icon */}
+                          <motion.div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 animate-transition"
+                            style={{ background: `${category.color}18`, border: `1px solid ${category.color}30` }}
+                            whileHover={{ rotate: 8, scale: 1.1 }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                          >
+                            <item.icon className="w-6 h-6" style={{ color: category.color }} />
+                          </motion.div>
+
+                          <h3 className="text-base font-semibold text-foreground-primary mb-2 group-hover:text-accent transition-colors flex items-center gap-2">
+                            {item.title}
+                          </h3>
+                          <p className="text-sm text-foreground-muted leading-relaxed mb-4">{item.desc}</p>
+                        </div>
+
+                        <div>
+                          <div className="text-xs font-semibold text-accent flex items-center gap-1 group-hover:gap-2 transition-all mt-2">
+                            Learn more <ArrowRight className="w-3.5 h-3.5" />
+                          </div>
+                          
+                          {/* Bottom accent line on hover */}
+                          <div className="mt-4 h-px w-0 group-hover:w-full transition-all duration-500 rounded-full animate-transition"
+                            style={{ background: `linear-gradient(to right, ${category.color}, transparent)` }} />
+                        </div>
                       </motion.div>
-
-                      <h3 className="text-base font-semibold text-foreground-primary mb-2 group-hover:text-accent transition-colors">
-                        {item.title}
-                      </h3>
-                      <p className="text-sm text-foreground-muted leading-relaxed">{item.desc}</p>
-
-                      {/* Bottom accent line on hover */}
-                      <div className="mt-4 h-px w-0 group-hover:w-full transition-all duration-500 rounded-full"
-                        style={{ background: `linear-gradient(to right, ${category.color}, transparent)` }} />
-                    </motion.div>
+                    </Link>
                   </ScrollReveal>
                 ))}
               </div>

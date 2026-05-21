@@ -389,6 +389,12 @@
   51%, 100% { opacity: 0; }
 }
 
+/* ─── Provider ticker infinite scroll ─── */
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 /* Lenis smooth scroll compatibility */
 html.lenis { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }

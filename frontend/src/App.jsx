@@ -8,6 +8,7 @@ import ProtectedRoute from '@components/auth/ProtectedRoute.jsx'
 
 import HomePage from '@pages/public/HomePage'
 import FeaturesPage from '@pages/public/FeaturesPage'
+import FeatureDetailPage from '@pages/public/FeatureDetailPage'
 import ModelsPage from '@pages/public/ModelsPage'
 import PricingPage from '@pages/public/PricingPage'
 import ContactPage from '@pages/public/ContactPage'
@@ -23,6 +24,8 @@ import TermsPage from '@pages/public/TermsPage'
 import CookiePolicyPage from '@pages/public/CookiePolicyPage'
 import AcceptableUsePage from '@pages/public/AcceptableUsePage'
 import GDPRPage from '@pages/public/GDPRPage'
+import ChangelogPage from '@pages/public/ChangelogPage'
+import ApiReferencePage from '@pages/public/ApiReferencePage'
 
 import SignupPage from '@pages/auth/SignupPage'
 import LoginPage from '@pages/auth/LoginPage'
@@ -43,7 +46,8 @@ import VoiceSettingsPage from '@pages/app/VoiceSettingsPage'
 const PUBLIC_PATHS = [
   '/', '/features', '/models', '/pricing', '/contact', '/about',
   '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy',
-  '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr'
+  '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr',
+  '/changelog', '/api-reference'
 ]
 const AUTH_PATHS = [
   '/auth/signup', '/auth/login', '/auth/forgot-password',
@@ -60,6 +64,7 @@ function App() {
       || AUTH_PATHS.some(p => window.location.pathname.startsWith(p))
       || window.location.pathname.startsWith('/blog/')
       || window.location.pathname.startsWith('/docs/')
+      || window.location.pathname.startsWith('/features/')
   }
 
   return (
@@ -70,6 +75,7 @@ function App() {
           {/* ── Public Marketing Routes (with Lenis smooth scroll) ── */}
           <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
           <Route path="/features" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
+          <Route path="/features/:slug" element={<PublicLayout><FeatureDetailPage /></PublicLayout>} />
           <Route path="/models" element={<PublicLayout><ModelsPage /></PublicLayout>} />
           <Route path="/pricing" element={<PublicLayout><PricingPage /></PublicLayout>} />
           <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
@@ -85,6 +91,8 @@ function App() {
           <Route path="/cookie-policy" element={<PublicLayout><CookiePolicyPage /></PublicLayout>} />
           <Route path="/acceptable-use" element={<PublicLayout><AcceptableUsePage /></PublicLayout>} />
           <Route path="/gdpr" element={<PublicLayout><GDPRPage /></PublicLayout>} />
+          <Route path="/changelog" element={<PublicLayout><ChangelogPage /></PublicLayout>} />
+          <Route path="/api-reference" element={<PublicLayout><ApiReferencePage /></PublicLayout>} />
 
           {/* ── Auth Routes ── */}
           <Route path="/auth/signup" element={<SignupPage />} />

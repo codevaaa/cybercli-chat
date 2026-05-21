@@ -18,14 +18,14 @@ export const FOOTER_SECTIONS = [
       { label: 'Features', href: '/features' },
       { label: 'Models', href: '/models' },
       { label: 'Pricing', href: '/pricing' },
-      { label: 'Changelog', href: '/blog' },
+      { label: 'Changelog', href: '/changelog' },
     ],
   },
   {
     title: 'Resources',
     links: [
       { label: 'Documentation', href: '/docs' },
-      { label: 'API Reference', href: '/docs/api' },
+      { label: 'API Reference', href: '/api-reference' },
       { label: 'Blog', href: '/blog' },
       { label: 'Affiliate Program', href: '/affiliate' },
     ],
