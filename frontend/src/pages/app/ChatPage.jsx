@@ -5,7 +5,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, Mic, Paperclip, Radio,
   Copy, Check, GitBranch, Volume2, VolumeX, Trash2, Pin, X,
   Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder,
-  Play, Key, RefreshCw, Ghost
+  Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
@@ -14,17 +14,18 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import api from '../../lib/api.js'
 import { useTTS } from '../../hooks/useTTS.js'
 import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
+import { useAuthStore } from '@stores/authStore.js'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
 
 const MODELS = [
-  { id: 'groq/llama-3.1-8b',        name: 'Cyber-Fast',       tag: 'Fast',     color: '#10B981' },
-  { id: 'gemini/gemini-2.5-flash',  name: 'Cyber-Balanced',   tag: 'Balanced', color: '#3B82F6' },
-  { id: 'openrouter/gpt-4o-mini',   name: 'Cyber-Mini',        tag: 'Capable',  color: '#8B5CF6' },
-  { id: 'groq/llama-3.1-70b',       name: 'Cyber-Smart',      tag: 'Smart',    color: '#F59E0B' },
-  { id: 'council',                  name: 'Cyber-Council',    tag: 'Debate',   color: '#D97757' },
+  { id: 'groq/llama-3.1-8b',        name: 'Cyber-Fast',       tag: 'Fast',     color: '#10B981', desc: 'Optimized for speed and quick everyday responses.' },
+  { id: 'gemini/gemini-2.5-flash',  name: 'Cyber-Balanced',   tag: 'Balanced', color: '#3B82F6', desc: 'Balanced response, ideal for rich multi-turn reasoning.' },
+  { id: 'openrouter/gpt-4o-mini',   name: 'Cyber-Mini',        tag: 'Capable',  color: '#8B5CF6', desc: 'Broad intelligence with highly optimized coding capability.' },
+  { id: 'groq/llama-3.1-70b',       name: 'Cyber-Smart',      tag: 'Smart',    color: '#F59E0B', desc: 'Deep problem-solving and structured logical analysis.' },
+  { id: 'council',                  name: 'Cyber-Council',    tag: 'Debate',   color: '#D97757', desc: 'Simultaneous multi-model consensus debate engine.' },
 ]
 
 const QUICK_ACTIONS = [
@@ -330,6 +331,7 @@ function ModelSelector({ selectedModel, onSelect }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const selected = MODELS.find(m => m.id === selectedModel) || MODELS[0]
+  const selectedIndex = MODELS.findIndex(m => m.id === selectedModel)
 
   useEffect(() => {
     const handler = (e) => {
@@ -338,6 +340,26 @@ function ModelSelector({ selectedModel, onSelect }) {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  const handleNext = () => {
+    const nextIdx = (selectedIndex + 1) % MODELS.length
+    onSelect(MODELS[nextIdx].id)
+  }
+
+  const handlePrev = () => {
+    const prevIdx = (selectedIndex - 1 + MODELS.length) % MODELS.length
+    onSelect(MODELS[prevIdx].id)
+  }
+
+  const handleWheel = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.deltaY > 0) {
+      handleNext()
+    } else {
+      handlePrev()
+    }
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -355,38 +377,114 @@ function ModelSelector({ selectedModel, onSelect }) {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            initial={{ opacity: 0, y: -12, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute bottom-full mb-2 right-0 w-64 rounded-2xl border border-border-subtle shadow-xl p-1.5 z-50"
-            style={{ background: 'var(--bg-elevated)' }}
+            exit={{ opacity: 0, y: -12, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute bottom-full mb-3 right-0 w-[290px] rounded-2xl border border-border-subtle shadow-2xl p-4 z-50 overflow-hidden flex flex-col items-center gap-3"
+            style={{ 
+              background: 'rgba(15, 15, 20, 0.95)',
+              backdropFilter: 'blur(16px)',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 30px rgba(217, 119, 87, 0.05)'
+            }}
           >
-            {MODELS.map((model) => (
-              <button
-                key={model.id}
-                onClick={() => { onSelect(model.id); setOpen(false) }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
-                  selectedModel === model.id
-                    ? 'bg-background-tertiary'
-                    : 'hover:bg-background-secondary'
-                }`}
+            {/* Holographic background glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full pointer-events-none filter blur-[40px] opacity-15"
+              style={{ background: `radial-gradient(circle, ${selected.color}, transparent)` }} />
+
+            <div className="w-full flex items-center justify-between border-b border-white/[0.06] pb-2 flex-shrink-0 z-10">
+              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">3D Intel Selector</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider" style={{ background: `${selected.color}15`, color: selected.color }}>
+                {selected.tag}
+              </span>
+            </div>
+
+            {/* 3D Cylinder View Container */}
+            <div 
+              onWheel={handleWheel}
+              className="relative w-full h-[150px] flex items-center justify-center select-none overflow-hidden rounded-xl border border-white/[0.02]"
+              style={{ 
+                perspective: '600px', 
+                transformStyle: 'preserve-3d',
+                background: 'rgba(0, 0, 0, 0.2)' 
+              }}
+            >
+              {/* Cycling arrows */}
+              <button 
+                onClick={handlePrev}
+                className="absolute top-2 z-20 p-1 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
               >
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: model.color }} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-foreground-primary truncate">{model.name}</div>
-                </div>
-                <span
-                  className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
-                  style={{
-                    background: model.color + '20',
-                    color: model.color,
-                  }}
-                >
-                  {model.tag}
-                </span>
+                <ChevronDown className="w-3.5 h-3.5 rotate-180" />
               </button>
-            ))}
+
+              {/* 3D Cylinder Body */}
+              <motion.div
+                animate={{ rotateX: selectedIndex * 36 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                className="w-full h-full relative flex items-center justify-center"
+                style={{ transformStyle: 'preserve-3d' }}
+              >
+                {MODELS.map((model, i) => {
+                  const angle = -i * 36; // degrees
+                  const translateZ = 95; // px distance from center of cylinder
+                  const isSelected = i === selectedIndex;
+                  const diff = Math.abs(i - selectedIndex);
+                  
+                  // Only render items close to viewport to avoid overlap issues
+                  const isVisible = diff <= 2 || diff === MODELS.length - 1 || diff === MODELS.length - 2;
+
+                  return (
+                    <div
+                      key={model.id}
+                      onClick={() => onSelect(model.id)}
+                      style={{
+                        position: 'absolute',
+                        transform: `rotateX(${angle}deg) translateZ(${translateZ}px)`,
+                        transformStyle: 'preserve-3d',
+                        backfaceVisibility: 'hidden',
+                        opacity: isSelected ? 1 : 0.25 - (diff * 0.05),
+                        display: isVisible ? 'flex' : 'none',
+                        pointerEvents: isSelected ? 'auto' : 'none',
+                      }}
+                      className={`w-[210px] items-center justify-between px-3.5 py-2.5 rounded-xl border cursor-pointer transition-all duration-300 ${
+                        isSelected 
+                          ? 'border-accent bg-accent/10 shadow-[0_0_20px_rgba(217,119,87,0.2)]' 
+                          : 'border-white/[0.04] bg-white/[0.01]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: model.color, boxShadow: `0 0 8px ${model.color}` }} />
+                        <span className="text-sm font-semibold text-white tracking-wide">{model.name}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </motion.div>
+
+              <button 
+                onClick={handleNext}
+                className="absolute bottom-2 z-20 p-1 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Model Description Text Box */}
+            <div className="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl p-2.5 flex-shrink-0 z-10 text-center min-h-[50px] flex items-center justify-center">
+              <motion.p 
+                key={selected.id}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-[11px] leading-normal font-medium text-gray-400"
+              >
+                {selected.desc}
+              </motion.p>
+            </div>
+            
+            {/* Scroll Indicator */}
+            <span className="text-[9px] text-gray-600 font-semibold tracking-wider uppercase select-none pointer-events-none">
+              Drag or Scroll Wheel to Navigate
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -412,7 +510,8 @@ function InputArea({
   imageGenerationEnabled,
   onToggleImageGeneration,
   memoryEnabled,
-  onToggleMemory
+  onToggleMemory,
+  inlineSpeechListening
 }) {
   const textareaRef = useRef(null)
 
@@ -481,10 +580,22 @@ function InputArea({
 
             <button
               onClick={onMicClick}
-              className="p-2 rounded-xl text-foreground-muted hover:text-accent hover:bg-background-tertiary transition-all"
-              title="Voice input"
+              className={`p-2 rounded-xl transition-all relative ${
+                inlineSpeechListening
+                  ? 'text-accent bg-accent/10 border border-accent/20'
+                  : 'text-foreground-muted hover:text-accent hover:bg-background-tertiary border border-transparent'
+              }`}
+              title="Voice input (Speech-to-Text)"
             >
-              <Mic className="w-4 h-4" />
+              {inlineSpeechListening && (
+                <motion.div
+                  className="absolute inset-0 rounded-xl"
+                  style={{ border: '2px solid #D97757' }}
+                  animate={{ scale: [1, 1.3], opacity: [0.6, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
+                />
+              )}
+              <Mic className={`w-4 h-4 ${inlineSpeechListening ? 'animate-pulse' : ''}`} />
             </button>
 
             <button
@@ -1953,6 +2064,71 @@ export default function ChatPage() {
   const [voiceChatOpen, setVoiceChatOpen] = useState(false)
   const voiceChatOpenRef = useRef(false)
 
+  // Inline Speech to Text state
+  const [inlineSpeechListening, setInlineSpeechListening] = useState(false)
+  const inlineRecognitionRef = useRef(null)
+  const inlineStartTextRef = useRef('')
+
+  const toggleInlineSpeech = useCallback(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) {
+      alert('Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.')
+      return
+    }
+
+    if (inlineSpeechListening) {
+      if (inlineRecognitionRef.current) {
+        try { inlineRecognitionRef.current.stop() } catch {}
+      }
+      setInlineSpeechListening(false)
+      return
+    }
+
+    inlineStartTextRef.current = input
+    
+    try {
+      const rec = new SR()
+      rec.continuous = true
+      rec.interimResults = true
+      rec.lang = 'en-US'
+
+      rec.onstart = () => {
+        setInlineSpeechListening(true)
+      }
+
+      rec.onresult = (event) => {
+        let interim = ''
+        let final = ''
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const t = event.results[i][0].transcript
+          if (event.results[i].isFinal) {
+            final += t
+          } else {
+            interim += t
+          }
+        }
+        const spoken = (final + interim).trim()
+        const separator = inlineStartTextRef.current ? ' ' : ''
+        setInput((inlineStartTextRef.current + separator + spoken).trim())
+      }
+
+      rec.onerror = (e) => {
+        console.error('Inline speech error:', e)
+        setInlineSpeechListening(false)
+      }
+
+      rec.onend = () => {
+        setInlineSpeechListening(false)
+      }
+
+      inlineRecognitionRef.current = rec
+      rec.start()
+    } catch (err) {
+      console.error('Failed to start speech recognition:', err)
+      setInlineSpeechListening(false)
+    }
+  }, [inlineSpeechListening, input])
+
   const messagesEndRef = useRef(null)
   const creatingThreadRef = useRef(null)
 
@@ -2287,6 +2463,18 @@ export default function ChatPage() {
   const userEmail = localStorage.getItem('user_email') || ''
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
 
+  const [showProfilePopover, setShowProfilePopover] = useState(false)
+  const { signOut } = useAuthStore()
+
+  const handleLogOut = async () => {
+    try {
+      await signOut()
+      navigate('/auth/login')
+    } catch (err) {
+      console.error('Error logging out:', err)
+    }
+  }
+
   const pinnedThreads = threads.filter(t => t.is_pinned)
   const recentThreads = threads.filter(t => !t.is_pinned).slice(0, 30)
 
@@ -2321,8 +2509,8 @@ export default function ChatPage() {
               </button>
             </div>
 
-            {/* New Chat + Search */}
-            <div className="px-3 pb-2 space-y-1 flex-shrink-0">
+            {/* New Chat */}
+            <div className="px-3 pb-2 flex-shrink-0">
               <button
                 onClick={() => { navigate('/chat'); setMessages([]); setActiveNav('chats') }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
@@ -2332,16 +2520,6 @@ export default function ChatPage() {
               >
                 <Plus className="w-4 h-4" />
                 New Chat
-              </button>
-              <button
-                onClick={() => setActiveNav('search')}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
-                style={{ color: '#D4D4D4' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <Search className="w-4 h-4" />
-                Search
               </button>
             </div>
 
@@ -2413,8 +2591,97 @@ export default function ChatPage() {
               )}
             </div>
 
-            {/* Bottom user bar */}
-            <div className="flex-shrink-0 border-t border-white/[0.06] p-3">
+            {/* Bottom user bar with Popover */}
+            <div 
+              className="flex-shrink-0 border-t border-white/[0.06] p-3 relative"
+              onMouseEnter={() => setShowProfilePopover(true)}
+              onMouseLeave={() => setShowProfilePopover(false)}
+            >
+              <AnimatePresence>
+                {showProfilePopover && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.96 }}
+                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute bottom-[60px] left-[12px] w-[256px] rounded-xl border border-white/[0.08] shadow-2xl p-1.5 z-50 flex flex-col gap-0.5"
+                    style={{ 
+                      background: 'rgba(26, 26, 26, 0.98)', 
+                      backdropFilter: 'blur(12px)',
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                    }}
+                  >
+                    <div className="px-3 py-2 text-xs font-semibold text-gray-400 truncate tracking-wide">
+                      {userEmail || 'bhaktikisakti.11@gmail.com'}
+                    </div>
+                    <div className="h-[1px] bg-white/[0.06] my-1" />
+                    
+                    <button 
+                      onClick={() => { setSettingsOpen(true); setShowProfilePopover(false); }}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Settings className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                        <span>Settings</span>
+                      </div>
+                      <span className="text-[9px] text-gray-650 tracking-tight font-bold uppercase">⚙ ↑Ctrl,</span>
+                    </button>
+
+                    <button 
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Globe className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                        <span>Language</span>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+                    </button>
+
+                    <button 
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                    >
+                      <HelpCircle className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                      <span>Get help</span>
+                    </button>
+
+                    <button 
+                      onClick={() => { navigate('/settings/billing'); setShowProfilePopover(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                    >
+                      <ArrowUpCircle className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                      <span>Upgrade plan</span>
+                    </button>
+
+                    <button 
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                    >
+                      <Download className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                      <span>Get apps and extensions</span>
+                    </button>
+
+                    <button 
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Info className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                        <span>Learn more</span>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+                    </button>
+
+                    <div className="h-[1px] bg-white/[0.06] my-1" />
+
+                    <button 
+                      onClick={handleLogOut}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-350 hover:bg-red-500/10 transition-all text-left group"
+                    >
+                      <LogOut className="w-4 h-4 text-red-500/60 group-hover:text-red-400 transition-colors" />
+                      <span>Log out</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <div className="flex items-center gap-2.5 px-2 py-2">
                 {/* Avatar */}
                 <div
@@ -2546,7 +2813,7 @@ export default function ChatPage() {
                     loading={loading}
                     selectedModel={selectedModel}
                     onModelChange={setSelectedModel}
-                    onMicClick={() => setVoiceChatOpen(true)}
+                    onMicClick={toggleInlineSpeech}
                     onWaveformClick={() => setVoiceChatOpen(true)}
                     webSearchEnabled={webSearchEnabled}
                     onToggleWebSearch={() => setWebSearchEnabled(v => !v)}
@@ -2556,6 +2823,7 @@ export default function ChatPage() {
                     onToggleImageGeneration={() => setImageGenerationEnabled(v => !v)}
                     memoryEnabled={memoryEnabled}
                     onToggleMemory={() => setMemoryEnabled(v => !v)}
+                    inlineSpeechListening={inlineSpeechListening}
                   />
                 </div>
               </div>
@@ -2597,7 +2865,7 @@ export default function ChatPage() {
                     loading={loading}
                     selectedModel={selectedModel}
                     onModelChange={setSelectedModel}
-                    onMicClick={() => setVoiceChatOpen(true)}
+                    onMicClick={toggleInlineSpeech}
                     onWaveformClick={() => setVoiceChatOpen(true)}
                     webSearchEnabled={webSearchEnabled}
                     onToggleWebSearch={() => setWebSearchEnabled(v => !v)}
@@ -2607,6 +2875,7 @@ export default function ChatPage() {
                     onToggleImageGeneration={() => setImageGenerationEnabled(v => !v)}
                     memoryEnabled={memoryEnabled}
                     onToggleMemory={() => setMemoryEnabled(v => !v)}
+                    inlineSpeechListening={inlineSpeechListening}
                   />
                 </div>
               </div>

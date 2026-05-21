@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import Navbar from '@components/layout/Navbar'
 import Footer from '@components/layout/Footer'
@@ -55,21 +55,23 @@ const AUTH_PATHS = [
 ]
 
 function App() {
+  const location = useLocation()
+
   useEffect(() => {
     document.documentElement.classList.add('dark')
   }, [])
 
   const isPublicRoute = () => {
-    return PUBLIC_PATHS.includes(window.location.pathname)
-      || AUTH_PATHS.some(p => window.location.pathname.startsWith(p))
-      || window.location.pathname.startsWith('/blog/')
-      || window.location.pathname.startsWith('/docs/')
-      || window.location.pathname.startsWith('/features/')
+    return PUBLIC_PATHS.includes(location.pathname)
+      || AUTH_PATHS.some(p => location.pathname.startsWith(p))
+      || location.pathname.startsWith('/blog/')
+      || location.pathname.startsWith('/docs/')
+      || location.pathname.startsWith('/features/')
   }
 
   return (
     <div className="min-h-screen bg-background-primary text-foreground-primary">
-      <Navbar />
+      {isPublicRoute() && !location.pathname.startsWith('/auth') && <Navbar />}
       <main>
         <Routes>
           {/* ── Public Marketing Routes (with Lenis smooth scroll) ── */}

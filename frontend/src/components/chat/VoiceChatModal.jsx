@@ -3,6 +3,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mic, MicOff, Volume2, VolumeX, ChevronDown, Check, Sparkles, Send } from 'lucide-react'
 import { useTTS } from '../../hooks/useTTS.js'
 
+function StarIcon({ size = 16, color = '#D97757' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+      <path
+        d="M32 4 L35.5 28.5 L60 32 L35.5 35.5 L32 60 L28.5 35.5 L4 32 L28.5 28.5 Z"
+        fill={color}
+        opacity="0.9"
+      />
+      <path
+        d="M32 12 L34 30 L52 32 L34 34 L32 52 L30 34 L12 32 L30 30 Z"
+        fill="white"
+        opacity="0.25"
+      />
+    </svg>
+  )
+}
+
 const VOICE_MODELS = [
   { id: 'eleven_ava',   label: 'Ava',    desc: 'Warm & Natural',         provider: 'elevenlabs', gender: 'female',  color: '#D97757' },
   { id: 'eleven_nova',  label: 'Nova',   desc: 'Clear & Professional',   provider: 'elevenlabs', gender: 'female',  color: '#06B6D4' },
@@ -323,7 +340,7 @@ export default function VoiceChatModal({
           {/* Brand */}
           <div className="absolute top-6 left-6 flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-[#D97757]/20 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-[#D97757]" />
+              <StarIcon size={18} color="#D97757" />
             </div>
             <span className="text-sm font-semibold text-white/60">CyberCli Voice</span>
           </div>
@@ -433,8 +450,8 @@ export default function VoiceChatModal({
             </div>
 
             {/* Footer note */}
-            <p className="text-xs text-white/20 text-center">
-              Powered by ElevenLabs via Puter · Gemini Flash TTS · Web Speech API
+            <p className="text-[11px] text-white/30 text-center tracking-wider font-semibold uppercase">
+              CyberCli Secure Voice Channel
             </p>
           </div>
         </motion.div>
