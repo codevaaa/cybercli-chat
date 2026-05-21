@@ -21,6 +21,17 @@ const userSettingsSchema = new mongoose.Schema({
   code_execution_enabled: { type: Boolean, default: false },
   image_generation_enabled: { type: Boolean, default: false },
   council_mode_enabled: { type: Boolean, default: false },
+
+  // Frontend settings fields
+  display_name: { type: String, default: '' },
+  nickname: { type: String, default: '' },
+  appearance: { type: String, enum: ['dark', 'light', 'system'], default: 'system' },
+  chat_font: { type: String, default: 'inter' },
+  voice: { type: String, default: 'ava' },
+  voice_speed: { type: String, default: 'normal' },
+  notifications_responses: { type: Boolean, default: true },
+  notifications_dispatch: { type: Boolean, default: false },
+  memory_enabled: { type: Boolean, default: false },
 }, { timestamps: true })
 
 export default mongoose.model('UserSettings', userSettingsSchema)

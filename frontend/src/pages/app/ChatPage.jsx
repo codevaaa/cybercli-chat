@@ -752,7 +752,7 @@ const SETTINGS_TABS = [
   { id: 'api_keys',     label: 'API Keys' },
 ]
 
-function SettingsDialog({ isOpen, onClose }) {
+function SettingsDialog({ isOpen, onClose, onSettingChange }) {
   const [activeTab, setActiveTab] = useState('general')
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState({
@@ -786,12 +786,30 @@ function SettingsDialog({ isOpen, onClose }) {
   const patchSetting = async (key, value) => {
     setSettings(prev => ({ ...prev, [key]: value }))
     setSaving(true)
-    try { await api.patch('/settings', { [key]: value }) } catch (e) { console.error(e) } finally { setSaving(false) }
+    try {
+      await api.patch('/settings', { [key]: value })
+      if (onSettingChange) {
+        onSettingChange(key, value)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleBlurSave = async (key, value) => {
     setSaving(true)
-    try { await api.patch('/settings', { [key]: value }) } catch (e) { console.error(e) } finally { setSaving(false) }
+    try {
+      await api.patch('/settings', { [key]: value })
+      if (onSettingChange) {
+        onSettingChange(key, value)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleGenerateKey = async (e) => {
@@ -2060,6 +2078,13 @@ export default function ChatPage() {
   const [imageGenerationEnabled, setImageGenerationEnabled] = useState(false)
   const [memoryEnabled, setMemoryEnabled] = useState(false)
 
+  const handleParentSettingChange = (key, value) => {
+    if (key === 'web_search_enabled') setWebSearchEnabled(value)
+    else if (key === 'code_execution_enabled') setCodeExecutionEnabled(value)
+    else if (key === 'image_generation_enabled') setImageGenerationEnabled(value)
+    else if (key === 'memory_enabled') setMemoryEnabled(value)
+  }
+
   // Voice overlay state
   const [voiceChatOpen, setVoiceChatOpen] = useState(false)
   const voiceChatOpenRef = useRef(false)
@@ -2929,7 +2954,7 @@ export default function ChatPage() {
       />
 
       {/* Settings dialog */}
-      <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} onSettingChange={handleParentSettingChange} />
     </div>
   )
 }
