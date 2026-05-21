@@ -21,19 +21,18 @@ import { useAuthStore } from '@stores/authStore.js'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
 
 const MODELS = [
-  { id: 'groq/llama-3.1-8b',        name: 'Cyber-Fast',       tag: 'Fast',     color: '#10B981', desc: 'Optimized for speed and quick everyday responses.' },
-  { id: 'gemini/gemini-2.5-flash',  name: 'Cyber-Balanced',   tag: 'Balanced', color: '#3B82F6', desc: 'Balanced response, ideal for rich multi-turn reasoning.' },
-  { id: 'openrouter/gpt-4o-mini',   name: 'Cyber-Mini',        tag: 'Capable',  color: '#8B5CF6', desc: 'Broad intelligence with highly optimized coding capability.' },
-  { id: 'groq/llama-3.1-70b',       name: 'Cyber-Smart',      tag: 'Smart',    color: '#F59E0B', desc: 'Deep problem-solving and structured logical analysis.' },
-  { id: 'council',                  name: 'Cyber-Council',    tag: 'Debate',   color: '#D97757', desc: 'Simultaneous multi-model consensus debate engine.' },
+  { id: 'groq/llama-3.1-70b',       name: 'Cyber-Opus',     tag: 'Opus 4.7',     color: '#8B5CF6', desc: 'Most capable for ambitious work.' },
+  { id: 'openrouter/gpt-4o-mini',   name: 'Cyber-Sonnet',   tag: 'Sonnet 4.6',   color: '#3B82F6', desc: 'Responsive everyday work.' },
+  { id: 'groq/llama-3.1-8b',        name: 'Cyber-Haiku',    tag: 'Haiku 4.5',    color: '#10B981', desc: 'Fastest, most efficient.' },
+  { id: 'council',                  name: 'Cyber-Council',  tag: 'Debate',       color: '#D97757', desc: 'Simultaneous multi-model consensus debate engine.' },
 ]
 
 const QUICK_ACTIONS = [
-  { label: '</> Code',    value: 'Help me write code for ' },
-  { label: 'Learn',       value: 'Explain the concept of ' },
-  { label: 'Create',      value: 'Help me create ' },
-  { label: 'Write',       value: 'Write a ' },
-  { label: 'Life stuff',  value: 'Give me advice on ' },
+  { id: 'write', label: 'Write', value: 'Write a ', icon: '✍️' },
+  { id: 'learn', label: 'Learn', value: 'Explain the concept of ', icon: '🎓' },
+  { id: 'code', label: 'Code', value: 'Help me write code for ', icon: '</>' },
+  { id: 'life', label: 'Life stuff', value: 'Give me advice on ', icon: '☕' },
+  { id: 'choice', label: "CyberCli's choice", value: "Give me a creative idea or recommendation ", icon: '💡' },
 ]
 
 const NAV_ITEMS = [
@@ -330,8 +329,6 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
 function ModelSelector({ selectedModel, onSelect }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
-  const selected = MODELS.find(m => m.id === selectedModel) || MODELS[0]
-  const selectedIndex = MODELS.findIndex(m => m.id === selectedModel)
 
   useEffect(() => {
     const handler = (e) => {
@@ -341,150 +338,115 @@ function ModelSelector({ selectedModel, onSelect }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const handleNext = () => {
-    const nextIdx = (selectedIndex + 1) % MODELS.length
-    onSelect(MODELS[nextIdx].id)
+  const isAdaptiveThinking = selectedModel === 'council'
+  const activeBaseModel = isAdaptiveThinking ? 'openrouter/gpt-4o-mini' : selectedModel
+  const selected = MODELS.find(m => m.id === activeBaseModel) || MODELS[1]
+
+  const handleSelectModel = (modelId) => {
+    onSelect(modelId)
+    setOpen(false)
   }
 
-  const handlePrev = () => {
-    const prevIdx = (selectedIndex - 1 + MODELS.length) % MODELS.length
-    onSelect(MODELS[prevIdx].id)
-  }
-
-  const handleWheel = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.deltaY > 0) {
-      handleNext()
+  const handleToggleAdaptiveThinking = () => {
+    if (isAdaptiveThinking) {
+      onSelect('openrouter/gpt-4o-mini')
     } else {
-      handlePrev()
+      onSelect('council')
     }
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative border-r border-white/[0.06] pr-2 mr-1" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-foreground-secondary hover:text-foreground-primary hover:bg-background-tertiary transition-all border border-border-subtle"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/5 transition-all"
       >
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: selected.color }} />
-        <span>{selected.name}</span>
-        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown className="w-3.5 h-3.5" />
-        </motion.div>
+        <span>{selected.tag}</span>
+        <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
       </button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -12, scale: 0.95 }}
+            initial={{ opacity: 0, y: -10, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -12, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute bottom-full mb-3 right-0 w-[290px] rounded-2xl border border-border-subtle shadow-2xl p-4 z-50 overflow-hidden flex flex-col items-center gap-3"
+            exit={{ opacity: 0, y: -10, scale: 0.96 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute bottom-full mb-2 right-0 w-64 rounded-2xl border border-white/[0.08] shadow-2xl p-2 z-50 flex flex-col gap-0.5"
             style={{ 
-              background: 'rgba(15, 15, 20, 0.95)',
-              backdropFilter: 'blur(16px)',
-              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 30px rgba(217, 119, 87, 0.05)'
+              background: 'rgba(26, 26, 26, 0.98)', 
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
             }}
           >
-            {/* Holographic background glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full pointer-events-none filter blur-[40px] opacity-15"
-              style={{ background: `radial-gradient(circle, ${selected.color}, transparent)` }} />
-
-            <div className="w-full flex items-center justify-between border-b border-white/[0.06] pb-2 flex-shrink-0 z-10">
-              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">3D Intel Selector</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider" style={{ background: `${selected.color}15`, color: selected.color }}>
-                {selected.tag}
-              </span>
-            </div>
-
-            {/* 3D Cylinder View Container */}
-            <div 
-              onWheel={handleWheel}
-              className="relative w-full h-[150px] flex items-center justify-center select-none overflow-hidden rounded-xl border border-white/[0.02]"
-              style={{ 
-                perspective: '600px', 
-                transformStyle: 'preserve-3d',
-                background: 'rgba(0, 0, 0, 0.2)' 
-              }}
+            {/* Opus 4.7 */}
+            <button
+              onClick={() => handleSelectModel('groq/llama-3.1-70b')}
+              className="w-full flex items-start justify-between p-2 rounded-xl hover:bg-white/5 transition-all text-left group"
             >
-              {/* Cycling arrows */}
-              <button 
-                onClick={handlePrev}
-                className="absolute top-2 z-20 p-1 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-              >
-                <ChevronDown className="w-3.5 h-3.5 rotate-180" />
-              </button>
+              <div>
+                <div className="text-[13px] font-semibold text-white group-hover:text-accent transition-colors">Opus 4.7</div>
+                <div className="text-[11px] text-gray-400 mt-0.5">Most capable for ambitious work</div>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-accent/20 bg-accent/10 text-accent uppercase tracking-wider">Upgrade</span>
+                {activeBaseModel === 'groq/llama-3.1-70b' && <Check className="w-3.5 h-3.5 text-accent" />}
+              </div>
+            </button>
 
-              {/* 3D Cylinder Body */}
-              <motion.div
-                animate={{ rotateX: selectedIndex * 36 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                className="w-full h-full relative flex items-center justify-center"
-                style={{ transformStyle: 'preserve-3d' }}
-              >
-                {MODELS.map((model, i) => {
-                  const angle = -i * 36; // degrees
-                  const translateZ = 95; // px distance from center of cylinder
-                  const isSelected = i === selectedIndex;
-                  const diff = Math.abs(i - selectedIndex);
-                  
-                  // Only render items close to viewport to avoid overlap issues
-                  const isVisible = diff <= 2 || diff === MODELS.length - 1 || diff === MODELS.length - 2;
+            {/* Sonnet 4.6 */}
+            <button
+              onClick={() => handleSelectModel('openrouter/gpt-4o-mini')}
+              className="w-full flex items-start justify-between p-2 rounded-xl hover:bg-white/5 transition-all text-left group"
+            >
+              <div>
+                <div className="text-[13px] font-semibold text-white group-hover:text-accent transition-colors">Sonnet 4.6</div>
+                <div className="text-[11px] text-gray-400 mt-0.5">Responsive everyday work</div>
+              </div>
+              {activeBaseModel === 'openrouter/gpt-4o-mini' && <Check className="w-3.5 h-3.5 text-accent flex-shrink-0" />}
+            </button>
 
-                  return (
-                    <div
-                      key={model.id}
-                      onClick={() => onSelect(model.id)}
-                      style={{
-                        position: 'absolute',
-                        transform: `rotateX(${angle}deg) translateZ(${translateZ}px)`,
-                        transformStyle: 'preserve-3d',
-                        backfaceVisibility: 'hidden',
-                        opacity: isSelected ? 1 : 0.25 - (diff * 0.05),
-                        display: isVisible ? 'flex' : 'none',
-                        pointerEvents: isSelected ? 'auto' : 'none',
-                      }}
-                      className={`w-[210px] items-center justify-between px-3.5 py-2.5 rounded-xl border cursor-pointer transition-all duration-300 ${
-                        isSelected 
-                          ? 'border-accent bg-accent/10 shadow-[0_0_20px_rgba(217,119,87,0.2)]' 
-                          : 'border-white/[0.04] bg-white/[0.01]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: model.color, boxShadow: `0 0 8px ${model.color}` }} />
-                        <span className="text-sm font-semibold text-white tracking-wide">{model.name}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </motion.div>
+            {/* Haiku 4.5 */}
+            <button
+              onClick={() => handleSelectModel('groq/llama-3.1-8b')}
+              className="w-full flex items-start justify-between p-2 rounded-xl hover:bg-white/5 transition-all text-left group"
+            >
+              <div>
+                <div className="text-[13px] font-semibold text-white group-hover:text-accent transition-colors">Haiku 4.5</div>
+                <div className="text-[11px] text-gray-400 mt-0.5">Fastest, most efficient</div>
+              </div>
+              {activeBaseModel === 'groq/llama-3.1-8b' && <Check className="w-3.5 h-3.5 text-accent flex-shrink-0" />}
+            </button>
 
-              <button 
-                onClick={handleNext}
-                className="absolute bottom-2 z-20 p-1 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+            <div className="h-[1px] bg-white/[0.06] my-1" />
+
+            {/* Adaptive thinking */}
+            <div className="w-full flex items-center justify-between p-2 rounded-xl">
+              <div>
+                <div className="text-[13px] font-semibold text-white">Adaptive thinking</div>
+                <div className="text-[11px] text-gray-400 mt-0.5">Thinks for more complex tasks</div>
+              </div>
+              <button
+                onClick={handleToggleAdaptiveThinking}
+                className={`w-9 h-5 rounded-full transition-all relative flex items-center p-0.5 ${
+                  isAdaptiveThinking ? 'bg-accent' : 'bg-white/10'
+                }`}
               >
-                <ChevronDown className="w-3.5 h-3.5" />
+                <div className={`w-4 h-4 bg-white rounded-full transition-all shadow ${isAdaptiveThinking ? 'translate-x-4' : 'translate-x-0'}`} />
               </button>
             </div>
 
-            {/* Model Description Text Box */}
-            <div className="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl p-2.5 flex-shrink-0 z-10 text-center min-h-[50px] flex items-center justify-center">
-              <motion.p 
-                key={selected.id}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-[11px] leading-normal font-medium text-gray-400"
-              >
-                {selected.desc}
-              </motion.p>
-            </div>
-            
-            {/* Scroll Indicator */}
-            <span className="text-[9px] text-gray-600 font-semibold tracking-wider uppercase select-none pointer-events-none">
-              Drag or Scroll Wheel to Navigate
-            </span>
+            <div className="h-[1px] bg-white/[0.06] my-1" />
+
+            {/* More models */}
+            <button
+              onClick={() => alert('Additional models including Gemini 2.5 Flash and DeepSeek are available via Settings Connectors.')}
+              className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-all text-left text-gray-300 hover:text-white"
+            >
+              <span className="text-[12px] font-medium">More models</span>
+              <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -503,14 +465,6 @@ function InputArea({
   onModelChange,
   onMicClick,
   onWaveformClick,
-  webSearchEnabled,
-  onToggleWebSearch,
-  codeExecutionEnabled,
-  onToggleCodeExecution,
-  imageGenerationEnabled,
-  onToggleImageGeneration,
-  memoryEnabled,
-  onToggleMemory,
   inlineSpeechListening
 }) {
   const textareaRef = useRef(null)
@@ -530,38 +484,16 @@ function InputArea({
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      {/* Quick actions */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
-        {QUICK_ACTIONS.map((action) => (
-          <button
-            key={action.label}
-            onClick={() => {
-              setInput(action.value)
-              textareaRef.current?.focus()
-            }}
-            className="px-3.5 py-1.5 rounded-full text-xs font-medium border border-border-subtle text-foreground-secondary hover:text-foreground-primary hover:border-accent/40 transition-all bg-background-secondary"
-          >
-            {action.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Input pill */}
+    <div className="w-full max-w-3xl mx-auto flex flex-col gap-4">
+      {/* Input container card */}
       <div
-        className="rounded-2xl border border-border-subtle transition-all overflow-hidden"
+        className="rounded-2xl border border-white/[0.06] transition-all overflow-hidden flex flex-col p-4 gap-3 bg-[#1e1e1e]"
         style={{
-          background: 'var(--bg-secondary)',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.24)',
         }}
       >
-        <div className="flex items-end gap-2 p-3">
-          {/* Attachment */}
-          <button className="flex-shrink-0 p-2 rounded-xl text-foreground-muted hover:text-foreground-primary hover:bg-background-tertiary transition-all mb-0.5">
-            <Paperclip className="w-4 h-4" />
-          </button>
-
-          {/* Textarea */}
+        {/* Top Row: Textarea & Teal Dot */}
+        <div className="flex items-start justify-between gap-4">
           <textarea
             ref={textareaRef}
             value={input}
@@ -570,20 +502,35 @@ function InputArea({
             placeholder="How can I help you today?"
             rows={1}
             disabled={loading}
-            className="flex-1 bg-transparent text-sm text-foreground-primary placeholder:text-foreground-muted resize-none focus:outline-none leading-relaxed py-1.5 min-h-[36px]"
+            className="flex-1 bg-transparent text-sm text-gray-200 placeholder:text-gray-500 resize-none focus:outline-none leading-relaxed py-1 min-h-[36px]"
             style={{ maxHeight: '200px' }}
           />
+          {/* Teal dot */}
+          <div className="flex-shrink-0 mt-2 pr-1 flex items-center justify-center">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+          </div>
+        </div>
 
-          {/* Right controls */}
-          <div className="flex items-center gap-1 flex-shrink-0 flex-wrap sm:flex-nowrap">
+        {/* Bottom Row: Controls */}
+        <div className="flex items-center justify-between border-t border-white/[0.04] pt-3 mt-1 flex-shrink-0">
+          {/* Left: Plus attachment */}
+          <button className="p-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all">
+            <Plus className="w-4 h-4" />
+          </button>
+
+          {/* Right: Model dropdown, Mic, Waveform, Send */}
+          <div className="flex items-center gap-2">
             <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} />
 
             <button
               onClick={onMicClick}
-              className={`p-2 rounded-xl transition-all relative ${
+              className={`p-2 rounded-xl transition-all relative border border-transparent ${
                 inlineSpeechListening
-                  ? 'text-accent bg-accent/10 border border-accent/20'
-                  : 'text-foreground-muted hover:text-accent hover:bg-background-tertiary border border-transparent'
+                  ? 'text-accent bg-accent/10 border-accent/20'
+                  : 'text-gray-500 hover:text-white hover:bg-white/5'
               }`}
               title="Voice input (Speech-to-Text)"
             >
@@ -600,7 +547,7 @@ function InputArea({
 
             <button
               onClick={onWaveformClick}
-              className="p-2 rounded-xl text-foreground-muted hover:text-foreground-primary hover:bg-background-tertiary transition-all"
+              className="p-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all"
               title="Voice-to-Voice Mode"
             >
               <Radio className="w-4 h-4" />
@@ -609,10 +556,10 @@ function InputArea({
             <button
               onClick={onSend}
               disabled={!input.trim() || loading}
-              className={`ml-1 p-2 rounded-xl transition-all ${
+              className={`p-2 rounded-xl transition-all ${
                 input.trim() && !loading
                   ? 'bg-accent text-white hover:bg-accent-light'
-                  : 'bg-background-tertiary text-foreground-muted cursor-not-allowed'
+                  : 'bg-white/5 text-gray-605 cursor-not-allowed'
               }`}
             >
               {loading ? (
@@ -629,65 +576,26 @@ function InputArea({
             </button>
           </div>
         </div>
-
-        {/* Divider */}
-        <div className="border-t border-border-subtle/40" />
-
-        {/* Capabilities shelf */}
-        <div className="px-4 py-2.5 bg-background-tertiary/20 flex items-center gap-4 text-[11px] flex-wrap">
-          <span className="text-foreground-muted text-[9px] uppercase font-bold tracking-wider">Capabilities:</span>
-          
-          <button
-            onClick={onToggleWebSearch}
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border transition-all ${
-              webSearchEnabled 
-                ? 'border-[#D97757]/30 bg-[#D97757]/10 text-[#D97757] font-medium' 
-                : 'border-transparent text-foreground-muted hover:text-foreground-secondary'
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span>Web Search</span>
-          </button>
-
-          <button
-            onClick={onToggleCodeExecution}
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border transition-all ${
-              codeExecutionEnabled 
-                ? 'border-[#10B981]/30 bg-[#10B981]/10 text-[#10B981] font-medium' 
-                : 'border-transparent text-foreground-muted hover:text-foreground-secondary'
-            }`}
-          >
-            <Terminal className="w-3.5 h-3.5" />
-            <span>Code Sandbox</span>
-          </button>
-
-          <button
-            onClick={onToggleImageGeneration}
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border transition-all ${
-              imageGenerationEnabled 
-                ? 'border-[#8B5CF6]/30 bg-[#8B5CF6]/10 text-[#8B5CF6] font-medium' 
-                : 'border-transparent text-foreground-muted hover:text-foreground-secondary'
-            }`}
-          >
-            <ImageIcon className="w-3.5 h-3.5" />
-            <span>Image Gen</span>
-          </button>
-
-          <button
-            onClick={onToggleMemory}
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border transition-all ${
-              memoryEnabled 
-                ? 'border-[#3B82F6]/30 bg-[#3B82F6]/10 text-[#3B82F6] font-medium' 
-                : 'border-transparent text-foreground-muted hover:text-foreground-secondary'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Memory</span>
-          </button>
-        </div>
       </div>
 
-      <p className="text-center text-[11px] text-foreground-muted mt-2">
+      {/* Quick Action Pills (below input card) */}
+      <div className="flex items-center justify-center gap-2 flex-wrap">
+        {QUICK_ACTIONS.map((action) => (
+          <button
+            key={action.id}
+            onClick={() => {
+              setInput(action.value)
+              textareaRef.current?.focus()
+            }}
+            className="px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/[0.06] text-gray-400 hover:text-white hover:border-white/12 hover:bg-white/5 transition-all flex items-center gap-1.5"
+          >
+            <span>{action.icon}</span>
+            <span>{action.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <p className="text-center text-[10px] text-gray-600 mt-1 uppercase tracking-wider font-semibold">
         CyberCli can make mistakes. Consider checking important information.
       </p>
     </div>
@@ -752,8 +660,14 @@ const SETTINGS_TABS = [
   { id: 'api_keys',     label: 'API Keys' },
 ]
 
-function SettingsDialog({ isOpen, onClose, onSettingChange }) {
-  const [activeTab, setActiveTab] = useState('general')
+function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'general' }) {
+  const [activeTab, setActiveTab] = useState(initialTab)
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab)
+    }
+  }, [isOpen, initialTab])
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState({
     display_name: '',
@@ -925,6 +839,20 @@ function SettingsDialog({ isOpen, onClose, onSettingChange }) {
               value={settings.chat_font || 'inter'}
               onChange={v => patchSetting('chat_font', v)}
             />
+          </Row>
+          <Row label="Language">
+            <select
+              value={settings.language || 'en'}
+              onChange={e => patchSetting('language', e.target.value)}
+              className="bg-background-tertiary text-sm text-foreground-primary border border-border-subtle rounded-xl px-3 py-2 focus:outline-none focus:border-accent"
+            >
+              <option value="en">English (US)</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+              <option value="hi">हिन्दी (Hindi)</option>
+              <option value="ur">اردو (Urdu)</option>
+            </select>
           </Row>
           <Row label="Voice">
             <select
@@ -2068,6 +1996,12 @@ export default function ChatPage() {
   const [copied, setCopied] = useState(null)
   const [streamingIndex, setStreamingIndex] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsTab, setSettingsTab] = useState('general')
+
+  const openSettings = (tab = 'general') => {
+    setSettingsTab(tab)
+    setSettingsOpen(true)
+  }
   const [error, setError] = useState(null)
   const [incognitoMode, setIncognitoMode] = useState(false)
   const incognitoMessagesRef = useRef([])
@@ -2628,31 +2562,27 @@ export default function ChatPage() {
                     initial={{ opacity: 0, y: 10, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.96 }}
-                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute bottom-[60px] left-[12px] w-[256px] rounded-xl border border-white/[0.08] shadow-2xl p-1.5 z-50 flex flex-col gap-0.5"
+                    transition={{ duration: 0.15 }}
+                    className="absolute bottom-full left-3 right-3 mb-2 rounded-2xl border border-white/[0.08] shadow-2xl p-2 z-50 flex flex-col gap-0.5"
                     style={{ 
                       background: 'rgba(26, 26, 26, 0.98)', 
                       backdropFilter: 'blur(12px)',
                       boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
                     }}
                   >
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-400 truncate tracking-wide">
-                      {userEmail || 'bhaktikisakti.11@gmail.com'}
-                    </div>
-                    <div className="h-[1px] bg-white/[0.06] my-1" />
-                    
                     <button 
-                      onClick={() => { setSettingsOpen(true); setShowProfilePopover(false); }}
+                      onClick={() => openSettings('general')}
                       className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <div className="flex items-center gap-2.5">
                         <Settings className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
                         <span>Settings</span>
                       </div>
-                      <span className="text-[9px] text-gray-650 tracking-tight font-bold uppercase">⚙ ↑Ctrl,</span>
+                      <span className="text-[9px] text-gray-600 tracking-tight font-bold uppercase">⚙ ↑Ctrl,</span>
                     </button>
 
                     <button 
+                      onClick={() => openSettings('general')}
                       className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <div className="flex items-center gap-2.5">
@@ -2663,6 +2593,7 @@ export default function ChatPage() {
                     </button>
 
                     <button 
+                      onClick={() => window.open('mailto:support@cybermindcli.com')}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <HelpCircle className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
@@ -2670,7 +2601,7 @@ export default function ChatPage() {
                     </button>
 
                     <button 
-                      onClick={() => { navigate('/settings/billing'); setShowProfilePopover(false); }}
+                      onClick={() => openSettings('billing')}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <ArrowUpCircle className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
@@ -2678,6 +2609,7 @@ export default function ChatPage() {
                     </button>
 
                     <button 
+                      onClick={() => alert('CyberCli App & Extension links will be sent to your email.')}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <Download className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
@@ -2685,6 +2617,7 @@ export default function ChatPage() {
                     </button>
 
                     <button 
+                      onClick={() => setActiveNav('customize')}
                       className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <div className="flex items-center gap-2.5">
@@ -2738,49 +2671,31 @@ export default function ChatPage() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* Header strip */}
-        <header className="flex items-center gap-3 px-4 py-3 flex-shrink-0 border-b border-border-subtle/30 bg-background-primary/20">
+        <header className="flex items-center gap-3 px-4 py-3 flex-shrink-0 border-b border-white/[0.03] bg-[#0A0A0F]">
           {!sidebarOpen && (
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-background-secondary transition-colors"
+              className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           )}
 
           {activeThreadId && activeNav === 'chats' && (
-            <div className="flex items-center gap-2 text-sm text-foreground-muted">
-              <span className="truncate max-w-[200px] font-medium text-foreground-secondary">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="truncate max-w-[200px] font-medium text-gray-300">
                 {threads.find(t => t._id === activeThreadId)?.title || 'Chat'}
               </span>
             </div>
           )}
 
           {activeNav !== 'chats' && (
-            <span className="text-sm font-semibold capitalize text-foreground-secondary">
+            <span className="text-sm font-semibold capitalize text-gray-300">
               {activeNav}
             </span>
           )}
 
           <div className="flex-1" />
-
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-background-secondary transition-colors"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setIncognitoMode(m => !m)}
-            title={incognitoMode ? 'Exit Incognito' : 'Incognito Mode'}
-            className={`p-1.5 rounded-lg transition-colors ${
-              incognitoMode
-                ? 'text-amber-400 bg-amber-400/10 hover:bg-amber-400/20'
-                : 'text-foreground-muted hover:text-foreground-primary hover:bg-background-secondary'
-            }`}
-          >
-            <Ghost className="w-4 h-4" />
-          </button>
         </header>
 
         {/* Error banner */}
@@ -2954,7 +2869,7 @@ export default function ChatPage() {
       />
 
       {/* Settings dialog */}
-      <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} onSettingChange={handleParentSettingChange} />
+      <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} onSettingChange={handleParentSettingChange} initialTab={settingsTab} />
     </div>
   )
 }
