@@ -57,7 +57,20 @@ app.use(helmet({
 }))
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL?.split(',') || ['http://localhost:5173', 'http://localhost:3000'],
+  origin: (origin, callback) => {
+    const whitelist = process.env.FRONTEND_URL?.split(',') || []
+    const defaults = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://cybercli-chat.vercel.app',
+      'https://cybercli.vercel.app'
+    ]
+    if (!origin || whitelist.includes(origin) || defaults.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],

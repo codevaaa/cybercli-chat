@@ -8,13 +8,17 @@ router.post('/', optionalAuth, async (req, res) => {
   const { text, voice_id, speed = 1.0 } = req.body
 
   try {
-    if (voice_id === 'ava' || voice_id === 'orion' || voice_id === 'gemini') {
-      const voice = voice_id === 'gemini' ? 'ava' : voice_id
-      const audio = await generateGeminiTTS(text, voice, speed)
+    const validVoices = ['ava', 'nova', 'luna', 'orion', 'echo', 'gemini']
+    const voiceLower = (voice_id || 'ava').toLowerCase()
+    
+    if (validVoices.includes(voiceLower)) {
+      // Map male/deep voices to orion (Podcast_Voice_B), others to ava (Podcast_Voice_A)
+      const mappedVoice = (voiceLower === 'orion' || voiceLower === 'echo') ? 'orion' : 'ava'
+      const audio = await generateGeminiTTS(text, mappedVoice, speed)
       res.setHeader('Content-Type', 'audio/mp3')
       res.send(audio)
     } else {
-      res.status(400).json({ error: 'Voice not yet implemented on backend. Use Puter.js client-side for ElevenLabs voices.' })
+      res.status(400).json({ error: 'Voice not yet implemented on backend.' })
     }
   } catch (error) {
     res.status(500).json({ error: error.message })

@@ -59,6 +59,13 @@ function getClient(provider) {
     })
   }
 
+  if (provider === 'nvidia') {
+    return new OpenAI({
+      apiKey: key,
+      baseURL: 'https://integrate.api.nvidia.com/v1',
+    })
+  }
+
   // For other providers, use OpenRouter as unified proxy
   return new OpenAI({
     apiKey: PROVIDER_KEYS.openrouter,

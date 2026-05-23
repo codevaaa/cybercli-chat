@@ -1,6 +1,19 @@
 import axios from 'axios'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname
+    if (hostname.includes('vercel.app') || hostname.includes('cybercli.app')) {
+      return 'https://cybercli-api.onrender.com/api/v1'
+    }
+  }
+  return 'http://localhost:3000/api/v1'
+}
+
+export const API_BASE = getApiBase()
 
 const api = axios.create({
   baseURL: API_BASE,

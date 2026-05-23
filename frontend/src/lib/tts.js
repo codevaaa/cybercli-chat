@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
+import { API_BASE } from './api.js'
 
 const TTS_PROVIDERS = {
   puter: {
@@ -101,10 +101,21 @@ class TTSService {
         await this.loadPuter()
       }
 
-      const voice = this.currentVoice || 'ava'
+      let voice = this.currentVoice || 'ava'
       
+      // Map shortnames to real ElevenLabs voice IDs
+      const PUTER_VOICES_MAP = {
+        ava: '21m00Tcm4TlvDq8ikWAM', // Rachel
+        nova: 'AZnzlk1XvdvUeBnXmlld', // Domi
+        luna: 'EXAVITQu4vr4xnSDxMaL', // Bella
+        orion: 'pNInz6obpgq5paNs9W47', // Adam
+        echo: 'TxGEqn7nUaNZTR5JgIec', // Josh
+      }
+      
+      const realVoiceId = PUTER_VOICES_MAP[voice.toLowerCase()] || voice
+
       // Call the real puter.ai.txt2speech endpoint
-      const audio = await window.puter.ai.txt2speech(text, { provider: 'elevenlabs', voice: voice })
+      const audio = await window.puter.ai.txt2speech(text, { provider: 'elevenlabs', voice: realVoiceId })
       
       return new Promise((resolve, reject) => {
         // Handle stopping

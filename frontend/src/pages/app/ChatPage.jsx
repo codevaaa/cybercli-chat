@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import api, { smartStream, createThread, getThreads, getMessages, isLoggedIn } from '../../lib/api.js'
+import api, { smartStream, createThread, getThreads, getMessages, isLoggedIn, API_BASE } from '../../lib/api.js'
 import { useTTS } from '../../hooks/useTTS.js'
 import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
 import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
@@ -19,14 +19,21 @@ import { useAuthStore } from '@stores/authStore.js'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
-
 const MODELS = [
-  { id: 'groq/llama-3.1-70b',       name: 'Cyber-Opus',     tag: 'Opus 4.7',     color: '#8B5CF6', desc: 'Most capable for ambitious work.' },
-  { id: 'openrouter/gpt-4o-mini',   name: 'Cyber-Sonnet',   tag: 'Sonnet 4.6',   color: '#3B82F6', desc: 'Responsive everyday work.' },
-  { id: 'groq/llama-3.1-8b',        name: 'Cyber-Haiku',    tag: 'Haiku 4.5',    color: '#10B981', desc: 'Fastest, most efficient.' },
-  { id: 'council',                  name: 'Cyber-Council',  tag: 'Debate',       color: '#D97757', desc: 'Simultaneous multi-model consensus debate engine.' },
+  { id: 'groq/llama-3.1-70b',       name: 'CyberCli-Prime',     tag: 'Prime',     color: '#8B5CF6', desc: 'Most capable model for complex and ambitious intelligence work.' },
+  { id: 'openrouter/gpt-4o-mini',   name: 'CyberCli-Core',      tag: 'Core',      color: '#3B82F6', desc: 'Versatile, Capable everyday engine.' },
+  { id: 'groq/llama-3.1-8b',        name: 'CyberCli-Swift',     tag: 'Swift',     color: '#10B981', desc: 'Blazing fast, lightweight, and efficient.' },
+  { id: 'council',                  name: 'CyberCli-Council',   tag: 'Council',   color: '#D97757', desc: 'Simultaneous multi-model consensus debate engine.' },
 ]
+
+const EXTRA_MODELS = [
+  { id: 'nvidia/llama-3.1-nemotron-70b', name: 'CyberCli-Nemotron', tag: 'Nemotron', color: '#76B900', desc: 'NVIDIA research-grade coding & reasoning.' },
+  { id: 'gemini/gemini-2.5-flash',       name: 'CyberCli-Flash',    tag: 'Flash',    color: '#4285F4', desc: 'Google next-gen high speed multimodal.' },
+  { id: 'gemini/gemini-2.5-pro',         name: 'CyberCli-Pro',      tag: 'Pro',      color: '#1A73E8', desc: 'Google high intelligence reasoning.' },
+  { id: 'cerebras/llama-3.1-8b',        name: 'CyberCli-HyperSwift', tag: 'HyperSwift', color: '#EC4899', desc: 'Sub-second wafer-scale speed inference.' },
+  { id: 'huggingface/meta-llama/Llama-3.1-8B-Instruct', name: 'CyberCli-Hugging', tag: 'Hugging', color: '#FFD21E', desc: 'Meta open-weights community run model.' },
+]
+
 
 const QUICK_ACTIONS = [
   { id: 'write', label: 'Write', value: 'Write a ', icon: '✍️' },
@@ -265,7 +272,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
         {/* Model badge for assistant */}
         {isAssistant && msg.model && !isStreaming && (
           <div className="mt-1.5 text-[10px] text-foreground-muted font-medium px-2 py-0.5 rounded bg-background-secondary border border-border-subtle">
-            {MODELS.find(m => m.id === msg.model)?.name || msg.model}
+            {MODELS.find(m => m.id === msg.model)?.name || EXTRA_MODELS.find(m => m.id === msg.model)?.name || msg.model}
           </div>
         )}
 
@@ -329,6 +336,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
 
 function ModelSelector({ selectedModel, onSelect }) {
   const [open, setOpen] = useState(false)
+  const [showMore, setShowMore] = useState(false)
   const ref = useRef(null)
 
   // 3D carousel: only the non-council models rotate in the orbit
@@ -339,7 +347,10 @@ function ModelSelector({ selectedModel, onSelect }) {
 
   useEffect(() => {
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false)
+        setShowMore(false)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -382,13 +393,13 @@ function ModelSelector({ selectedModel, onSelect }) {
   }
 
   const isAdaptiveThinking = isAdaptive
-  const activeBaseModel = isAdaptive ? 'openrouter/gpt-4o-mini' : selectedModel
-  const selected = baseModels[currentIndex] || baseModels[1]
+  const allAvailableModels = [...MODELS, ...EXTRA_MODELS]
+  const selected = allAvailableModels.find(m => m.id === selectedModel) || MODELS[1]
 
   return (
     <div className="relative border-r border-white/[0.06] pr-2 mr-1" ref={ref}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => { setOpen(!open); setShowMore(false) }}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/5 transition-all"
       >
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: selected.color }} />
@@ -410,135 +421,175 @@ function ModelSelector({ selectedModel, onSelect }) {
               boxShadow: '0 28px 64px rgba(0,0,0,0.65), inset 0 0 0 1px rgba(255,255,255,0.05)',
             }}
           >
-            {/* 3D Carousel Stage */}
-            <div
-              className="relative overflow-hidden flex items-center justify-center"
-              style={{ perspective: '700px', height: 175 }}
-            >
-              {/* Ambient glow */}
-              <motion.div
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-28 h-8 rounded-full blur-2xl pointer-events-none"
-                style={{ background: selected.color }}
-                animate={{ opacity: [0.18, 0.38, 0.18] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-              />
-
-              {/* Left nav */}
-              <button
-                onClick={() => rotate(-1)}
-                className="absolute left-3 z-20 p-1.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] text-gray-400 hover:text-white transition-all"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              {/* Cards ring */}
-              <div className="relative flex items-center justify-center w-full h-full" style={{ transformStyle: 'preserve-3d' }}>
-                {baseModels.map((model, idx) => {
-                  const { xOffset, scale, opacity, rotY, zIndex, visible, isCurrent } = getCardProps(idx)
-                  if (!visible) return null
-                  return (
-                    <motion.div
-                      key={model.id}
-                      className="absolute cursor-pointer select-none"
-                      style={{ zIndex }}
-                      animate={{ x: xOffset, scale, opacity, rotateY: rotY }}
-                      transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-                      onClick={() => { if (!isCurrent) handleSelectModel(idx) }}
-                    >
-                      <div
-                        className="w-[136px] rounded-2xl p-3.5 border"
-                        style={{
-                          background: isCurrent ? `${model.color}10` : 'rgba(255,255,255,0.025)',
-                          borderColor: isCurrent ? `${model.color}45` : 'rgba(255,255,255,0.07)',
-                          boxShadow: isCurrent
-                            ? `0 0 24px ${model.color}22, inset 0 1px 0 rgba(255,255,255,0.06)`
-                            : 'none',
+            {showMore ? (
+              /* Extra Models Sub-Menu */
+              <div className="flex flex-col max-h-[350px] overflow-y-auto">
+                <div className="flex items-center gap-2.5 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+                  <button
+                    onClick={() => setShowMore(false)}
+                    className="text-xs font-semibold text-accent hover:text-accent-light"
+                  >
+                    ← Back
+                  </button>
+                  <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">More Models</span>
+                </div>
+                <div className="divide-y divide-white/[0.04] p-1.5">
+                  {EXTRA_MODELS.map((model) => {
+                    const isSelected = selectedModel === model.id
+                    return (
+                      <button
+                        key={model.id}
+                        onClick={() => {
+                          onSelect(model.id)
+                          setOpen(false)
+                          setShowMore(false)
                         }}
+                        className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition-all flex items-start gap-2.5"
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: model.color }} />
-                            <span className="text-[13px] font-bold text-white">{model.tag}</span>
+                        <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: model.color }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[13px] font-bold text-white truncate">{model.name}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-accent shrink-0" />}
                           </div>
-                          {idx === 0 ? (
-                            <span
-                              className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide"
-                              style={{ background: 'rgba(217,119,87,0.18)', color: '#D97757' }}
-                            >
-                              PRO
-                            </span>
-                          ) : isCurrent ? (
-                            <Check className="w-3.5 h-3.5" style={{ color: model.color }} />
-                          ) : null}
+                          <p className="text-[10px] text-gray-400 mt-0.5 leading-relaxed">{model.desc}</p>
                         </div>
-                        <p
-                          className="text-[10px] leading-relaxed"
-                          style={{ color: isCurrent ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.22)' }}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              /* Base Models & Carousel */
+              <>
+                {/* 3D Carousel Stage */}
+                <div
+                  className="relative overflow-hidden flex items-center justify-center"
+                  style={{ perspective: '700px', height: 175 }}
+                >
+                  {/* Ambient glow */}
+                  <motion.div
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-28 h-8 rounded-full blur-2xl pointer-events-none"
+                    style={{ background: selected.color }}
+                    animate={{ opacity: [0.18, 0.38, 0.18] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+
+                  {/* Left nav */}
+                  <button
+                    onClick={() => rotate(-1)}
+                    className="absolute left-3 z-20 p-1.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] text-gray-400 hover:text-white transition-all"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  {/* Cards ring */}
+                  <div className="relative flex items-center justify-center w-full h-full" style={{ transformStyle: 'preserve-3d' }}>
+                    {baseModels.map((model, idx) => {
+                      const { xOffset, scale, opacity, rotY, zIndex, visible, isCurrent } = getCardProps(idx)
+                      if (!visible) return null
+                      return (
+                        <motion.div
+                          key={model.id}
+                          className="absolute cursor-pointer select-none"
+                          style={{ zIndex }}
+                          animate={{ x: xOffset, scale, opacity, rotateY: rotY }}
+                          transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                          onClick={() => { if (!isCurrent) handleSelectModel(idx) }}
                         >
-                          {model.desc}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )
-                })}
-              </div>
+                          <div
+                            className="w-[136px] rounded-2xl p-3.5 border"
+                            style={{
+                              background: isCurrent ? `${model.color}10` : 'rgba(255,255,255,0.025)',
+                              borderColor: isCurrent ? `${model.color}45` : 'rgba(255,255,255,0.07)',
+                              boxShadow: isCurrent
+                                ? `0 0 24px ${model.color}22, inset 0 1px 0 rgba(255,255,255,0.06)`
+                                : 'none',
+                            }}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: model.color }} />
+                                <span className="text-[13px] font-bold text-white">{model.tag}</span>
+                              </div>
+                              {idx === 0 ? (
+                                <span
+                                  className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide"
+                                  style={{ background: 'rgba(217,119,87,0.18)', color: '#D97757' }}
+                                >
+                                  PRO
+                                </span>
+                              ) : isCurrent ? (
+                                <Check className="w-3.5 h-3.5" style={{ color: model.color }} />
+                              ) : null}
+                            </div>
+                            <p
+                              className="text-[10px] leading-relaxed"
+                              style={{ color: isCurrent ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.22)' }}
+                            >
+                              {model.desc}
+                            </p>
+                          </div>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
 
-              {/* Right nav */}
-              <button
-                onClick={() => rotate(1)}
-                className="absolute right-3 z-20 p-1.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] text-gray-400 hover:text-white transition-all"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+                  {/* Right nav */}
+                  <button
+                    onClick={() => rotate(1)}
+                    className="absolute right-3 z-20 p-1.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] text-gray-400 hover:text-white transition-all"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
 
-            {/* Dot indicators */}
-            <div className="flex items-center justify-center gap-2 py-2.5">
-              {baseModels.map((m, i) => (
+                {/* Dot indicators */}
+                <div className="flex items-center justify-center gap-2 py-2.5">
+                  {baseModels.map((m, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSelectModel(i)}
+                      className="rounded-full transition-all duration-300"
+                      style={{
+                        width: i === currentIndex ? 18 : 6,
+                        height: 6,
+                        background: i === currentIndex ? m.color : 'rgba(255,255,255,0.18)',
+                      }}
+                    />
+                  ))}
+                </div>
+
+                <div className="h-px bg-white/[0.06]" />
+
+                {/* Adaptive thinking */}
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div>
+                    <p className="text-[13px] font-semibold text-white">Adaptive thinking</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Thinks for more complex tasks</p>
+                  </div>
+                  <button
+                    onClick={handleToggleAdaptiveThinking}
+                    className={`w-9 h-5 rounded-full transition-all relative flex items-center p-0.5 ${
+                      isAdaptiveThinking ? 'bg-accent' : 'bg-white/10'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${isAdaptiveThinking ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+
+                <div className="h-px bg-white/[0.06]" />
+
+                {/* More models */}
                 <button
-                  key={i}
-                  onClick={() => handleSelectModel(i)}
-                  className="rounded-full transition-all duration-300"
-                  style={{
-                    width: i === currentIndex ? 18 : 6,
-                    height: 6,
-                    background: i === currentIndex ? m.color : 'rgba(255,255,255,0.18)',
-                  }}
-                />
-              ))}
-            </div>
-
-            <div className="h-px bg-white/[0.06]" />
-
-            {/* Adaptive thinking */}
-            <div className="flex items-center justify-between px-4 py-3">
-              <div>
-                <p className="text-[13px] font-semibold text-white">Adaptive thinking</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">Thinks for more complex tasks</p>
-              </div>
-              <button
-                onClick={handleToggleAdaptiveThinking}
-                className={`w-9 h-5 rounded-full transition-all relative flex items-center p-0.5 ${
-                  isAdaptiveThinking ? 'bg-accent' : 'bg-white/10'
-                }`}
-              >
-                <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${isAdaptiveThinking ? 'translate-x-4' : 'translate-x-0'}`} />
-              </button>
-            </div>
-
-            <div className="h-px bg-white/[0.06]" />
-
-            {/* More models */}
-            <button
-              onClick={() => {
-                alert('Additional models including Gemini 2.5 Flash and DeepSeek are available via Settings → Connectors.')
-                setOpen(false)
-              }}
-              className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.04] transition-all text-left"
-            >
-              <span className="text-[12px] font-medium text-gray-300">More models</span>
-              <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
-            </button>
+                  onClick={() => setShowMore(true)}
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.04] transition-all text-left"
+                >
+                  <span className="text-[12px] font-medium text-gray-300">More models</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
+                </button>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -2163,6 +2214,12 @@ export default function ChatPage() {
     else if (key === 'language') {
       const langMap = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', hi: 'हिं', ur: 'اُ' }
       setUserLanguage(langMap[value] || (value || 'en').toUpperCase())
+    } else if (key === 'voice') {
+      updateVoice(value.toLowerCase())
+    } else if (key === 'voice_speed') {
+      const speedMap = { slow: 0.85, normal: 1.0, fast: 1.25 }
+      const floatVal = speedMap[value.toLowerCase()] || 1.0
+      updateSpeed(floatVal)
     }
   }
 
@@ -2244,7 +2301,8 @@ export default function ChatPage() {
     isPlaying,
     isLoading: ttsLoading,
     updateProvider,
-    updateVoice
+    updateVoice,
+    updateSpeed
   } = useTTS()
 
   const activeThreadId = threadId || null

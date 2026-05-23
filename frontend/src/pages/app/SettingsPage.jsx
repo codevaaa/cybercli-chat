@@ -648,10 +648,69 @@ export default function SettingsPage() {
     fetchSettings()
   }, [])
 
+  const toBackendSettings = (frontendSettings) => {
+    const mapped = {};
+    if (frontendSettings.full_name !== undefined) mapped.display_name = frontendSettings.full_name;
+    if (frontendSettings.nickname !== undefined) mapped.nickname = frontendSettings.nickname;
+    if (frontendSettings.instructions !== undefined) mapped.custom_instructions = frontendSettings.instructions;
+    if (frontendSettings.theme !== undefined) mapped.appearance = frontendSettings.theme.toLowerCase();
+    if (frontendSettings.chat_font !== undefined) {
+      const f = frontendSettings.chat_font.toLowerCase();
+      mapped.chat_font = f === 'instrument serif' ? 'serif' : f === 'jetbrains mono' ? 'mono' : 'inter';
+    }
+    if (frontendSettings.voice !== undefined) mapped.voice = frontendSettings.voice.toLowerCase();
+    if (frontendSettings.voice_speed !== undefined) mapped.voice_speed = frontendSettings.voice_speed.toLowerCase();
+    
+    if (frontendSettings.web_search !== undefined) mapped.web_search_enabled = frontendSettings.web_search;
+    if (frontendSettings.code_execution !== undefined) mapped.code_execution_enabled = frontendSettings.code_execution;
+    if (frontendSettings.image_gen !== undefined) mapped.image_generation_enabled = frontendSettings.image_gen;
+    if (frontendSettings.memory !== undefined) mapped.memory_enabled = frontendSettings.memory;
+    
+    if (frontendSettings.notify_completions !== undefined) mapped.notifications_responses = frontendSettings.notify_completions;
+    if (frontendSettings.notify_dispatch !== undefined) mapped.notifications_dispatch = frontendSettings.notify_dispatch;
+    
+    return mapped;
+  }
+
+  const toFrontendSettings = (backendSettings) => {
+    const mapped = {};
+    if (backendSettings.display_name !== undefined) mapped.full_name = backendSettings.display_name;
+    if (backendSettings.nickname !== undefined) mapped.nickname = backendSettings.nickname;
+    if (backendSettings.custom_instructions !== undefined) mapped.instructions = backendSettings.custom_instructions;
+    if (backendSettings.appearance !== undefined) {
+      const v = backendSettings.appearance;
+      mapped.theme = v.charAt(0).toUpperCase() + v.slice(1);
+    }
+    if (backendSettings.chat_font !== undefined) {
+      const v = backendSettings.chat_font;
+      const fontMap = { inter: 'Inter', serif: 'Instrument Serif', mono: 'JetBrains Mono' };
+      mapped.chat_font = fontMap[v] || (v.charAt(0).toUpperCase() + v.slice(1));
+    }
+    if (backendSettings.voice !== undefined) {
+      const v = backendSettings.voice;
+      mapped.voice = v.charAt(0).toUpperCase() + v.slice(1);
+    }
+    if (backendSettings.voice_speed !== undefined) {
+      const v = backendSettings.voice_speed;
+      mapped.voice_speed = v.charAt(0).toUpperCase() + v.slice(1);
+    }
+    
+    if (backendSettings.web_search_enabled !== undefined) mapped.web_search = backendSettings.web_search_enabled;
+    if (backendSettings.code_execution_enabled !== undefined) mapped.code_execution = backendSettings.code_execution_enabled;
+    if (backendSettings.image_generation_enabled !== undefined) mapped.image_gen = backendSettings.image_generation_enabled;
+    if (backendSettings.memory_enabled !== undefined) mapped.memory = backendSettings.memory_enabled;
+    
+    if (backendSettings.notifications_responses !== undefined) mapped.notify_completions = backendSettings.notifications_responses;
+    if (backendSettings.notifications_dispatch !== undefined) mapped.notify_dispatch = backendSettings.notifications_dispatch;
+    
+    return mapped;
+  }
+
   const fetchSettings = async () => {
     try {
       const { data } = await api.get('/settings')
-      setSettings(prev => ({ ...prev, ...data }))
+      const frontendForm = toFrontendSettings(data)
+      setSettings(prev => ({ ...prev, ...frontendForm }))
     } catch (err) {
       // Use defaults — backend may not be live yet
       const stored = {}
@@ -669,10 +728,20 @@ export default function SettingsPage() {
     setSettings(prev => ({ ...prev, [key]: value }))
     localStorage.setItem(`setting_${key}`, value)
 
+    // Synchronize Voice & Voice Speed changes with local storage for useTTS
+    if (key === 'voice') {
+      localStorage.setItem('tts_voice', value.toLowerCase())
+    } else if (key === 'voice_speed') {
+      const speedMap = { slow: '0.85', normal: '1.0', fast: '1.25' }
+      const floatStr = speedMap[value.toLowerCase()] || '1.0'
+      localStorage.setItem('tts_speed', floatStr)
+    }
+
     setSaving(true)
     setSaved(false)
     try {
-      await api.patch('/settings', { [key]: value })
+      const patchData = toBackendSettings({ [key]: value })
+      await api.patch('/settings', patchData)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
