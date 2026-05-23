@@ -1,5 +1,4 @@
-// TTS Service using Puter.js (Free TTS via ElevenLabs - no API key needed)
-// Puter.js provides free access to ElevenLabs TTS without requiring your own API key
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
 
 const TTS_PROVIDERS = {
   puter: {
@@ -18,12 +17,11 @@ const TTS_PROVIDERS = {
   },
   gemini: {
     name: 'Google Gemini Flash TTS',
-    description: 'Google Gemini Flash Text-to-Speech - requires API key',
+    description: 'Google Gemini Flash Text-to-Speech (Server-side)',
     voices: [
-      { id: 'en-US-Neural2-A', name: 'Neural2 A', gender: 'female', accent: 'american' },
-      { id: 'en-US-Neural2-B', name: 'Neural2 B', gender: 'male', accent: 'american' },
-      { id: 'en-US-Neural2-C', name: 'Neural2 C', gender: 'female', accent: 'american' },
-      { id: 'en-GB-Neural2-A', name: 'Neural2 UK A', gender: 'female', accent: 'british' },
+      { id: 'gemini', name: 'Gemini Voice', gender: 'female', accent: 'american' },
+      { id: 'ava', name: 'Ava', gender: 'female', accent: 'american' },
+      { id: 'orion', name: 'Orion', gender: 'male', accent: 'american' },
     ],
   },
   browser: {
@@ -146,41 +144,26 @@ class TTSService {
 
   // Google Gemini TTS
   async speakWithGemini(text) {
-    if (!this.geminiApiKey) {
-      throw new Error('Gemini API key not set')
-    }
-
     try {
-      const response = await fetch(
-        `https://texttospeech.googleapis.com/v1/text:synthesize?key=${this.geminiApiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            input: { text },
-            voice: {
-              languageCode: 'en-US',
-              name: this.currentVoice || 'en-US-Neural2-A',
-            },
-            audioConfig: {
-              audioEncoding: 'MP3',
-              speakingRate: this.currentSpeed,
-              pitch: this.currentPitch,
-            },
-          }),
-        }
-      )
+      const token = localStorage.getItem('sb-access-token')
+      const response = await fetch(`${API_BASE}/tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          text,
+          voice_id: this.currentVoice || 'gemini',
+          speed: this.currentSpeed,
+        }),
+      })
 
       if (!response.ok) {
-        throw new Error('Gemini TTS API error')
+        throw new Error(`Gemini TTS API status ${response.status}`)
       }
 
-      const data = await response.json()
-      const audioBlob = new Blob(
-        [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
-        { type: 'audio/mp3' }
-      )
-
+      const audioBlob = await response.blob()
       return this.playAudio(audioBlob)
     } catch (error) {
       console.error('Gemini TTS error:', error)

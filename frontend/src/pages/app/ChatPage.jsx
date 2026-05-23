@@ -5,15 +5,16 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, Mic, Paperclip, Radio,
   Copy, Check, GitBranch, Volume2, VolumeX, Trash2, Pin, X,
   Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder,
-  Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info
+  Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import api from '../../lib/api.js'
+import api, { smartStream, createThread, getThreads, getMessages, isLoggedIn } from '../../lib/api.js'
 import { useTTS } from '../../hooks/useTTS.js'
 import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
+import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
 import { useAuthStore } from '@stores/authStore.js'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -330,6 +331,12 @@ function ModelSelector({ selectedModel, onSelect }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
+  // 3D carousel: only the non-council models rotate in the orbit
+  const baseModels = MODELS.filter(m => m.id !== 'council')
+  const isAdaptive = selectedModel === 'council'
+  const initIdx = baseModels.findIndex(m => m.id === (isAdaptive ? 'openrouter/gpt-4o-mini' : selectedModel))
+  const [currentIndex, setCurrentIndex] = useState(initIdx >= 0 ? initIdx : 1)
+
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false)
@@ -338,22 +345,45 @@ function ModelSelector({ selectedModel, onSelect }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const isAdaptiveThinking = selectedModel === 'council'
-  const activeBaseModel = isAdaptiveThinking ? 'openrouter/gpt-4o-mini' : selectedModel
-  const selected = MODELS.find(m => m.id === activeBaseModel) || MODELS[1]
+  useEffect(() => {
+    const idx = baseModels.findIndex(m => m.id === (isAdaptive ? 'openrouter/gpt-4o-mini' : selectedModel))
+    if (idx >= 0) setCurrentIndex(idx)
+  }, [selectedModel])
 
-  const handleSelectModel = (modelId) => {
-    onSelect(modelId)
-    setOpen(false)
+  const total = baseModels.length
+
+  const handleSelectModel = (idx) => {
+    setCurrentIndex(idx)
+    onSelect(baseModels[idx].id)
+  }
+
+  const rotate = (dir) => {
+    const next = (currentIndex + dir + total) % total
+    handleSelectModel(next)
   }
 
   const handleToggleAdaptiveThinking = () => {
-    if (isAdaptiveThinking) {
-      onSelect('openrouter/gpt-4o-mini')
-    } else {
-      onSelect('council')
+    isAdaptive ? onSelect(baseModels[currentIndex].id) : onSelect('council')
+  }
+
+  const getCardProps = (idx) => {
+    let rel = ((idx - currentIndex) % total + total) % total
+    if (rel > total / 2) rel = rel - total
+    const isCurrent = rel === 0
+    return {
+      xOffset: rel * 130,
+      scale: isCurrent ? 1 : 0.70,
+      opacity: isCurrent ? 1 : 0.45,
+      rotY: rel * -22,
+      zIndex: isCurrent ? 10 : 5,
+      visible: Math.abs(rel) <= 1,
+      isCurrent,
     }
   }
+
+  const isAdaptiveThinking = isAdaptive
+  const activeBaseModel = isAdaptive ? 'openrouter/gpt-4o-mini' : selectedModel
+  const selected = baseModels[currentIndex] || baseModels[1]
 
   return (
     <div className="relative border-r border-white/[0.06] pr-2 mr-1" ref={ref}>
@@ -362,70 +392,129 @@ function ModelSelector({ selectedModel, onSelect }) {
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/5 transition-all"
       >
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: selected.color }} />
-        <span>{selected.tag}</span>
-        <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
+        <span>{isAdaptive ? 'Council' : selected.tag}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.96 }}
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.96 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute bottom-full mb-2 right-0 w-64 rounded-2xl border border-white/[0.08] shadow-2xl p-2 z-50 flex flex-col gap-0.5"
-            style={{ 
-              background: 'rgba(26, 26, 26, 0.98)', 
-              backdropFilter: 'blur(12px)',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute bottom-full mb-3 right-0 z-50 rounded-2xl border border-white/[0.08] w-[330px] overflow-hidden"
+            style={{
+              background: 'rgba(13, 13, 18, 0.98)',
+              backdropFilter: 'blur(24px)',
+              boxShadow: '0 28px 64px rgba(0,0,0,0.65), inset 0 0 0 1px rgba(255,255,255,0.05)',
             }}
           >
-            {/* Opus 4.7 */}
-            <button
-              onClick={() => handleSelectModel('groq/llama-3.1-70b')}
-              className="w-full flex items-start justify-between p-2 rounded-xl hover:bg-white/5 transition-all text-left group"
+            {/* 3D Carousel Stage */}
+            <div
+              className="relative overflow-hidden flex items-center justify-center"
+              style={{ perspective: '700px', height: 175 }}
             >
-              <div>
-                <div className="text-[13px] font-semibold text-white group-hover:text-accent transition-colors">Opus 4.7</div>
-                <div className="text-[11px] text-gray-400 mt-0.5">Most capable for ambitious work</div>
-              </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-accent/20 bg-accent/10 text-accent uppercase tracking-wider">Upgrade</span>
-                {activeBaseModel === 'groq/llama-3.1-70b' && <Check className="w-3.5 h-3.5 text-accent" />}
-              </div>
-            </button>
+              {/* Ambient glow */}
+              <motion.div
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-28 h-8 rounded-full blur-2xl pointer-events-none"
+                style={{ background: selected.color }}
+                animate={{ opacity: [0.18, 0.38, 0.18] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+              />
 
-            {/* Sonnet 4.6 */}
-            <button
-              onClick={() => handleSelectModel('openrouter/gpt-4o-mini')}
-              className="w-full flex items-start justify-between p-2 rounded-xl hover:bg-white/5 transition-all text-left group"
-            >
-              <div>
-                <div className="text-[13px] font-semibold text-white group-hover:text-accent transition-colors">Sonnet 4.6</div>
-                <div className="text-[11px] text-gray-400 mt-0.5">Responsive everyday work</div>
-              </div>
-              {activeBaseModel === 'openrouter/gpt-4o-mini' && <Check className="w-3.5 h-3.5 text-accent flex-shrink-0" />}
-            </button>
+              {/* Left nav */}
+              <button
+                onClick={() => rotate(-1)}
+                className="absolute left-3 z-20 p-1.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] text-gray-400 hover:text-white transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
 
-            {/* Haiku 4.5 */}
-            <button
-              onClick={() => handleSelectModel('groq/llama-3.1-8b')}
-              className="w-full flex items-start justify-between p-2 rounded-xl hover:bg-white/5 transition-all text-left group"
-            >
-              <div>
-                <div className="text-[13px] font-semibold text-white group-hover:text-accent transition-colors">Haiku 4.5</div>
-                <div className="text-[11px] text-gray-400 mt-0.5">Fastest, most efficient</div>
+              {/* Cards ring */}
+              <div className="relative flex items-center justify-center w-full h-full" style={{ transformStyle: 'preserve-3d' }}>
+                {baseModels.map((model, idx) => {
+                  const { xOffset, scale, opacity, rotY, zIndex, visible, isCurrent } = getCardProps(idx)
+                  if (!visible) return null
+                  return (
+                    <motion.div
+                      key={model.id}
+                      className="absolute cursor-pointer select-none"
+                      style={{ zIndex }}
+                      animate={{ x: xOffset, scale, opacity, rotateY: rotY }}
+                      transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                      onClick={() => { if (!isCurrent) handleSelectModel(idx) }}
+                    >
+                      <div
+                        className="w-[136px] rounded-2xl p-3.5 border"
+                        style={{
+                          background: isCurrent ? `${model.color}10` : 'rgba(255,255,255,0.025)',
+                          borderColor: isCurrent ? `${model.color}45` : 'rgba(255,255,255,0.07)',
+                          boxShadow: isCurrent
+                            ? `0 0 24px ${model.color}22, inset 0 1px 0 rgba(255,255,255,0.06)`
+                            : 'none',
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: model.color }} />
+                            <span className="text-[13px] font-bold text-white">{model.tag}</span>
+                          </div>
+                          {idx === 0 ? (
+                            <span
+                              className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide"
+                              style={{ background: 'rgba(217,119,87,0.18)', color: '#D97757' }}
+                            >
+                              PRO
+                            </span>
+                          ) : isCurrent ? (
+                            <Check className="w-3.5 h-3.5" style={{ color: model.color }} />
+                          ) : null}
+                        </div>
+                        <p
+                          className="text-[10px] leading-relaxed"
+                          style={{ color: isCurrent ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.22)' }}
+                        >
+                          {model.desc}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )
+                })}
               </div>
-              {activeBaseModel === 'groq/llama-3.1-8b' && <Check className="w-3.5 h-3.5 text-accent flex-shrink-0" />}
-            </button>
 
-            <div className="h-[1px] bg-white/[0.06] my-1" />
+              {/* Right nav */}
+              <button
+                onClick={() => rotate(1)}
+                className="absolute right-3 z-20 p-1.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] text-gray-400 hover:text-white transition-all"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Dot indicators */}
+            <div className="flex items-center justify-center gap-2 py-2.5">
+              {baseModels.map((m, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSelectModel(i)}
+                  className="rounded-full transition-all duration-300"
+                  style={{
+                    width: i === currentIndex ? 18 : 6,
+                    height: 6,
+                    background: i === currentIndex ? m.color : 'rgba(255,255,255,0.18)',
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="h-px bg-white/[0.06]" />
 
             {/* Adaptive thinking */}
-            <div className="w-full flex items-center justify-between p-2 rounded-xl">
+            <div className="flex items-center justify-between px-4 py-3">
               <div>
-                <div className="text-[13px] font-semibold text-white">Adaptive thinking</div>
-                <div className="text-[11px] text-gray-400 mt-0.5">Thinks for more complex tasks</div>
+                <p className="text-[13px] font-semibold text-white">Adaptive thinking</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Thinks for more complex tasks</p>
               </div>
               <button
                 onClick={handleToggleAdaptiveThinking}
@@ -433,18 +522,21 @@ function ModelSelector({ selectedModel, onSelect }) {
                   isAdaptiveThinking ? 'bg-accent' : 'bg-white/10'
                 }`}
               >
-                <div className={`w-4 h-4 bg-white rounded-full transition-all shadow ${isAdaptiveThinking ? 'translate-x-4' : 'translate-x-0'}`} />
+                <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${isAdaptiveThinking ? 'translate-x-4' : 'translate-x-0'}`} />
               </button>
             </div>
 
-            <div className="h-[1px] bg-white/[0.06] my-1" />
+            <div className="h-px bg-white/[0.06]" />
 
             {/* More models */}
             <button
-              onClick={() => alert('Additional models including Gemini 2.5 Flash and DeepSeek are available via Settings Connectors.')}
-              className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-all text-left text-gray-300 hover:text-white"
+              onClick={() => {
+                alert('Additional models including Gemini 2.5 Flash and DeepSeek are available via Settings → Connectors.')
+                setOpen(false)
+              }}
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.04] transition-all text-left"
             >
-              <span className="text-[12px] font-medium">More models</span>
+              <span className="text-[12px] font-medium text-gray-300">More models</span>
               <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
             </button>
           </motion.div>
@@ -465,7 +557,11 @@ function InputArea({
   onModelChange,
   onMicClick,
   onWaveformClick,
-  inlineSpeechListening
+  inlineSpeechListening,
+  deepResearchEnabled = false,
+  onToggleDeepResearch,
+  incognitoMode = false,
+  onToggleIncognito,
 }) {
   const textareaRef = useRef(null)
 
@@ -487,7 +583,7 @@ function InputArea({
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-4">
       {/* Input container card */}
       <div
-        className="rounded-2xl border border-white/[0.06] transition-all overflow-hidden flex flex-col p-4 gap-3 bg-[#1e1e1e]"
+        className="rounded-2xl border border-white/[0.06] transition-all relative flex flex-col p-4 gap-3 bg-[#1e1e1e]"
         style={{
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.24)',
         }}
@@ -521,13 +617,40 @@ function InputArea({
             <Plus className="w-4 h-4" />
           </button>
 
-          {/* Right: Model dropdown, Mic, Waveform, Send */}
-          <div className="flex items-center gap-2">
+          {/* Right: Model dropdown, Research, Ghost, Mic, Waveform, Send */}
+          <div className="flex items-center gap-1.5">
             <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} />
+
+            {/* Deep Research toggle */}
+            <button
+              onClick={onToggleDeepResearch}
+              title="Deep Research — multi-angle web synthesis"
+              className={`flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                deepResearchEnabled
+                  ? 'bg-blue-500/15 text-blue-400 border-blue-500/25'
+                  : 'text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              {deepResearchEnabled && <span className="hidden sm:inline text-[11px]">Deep</span>}
+            </button>
+
+            {/* Incognito / Ghost mode */}
+            <button
+              onClick={onToggleIncognito}
+              title={incognitoMode ? 'Incognito ON — click to disable' : 'Enable Incognito (no history)'}
+              className={`p-1.5 rounded-xl transition-all border ${
+                incognitoMode
+                  ? 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'
+                  : 'text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent'
+              }`}
+            >
+              <Ghost className="w-4 h-4" />
+            </button>
 
             <button
               onClick={onMicClick}
-              className={`p-2 rounded-xl transition-all relative border border-transparent ${
+              className={`p-1.5 rounded-xl transition-all relative border border-transparent ${
                 inlineSpeechListening
                   ? 'text-accent bg-accent/10 border-accent/20'
                   : 'text-gray-500 hover:text-white hover:bg-white/5'
@@ -547,16 +670,30 @@ function InputArea({
 
             <button
               onClick={onWaveformClick}
-              className="p-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all"
+              className="p-1.5 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-[2px] h-7 w-8"
               title="Voice-to-Voice Mode"
             >
-              <Radio className="w-4 h-4" />
+              {[0, 1, 2, 3, 4].map((bar) => (
+                <motion.div
+                  key={bar}
+                  className="w-[2px] rounded-full bg-current"
+                  animate={{
+                    height: ['6px', '16px', '4px', '12px', '6px'],
+                  }}
+                  transition={{
+                    duration: 1.0,
+                    repeat: Infinity,
+                    delay: bar * 0.12,
+                    ease: 'easeInOut',
+                  }}
+                />
+              ))}
             </button>
 
             <button
               onClick={onSend}
               disabled={!input.trim() || loading}
-              className={`p-2 rounded-xl transition-all ${
+              className={`p-1.5 rounded-xl transition-all ${
                 input.trim() && !loading
                   ? 'bg-accent text-white hover:bg-accent-light'
                   : 'bg-white/5 text-gray-605 cursor-not-allowed'
@@ -2011,12 +2148,22 @@ export default function ChatPage() {
   const [codeExecutionEnabled, setCodeExecutionEnabled] = useState(false)
   const [imageGenerationEnabled, setImageGenerationEnabled] = useState(false)
   const [memoryEnabled, setMemoryEnabled] = useState(false)
+  const [deepResearchEnabled, setDeepResearchEnabled] = useState(false)
+
+  // UI panels
+  const [showArtifacts, setShowArtifacts] = useState(false)
 
   const handleParentSettingChange = (key, value) => {
     if (key === 'web_search_enabled') setWebSearchEnabled(value)
     else if (key === 'code_execution_enabled') setCodeExecutionEnabled(value)
     else if (key === 'image_generation_enabled') setImageGenerationEnabled(value)
     else if (key === 'memory_enabled') setMemoryEnabled(value)
+    else if (key === 'appearance') setCurrentTheme(value)
+    else if (key === 'chat_font') setCurrentFont(value)
+    else if (key === 'language') {
+      const langMap = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', hi: 'हिं', ur: 'اُ' }
+      setUserLanguage(langMap[value] || (value || 'en').toUpperCase())
+    }
   }
 
   // Voice overlay state
@@ -2106,14 +2253,54 @@ export default function ChatPage() {
     voiceChatOpenRef.current = voiceChatOpen
   }, [voiceChatOpen])
 
-  // ── Data loading ──
+  // ── Data loading & Dynamic Settings application ──
+
+  const [currentTheme, setCurrentTheme] = useState('system')
+  const [currentFont, setCurrentFont] = useState('inter')
 
   useEffect(() => {
-    loadThreads()
+    const root = document.documentElement
+    
+    const handleThemeChange = () => {
+      if (currentTheme === 'dark' || (currentTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        root.classList.add('dark')
+      } else {
+        root.classList.remove('dark')
+      }
+    }
+    
+    handleThemeChange()
+    
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    if (currentTheme === 'system') {
+      media.addEventListener('change', handleThemeChange)
+    }
+    
+    return () => {
+      media.removeEventListener('change', handleThemeChange)
+    }
+  }, [currentTheme])
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.remove('font-sans', 'font-serif', 'font-mono')
+    if (currentFont === 'serif') {
+      root.classList.add('font-serif')
+    } else if (currentFont === 'mono') {
+      root.classList.add('font-mono')
+    } else {
+      root.classList.add('font-sans')
+    }
+  }, [currentFont])
+
+  useEffect(() => {
+    if (isLoggedIn()) {
+      loadThreads()
+    }
   }, [])
 
   useEffect(() => {
-    if (threadId) {
+    if (threadId && isLoggedIn()) {
       if (creatingThreadRef.current === threadId) {
         creatingThreadRef.current = null
       } else {
@@ -2125,14 +2312,19 @@ export default function ChatPage() {
   }, [threadId])
 
   useEffect(() => {
-    // Fetch default capabilities setting
     const fetchCapabilities = async () => {
+      if (!isLoggedIn()) return
       try {
         const { data } = await api.get('/settings')
         setWebSearchEnabled(data.web_search_enabled || false)
         setCodeExecutionEnabled(data.code_execution_enabled || false)
         setImageGenerationEnabled(data.image_generation_enabled || false)
         setMemoryEnabled(data.memories && data.memories.length > 0)
+        setCurrentTheme(data.appearance || 'system')
+        setCurrentFont(data.chat_font || 'inter')
+        // Sync language pill in profile bar
+        const langMap = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', hi: 'हिं', ur: 'اُ' }
+        setUserLanguage(langMap[data.language] || (data.language || 'en').toUpperCase())
       } catch (err) {
         console.error('Failed to load initial settings:', err)
       }
@@ -2314,6 +2506,67 @@ export default function ChatPage() {
     setLoading(true)
     setError(null)
 
+    const token = localStorage.getItem('sb-access-token')
+
+    // Guest mode: no token → use completions endpoint directly (same as incognito)
+    if (!token) {
+      const userMsg = { role: 'user', content: userText }
+      const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg]
+      setMessages(prev => [...prev, userMsg])
+      const assistantMsg = { role: 'assistant', content: '', model: selectedModel }
+      setMessages(prev => [...prev, assistantMsg])
+      const assistantIdx = messages.length + 1
+      setStreamingIndex(assistantIdx)
+      let fullReply = ''
+      try {
+        const res = await fetch(`${API_BASE}/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: history, model: selectedModel, webSearchEnabled, deepResearchEnabled })
+        })
+        if (!res.ok) throw new Error('Stream failed')
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let streamBuffer = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          streamBuffer += decoder.decode(value, { stream: true })
+          const lines = streamBuffer.split('\n')
+          streamBuffer = lines.pop() || ''
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed.startsWith('data: ')) continue
+            const raw = trimmed.slice(6)
+            if (raw === '[DONE]') break
+            try {
+              const parsed = JSON.parse(raw)
+              if (parsed.type === 'token') {
+                fullReply += parsed.content
+                setMessages(prev => {
+                  const next = [...prev]
+                  if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
+                  return next
+                })
+              }
+            } catch {}
+          }
+        }
+        if (voiceChatOpenRef.current) speak(fullReply)
+      } catch (err) {
+        setMessages(prev => {
+          const next = [...prev]
+          if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${err.message}` }
+          return next
+        })
+        setError('Chat failed. Please try again.')
+      } finally {
+        setStreamingIndex(null)
+        setLoading(false)
+      }
+      return
+    }
+
     let currentId = activeThreadId
     if (!currentId) {
       try {
@@ -2328,8 +2581,6 @@ export default function ChatPage() {
         return
       }
     }
-
-    const token = localStorage.getItem('sb-access-token')
     const userMsg = { role: 'user', content: userText }
     const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg]
 
@@ -2353,6 +2604,7 @@ export default function ChatPage() {
           messages: history,
           model: selectedModel,
           webSearchEnabled,
+          deepResearchEnabled,
           codeExecutionEnabled,
           imageGenerationEnabled,
           memoryEnabled
@@ -2421,6 +2673,7 @@ export default function ChatPage() {
   const userName = localStorage.getItem('user_name') || 'User'
   const userEmail = localStorage.getItem('user_email') || ''
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
+  const [userLanguage, setUserLanguage] = useState('EN')
 
   const [showProfilePopover, setShowProfilePopover] = useState(false)
   const { signOut } = useAuthStore()
@@ -2455,10 +2708,18 @@ export default function ChatPage() {
             {/* Brand + collapse */}
             <div className="flex items-center justify-between px-4 py-4 flex-shrink-0">
               <Link to="/" className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(217,119,87,0.15)' }}>
+                <motion.div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(217,119,87,0.15)' }}
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                >
                   <StarIcon size={18} color="#D97757" />
+                </motion.div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-sm leading-tight" style={{ color: '#FAF9F7' }}>CyberCli</span>
+                  <span className="text-[9px] text-gray-600 leading-none tracking-wide">by CyberMindCLI</span>
                 </div>
-                <span className="font-semibold text-sm" style={{ color: '#FAF9F7' }}>CyberCli</span>
               </Link>
               <button
                 onClick={() => setSidebarOpen(false)}
@@ -2640,7 +2901,7 @@ export default function ChatPage() {
                 )}
               </AnimatePresence>
 
-              <div className="flex items-center gap-2.5 px-2 py-2">
+              <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/[0.04] transition-all cursor-pointer">
                 {/* Avatar */}
                 <div
                   className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -2652,14 +2913,23 @@ export default function ChatPage() {
                   <div className="text-[13px] font-medium text-gray-200 truncate">{userName}</div>
                   <div className="text-[10px] text-gray-600 truncate">{userEmail || 'Free Plan'}</div>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(217,119,87,0.2)', color: '#D97757' }}>FREE</span>
-                  <button
-                    onClick={() => setSettingsOpen(true)}
-                    className="p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors"
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <span
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-md border border-white/[0.08] text-gray-400 uppercase tracking-wide"
+                    style={{ background: 'rgba(255,255,255,0.04)' }}
                   >
-                    <Settings className="w-3.5 h-3.5" />
-                  </button>
+                    {userLanguage}
+                  </span>
+                  {!localStorage.getItem('sb-access-token') ? (
+                    <span
+                      className="text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5"
+                      style={{ background: 'rgba(251,191,36,0.15)', color: '#FCD34D' }}
+                    >
+                      <Ghost className="w-2.5 h-2.5" />GUEST
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(217,119,87,0.2)', color: '#D97757' }}>FREE</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -2764,6 +3034,10 @@ export default function ChatPage() {
                     memoryEnabled={memoryEnabled}
                     onToggleMemory={() => setMemoryEnabled(v => !v)}
                     inlineSpeechListening={inlineSpeechListening}
+                    deepResearchEnabled={deepResearchEnabled}
+                    onToggleDeepResearch={() => setDeepResearchEnabled(v => !v)}
+                    incognitoMode={incognitoMode}
+                    onToggleIncognito={() => setIncognitoMode(v => !v)}
                   />
                 </div>
               </div>
@@ -2816,6 +3090,10 @@ export default function ChatPage() {
                     memoryEnabled={memoryEnabled}
                     onToggleMemory={() => setMemoryEnabled(v => !v)}
                     inlineSpeechListening={inlineSpeechListening}
+                    deepResearchEnabled={deepResearchEnabled}
+                    onToggleDeepResearch={() => setDeepResearchEnabled(v => !v)}
+                    incognitoMode={incognitoMode}
+                    onToggleIncognito={() => setIncognitoMode(v => !v)}
                   />
                 </div>
               </div>

@@ -1,11 +1,27 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware/auth.js'
+import { requireAuth, optionalAuth } from '../middleware/auth.js'
 import { llmGateway } from '../services/llm/gateway.js'
 
 const router = Router()
 
-router.post('/', requireAuth, async (req, res) => {
-  const { messages, model, temperature = 0.7, stream = true } = req.body
+router.post('/', optionalAuth, async (req, res) => {
+  const { 
+    messages, 
+    model, 
+    temperature = 0.7, 
+    stream = true,
+    webSearchEnabled = false,
+    codeExecutionEnabled = false,
+    imageGenerationEnabled = false,
+    memoryEnabled = false,
+    deepResearchEnabled = false
+  } = req.body
+
+  if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({ error: 'messages array is required' })
+  }
+
+  const lastUserMsg = messages[messages.length - 1]
 
   if (stream) {
     res.setHeader('Content-Type', 'text/event-stream')
@@ -13,13 +29,85 @@ router.post('/', requireAuth, async (req, res) => {
     res.setHeader('Connection', 'keep-alive')
 
     try {
-      const generator = await llmGateway.complete({ messages, model, temperature })
-      for await (const chunk of generator) {
-        res.write(`data: ${JSON.stringify(chunk)}\n\n`)
+      let extraSystemContent = ""
+
+      // If user is authenticated, we can optionally fetch user settings
+      if (req.user) {
+        try {
+          const UserSettings = (await import('../models/UserSettings.js')).default
+          const settings = await UserSettings.findOne({ user_id: req.user.id })
+          if (settings) {
+            if (settings.custom_instructions) {
+              extraSystemContent += `\n\n[USER CUSTOM INSTRUCTIONS]\nYou must follow these instructions:\n${settings.custom_instructions}`
+            }
+            if (memoryEnabled && settings.memories && settings.memories.length > 0) {
+              extraSystemContent += `\n\n[USER PROFILE & MEMORIES]\nYou must remember these facts about the user:\n` + settings.memories.map(m => `- ${m}`).join('\n')
+            }
+          }
+        } catch (settingsErr) {
+          console.error('Error fetching settings for guest completions:', settingsErr)
+        }
       }
-      res.write('data: [DONE]\n\n')
+
+      // Handle Deep Research
+      if (deepResearchEnabled) {
+        try {
+          res.write(`data: ${JSON.stringify({ type: 'info', content: '🔍 Running deep research across multiple sources…' })}\n\n`)
+          const { performDeepResearch, formatDeepResearchContext } = await import('../utils/deepResearch.js')
+          const research = await performDeepResearch(lastUserMsg.content)
+          if (research.results.length > 0) {
+            res.write(`data: ${JSON.stringify({ type: 'info', content: `📚 Analyzed ${research.totalSources} sources. Synthesizing response…` })}\n\n`)
+            extraSystemContent += '\n\n' + formatDeepResearchContext(research)
+          }
+        } catch (researchErr) {
+          console.error('Deep research error:', researchErr)
+        }
+      }
+
+      // Handle Web Search
+      if (webSearchEnabled && !deepResearchEnabled) {
+        try {
+          const { performWebSearch } = await import('../utils/webSearch.js')
+          const results = await performWebSearch(lastUserMsg.content)
+          if (results && results.length > 0) {
+            extraSystemContent += `\n\n[WEB SEARCH RESULTS for "${lastUserMsg.content}"]\n` + 
+              results.map((r, i) => `${i+1}. Title: ${r.title}\n   Link: ${r.link}\n   Snippet: ${r.snippet}`).join('\n\n') +
+              `\n\nUse the search results above to provide up-to-date and accurate information. You must cite the links directly (e.g. [Title](url)) when using them.`
+          }
+        } catch (searchErr) {
+          console.error('Web search error during guest completion:', searchErr)
+        }
+      }
+
+      // Handle Image Generation
+      if (imageGenerationEnabled) {
+        extraSystemContent += `\n\n[IMAGE GENERATION CAPABILITY]\nYou have the real power to generate images. If the user asks you to generate, draw, or paint an image, you MUST formulate a detailed, high-quality, English image prompt and output it inside a markdown image tag using Pollinations AI, exactly like this:\n![description](https://image.pollinations.ai/p/{detailed_url_encoded_prompt}?width=512&height=512&nologo=true)\nDo not use placeholders. Generate a real descriptive prompt.`
+      }
+
+      // Handle Code Execution
+      if (codeExecutionEnabled) {
+        extraSystemContent += `\n\n[CODE EXECUTION CAPABILITY]\nJavaScript code execution is enabled. The user can execute JavaScript code blocks directly. If they ask you to run a calculation, verify some code, or write JavaScript, write standard JavaScript code blocks and remind them they can click the "Run" button on the top-right of your code blocks to execute the code in a sandboxed environment.`
+      }
+
+      const history = messages.map(m => ({ role: m.role, content: m.content }))
+      if (extraSystemContent) {
+        history.push({ role: 'system', content: extraSystemContent, _skip_inject: true })
+      }
+
+      const generator = await llmGateway.complete({ messages: history, model: model || 'auto', temperature })
+      for await (const chunk of generator) {
+        if (chunk.type === 'token') {
+          res.write(`data: ${JSON.stringify({ type: 'token', content: chunk.content })}\n\n`)
+        } else if (chunk.type === 'error') {
+          res.write(`data: ${JSON.stringify({ type: 'error', content: chunk.content })}\n\n`)
+        } else if (chunk.type === 'info') {
+          res.write(`data: ${JSON.stringify({ type: 'info', content: chunk.content })}\n\n`)
+        } else if (chunk.type === 'done') {
+          res.write('data: [DONE]\n\n')
+        }
+      }
     } catch (error) {
-      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`)
+      res.write(`data: ${JSON.stringify({ type: 'error', content: error.message })}\n\n`)
     }
     res.end()
   } else {
@@ -33,7 +121,7 @@ router.post('/', requireAuth, async (req, res) => {
 })
 
 // Real Council Mode: parallel debates + synthesis stream
-router.post('/council', requireAuth, async (req, res) => {
+router.post('/council', optionalAuth, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
@@ -124,7 +212,7 @@ Please analyze their responses, identify areas of consensus, resolve contradicti
 })
 
 // Compare Mode: return non-stream responses from 3 models with real latencies
-router.post('/compare', requireAuth, async (req, res) => {
+router.post('/compare', optionalAuth, async (req, res) => {
   const { messages } = req.body
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'messages array is required' })

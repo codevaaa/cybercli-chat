@@ -169,7 +169,8 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     webSearchEnabled = false,
     codeExecutionEnabled = false,
     imageGenerationEnabled = false,
-    memoryEnabled = false
+    memoryEnabled = false,
+    deepResearchEnabled = false
   } = req.body
   
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -214,8 +215,23 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
       console.error('Error fetching settings for chat system prompt:', settingsErr)
     }
 
-    // 3. Handle Web Search
-    if (webSearchEnabled) {
+    // 3. Handle Deep Research (multi-angle web search like Perplexity)
+    if (deepResearchEnabled) {
+      try {
+        res.write(`data: ${JSON.stringify({ type: 'info', content: '🔍 Running deep research across multiple sources…' })}\n\n`)
+        const { performDeepResearch, formatDeepResearchContext } = await import('../utils/deepResearch.js')
+        const research = await performDeepResearch(lastUserMsg.content)
+        if (research.results.length > 0) {
+          res.write(`data: ${JSON.stringify({ type: 'info', content: `📚 Analyzed ${research.totalSources} sources. Synthesizing response…` })}\n\n`)
+          extraSystemContent += '\n\n' + formatDeepResearchContext(research)
+        }
+      } catch (researchErr) {
+        console.error('Deep research error:', researchErr)
+      }
+    }
+
+    // 4. Handle Web Search (quick mode)
+    if (webSearchEnabled && !deepResearchEnabled) {
       try {
         const { performWebSearch } = await import('../utils/webSearch.js')
         const results = await performWebSearch(lastUserMsg.content)
@@ -229,25 +245,23 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
       }
     }
 
-    // 4. Handle Image Generation Instructions
+    // 5. Handle Image Generation Instructions
     if (imageGenerationEnabled) {
-      extraSystemContent += `\n\n[IMAGE GENERATION CAPABILITY]\nYou have the real power to generate images. If the user asks you to generate, draw, or paint an image, you MUST formulate a detailed, high-quality, English image prompt and output it inside a markdown image tag using Pollinations AI, exactly like this:
-![description](https://image.pollinations.ai/p/{detailed_url_encoded_prompt}?width=512&height=512&nologo=true)
-Do not use placeholders. Generate a real descriptive prompt.`
+      extraSystemContent += `\n\n[IMAGE GENERATION CAPABILITY]\nYou have the real power to generate images. If the user asks you to generate, draw, or paint an image, you MUST formulate a detailed, high-quality, English image prompt and output it inside a markdown image tag using Pollinations AI, exactly like this:\n![description](https://image.pollinations.ai/p/{detailed_url_encoded_prompt}?width=512&height=512&nologo=true)\nDo not use placeholders. Generate a real descriptive prompt.`
     }
 
-    // 5. Handle Code Execution Instructions
+    // 6. Handle Code Execution Instructions
     if (codeExecutionEnabled) {
       extraSystemContent += `\n\n[CODE EXECUTION CAPABILITY]\nJavaScript code execution is enabled. The user can execute JavaScript code blocks directly. If they ask you to run a calculation, verify some code, or write JavaScript, write standard JavaScript code blocks and remind them they can click the "Run" button on the top-right of your code blocks to execute the code in a sandboxed environment.`
     }
 
-    // 6. Enrich messages history
+    // 7. Enrich messages history
     const history = messages.map(m => ({ role: m.role, content: m.content }))
     if (extraSystemContent) {
       history.push({ role: 'system', content: extraSystemContent, _skip_inject: true })
     }
 
-    // 7. Call LLM Gateway
+    // 8. Call LLM Gateway
     let generator
     if (model === 'council') {
       const councilModels = [
