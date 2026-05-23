@@ -10,14 +10,14 @@ export async function generateGeminiTTS(text, voiceId = 'ava', speed = 1.0) {
 
   try {
     const response = await genAI.models.generateContent({
-      model: 'gemini-3.1-flash-tts-preview',
+      model: 'gemini-2.0-flash',
       contents: text,
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
             prebuiltVoiceConfig: {
-              voiceName: voiceId === 'orion' ? 'Podcast_Voice_B' : 'Podcast_Voice_A',
+              voiceName: voiceId === 'orion' ? 'Charon' : 'Aoede',
             },
           },
         },

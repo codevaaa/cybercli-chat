@@ -105,11 +105,11 @@ class TTSService {
       
       // Map shortnames to real ElevenLabs voice IDs
       const PUTER_VOICES_MAP = {
-        ava: '21m00Tcm4TlvDq8ikWAM', // Rachel
-        nova: 'AZnzlk1XvdvUeBnXmlld', // Domi
-        luna: 'EXAVITQu4vr4xnSDxMaL', // Bella
-        orion: 'pNInz6obpgq5paNs9W47', // Adam
-        echo: 'TxGEqn7nUaNZTR5JgIec', // Josh
+        ava: 'H6QPv2pQZDcGqLwDTIJQ',
+        nova: 'FZkK3TvQ0pjyDmT8fzIW',
+        luna: 'CwhRBWXzGAHq8TQ4Fs17',
+        orion: 'wbOlq3nIga8HKqcDhASI',
+        echo: 'TxGEqn7nUaNZTR5JgIec', // Keep echo as is or if user didn't request a change
       }
       
       const realVoiceId = PUTER_VOICES_MAP[voice.toLowerCase()] || voice

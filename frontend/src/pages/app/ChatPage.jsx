@@ -1298,10 +1298,11 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
 
 // ─── Hero State ───────────────────────────────────────────────────────────────
 
-function HeroState() {
+function HeroState({ userName }) {
+  const firstName = userName ? userName.split(' ')[0] : 'User'
   return (
     <motion.div
-      className="flex flex-col items-center justify-center flex-1 text-center px-4"
+      className="flex flex-col items-center justify-center text-center px-4"
       initial="hidden"
       animate="visible"
       variants={{
@@ -1323,7 +1324,7 @@ function HeroState() {
         className="font-serif text-4xl md:text-5xl mb-3"
         style={{ color: '#FAF3E8', letterSpacing: '-0.02em', lineHeight: 1.15 }}
       >
-        What shall we think through?
+        Back at it, {firstName.toLowerCase()}
       </motion.h1>
 
       <motion.p
@@ -2442,12 +2443,16 @@ export default function ChatPage() {
   const handleDeleteThread = async (id, e) => {
     e?.stopPropagation()
     if (!confirm('Delete this conversation?')) return
+    const previousThreads = [...threads]
+    setThreads(prev => prev.filter(t => t._id !== id))
+    if (activeThreadId === id) navigate('/chat')
     try {
       await api.delete(`/chat/${id}`)
-      setThreads(prev => prev.filter(t => t._id !== id))
-      if (activeThreadId === id) navigate('/chat')
+      loadThreads()
     } catch (err) {
       console.error('Failed to delete thread:', err)
+      setThreads(previousThreads)
+      setError('Failed to delete conversation from server.')
     }
   }
 
@@ -3068,12 +3073,9 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
           {activeNav === 'chats' ? (
             messages.length === 0 && !loading ? (
-              <div className="h-full flex flex-col justify-between">
-                <div className="flex-1 flex items-center justify-center">
-                  <HeroState />
-                </div>
-                {/* Input in center */}
-                <div className="px-4 pb-6">
+              <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full px-4 pb-20">
+                <HeroState userName={userName} />
+                <div className="w-full mt-8">
                   <InputArea
                     input={input}
                     setInput={setInput}

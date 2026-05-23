@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Mic, MicOff, VolumeX, ChevronLeft, ChevronRight, Send } from 'lucide-react'
+import { X, Mic, MicOff, VolumeX, ChevronLeft, ChevronRight, Send, Check } from 'lucide-react'
 
 function StarIcon({ size = 16, color = '#D97757' }) {
   return (
@@ -219,6 +219,7 @@ export default function VoiceChatModal({
   updateProvider,
   updateVoice
 }) {
+  const [step, setStep] = useState('select')
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [voiceIndex, setVoiceIndex] = useState(0)
@@ -234,6 +235,31 @@ export default function VoiceChatModal({
 
   const selectedVoice = VOICE_MODELS[voiceIndex] || VOICE_MODELS[0]
   const effectivePlaying = isPlaying || localPlaying
+
+  const effectivePlayingRef = useRef(effectivePlaying)
+  useEffect(() => {
+    effectivePlayingRef.current = effectivePlaying
+  }, [effectivePlaying])
+
+  const handleInterrupt = useCallback(() => {
+    browserStop()
+    if (externalStop) externalStop()
+    setLocalPlaying(false)
+    clearTimeout(silenceTimerRef.current)
+    clearInterval(countdownRef.current)
+    setCountdown(null)
+  }, [externalStop])
+
+  // Reset to selection step when modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setStep('select')
+      setIsListening(false)
+      setTranscript('')
+      wasListeningRef.current = false
+      finalTranscriptRef.current = ''
+    }
+  }, [isOpen])
 
   // Sync voice model selection to parent
   useEffect(() => {
@@ -278,7 +304,7 @@ export default function VoiceChatModal({
       clearTimeout(silenceTimerRef.current)
       clearInterval(countdownRef.current)
       setCountdown(null)
-    } else if (wasListeningRef.current && recognitionRef.current) {
+    } else if (wasListeningRef.current && recognitionRef.current && step === 'active') {
       setTimeout(() => {
         finalTranscriptRef.current = ''
         setTranscript('')
@@ -286,13 +312,13 @@ export default function VoiceChatModal({
         setIsListening(true)
       }, 350)
     }
-  }, [effectivePlaying])
+  }, [effectivePlaying, step])
 
   const startSilenceTimer = useCallback(() => {
     clearTimeout(silenceTimerRef.current)
     clearInterval(countdownRef.current)
-    setCountdown(1.5)
-    let remaining = 1.5
+    setCountdown(1.0)
+    let remaining = 1.0
     countdownRef.current = setInterval(() => {
       remaining -= 0.1
       setCountdown(Math.max(0, remaining))
@@ -309,7 +335,7 @@ export default function VoiceChatModal({
         wasListeningRef.current = false
         try { recognitionRef.current?.stop() } catch {}
       }
-    }, 1500)
+    }, 1000)
   }, [onSendMessage])
 
   const initRecognition = useCallback(() => {
@@ -320,6 +346,11 @@ export default function VoiceChatModal({
     rec.interimResults = true
     rec.lang = 'en-US'
     rec.onresult = (event) => {
+      // Auto interrupt if AI is speaking
+      if (effectivePlayingRef.current) {
+        handleInterrupt()
+      }
+
       let interim = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const t = event.results[i][0].transcript
@@ -342,14 +373,14 @@ export default function VoiceChatModal({
       setCountdown(null)
     }
     rec.onend = () => {
-      if (wasListeningRef.current && !effectivePlaying) {
+      if (wasListeningRef.current && !effectivePlayingRef.current && step === 'active') {
         try { rec.start() } catch {}
       } else {
         setIsListening(false)
       }
     }
     return rec
-  }, [startSilenceTimer, effectivePlaying])
+  }, [startSilenceTimer, step, handleInterrupt])
 
   useEffect(() => {
     recognitionRef.current = initRecognition()
@@ -359,7 +390,7 @@ export default function VoiceChatModal({
       clearInterval(countdownRef.current)
       browserStop()
     }
-  }, [])
+  }, [initRecognition])
 
   const toggleListening = () => {
     if (!recognitionRef.current) {
@@ -390,15 +421,6 @@ export default function VoiceChatModal({
     }
   }
 
-  const handleInterrupt = () => {
-    browserStop()
-    if (externalStop) externalStop()
-    setLocalPlaying(false)
-    clearTimeout(silenceTimerRef.current)
-    clearInterval(countdownRef.current)
-    setCountdown(null)
-  }
-
   const handleSend = () => {
     if (transcript.trim()) {
       clearTimeout(silenceTimerRef.current)
@@ -413,11 +435,28 @@ export default function VoiceChatModal({
     }
   }
 
-  const prevVoice = () => setVoiceIndex(i => (i - 1 + VOICE_MODELS.length) % VOICE_MODELS.length)
-  const nextVoice = () => setVoiceIndex(i => (i + 1) % VOICE_MODELS.length)
+  const handleContinue = () => {
+    setStep('active')
+    finalTranscriptRef.current = ''
+    setTranscript('')
+    wasListeningRef.current = true
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.start()
+        setIsListening(true)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  }
 
-  const prevModel = VOICE_MODELS[(voiceIndex - 1 + VOICE_MODELS.length) % VOICE_MODELS.length]
-  const nextModel = VOICE_MODELS[(voiceIndex + 1) % VOICE_MODELS.length]
+  const handleBackToSelect = () => {
+    handleInterrupt()
+    setIsListening(false)
+    wasListeningRef.current = false
+    try { recognitionRef.current?.stop() } catch {}
+    setStep('select')
+  }
 
   const statusLabel = {
     idle: 'Tap mic to speak',
@@ -435,7 +474,7 @@ export default function VoiceChatModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 flex flex-col items-center"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-between"
           style={{ background: '#0a0a0f' }}
         >
           {/* Subtle ambient bg glow */}
@@ -454,7 +493,7 @@ export default function VoiceChatModal({
                 <StarIcon size={18} color="#D97757" />
               </div>
               <div>
-                <span className="text-sm font-semibold text-white/80">CyberCli</span>
+                <span className="text-sm font-semibold text-white/80 font-sans">CyberCli</span>
                 <div className="text-[10px] text-white/30 font-medium tracking-wider">by CyberMindCLI</div>
               </div>
             </div>
@@ -469,175 +508,194 @@ export default function VoiceChatModal({
           </div>
 
           {/* Main content — centered */}
-          <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md px-6 gap-8 relative z-10">
-
-            {/* Animated orb */}
-            <VoiceOrb
-              status={status}
-              color={selectedVoice.color}
-              orbColors={selectedVoice.orbColors}
-            />
-
-            {/* Voice name + description */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={voiceIndex}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="text-center"
-              >
-                <h2 className="text-2xl font-bold text-white">{selectedVoice.label}</h2>
-                <p className="text-sm text-white/40 mt-1">{selectedVoice.desc}</p>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Horizontal voice carousel */}
-            <div className="flex items-center gap-4 w-full justify-center">
-              <button
-                onClick={prevVoice}
-                className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-
-              <div className="flex items-center gap-6">
-                <span className="text-sm text-white/25 font-medium w-16 text-right">{prevModel.label}</span>
-                <div className="flex flex-col items-center">
-                  <span
-                    className="text-base font-bold"
-                    style={{ color: selectedVoice.color }}
-                  >
-                    {selectedVoice.label}
-                  </span>
-                  <div className="flex gap-1 mt-1.5">
-                    {VOICE_MODELS.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setVoiceIndex(i)}
-                        className="rounded-full transition-all"
-                        style={{
-                          width: i === voiceIndex ? 14 : 5,
-                          height: 5,
-                          background: i === voiceIndex ? selectedVoice.color : 'rgba(255,255,255,0.15)',
-                        }}
-                      />
-                    ))}
-                  </div>
+          <div className="flex-1 flex flex-col items-center justify-center w-full max-w-lg px-6 gap-8 relative z-10">
+            {step === 'select' ? (
+              <div className="w-full flex flex-col items-center gap-6">
+                {/* Header */}
+                <div className="text-center max-w-sm">
+                  <h2 className="text-2xl font-bold text-white tracking-tight font-sans">Select Voice Agent</h2>
+                  <p className="text-sm text-white/40 mt-1">Choose a persona for your voice-to-voice conversation session.</p>
                 </div>
-                <span className="text-sm text-white/25 font-medium w-16 text-left">{nextModel.label}</span>
-              </div>
 
-              <button
-                onClick={nextVoice}
-                className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+                {/* Grid of 6 agents */}
+                <div className="grid grid-cols-2 gap-3.5 w-full mt-2">
+                  {VOICE_MODELS.map((model, idx) => {
+                    const isSelected = idx === voiceIndex
+                    return (
+                      <motion.button
+                        key={model.id}
+                        onClick={() => setVoiceIndex(idx)}
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="p-4 rounded-xl text-left border relative overflow-hidden transition-all flex flex-col justify-between h-28"
+                        style={{
+                          backgroundColor: isSelected ? `${model.color}0A` : 'rgba(255,255,255,0.02)',
+                          borderColor: isSelected ? model.color : 'rgba(255,255,255,0.06)',
+                          boxShadow: isSelected ? `0 0 16px ${model.color}15` : 'none',
+                        }}
+                      >
+                        {/* Selected Indicator Checkmark */}
+                        {isSelected && (
+                          <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: model.color }}>
+                            <Check className="w-3 h-3 text-white stroke-[3px]" />
+                          </div>
+                        )}
+                        
+                        {/* Color dot indicator */}
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: model.color, boxShadow: `0 0 8px ${model.color}` }} />
+                          <span className="text-sm font-bold text-white">{model.label}</span>
+                        </div>
 
-            {/* Waveform */}
-            <WaveformBars
-              isActive={status === 'listening' || status === 'speaking'}
-              color={status === 'speaking' ? '#D97757' : selectedVoice.color}
-              intensity={status === 'speaking' ? 0.6 : 1.0}
-            />
+                        <div className="mt-auto">
+                          <p className="text-xs text-white/50 leading-snug">{model.desc}</p>
+                        </div>
+                      </motion.button>
+                    )
+                  })}
+                </div>
 
-            {/* Status text + transcript */}
-            <div className="text-center min-h-[48px]">
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={status + String(countdown !== null)}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.15 }}
-                  className="text-sm font-medium"
+                {/* Continue Button */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleContinue}
+                  className="w-full py-3.5 rounded-xl font-bold text-white transition-all shadow-lg hover:shadow-xl mt-4 flex items-center justify-center gap-2 relative z-20"
                   style={{
-                    color: status === 'speaking' ? '#D97757'
-                      : status === 'listening' ? selectedVoice.color
-                      : 'rgba(255,255,255,0.5)'
+                    background: selectedVoice.color,
+                    boxShadow: `0 4px 20px ${selectedVoice.color}35`,
                   }}
                 >
-                  {statusLabel}
-                </motion.p>
-              </AnimatePresence>
-              {transcript && (
-                <p className="mt-1.5 text-xs text-white/30 max-w-xs leading-relaxed">
-                  &ldquo;{transcript}&rdquo;
-                </p>
-              )}
-              {countdown !== null && (
-                <div className="mt-2 mx-auto w-32 h-0.5 bg-white/10 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full"
-                    style={{ background: selectedVoice.color }}
-                    initial={{ width: '100%' }}
-                    animate={{ width: `${(countdown / 1.5) * 100}%` }}
-                    transition={{ duration: 0.1, ease: 'linear' }}
-                  />
+                  <span>Continue with {selectedVoice.label}</span>
+                </motion.button>
+              </div>
+            ) : (
+              <div className="w-full flex flex-col items-center gap-8">
+                {/* Animated orb */}
+                <VoiceOrb
+                  status={status}
+                  color={selectedVoice.color}
+                  orbColors={selectedVoice.orbColors}
+                />
+
+                {/* Voice name + description */}
+                <div className="text-center">
+                  <h2 className="text-2xl font-bold text-white">{selectedVoice.label}</h2>
+                  <p className="text-sm text-white/40 mt-1">{selectedVoice.desc}</p>
                 </div>
-              )}
-            </div>
 
-            {/* Mic button */}
-            <div className="flex flex-col items-center gap-4">
-              <motion.button
-                onClick={status === 'speaking' ? handleInterrupt : toggleListening}
-                className="relative w-20 h-20 rounded-full flex items-center justify-center"
-                style={{
-                  background: isListening
-                    ? `radial-gradient(circle, ${selectedVoice.color}30, ${selectedVoice.color}10)`
-                    : 'rgba(255,255,255,0.05)',
-                  border: `2px solid ${isListening ? selectedVoice.color : 'rgba(255,255,255,0.10)'}`,
-                  boxShadow: isListening ? `0 0 40px ${selectedVoice.color}35` : 'none',
-                }}
-                whileTap={{ scale: 0.9 }}
-                whileHover={{ scale: 1.07 }}
-              >
-                {isListening && (
-                  <motion.div
-                    className="absolute inset-0 rounded-full"
-                    style={{ border: `2px solid ${selectedVoice.color}` }}
-                    animate={{ scale: [1, 1.45], opacity: [0.5, 0] }}
-                    transition={{ duration: 1.3, repeat: Infinity, ease: 'easeOut' }}
-                  />
-                )}
-                {isListening
-                  ? <MicOff className="w-8 h-8 text-white" />
-                  : status === 'speaking'
-                    ? <VolumeX className="w-8 h-8 text-white" />
-                    : <Mic className="w-8 h-8 text-white/60" />
-                }
-              </motion.button>
+                {/* Back Button / Switch Agent */}
+                <button
+                  onClick={handleBackToSelect}
+                  className="px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/60 hover:text-white transition-all flex items-center gap-1.5"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Change Agent Persona
+                </button>
 
-              {/* Manual send */}
-              <AnimatePresence>
-                {transcript && !isListening && (
+                {/* Waveform */}
+                <WaveformBars
+                  isActive={status === 'listening' || status === 'speaking'}
+                  color={status === 'speaking' ? '#D97757' : selectedVoice.color}
+                  intensity={status === 'speaking' ? 0.6 : 1.0}
+                />
+
+                {/* Status text + transcript */}
+                <div className="text-center min-h-[48px] w-full">
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={status + String(countdown !== null)}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.15 }}
+                      className="text-sm font-medium"
+                      style={{
+                        color: status === 'speaking' ? '#D97757'
+                          : status === 'listening' ? selectedVoice.color
+                          : 'rgba(255,255,255,0.5)'
+                      }}
+                    >
+                      {statusLabel}
+                    </motion.p>
+                  </AnimatePresence>
+                  {transcript && (
+                    <p className="mt-1.5 text-xs text-white/40 max-w-xs mx-auto leading-relaxed italic">
+                      &ldquo;{transcript}&rdquo;
+                    </p>
+                  )}
+                  {countdown !== null && (
+                    <div className="mt-2 mx-auto w-32 h-0.5 bg-white/10 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ background: selectedVoice.color }}
+                        initial={{ width: '100%' }}
+                        animate={{ width: `${(countdown / 1.0) * 100}%` }}
+                        transition={{ duration: 0.1, ease: 'linear' }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Mic button */}
+                <div className="flex flex-col items-center gap-4">
                   <motion.button
-                    initial={{ opacity: 0, scale: 0.85, y: 8 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.85, y: 8 }}
-                    transition={{ duration: 0.2 }}
-                    onClick={handleSend}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white"
+                    onClick={status === 'speaking' ? handleInterrupt : toggleListening}
+                    className="relative w-20 h-20 rounded-full flex items-center justify-center"
                     style={{
-                      background: selectedVoice.color,
-                      boxShadow: `0 4px 24px ${selectedVoice.color}40`,
+                      background: isListening
+                        ? `radial-gradient(circle, ${selectedVoice.color}30, ${selectedVoice.color}10)`
+                        : 'rgba(255,255,255,0.05)',
+                      border: `2px solid ${isListening ? selectedVoice.color : 'rgba(255,255,255,0.10)'}`,
+                      boxShadow: isListening ? `0 0 40px ${selectedVoice.color}35` : 'none',
                     }}
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.07 }}
                   >
-                    <Send className="w-4 h-4" />
-                    Send Message
+                    {isListening && (
+                      <motion.div
+                        className="absolute inset-0 rounded-full"
+                        style={{ border: `2px solid ${selectedVoice.color}` }}
+                        animate={{ scale: [1, 1.45], opacity: [0.5, 0] }}
+                        transition={{ duration: 1.3, repeat: Infinity, ease: 'easeOut' }}
+                      />
+                    )}
+                    {isListening
+                      ? <MicOff className="w-8 h-8 text-white" />
+                      : status === 'speaking'
+                        ? <VolumeX className="w-8 h-8 text-white" />
+                        : <Mic className="w-8 h-8 text-white/60" />
+                    }
                   </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
+
+                  {/* Manual send */}
+                  <AnimatePresence>
+                    {transcript && !isListening && (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.85, y: 8 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.85, y: 8 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={handleSend}
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white"
+                        style={{
+                          background: selectedVoice.color,
+                          boxShadow: `0 4px 24px ${selectedVoice.color}40`,
+                        }}
+                      >
+                        <Send className="w-4 h-4" />
+                        Send Message
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
-          <div className="pb-8 relative z-10">
-            <p className="text-[10px] text-white/20 text-center uppercase tracking-widest font-semibold">
+          <div className="pb-8 relative z-10 flex-shrink-0">
+            <p className="text-[10px] text-white/20 text-center uppercase tracking-widest font-semibold font-sans">
               CyberCli Secure Voice Channel
             </p>
           </div>
