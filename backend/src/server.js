@@ -23,6 +23,7 @@ import webhookRoutes from './routes/webhook.routes.js'
 import apiKeysRoutes from './routes/apiKeys.routes.js'
 import daemonRoutes from './routes/daemon.routes.js'
 import executeRoutes from './routes/execute.routes.js'
+import imagesRoutes from './routes/images.routes.js'
 import http from 'http'
 import { WebSocketServer } from 'ws'
 import ApiKey from './models/ApiKey.js'
@@ -133,6 +134,7 @@ app.use('/api/v1/webhook', webhookRoutes)
 app.use('/api/v1/api-keys', apiKeysRoutes)
 app.use('/api/v1/daemon', daemonRoutes)
 app.use('/api/v1/execute', executeRoutes)
+app.use('/api/v1/images', imagesRoutes)
 
 // 404 handler
 app.use((req, res) => {

@@ -180,6 +180,116 @@ function CodeBlock({ language, value, codeExecutionEnabled }) {
   )
 }
 
+// ─── Image Generator Widget ──────────────────────────────────────────────────
+
+function ImageGeneratorWidget({ src, alt }) {
+  const [loading, setLoading] = useState(true)
+  const [imageUrl, setImageUrl] = useState(null)
+  const [error, setError] = useState(null)
+  const [retryCount, setRetryCount] = useState(0)
+
+  useEffect(() => {
+    let active = true
+    const generateImage = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        let prompt = alt || 'A beautiful generated image'
+        if (src.includes('/p/')) {
+          const parts = src.split('/p/')
+          if (parts[1]) {
+            const promptPart = parts[1].split('?')[0]
+            prompt = decodeURIComponent(promptPart)
+          }
+        }
+
+        const token = localStorage.getItem('sb-access-token')
+        const response = await fetch(`${API_BASE}/images/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ prompt })
+        })
+
+        if (!response.ok) {
+          const errData = await response.json()
+          throw new Error(errData.error || `Error: ${response.status}`)
+        }
+
+        const data = await response.json()
+        if (active) {
+          setImageUrl(data.url)
+          setLoading(false)
+        }
+      } catch (err) {
+        if (active) {
+          setError(err.message)
+          setLoading(false)
+        }
+      }
+    }
+
+    generateImage()
+    return () => {
+      active = false
+    }
+  }, [src, alt, retryCount])
+
+  if (loading) {
+    return (
+      <div className="my-3 rounded-xl border border-border-subtle bg-background-secondary p-6 flex flex-col items-center justify-center gap-4 max-w-lg">
+        <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+        <div className="text-xs text-foreground-muted animate-pulse">Generating your premium image...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="my-3 rounded-xl border border-red-500/20 bg-red-500/5 p-5 flex flex-col items-start gap-3 max-w-lg">
+        <div className="flex items-center gap-2 text-red-400 font-semibold text-sm">
+          <AlertCircle className="w-4 h-4" />
+          <span>Image Generation Limit Exceeded</span>
+        </div>
+        <p className="text-xs text-foreground-muted leading-relaxed">
+          {error.includes('limit') 
+            ? "You have reached your daily limit of 5 free image generations. Please upgrade to Pro for unlimited image generation."
+            : error}
+        </p>
+        <div className="flex gap-2.5 mt-1">
+          <Link to="/pricing" className="px-3 py-1.5 rounded-lg bg-[#D97757] hover:bg-[#D97757]/80 text-[10px] uppercase tracking-wider font-bold text-white transition-all">
+            Upgrade to Pro
+          </Link>
+          <button 
+            onClick={() => setRetryCount(c => c + 1)}
+            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] uppercase tracking-wider font-bold text-white/80 transition-all flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="my-3 rounded-xl overflow-hidden border border-border-subtle bg-background-secondary relative group max-w-lg animate-fade-in">
+      <img src={imageUrl} alt={alt} className="w-full h-auto object-cover max-h-[512px]" />
+      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all flex gap-2">
+        <button
+          onClick={() => window.open(imageUrl, '_blank')}
+          className="p-2 rounded-lg bg-black/60 hover:bg-black/80 border border-white/10 text-white transition-all"
+          title="Open in new tab"
+        >
+          <Download className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Message Bubble ──────────────────────────────────────────────────────────
 
 function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled }) {
@@ -222,6 +332,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
           <div className="text-sm leading-relaxed text-foreground-primary prose-custom w-full">
             <ReactMarkdown
               components={{
+                img: ({ src, alt }) => <ImageGeneratorWidget src={src} alt={alt} />,
                 code({ node, inline, className, children, ...props }) {
                   const match = /language-(\w+)/.exec(className || '')
                   if (!inline && match) {
@@ -2303,7 +2414,8 @@ export default function ChatPage() {
     isLoading: ttsLoading,
     updateProvider,
     updateVoice,
-    updateSpeed
+    updateSpeed,
+    currentVoice
   } = useTTS()
 
   const activeThreadId = threadId || null
@@ -2496,15 +2608,52 @@ export default function ChatPage() {
     if (!rawText.trim() || loading) return
     const userText = rawText.trim()
 
+    // Determine active model and system prompt override if voice chat is open
+    let activeModel = selectedModel
+    const extraSystemMessages = []
+    
+    if (voiceChatOpenRef.current) {
+      const voice = currentVoice ? currentVoice.toLowerCase() : 'ava'
+      const VOICE_AGENTS_BRAINS = {
+        ava: {
+          model: 'openrouter/gpt-4o-mini',
+          prompt: `You are Ava, a warm, natural, and friendly conversational AI developer assistant. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
+        },
+        nova: {
+          model: 'groq/llama-3.1-70b',
+          prompt: `You are Nova, a clear, professional, and expert technical advisor. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
+        },
+        luna: {
+          model: 'gemini/gemini-2.5-flash',
+          prompt: `You are Luna, a soft, soothing, and empathetic creative partner. Keep your responses warm, comforting, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in a gentle, warm tone.`
+        },
+        orion: {
+          model: 'groq/llama-3.1-70b',
+          prompt: `You are Orion, a deep, authoritative, and strategic AI planner. Provide brief but strong guidance (maximum 1-2 sentences). Absolutely DO NOT use markdown syntax, bullet points, or complex formatting. Speak with confidence and authority.`
+        },
+        echo: {
+          model: 'groq/llama-3.1-8b',
+          prompt: `You are Echo, an energetic, dynamic, and fast-paced brainstorming buddy. Keep responses highly energetic, extremely short and punchy (often just a few words, maximum 1 sentence). Absolutely DO NOT use markdown, formatting, or lists. Speak dynamically and quickly.`
+        },
+        gemini: {
+          model: 'gemini/gemini-2.5-flash',
+          prompt: `You are Gemini, an AI-native voice companion. Keep your responses natural, conversational, fluid, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown formatting, bullet points, or code blocks. Speak naturally and dynamically.`
+        }
+      }
+      const brain = VOICE_AGENTS_BRAINS[voice] || VOICE_AGENTS_BRAINS.ava
+      activeModel = brain.model
+      extraSystemMessages.push({ role: 'system', content: brain.prompt, _skip_inject: true })
+    }
+
     // Incognito path — bypass DB entirely
     if (incognitoMode) {
       if (typeof textOverride !== 'string') setInput('')
       setLoading(true)
       setError(null)
       const userMsg = { role: 'user', content: userText }
-      const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg]
+      const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg, ...extraSystemMessages]
       setMessages(prev => [...prev, userMsg])
-      const assistantMsg = { role: 'assistant', content: '', model: selectedModel }
+      const assistantMsg = { role: 'assistant', content: '', model: activeModel }
       setMessages(prev => [...prev, assistantMsg])
       const assistantIdx = messages.length + 1
       setStreamingIndex(assistantIdx)
@@ -2517,7 +2666,7 @@ export default function ChatPage() {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {})
           },
-          body: JSON.stringify({ messages: history, model: selectedModel })
+          body: JSON.stringify({ messages: history, model: activeModel })
         })
         if (!res.ok) throw new Error('Stream failed')
         const reader = res.body.getReader()
@@ -2574,9 +2723,9 @@ export default function ChatPage() {
     // Guest mode: no token → use completions endpoint directly (same as incognito)
     if (!token) {
       const userMsg = { role: 'user', content: userText }
-      const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg]
+      const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg, ...extraSystemMessages]
       setMessages(prev => [...prev, userMsg])
-      const assistantMsg = { role: 'assistant', content: '', model: selectedModel }
+      const assistantMsg = { role: 'assistant', content: '', model: activeModel }
       setMessages(prev => [...prev, assistantMsg])
       const assistantIdx = messages.length + 1
       setStreamingIndex(assistantIdx)
@@ -2585,7 +2734,7 @@ export default function ChatPage() {
         const res = await fetch(`${API_BASE}/completions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: history, model: selectedModel, webSearchEnabled, deepResearchEnabled })
+          body: JSON.stringify({ messages: history, model: activeModel, webSearchEnabled, deepResearchEnabled })
         })
         if (!res.ok) throw new Error('Stream failed')
         const reader = res.body.getReader()
@@ -2633,7 +2782,7 @@ export default function ChatPage() {
     let currentId = activeThreadId
     if (!currentId) {
       try {
-        const { data } = await api.post('/chat', { title: userText.substring(0, 50), model_id: selectedModel })
+        const { data } = await api.post('/chat', { title: userText.substring(0, 50), model_id: activeModel })
         setThreads(prev => [data, ...prev])
         currentId = data._id
         creatingThreadRef.current = currentId
@@ -2645,12 +2794,12 @@ export default function ChatPage() {
       }
     }
     const userMsg = { role: 'user', content: userText }
-    const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg]
+    const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg, ...extraSystemMessages]
 
     setMessages(prev => [...prev, userMsg])
 
     // Setup streaming output bubble
-    const assistantMsg = { role: 'assistant', content: '', model: selectedModel }
+    const assistantMsg = { role: 'assistant', content: '', model: activeModel }
     setMessages(prev => [...prev, assistantMsg])
     const assistantIdx = messages.length + 1
     setStreamingIndex(assistantIdx)
@@ -2665,7 +2814,7 @@ export default function ChatPage() {
         },
         body: JSON.stringify({
           messages: history,
-          model: selectedModel,
+          model: activeModel,
           webSearchEnabled,
           deepResearchEnabled,
           codeExecutionEnabled,
@@ -2730,7 +2879,7 @@ export default function ChatPage() {
       setStreamingIndex(null)
       setLoading(false)
     }
-  }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode])
+  }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice])
 
   // ── User info (from localStorage) ──
   const userName = localStorage.getItem('user_name') || 'User'
