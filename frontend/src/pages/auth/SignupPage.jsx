@@ -115,7 +115,7 @@ export default function SignupPage() {
                   onChange={(e) => setForm({ ...form, fullName: e.target.value })}
                   onFocus={() => setFocusedField('fullName')}
                   onBlur={() => setFocusedField(null)}
-                  placeholder="Your full name"
+                  placeholder="Chandan Pandey"
                   required
                   className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-background-tertiary border border-border-subtle text-foreground-primary text-sm focus:outline-none transition-all placeholder:text-foreground-muted"
                   style={{

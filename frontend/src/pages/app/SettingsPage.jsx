@@ -20,7 +20,7 @@ const TABS = [
   { id: 'api-keys',     label: 'API Keys',      icon: Code2       },
 ]
 
-const VOICES = ['Ava', 'Nova', 'Luna', 'Orion', 'Echo']
+const VOICES = ['Sol', 'Cove', 'Breeze', 'Orion', 'Echo']
 const FONTS  = ['Inter', 'Instrument Serif', 'JetBrains Mono']
 
 // ─── Utility components ───────────────────────────────────────────────────────
@@ -595,7 +595,7 @@ const DEFAULT_SETTINGS = {
   instructions: '',
   theme: 'dark',
   chat_font: 'Inter',
-  voice: 'Ava',
+  voice: 'Sol',
   voice_speed: 'Normal',
   notify_completions: true,
   notify_dispatch: false,

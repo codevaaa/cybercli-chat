@@ -301,6 +301,8 @@ Rules:
         'gemini/gemini-2.5-flash': ''
       }
 
+      res.write(`data: ${JSON.stringify({ type: 'info', content: '💬 Initiating parallel model debate... (GPT-4o Mini, Llama 3.1, Gemini Flash)' })}\n\n`)
+
       await Promise.all(councilModels.map(async ({ id }) => {
         try {
           const gen = await llmGateway.complete({ messages: history, model: id, temperature: 0.7 })
@@ -313,6 +315,8 @@ Rules:
           console.error(`Council model ${id} failed:`, err)
         }
       }))
+
+      res.write(`data: ${JSON.stringify({ type: 'info', content: '🤔 Synthesizing council response...' })}\n\n`)
 
       const debateTranscript = `
 Here is the debate transcript from three expert models on the user's query:

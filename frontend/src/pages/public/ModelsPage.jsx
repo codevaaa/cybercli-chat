@@ -146,6 +146,74 @@ const MODEL_CARDS = [
     categories: ['free', 'reasoning'],
     status: 'live',
   },
+  {
+    id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-8B',
+    name: 'Cyber-Hermes8B',
+    provider: 'Nous Research Hermes 3',
+    providerKey: 'huggingface',
+    providerColor: '#9F7AEA',
+    providerBg: 'rgba(159,122,234,0.08)',
+    providerBorder: 'rgba(159,122,234,0.2)',
+    description: 'A highly capable uncensored model fine-tuned for general-purpose conversation, tool usage, and roleplay.',
+    capabilities: ['Uncensored', 'Fast', 'Agentic'],
+    capColors: { Uncensored: '#EF4444', Fast: '#F59E0B', Agentic: '#8B5CF6' },
+    contextWindow: '128K tokens',
+    latency: '~0.8s',
+    tier: 'Free',
+    categories: ['free', 'fast'],
+    status: 'live',
+  },
+  {
+    id: 'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b',
+    name: 'Cyber-DolphinLlama',
+    provider: 'Dolphin Cognitive Cluster',
+    providerKey: 'huggingface',
+    providerColor: '#38B2AC',
+    providerBg: 'rgba(56,178,172,0.08)',
+    providerBorder: 'rgba(56,178,172,0.2)',
+    description: 'Fully uncensored Llama 3 70b variant. Highly capable in complex logical deductions, writing, and strategic brainstorming.',
+    capabilities: ['Uncensored', 'Reasoning', 'RLHF'],
+    capColors: { Uncensored: '#EF4444', Reasoning: '#8B5CF6', RLHF: '#D69E2E' },
+    contextWindow: '8K tokens',
+    latency: '~1.5s',
+    tier: 'Free',
+    categories: ['free', 'reasoning'],
+    status: 'live',
+  },
+  {
+    id: 'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b',
+    name: 'Cyber-DolphinQwen',
+    provider: 'Dolphin Cognitive Cluster',
+    providerKey: 'huggingface',
+    providerColor: '#4FD1C5',
+    providerBg: 'rgba(79,209,197,0.08)',
+    providerBorder: 'rgba(79,209,197,0.2)',
+    description: 'Uncensored Qwen 2.5 72b flagship. Combines supreme multilingual logic with dolphin\'s freedom of thought.',
+    capabilities: ['Uncensored', 'Coding', 'Reasoning'],
+    capColors: { Uncensored: '#EF4444', Coding: '#ED8936', Reasoning: '#8B5CF6' },
+    contextWindow: '32K tokens',
+    latency: '~1.6s',
+    tier: 'Free',
+    categories: ['free', 'reasoning', 'creative'],
+    status: 'live',
+  },
+  {
+    id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',
+    name: 'Cyber-QwenCoder',
+    provider: 'Qwen Coder Core',
+    providerKey: 'huggingface',
+    providerColor: '#ED8936',
+    providerBg: 'rgba(237,137,54,0.08)',
+    providerBorder: 'rgba(237,137,54,0.2)',
+    description: 'The best open-source coding engine. Fine-tuned on massive multilingual codebases for writing and debugging.',
+    capabilities: ['Coding', 'Fast', 'Logical'],
+    capColors: { Coding: '#ED8936', Fast: '#F59E0B', Logical: '#3B82F6' },
+    contextWindow: '32K tokens',
+    latency: '~1.1s',
+    tier: 'Free',
+    categories: ['free', 'fast'],
+    status: 'live',
+  },
 ]
 
 const PROVIDER_ICONS = {
@@ -444,7 +512,7 @@ export default function ModelsPage() {
           </ScrollReveal>
 
           {/* Model cards grid */}
-          <motion.div layout className="grid sm:grid-cols-1 lg:grid-cols-2 gap-5">
+          <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence mode="popLayout">
               {filteredModels.map((model, i) => (
                 <ModelCard key={model.id} model={model} index={i} />

@@ -5,7 +5,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, Mic, Paperclip, Radio,
   Copy, Check, GitBranch, Volume2, VolumeX, Trash2, Pin, X,
   Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder,
-  Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen
+  Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen, Menu
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
@@ -36,6 +36,12 @@ const EXTRA_MODELS = [
   { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',name: 'CyberCli-DeepSeek',     tag: 'DeepSeek-R1', color: '#00A3FF', desc: 'DeepSeek R1 distilled — chain-of-thought reasoning.' },
   { id: 'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1',     name: 'CyberCli-Mixtral',      tag: 'Mixtral',     color: '#FF4D88', desc: 'Mistral mixture-of-experts model.' },
   { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-70B',      name: 'CyberCli-Hermes',       tag: 'Hermes-70B',  color: '#9F7AEA', desc: 'Nous Research Hermes 3 — tool use & function calling.' },
+  { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-8B',       name: 'CyberCli-Hermes-8B',    tag: 'Hermes-8B',   color: '#805AD5', desc: 'Nous Research Hermes 3 8B — fast uncensored model.' },
+  { id: 'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b', name: 'CyberCli-DolphinLlama', tag: 'DolphinLlama', color: '#38B2AC', desc: 'Dolphin 2.9.4 Llama 3 70B — fully uncensored debate.' },
+  { id: 'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b', name: 'CyberCli-DolphinQwen',  tag: 'DolphinQwen',  color: '#4FD1C5', desc: 'Dolphin 2.9.2 Qwen 2.5 72B — fully uncensored flagship.' },
+  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',          name: 'CyberCli-QwenCoder',    tag: 'QwenCoder',   color: '#ED8936', desc: 'Qwen 2.5 Coder 32B — supreme open-source coder.' },
+  { id: 'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', name: 'CyberCli-DolphinNemo', tag: 'DolphinNemo', color: '#319795', desc: 'Dolphin Mistral Nemo 12B — uncensored edge agent.' },
+  { id: 'huggingface/defog/sqlcoder-70b-v1.5',                  name: 'CyberCli-SqlCoder',     tag: 'SqlCoder',    color: '#D69E2E', desc: 'Defog SQLCoder 70B — text-to-SQL specialized reasoning.' },
 ]
 
 
@@ -54,6 +60,20 @@ const NAV_ITEMS = [
   { id: 'artifacts', label: 'Artifacts', icon: Layers        },
   { id: 'code',      label: 'Code',      icon: Code2,  badge: 'Pro' },
   { id: 'customize', label: 'Customize', icon: Sliders       },
+]
+
+const LANGUAGES = [
+  { name: 'English (United States)', code: 'EN' },
+  { name: 'Français (France)', code: 'FR' },
+  { name: 'Deutsch (Deutschland)', code: 'DE' },
+  { name: 'हिन्दी (भारत)', code: 'HI' },
+  { name: 'Indonesia (Indonesia)', code: 'ID' },
+  { name: 'Italiano (Italia)', code: 'IT' },
+  { name: '日本語 (日本)', code: 'JA' },
+  { name: '한국어 (대한민국)', code: 'KO' },
+  { name: 'Português (Brasil)', code: 'PT' },
+  { name: 'Español (Latinoamérica)', code: 'ES' },
+  { name: 'Español (España)', code: 'ES' }
 ]
 
 // ─── Star SVG Icon ───────────────────────────────────────────────────────────
@@ -321,7 +341,7 @@ function ImageGeneratorWidget({ src, alt }) {
 
 // ─── Daemon Action Widget ────────────────────────────────────────────────────
 
-function DaemonActionWidget({ action, payload, daemonConnected }) {
+function DaemonActionWidget({ action, payload, daemonConnected, onExecuteSuccess }) {
   const [status, setStatus] = useState('idle') // idle | executing | success | error
   const [result, setResult] = useState(null)
   const [errMessage, setErrMessage] = useState(null)
@@ -350,6 +370,9 @@ function DaemonActionWidget({ action, payload, daemonConnected }) {
 
       setStatus('success')
       setResult(data.data)
+      if (onExecuteSuccess && (action === 'read_file' || action === 'write_file')) {
+        onExecuteSuccess(payload.path)
+      }
     } catch (err) {
       setStatus('error')
       setErrMessage(err.message)
@@ -538,16 +561,13 @@ const parseDaemonActions = (text) => {
 
 // ─── Message Bubble ──────────────────────────────────────────────────────────
 
-function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled, daemonConnected }) {
-  const [hovering, setHovering] = useState(false)
+function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled, daemonConnected, onExecuteSuccess }) {
   const isUser = msg.role === 'user'
   const isAssistant = msg.role === 'assistant'
 
   return (
     <div
       className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'} group`}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
     >
       {/* Assistant avatar */}
       {isAssistant && (
@@ -559,7 +579,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
         </div>
       )}
 
-      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[85%]`}>
+      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[85%] relative pb-8`}>
         {/* Content */}
         {isUser ? (
           <div
@@ -631,6 +651,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
                     action="read_file"
                     payload={{ path: block.path }}
                     daemonConnected={daemonConnected}
+                    onExecuteSuccess={onExecuteSuccess}
                   />
                 )
               } else if (block.type === 'write_file') {
@@ -640,6 +661,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
                     action="write_file"
                     payload={{ path: block.path, content: block.content }}
                     daemonConnected={daemonConnected}
+                    onExecuteSuccess={onExecuteSuccess}
                   />
                 )
               } else if (block.type === 'run_command') {
@@ -676,11 +698,10 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
           </Link>
         )}
 
-        {/* Action row — always renders to avoid layout jump, visibility via opacity */}
+        {/* Action row — absolute position inside the pb-8 padding to avoid layout jump */}
         {!isStreaming && (
           <div
-            className="flex items-center gap-0.5 mt-1.5 transition-opacity duration-150"
-            style={{ opacity: hovering ? 1 : 0, pointerEvents: hovering ? 'auto' : 'none' }}
+            className={`absolute bottom-0.5 ${isUser ? 'right-0' : 'left-0'} flex items-center gap-0.5 transition-opacity duration-150 z-10 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto`}
           >
             <button
               onClick={() => onCopy(msg.content, index)}
@@ -1156,19 +1177,26 @@ function InputArea({
 
       {/* Quick Action Pills (below input card) */}
       <div className="flex items-center justify-center gap-2 flex-wrap">
-        {QUICK_ACTIONS.map((action) => (
-          <button
-            key={action.id}
-            onClick={() => {
-              setInput(action.value)
-              textareaRef.current?.focus()
-            }}
-            className="px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/[0.06] text-gray-400 hover:text-white hover:border-white/12 hover:bg-white/5 transition-all flex items-center gap-1.5"
-          >
-            <span>{action.icon}</span>
-            <span>{action.label}</span>
-          </button>
-        ))}
+        {QUICK_ACTIONS.map((action) => {
+          const isChoice = action.id === 'choice';
+          return (
+            <button
+              key={action.id}
+              onClick={() => {
+                setInput(action.value)
+                textareaRef.current?.focus()
+              }}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+                isChoice
+                  ? 'border border-amber-500/30 bg-amber-500/5 text-amber-400 hover:text-amber-300 hover:border-amber-500/50 hover:bg-amber-500/10'
+                  : 'border border-white/[0.06] text-gray-400 hover:text-white hover:border-white/12 hover:bg-white/5'
+              }`}
+            >
+              <span>{action.icon}</span>
+              <span>{action.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       <p className="text-center text-[10px] text-gray-600 mt-1 uppercase tracking-wider font-semibold">
@@ -2584,6 +2612,41 @@ export default function ChatPage() {
   const [settingsTab, setSettingsTab] = useState('general')
   const [daemonConnected, setDaemonConnected] = useState(false)
 
+  // Claude & Cyber Mode Upgrades
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [cyberMode, setCyberMode] = useState(false)
+  const [workspaceOpen, setWorkspaceOpen] = useState(false)
+  const [workspaceTab, setWorkspaceTab] = useState('terminal')
+  const [terminalHistory, setTerminalHistory] = useState([
+    { type: 'output', text: 'Welcome to CyberCli Workspace Terminal! Type your command below and hit enter.' }
+  ])
+  const [terminalInput, setTerminalInput] = useState('')
+  const [terminalLoading, setTerminalLoading] = useState(false)
+  const [activePreviewFile, setActivePreviewFile] = useState(null)
+  const [profileMenuTab, setProfileMenuTab] = useState('main')
+  
+  const activeThreadIdRef = useRef(null)
+  const isCreatingThreadRef = useRef(false)
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false)
+  const [hoveredSubmenu, setHoveredSubmenu] = useState(null)
+  
+  const [previewFilePath, setPreviewFilePath] = useState('')
+  const [previewFileContent, setPreviewFileContent] = useState('')
+  const [previewFileLoading, setPreviewFileLoading] = useState(false)
+  const [previewFileError, setPreviewFileError] = useState(null)
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (mobile) setSidebarOpen(false)
+    }
+    window.addEventListener('resize', handleResize)
+    // Initial call
+    handleResize()
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   const loadDaemonStatus = async () => {
     try {
       const token = localStorage.getItem('sb-access-token')
@@ -2603,6 +2666,103 @@ export default function ChatPage() {
     loadDaemonStatus()
     const intv = setInterval(loadDaemonStatus, 5000)
     return () => clearInterval(intv)
+  }, [])
+
+  const handleTerminalSubmit = async (e) => {
+    e.preventDefault()
+    if (!terminalInput.trim() || terminalLoading) return
+    const cmd = terminalInput.trim()
+    setTerminalInput('')
+    setTerminalHistory(prev => [...prev, { type: 'input', text: cmd }])
+    
+    if (!daemonConnected) {
+      setTerminalHistory(prev => [...prev, { type: 'error', text: 'Error: Local Workspace Daemon is offline. Please link your workspace first.' }])
+      return
+    }
+
+    setTerminalLoading(true)
+    try {
+      const token = localStorage.getItem('sb-access-token')
+      const response = await fetch(`${API_BASE}/daemon/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ action: 'run_command', payload: { command: cmd } })
+      })
+      const data = await response.json()
+      if (data.success) {
+        const out = data.data.stdout || ''
+        const err = data.data.stderr || ''
+        if (out) setTerminalHistory(prev => [...prev, { type: 'output', text: out }])
+        if (err) setTerminalHistory(prev => [...prev, { type: 'error', text: err }])
+        if (!out && !err) setTerminalHistory(prev => [...prev, { type: 'output', text: '(Command executed with no output)' }])
+      } else {
+        setTerminalHistory(prev => [...prev, { type: 'error', text: `Error: ${data.error || 'Execution failed'}` }])
+      }
+    } catch (err) {
+      setTerminalHistory(prev => [...prev, { type: 'error', text: `Error: ${err.message}` }])
+    } finally {
+      setTerminalLoading(false)
+    }
+  }
+
+  const handleLoadPreviewFile = async (pathOverride) => {
+    const path = pathOverride || previewFilePath
+    if (!path.trim()) return
+    setPreviewFileLoading(true)
+    setPreviewFileError(null)
+    setPreviewFileContent('')
+    try {
+      const token = localStorage.getItem('sb-access-token')
+      const response = await fetch(`${API_BASE}/daemon/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ action: 'read_file', payload: { path } })
+      })
+      const data = await response.json()
+      if (data.success) {
+        setPreviewFileContent(data.data.content || '')
+        setActivePreviewFile(path)
+      } else {
+        setPreviewFileError(data.error || 'Failed to read file')
+      }
+    } catch (err) {
+      setPreviewFileError(err.message)
+    } finally {
+      setPreviewFileLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl + /
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault()
+        setShowShortcutsModal(prev => !prev)
+      }
+      // Ctrl + ,
+      if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+        e.preventDefault()
+        openSettings('general')
+      }
+      // Ctrl + p (Workspace toggle)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault()
+        setWorkspaceOpen(prev => !prev)
+      }
+      // Escape to close modals
+      if (e.key === 'Escape') {
+        setShowShortcutsModal(false)
+        setSettingsOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   const openSettings = (tab = 'general') => {
@@ -2779,12 +2939,14 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (threadId && isLoggedIn()) {
+      activeThreadIdRef.current = threadId
       if (creatingThreadRef.current === threadId) {
         creatingThreadRef.current = null
       } else {
         loadMessages(threadId)
       }
     } else {
+      activeThreadIdRef.current = null
       setMessages([])
     }
   }, [threadId])
@@ -2920,7 +3082,8 @@ export default function ChatPage() {
     const extraSystemMessages = []
     
     if (voiceChatOpenRef.current) {
-      const voice = currentVoice ? currentVoice.toLowerCase() : 'eleven_sol'
+      const voiceRaw = currentVoice ? currentVoice.toLowerCase() : 'sol'
+      const voice = voiceRaw === 'gemini' ? 'gemini_flash' : (voiceRaw.startsWith('eleven_') ? voiceRaw : `eleven_${voiceRaw}`)
       const VOICE_AGENTS_BRAINS = {
         // Sol — warm, friendly (maps to former "ava")
         eleven_sol: {
@@ -3005,6 +3168,12 @@ export default function ChatPage() {
                   if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
                   return next
                 })
+              } else if (parsed.type === 'info') {
+                setMessages(prev => {
+                  const next = [...prev]
+                  if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: parsed.content }
+                  return next
+                })
               }
             } catch {}
           }
@@ -3073,6 +3242,12 @@ export default function ChatPage() {
                   if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
                   return next
                 })
+              } else if (parsed.type === 'info') {
+                setMessages(prev => {
+                  const next = [...prev]
+                  if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: parsed.content }
+                  return next
+                })
               }
             } catch {}
           }
@@ -3093,18 +3268,24 @@ export default function ChatPage() {
     }
 
     // Use the ref as fallback so rapid consecutive sends don't create duplicate threads
-    let currentId = activeThreadId || creatingThreadRef.current
+    let currentId = activeThreadId || activeThreadIdRef.current || creatingThreadRef.current
     if (!currentId) {
+      if (isCreatingThreadRef.current) return
+      isCreatingThreadRef.current = true
       try {
         const { data } = await api.post('/chat', { title: userText.substring(0, 50), model_id: activeModel })
         setThreads(prev => [data, ...prev])
         currentId = data._id
+        activeThreadIdRef.current = currentId
         creatingThreadRef.current = currentId
         navigate(`/chat/${currentId}`, { replace: true })
       } catch (err) {
         console.error('Failed to create thread silently:', err)
         setLoading(false)
+        isCreatingThreadRef.current = false
         return
+      } finally {
+        isCreatingThreadRef.current = false
       }
     }
     const userMsg = { role: 'user', content: userText }
@@ -3158,12 +3339,20 @@ export default function ChatPage() {
           if (raw === '[DONE]') break
           try {
             const parsed = JSON.parse(raw)
-            if (parsed.type === 'token') {
+             if (parsed.type === 'token') {
               fullReply += parsed.content
               setMessages(prev => {
                 const next = [...prev]
                 if (next.length > 0) {
                   next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
+                }
+                return next
+              })
+            } else if (parsed.type === 'info') {
+              setMessages(prev => {
+                const next = [...prev]
+                if (next.length > 0) {
+                  next[next.length - 1] = { ...next[next.length - 1], content: parsed.content }
                 }
                 return next
               })
@@ -3199,9 +3388,30 @@ export default function ChatPage() {
   const userName = localStorage.getItem('user_name') || 'User'
   const userEmail = localStorage.getItem('user_email') || ''
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
-  const [userLanguage, setUserLanguage] = useState('EN')
+  const [userLanguage, setUserLanguage] = useState(() => localStorage.getItem('user_language') || 'EN')
 
   const [showProfilePopover, setShowProfilePopover] = useState(false)
+  const popoverTimeoutRef = useRef(null)
+
+  const handleUserBarMouseEnter = (submenu = null) => {
+    if (popoverTimeoutRef.current) {
+      clearTimeout(popoverTimeoutRef.current)
+      popoverTimeoutRef.current = null
+    }
+    setShowProfilePopover(true)
+    if (submenu) {
+      setHoveredSubmenu(submenu)
+    }
+  }
+
+  const handleUserBarMouseLeave = () => {
+    if (popoverTimeoutRef.current) clearTimeout(popoverTimeoutRef.current)
+    popoverTimeoutRef.current = setTimeout(() => {
+      setShowProfilePopover(false)
+      setHoveredSubmenu(null)
+    }, 150)
+  }
+
   const { signOut } = useAuthStore()
 
   const handleLogOut = async () => {
@@ -3217,9 +3427,15 @@ export default function ChatPage() {
   const recentThreads = threads.filter(t => !t.is_pinned).slice(0, 30)
 
   return (
-    <div className="h-screen flex overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+    <div className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''}`} style={{ background: 'var(--bg-primary)' }}>
 
       {/* ── Sidebar ── */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-all duration-300 animate-fade-in"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
       <AnimatePresence initial={false}>
         {sidebarOpen && (
           <motion.aside
@@ -3228,7 +3444,7 @@ export default function ChatPage() {
             animate={{ width: 280, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-shrink-0 flex flex-col overflow-hidden border-r border-border-subtle"
+            className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 shadow-2xl' : 'flex-shrink-0'} flex flex-col overflow-hidden border-r border-border-subtle`}
             style={{ background: '#1a1a1a' }}
           >
             {/* Brand + collapse */}
@@ -3340,8 +3556,8 @@ export default function ChatPage() {
             {/* Bottom user bar with Popover */}
             <div 
               className="flex-shrink-0 border-t border-white/[0.06] p-3 relative"
-              onMouseEnter={() => setShowProfilePopover(true)}
-              onMouseLeave={() => setShowProfilePopover(false)}
+              onMouseEnter={() => handleUserBarMouseEnter()}
+              onMouseLeave={handleUserBarMouseLeave}
             >
               <AnimatePresence>
                 {showProfilePopover && (
@@ -3359,6 +3575,7 @@ export default function ChatPage() {
                   >
                     <button 
                       onClick={() => openSettings('general')}
+                      onMouseEnter={() => setHoveredSubmenu(null)}
                       className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <div className="flex items-center gap-2.5">
@@ -3369,7 +3586,7 @@ export default function ChatPage() {
                     </button>
 
                     <button 
-                      onClick={() => openSettings('general')}
+                      onMouseEnter={() => setHoveredSubmenu('language')}
                       className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <div className="flex items-center gap-2.5">
@@ -3381,6 +3598,7 @@ export default function ChatPage() {
 
                     <button 
                       onClick={() => window.open('mailto:support@cybermindcli.com')}
+                      onMouseEnter={() => setHoveredSubmenu(null)}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <HelpCircle className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
@@ -3389,6 +3607,7 @@ export default function ChatPage() {
 
                     <button 
                       onClick={() => openSettings('billing')}
+                      onMouseEnter={() => setHoveredSubmenu(null)}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <ArrowUpCircle className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
@@ -3397,6 +3616,7 @@ export default function ChatPage() {
 
                     <button 
                       onClick={() => alert('CyberCli App & Extension links will be sent to your email.')}
+                      onMouseEnter={() => setHoveredSubmenu(null)}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <Download className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
@@ -3404,7 +3624,7 @@ export default function ChatPage() {
                     </button>
 
                     <button 
-                      onClick={() => setActiveNav('customize')}
+                      onMouseEnter={() => setHoveredSubmenu('learn_more')}
                       className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
                     >
                       <div className="flex items-center gap-2.5">
@@ -3418,10 +3638,121 @@ export default function ChatPage() {
 
                     <button 
                       onClick={handleLogOut}
+                      onMouseEnter={() => setHoveredSubmenu(null)}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-350 hover:bg-red-500/10 transition-all text-left group"
                     >
                       <LogOut className="w-4 h-4 text-red-500/60 group-hover:text-red-400 transition-colors" />
                       <span>Log out</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Submenus floating to the right */}
+              <AnimatePresence>
+                {showProfilePopover && hoveredSubmenu === 'language' && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.15 }}
+                    onMouseEnter={() => handleUserBarMouseEnter('language')}
+                    onMouseLeave={handleUserBarMouseLeave}
+                    className="fixed bottom-[140px] left-[285px] w-[240px] rounded-2xl border border-white/[0.08] shadow-2xl p-2 z-[60] flex flex-col gap-0.5"
+                    style={{ 
+                      background: 'rgba(26, 26, 26, 0.98)', 
+                      backdropFilter: 'blur(12px)',
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                    }}
+                  >
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-white/[0.04] mb-1">Select Language</div>
+                    <div className="max-h-[300px] overflow-y-auto pr-1">
+                      {LANGUAGES.map(lang => (
+                        <button
+                          key={lang.name}
+                          onClick={() => {
+                            setUserLanguage(lang.code)
+                            localStorage.setItem('user_language', lang.code)
+                            localStorage.setItem('user_language_name', lang.name)
+                          }}
+                          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left"
+                        >
+                          <span>{lang.name}</span>
+                          {userLanguage === lang.code && <Check className="w-3.5 h-3.5 text-[#D97757]" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {showProfilePopover && hoveredSubmenu === 'learn_more' && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.15 }}
+                    onMouseEnter={() => handleUserBarMouseEnter('learn_more')}
+                    onMouseLeave={handleUserBarMouseLeave}
+                    className="fixed bottom-[90px] left-[285px] w-[240px] rounded-2xl border border-white/[0.08] shadow-2xl p-2 z-[60] flex flex-col gap-0.5"
+                    style={{ 
+                      background: 'rgba(26, 26, 26, 0.98)', 
+                      backdropFilter: 'blur(12px)',
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                    }}
+                  >
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-white/[0.04] mb-1">Resources</div>
+                    <Link
+                      to="/docs"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                    >
+                      API Console
+                    </Link>
+                    <Link
+                      to="/about"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                    >
+                      About CyberMindCLI
+                    </Link>
+                    <Link
+                      to="/docs"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                    >
+                      Tutorials
+                    </Link>
+                    <a
+                      href="https://cybermindcli.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                    >
+                      Courses
+                    </a>
+                    <Link
+                      to="/terms-of-service"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                    >
+                      Usage policy
+                    </Link>
+                    <Link
+                      to="/privacy-policy"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                    >
+                      Privacy policy
+                    </Link>
+                    <Link
+                      to="/privacy-policy#choices"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                    >
+                      Your privacy choices
+                    </Link>
+                    <button
+                      onClick={() => setShowShortcutsModal(true)}
+                      className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left"
+                    >
+                      <span>Keyboard shortcuts</span>
+                      <span className="text-[10px] text-gray-500 font-semibold font-mono">Ctrl+/</span>
                     </button>
                   </motion.div>
                 )}
@@ -3492,6 +3823,34 @@ export default function ChatPage() {
           )}
 
           <div className="flex-1" />
+          
+          <div className="flex items-center gap-2">
+            {/* Cyber Mode Toggle */}
+            <button
+              onClick={() => setCyberMode(prev => !prev)}
+              className={`p-2 rounded-xl border transition-all duration-200 ${
+                cyberMode 
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)] animate-pulse'
+                  : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+              }`}
+              title="Toggle Cyber Mode"
+            >
+              <Zap className="w-4 h-4" />
+            </button>
+
+            {/* Workspace split toggle */}
+            <button
+              onClick={() => setWorkspaceOpen(prev => !prev)}
+              className={`p-2 rounded-xl border transition-all duration-200 ${
+                workspaceOpen 
+                  ? 'bg-[#D97757]/20 border-[#D97757]/40 text-[#D97757]' 
+                  : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+              }`}
+              title="Toggle Workspace Panel"
+            >
+              <Terminal className="w-4 h-4" />
+            </button>
+          </div>
         </header>
 
         {/* Error banner */}
@@ -3532,123 +3891,351 @@ export default function ChatPage() {
           )}
         </AnimatePresence>
 
-        {/* Main Content Area based on Nav selection */}
-        <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
-          {activeNav === 'chats' ? (
-            messages.length === 0 && !loading ? (
-              <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full px-4 pb-20">
-                <HeroState userName={userName} />
-                <div className="w-full mt-8">
-                  <InputArea
-                    input={input}
-                    setInput={setInput}
-                    onSend={handleSend}
-                    loading={loading}
-                    selectedModel={selectedModel}
-                    onModelChange={setSelectedModel}
-                    onMicClick={toggleInlineSpeech}
-                    onWaveformClick={() => setVoiceChatOpen(true)}
-                    webSearchEnabled={webSearchEnabled}
-                    onToggleWebSearch={() => setWebSearchEnabled(v => !v)}
-                    codeExecutionEnabled={codeExecutionEnabled}
-                    onToggleCodeExecution={() => setCodeExecutionEnabled(v => !v)}
-                    imageGenerationEnabled={imageGenerationEnabled}
-                    onToggleImageGeneration={() => setImageGenerationEnabled(v => !v)}
-                    memoryEnabled={memoryEnabled}
-                    onToggleMemory={() => setMemoryEnabled(v => !v)}
-                    inlineSpeechListening={inlineSpeechListening}
-                    deepResearchEnabled={deepResearchEnabled}
-                    onToggleDeepResearch={() => setDeepResearchEnabled(v => !v)}
-                    incognitoMode={incognitoMode}
-                    onToggleIncognito={() => setIncognitoMode(v => !v)}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
-                  {loading && messages.length === 0 ? (
-                    <div className="flex items-center justify-center py-12">
-                      <motion.div
-                        className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin"
+        {/* Split Container */}
+        <div className="flex-1 flex overflow-hidden relative">
+          
+          {/* Chat Content Panel (Left/Main side) */}
+          <div className={`flex-1 flex flex-col min-w-0 h-full ${workspaceOpen && !isMobile ? 'w-[55%]' : 'w-full'}`}>
+            {/* Main Content Area based on Nav selection */}
+            <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
+              {activeNav === 'chats' ? (
+                messages.length === 0 && !loading ? (
+                  <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full px-4 pb-20">
+                    <HeroState userName={userName} />
+                    <div className="w-full mt-8">
+                      <InputArea
+                        input={input}
+                        setInput={setInput}
+                        onSend={handleSend}
+                        loading={loading}
+                        selectedModel={selectedModel}
+                        onModelChange={setSelectedModel}
+                        onMicClick={toggleInlineSpeech}
+                        onWaveformClick={() => setVoiceChatOpen(true)}
+                        webSearchEnabled={webSearchEnabled}
+                        onToggleWebSearch={() => setWebSearchEnabled(v => !v)}
+                        codeExecutionEnabled={codeExecutionEnabled}
+                        onToggleCodeExecution={() => setCodeExecutionEnabled(v => !v)}
+                        imageGenerationEnabled={imageGenerationEnabled}
+                        onToggleImageGeneration={() => setImageGenerationEnabled(v => !v)}
+                        memoryEnabled={memoryEnabled}
+                        onToggleMemory={() => setMemoryEnabled(v => !v)}
+                        inlineSpeechListening={inlineSpeechListening}
+                        deepResearchEnabled={deepResearchEnabled}
+                        onToggleDeepResearch={() => setDeepResearchEnabled(v => !v)}
+                        incognitoMode={incognitoMode}
+                        onToggleIncognito={() => setIncognitoMode(v => !v)}
                       />
                     </div>
-                  ) : (
-                    messages.map((msg, i) => (
-                      <MessageBubble
-                        key={msg._id || `msg-${i}`}
-                        msg={msg}
-                        index={i}
-                        isStreaming={streamingIndex === i}
-                        onCopy={handleCopy}
-                        onSpeak={(text) => speak(text)}
-                        onFork={handleFork}
-                        onStop={stop}
-                        ttsLoading={ttsLoading}
-                        isPlaying={isPlaying}
-                        copied={copied}
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col min-h-0">
+                    <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+                      {loading && messages.length === 0 ? (
+                        <div className="flex items-center justify-center py-12">
+                          <motion.div
+                            className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin"
+                          />
+                        </div>
+                      ) : (
+                        messages.map((msg, i) => (
+                          <MessageBubble
+                            key={msg._id || `msg-${i}`}
+                            msg={msg}
+                            index={i}
+                            isStreaming={streamingIndex === i}
+                            onCopy={handleCopy}
+                            onSpeak={(text) => speak(text)}
+                            onFork={handleFork}
+                            onStop={stop}
+                            ttsLoading={ttsLoading}
+                            isPlaying={isPlaying}
+                            copied={copied}
+                            codeExecutionEnabled={codeExecutionEnabled}
+                            daemonConnected={daemonConnected}
+                            onExecuteSuccess={(path) => {
+                              setPreviewFilePath(path)
+                              handleLoadPreviewFile(path)
+                              setWorkspaceTab('preview')
+                              setWorkspaceOpen(true)
+                            }}
+                          />
+                        ))
+                      )}
+                      <div ref={messagesEndRef} />
+                    </div>
+                    {/* Input pinned at bottom */}
+                    <div className="px-4 py-4 border-t border-border-subtle bg-background-primary flex-shrink-0">
+                      <InputArea
+                        input={input}
+                        setInput={setInput}
+                        onSend={handleSend}
+                        loading={loading}
+                        selectedModel={selectedModel}
+                        onModelChange={setSelectedModel}
+                        onMicClick={toggleInlineSpeech}
+                        onWaveformClick={() => setVoiceChatOpen(true)}
+                        webSearchEnabled={webSearchEnabled}
+                        onToggleWebSearch={() => setWebSearchEnabled(v => !v)}
                         codeExecutionEnabled={codeExecutionEnabled}
-                        daemonConnected={daemonConnected}
+                        onToggleCodeExecution={() => setCodeExecutionEnabled(v => !v)}
+                        imageGenerationEnabled={imageGenerationEnabled}
+                        onToggleImageGeneration={() => setImageGenerationEnabled(v => !v)}
+                        memoryEnabled={memoryEnabled}
+                        onToggleMemory={() => setMemoryEnabled(v => !v)}
+                        inlineSpeechListening={inlineSpeechListening}
+                        deepResearchEnabled={deepResearchEnabled}
+                        onToggleDeepResearch={() => setDeepResearchEnabled(v => !v)}
+                        incognitoMode={incognitoMode}
+                        onToggleIncognito={() => setIncognitoMode(v => !v)}
                       />
-                    ))
+                    </div>
+                  </div>
+                )
+              ) : activeNav === 'search' ? (
+                <SearchView navigate={navigate} setActiveNav={setActiveNav} />
+              ) : activeNav === 'projects' ? (
+                <ProjectsView
+                  threads={threads}
+                  navigate={navigate}
+                  setActiveNav={setActiveNav}
+                  handleCreateThread={handleCreateThread}
+                />
+              ) : activeNav === 'artifacts' ? (
+                <ArtifactsView
+                  messages={messages}
+                />
+              ) : activeNav === 'code' ? (
+                <CodeView daemonConnected={daemonConnected} loadDaemonStatus={loadDaemonStatus} />
+              ) : activeNav === 'customize' ? (
+                <CustomizeView
+                  webSearchEnabled={webSearchEnabled}
+                  setWebSearchEnabled={setWebSearchEnabled}
+                  codeExecutionEnabled={codeExecutionEnabled}
+                  setCodeExecutionEnabled={setCodeExecutionEnabled}
+                  imageGenerationEnabled={imageGenerationEnabled}
+                  setImageGenerationEnabled={setImageGenerationEnabled}
+                  memoryEnabled={memoryEnabled}
+                  setMemoryEnabled={setMemoryEnabled}
+                />
+              ) : null}
+            </div>
+          </div>
+
+          {/* Workspace Panel (Right side) */}
+          <AnimatePresence>
+            {workspaceOpen && (
+              <motion.div
+                initial={{ x: isMobile ? '100%' : 100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: isMobile ? '100%' : 100, opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className={`${
+                  isMobile
+                    ? 'fixed inset-y-0 right-0 z-40 w-full sm:w-[85%] shadow-2xl animate-fade-in'
+                    : 'w-[45%] border-l border-white/[0.06]'
+                } h-full bg-[#0D0D14] flex flex-col overflow-hidden`}
+              >
+                {/* Workspace Panel Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04] bg-[#0A0A0F]/80 backdrop-blur-md flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setWorkspaceTab('terminal')}
+                      className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all ${
+                        workspaceTab === 'terminal'
+                          ? 'bg-[#D97757]/15 text-[#D97757] border border-[#D97757]/20'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      Terminal
+                    </button>
+                    <button
+                      onClick={() => setWorkspaceTab('preview')}
+                      className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all ${
+                        workspaceTab === 'preview'
+                          ? 'bg-[#D97757]/15 text-[#D97757] border border-[#D97757]/20'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      File Preview
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setWorkspaceOpen(false)}
+                    className="p-1 rounded-lg text-gray-500 hover:text-white transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Workspace Panel Body */}
+                <div className="flex-1 overflow-hidden relative flex flex-col">
+                  {workspaceTab === 'terminal' ? (
+                    <div className="flex-1 flex flex-col overflow-hidden bg-black/40 p-4 font-mono text-xs text-left">
+                      {/* Terminal scrollable logs */}
+                      <div className="flex-1 overflow-y-auto mb-3 space-y-2 pr-1">
+                        {terminalHistory.map((item, idx) => {
+                          if (item.type === 'input') {
+                            return (
+                              <div key={idx} className="text-gray-400 flex items-start gap-1">
+                                <span className="text-[#D97757] font-bold">$</span>
+                                <span className="whitespace-pre-wrap select-all">{item.text}</span>
+                              </div>
+                            )
+                          } else if (item.type === 'error') {
+                            return (
+                              <pre key={idx} className="text-rose-400 whitespace-pre-wrap leading-relaxed select-text pr-2">{item.text}</pre>
+                            )
+                          } else {
+                            return (
+                              <pre key={idx} className="text-emerald-400 whitespace-pre-wrap leading-relaxed select-text pr-2">{item.text}</pre>
+                            )
+                          }
+                        })}
+                        {terminalLoading && (
+                          <div className="text-[#D97757] animate-pulse flex items-center gap-1.5 mt-2">
+                            <span className="w-2 h-2 rounded-full bg-[#D97757] animate-ping" />
+                            Executing command... (waiting for local daemon terminal confirmation)
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Link helper warning if daemon offline */}
+                      {!daemonConnected && (
+                        <div className="mb-4 p-4 rounded-xl border border-red-500/20 bg-red-500/5 space-y-2.5 font-sans">
+                          <p className="text-xs font-semibold text-rose-400 flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" />
+                            Daemon Offline
+                          </p>
+                          <p className="text-[11px] text-gray-400 leading-normal">
+                            Link your local workspace directory using your API Access Key. Link commands:
+                          </p>
+                          <pre className="p-3 bg-black/40 border border-white/5 rounded-lg text-xs font-mono text-gray-300 leading-relaxed whitespace-pre-wrap select-all">
+                            # Install CyberCli globally{"\n"}
+                            npm install -g cybercli{"\n\n"}
+                            # Link current directory{"\n"}
+                            cybercli link --key YOUR_API_KEY
+                          </pre>
+                          <p className="text-[10px] text-gray-500">
+                            Go to the "Code" tab in the sidebar to generate or copy an API access key.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Terminal input bar */}
+                      <form onSubmit={handleTerminalSubmit} className="flex items-center gap-1 bg-black/30 border border-white/[0.06] rounded-xl p-2 flex-shrink-0">
+                        <span className="text-[#D97757] font-bold select-none px-1">$</span>
+                        <input
+                          type="text"
+                          value={terminalInput}
+                          onChange={(e) => setTerminalInput(e.target.value)}
+                          placeholder="Type command (e.g. npm run test)..."
+                          disabled={terminalLoading || !daemonConnected}
+                          className="flex-1 bg-transparent border-0 outline-none p-0 text-white font-mono text-xs focus:ring-0 placeholder-gray-600 disabled:cursor-not-allowed"
+                        />
+                      </form>
+                    </div>
+                  ) : (
+                    /* File Preview */
+                    <div className="flex-1 flex flex-col overflow-hidden bg-black/20">
+                      {/* Path search / control bar */}
+                      <div className="p-2 border-b border-white/[0.04] bg-[#0A0A0F]/60 flex items-center gap-2 flex-shrink-0">
+                        <input
+                          type="text"
+                          value={previewFilePath}
+                          onChange={(e) => setPreviewFilePath(e.target.value)}
+                          placeholder="Path to file (e.g. src/index.js)..."
+                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-accent"
+                        />
+                        <button
+                          onClick={() => handleLoadPreviewFile()}
+                          disabled={previewFileLoading || !daemonConnected}
+                          className="px-3 py-1 rounded-lg bg-accent text-white text-xs font-bold hover:bg-accent-dark disabled:bg-white/5 disabled:text-white/30 transition-all flex-shrink-0"
+                        >
+                          {previewFileLoading ? 'Loading...' : 'Load'}
+                        </button>
+                      </div>
+
+                      {/* Preview view area */}
+                      <div className="flex-1 overflow-auto">
+                        {previewFileLoading && (
+                          <div className="h-full flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-full border-2 border-[#D97757] border-t-transparent animate-spin" />
+                          </div>
+                        )}
+
+                        {!previewFileLoading && previewFileError && (
+                          <div className="p-5 text-center flex flex-col items-center justify-center h-full gap-2">
+                            <AlertCircle className="w-8 h-8 text-rose-400" />
+                            <p className="text-xs text-rose-300 font-semibold">{previewFileError}</p>
+                            <p className="text-[10px] text-gray-500 max-w-xs">Verify the file path is correct and your workspace daemon is connected.</p>
+                          </div>
+                        )}
+
+                        {!previewFileLoading && !previewFileError && !previewFileContent && (
+                          <div className="p-5 text-center flex flex-col items-center justify-center h-full text-gray-500 gap-2">
+                            <Folder className="w-8 h-8 opacity-30" />
+                            <p className="text-xs">No active file previewed</p>
+                            <p className="text-[10px] max-w-xs leading-normal">Load a file from the path bar above, or run a daemon read/write action from the chat bubbles.</p>
+                          </div>
+                        )}
+
+                        {!previewFileLoading && !previewFileError && previewFileContent && (
+                          <div className="h-full select-text">
+                            {/* Diff check */}
+                            {activePreviewFile?.endsWith('.diff') || activePreviewFile?.endsWith('.dff') || previewFileContent.startsWith('diff') ? (
+                              <div className="font-mono text-xs p-4 space-y-0.5 whitespace-pre overflow-auto h-full text-left">
+                                {previewFileContent.split('\n').map((line, idx) => {
+                                  let colorClass = "text-gray-300"
+                                  if (line.startsWith('+')) {
+                                    colorClass = "text-emerald-400 bg-emerald-950/30 px-1 rounded-sm border-l-2 border-emerald-500"
+                                  } else if (line.startsWith('-')) {
+                                    colorClass = "text-rose-400 bg-rose-950/30 px-1 rounded-sm border-l-2 border-rose-500"
+                                  }
+                                  return (
+                                    <div key={idx} className={colorClass}>
+                                      {line}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            ) : activePreviewFile?.endsWith('.md') ? (
+                              <div className="prose-custom p-5 overflow-auto h-full text-gray-300 text-left">
+                                <ReactMarkdown
+                                  components={{
+                                    code({ node, inline, className, children, ...props }) {
+                                      return (
+                                        <code className="px-1.5 py-0.5 rounded text-xs font-mono bg-background-tertiary text-foreground-primary" {...props}>
+                                          {children}
+                                        </code>
+                                      )
+                                    }
+                                  }}
+                                >
+                                  {previewFileContent}
+                                </ReactMarkdown>
+                              </div>
+                            ) : (
+                              <div className="overflow-auto h-full text-left">
+                                <SyntaxHighlighter
+                                  language={activePreviewFile?.split('.').pop() || 'javascript'}
+                                  style={oneDark}
+                                  customStyle={{ margin: 0, padding: '16px', background: '#0a0a0f', fontSize: '0.8125rem', height: '100%' }}
+                                  showLineNumbers={previewFileContent.split('\n').length > 3}
+                                >
+                                  {previewFileContent}
+                                </SyntaxHighlighter>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
-                  <div ref={messagesEndRef} />
                 </div>
-                {/* Input pinned at bottom */}
-                <div className="px-4 py-4 border-t border-border-subtle bg-background-primary flex-shrink-0">
-                  <InputArea
-                    input={input}
-                    setInput={setInput}
-                    onSend={handleSend}
-                    loading={loading}
-                    selectedModel={selectedModel}
-                    onModelChange={setSelectedModel}
-                    onMicClick={toggleInlineSpeech}
-                    onWaveformClick={() => setVoiceChatOpen(true)}
-                    webSearchEnabled={webSearchEnabled}
-                    onToggleWebSearch={() => setWebSearchEnabled(v => !v)}
-                    codeExecutionEnabled={codeExecutionEnabled}
-                    onToggleCodeExecution={() => setCodeExecutionEnabled(v => !v)}
-                    imageGenerationEnabled={imageGenerationEnabled}
-                    onToggleImageGeneration={() => setImageGenerationEnabled(v => !v)}
-                    memoryEnabled={memoryEnabled}
-                    onToggleMemory={() => setMemoryEnabled(v => !v)}
-                    inlineSpeechListening={inlineSpeechListening}
-                    deepResearchEnabled={deepResearchEnabled}
-                    onToggleDeepResearch={() => setDeepResearchEnabled(v => !v)}
-                    incognitoMode={incognitoMode}
-                    onToggleIncognito={() => setIncognitoMode(v => !v)}
-                  />
-                </div>
-              </div>
-            )
-          ) : activeNav === 'search' ? (
-            <SearchView navigate={navigate} setActiveNav={setActiveNav} />
-          ) : activeNav === 'projects' ? (
-            <ProjectsView
-              threads={threads}
-              navigate={navigate}
-              setActiveNav={setActiveNav}
-              handleCreateThread={handleCreateThread}
-            />
-          ) : activeNav === 'artifacts' ? (
-            <ArtifactsView
-              messages={messages}
-            />
-          ) : activeNav === 'code' ? (
-            <CodeView daemonConnected={daemonConnected} loadDaemonStatus={loadDaemonStatus} />
-          ) : activeNav === 'customize' ? (
-            <CustomizeView
-              webSearchEnabled={webSearchEnabled}
-              setWebSearchEnabled={setWebSearchEnabled}
-              codeExecutionEnabled={codeExecutionEnabled}
-              setCodeExecutionEnabled={setCodeExecutionEnabled}
-              imageGenerationEnabled={imageGenerationEnabled}
-              setImageGenerationEnabled={setImageGenerationEnabled}
-              memoryEnabled={memoryEnabled}
-              setMemoryEnabled={setMemoryEnabled}
-            />
-          ) : null}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
 
@@ -3664,11 +4251,51 @@ export default function ChatPage() {
         }}
         isPlaying={isPlaying}
         isProcessing={loading}
+        ttsLoading={ttsLoading}
         speak={speak}
         stop={stop}
         updateProvider={updateProvider}
         updateVoice={updateVoice}
       />
+
+      {/* Keyboard Shortcuts Modal */}
+      <AnimatePresence>
+        {showShortcutsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#1c1c24] border border-white/[0.08] rounded-2xl w-full max-w-md p-6 relative shadow-2xl"
+            >
+              <button
+                onClick={() => setShowShortcutsModal(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <Info className="w-5 h-5 text-[#D97757]" />
+                Keyboard Shortcuts
+              </h3>
+              <div className="space-y-3.5">
+                {[
+                  { key: 'Ctrl + /', desc: 'Toggle keyboard shortcuts dialog' },
+                  { key: 'Ctrl + ,', desc: 'Open Settings panel' },
+                  { key: 'Ctrl + P', desc: 'Toggle Workspace panel' },
+                  { key: 'Ctrl + Enter', desc: 'Submit chat query' },
+                  { key: 'Esc', desc: 'Close dialogs' }
+                ].map(shortcut => (
+                  <div key={shortcut.key} className="flex items-center justify-between text-sm py-1 border-b border-white/[0.04] last:border-0">
+                    <span className="text-gray-400 font-medium">{shortcut.desc}</span>
+                    <kbd className="px-2.5 py-1 rounded bg-[#0f0f15] border border-white/[0.08] text-xs font-mono text-[#D97757] font-semibold">{shortcut.key}</kbd>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Settings dialog */}
       <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} onSettingChange={handleParentSettingChange} initialTab={settingsTab} />

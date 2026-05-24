@@ -31,7 +31,7 @@ const TTS_PROVIDERS = {
 class TTSService {
   constructor() {
     this.currentProvider = 'puter'
-    this.currentVoice = 'ava'
+    this.currentVoice = 'sol'
     this.currentSpeed = 1.0
     this.currentPitch = 1.0
     this.browserVoices = []
@@ -98,7 +98,7 @@ class TTSService {
         await this.loadPuter()
       }
 
-      let voice = this.currentVoice || 'ava'
+      let voice = this.currentVoice || 'sol'
       
       // Map shortnames to real ElevenLabs voice IDs
       const PUTER_VOICES_MAP = {

@@ -8,12 +8,12 @@ router.post('/', optionalAuth, async (req, res) => {
   const { text, voice_id, speed = 1.0 } = req.body
 
   try {
-    const validVoices = ['ava', 'nova', 'luna', 'orion', 'echo', 'gemini']
-    const voiceLower = (voice_id || 'ava').toLowerCase()
+    const validVoices = ['ava', 'nova', 'luna', 'orion', 'echo', 'gemini', 'sol', 'cove', 'breeze']
+    const voiceLower = (voice_id || 'sol').toLowerCase()
     
     if (validVoices.includes(voiceLower)) {
-      // Map male/deep voices to orion (Podcast_Voice_B), others to ava (Podcast_Voice_A)
-      const mappedVoice = (voiceLower === 'orion' || voiceLower === 'echo') ? 'orion' : 'ava'
+      // Map male/deep voices to orion (Charon), others to ava (Aoede)
+      const mappedVoice = (voiceLower === 'orion' || voiceLower === 'echo' || voiceLower === 'cove') ? 'orion' : 'ava'
       const audio = await generateGeminiTTS(text, mappedVoice, speed)
       res.setHeader('Content-Type', 'audio/mp3')
       res.send(audio)

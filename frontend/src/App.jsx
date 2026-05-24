@@ -107,8 +107,7 @@ function App() {
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
           {/* ── Protected App Routes (no Lenis — native scroll for chat) ── */}
-          <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
-          <Route path="/chat/:threadId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+          <Route path="/chat/:threadId?" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/settings/billing" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/settings/api-keys" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

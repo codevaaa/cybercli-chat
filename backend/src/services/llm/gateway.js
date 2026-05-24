@@ -37,13 +37,21 @@ const MODEL_MAP = {
   'gemini/gemini-2.5-pro': { provider: 'gemini', model: 'gemini-2.5-pro-preview-05-06', purpose: 'reasoning' },
   'cerebras/llama-3.1-8b': { provider: 'cerebras', model: 'llama3.1-8b', purpose: 'speed' },
   'cloudflare/@cf/meta/llama-3.1-8b-instruct': { provider: 'cloudflare', model: '@cf/meta/llama-3.1-8b-instruct', purpose: 'general' },
-  // HuggingFace models
-  'huggingface/meta-llama/Llama-3.1-8B-Instruct':         { provider: 'huggingface', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
-  'huggingface/meta-llama/Llama-3.3-70B-Instruct':        { provider: 'huggingface', model: 'meta-llama/Llama-3.3-70B-Instruct', purpose: 'reasoning' },
-  'huggingface/Qwen/Qwen2.5-72B-Instruct':                { provider: 'huggingface', model: 'Qwen/Qwen2.5-72B-Instruct', purpose: 'reasoning' },
-  'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B':{ provider: 'huggingface', model: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B', purpose: 'reasoning' },
-  'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1':     { provider: 'huggingface', model: 'mistralai/Mixtral-8x7B-Instruct-v0.1', purpose: 'general' },
-  'huggingface/NousResearch/Hermes-3-Llama-3.1-70B':      { provider: 'huggingface', model: 'NousResearch/Hermes-3-Llama-3.1-70B', purpose: 'reasoning' },
+  
+  // HuggingFace models (10+ Powerful/Uncensored models)
+  'huggingface/meta-llama/Llama-3.1-8B-Instruct':                     { provider: 'huggingface', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
+  'huggingface/meta-llama/Llama-3.3-70B-Instruct':                    { provider: 'huggingface', model: 'meta-llama/Llama-3.3-70B-Instruct', purpose: 'reasoning' },
+  'huggingface/Qwen/Qwen2.5-72B-Instruct':                            { provider: 'huggingface', model: 'Qwen/Qwen2.5-72B-Instruct', purpose: 'reasoning' },
+  'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B':            { provider: 'huggingface', model: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B', purpose: 'reasoning' },
+  'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1':                 { provider: 'huggingface', model: 'mistralai/Mixtral-8x7B-Instruct-v0.1', purpose: 'general' },
+  'huggingface/NousResearch/Hermes-3-Llama-3.1-70B':                  { provider: 'huggingface', model: 'NousResearch/Hermes-3-Llama-3.1-70B', purpose: 'reasoning' },
+  'huggingface/NousResearch/Hermes-3-Llama-3.1-8B':                   { provider: 'huggingface', model: 'NousResearch/Hermes-3-Llama-3.1-8B', purpose: 'general' },
+  'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b':       { provider: 'huggingface', model: 'cognitivecomputations/dolphin-2.9.4-llama3-70b', purpose: 'reasoning' },
+  'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b':       { provider: 'huggingface', model: 'cognitivecomputations/dolphin-2.9.2-qwen2.5-72b', purpose: 'reasoning' },
+  'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct':                      { provider: 'huggingface', model: 'Qwen/Qwen2.5-Coder-32B-Instruct', purpose: 'general' },
+  'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b': { provider: 'huggingface', model: 'cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', purpose: 'general' },
+  'huggingface/defog/sqlcoder-70b-v1.5':                              { provider: 'huggingface', model: 'defog/sqlcoder-70b-v1.5', purpose: 'reasoning' },
+
   'nvidia/llama-3.1-nemotron-70b': { provider: 'nvidia', model: 'llama-3.1-nemotron-70b-instruct', purpose: 'reasoning' },
   'bytez/meta-llama/Llama-3.1-8B-Instruct': { provider: 'bytez', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
 }
@@ -55,8 +63,30 @@ const FALLBACK_CHAIN = [
 ]
 
 function getClient(provider) {
-  const key = PROVIDER_KEYS[provider]
+  let key = PROVIDER_KEYS[provider]
+  
+  if (provider === 'huggingface') {
+    const HUGGINGFACE_KEYS = [
+      process.env.HUGGINGFACE_API_KEY,
+      process.env.HUGGINGFACE_API_KEY_2,
+      process.env.HUGGINGFACE_API_KEY_3,
+    ].filter(Boolean)
+
+    if (HUGGINGFACE_KEYS.length > 0) {
+      if (typeof global.hfKeyIndex === 'undefined') global.hfKeyIndex = 0
+      key = HUGGINGFACE_KEYS[global.hfKeyIndex]
+      global.hfKeyIndex = (global.hfKeyIndex + 1) % HUGGINGFACE_KEYS.length
+    }
+  }
+
   if (!key) return null
+
+  if (provider === 'huggingface') {
+    return new OpenAI({
+      apiKey: key,
+      baseURL: 'https://api-inference.huggingface.co/v1',
+    })
+  }
 
   if (provider === 'openrouter' || provider === 'groq') {
     return new OpenAI({

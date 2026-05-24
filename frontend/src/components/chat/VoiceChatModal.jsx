@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, VolumeX, ChevronLeft, ChevronRight, Send, Check } from 'lucide-react'
+import { X, VolumeX, ChevronLeft, ChevronRight, Send, Check, Mic, MicOff } from 'lucide-react'
 
 function StarIcon({ size = 16, color = '#D97757' }) {
   return (
@@ -164,6 +164,7 @@ export default function VoiceChatModal({
   onSendMessage,
   isPlaying,
   isProcessing,
+  ttsLoading,
   speak: externalSpeak,
   stop: externalStop,
   updateProvider,
@@ -171,7 +172,6 @@ export default function VoiceChatModal({
 }) {
   const [step, setStep] = useState('select')
   const [isListening, setIsListening] = useState(false)
-  const [isMuted, setIsMuted] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [voiceIndex, setVoiceIndex] = useState(0)
   const [status, setStatus] = useState('idle') // idle | listening | processing | speaking
@@ -182,7 +182,6 @@ export default function VoiceChatModal({
   const silenceTimerRef = useRef(null)
   const countdownRef = useRef(null)
 
-  const isMutedRef = useRef(isMuted)
   const isPlayingRef = useRef(isPlaying)
   const isProcessingRef = useRef(isProcessing)
   const stepRef = useRef(step)
@@ -203,7 +202,6 @@ export default function VoiceChatModal({
   }, [externalStop])
 
   // Sync ref values for access inside recognition closures
-  useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
   useEffect(() => { isPlayingRef.current = isPlaying }, [isPlaying])
   useEffect(() => { isProcessingRef.current = isProcessing }, [isProcessing])
   useEffect(() => { stepRef.current = step }, [step])
@@ -310,7 +308,7 @@ export default function VoiceChatModal({
       setCountdown(null)
     }
     rec.onend = () => {
-      if (!isMutedRef.current && !isPlayingRef.current && !isProcessingRef.current && stepRef.current === 'active') {
+      if (!isPlayingRef.current && !isProcessingRef.current && stepRef.current === 'active') {
         try { rec.start() } catch {}
       } else {
         setIsListening(false)
@@ -329,7 +327,7 @@ export default function VoiceChatModal({
       return
     }
 
-    const shouldBeListening = !isMuted && !isPlaying && !isProcessing
+    const shouldBeListening = !isPlaying && !isProcessing && !ttsLoading
 
     if (shouldBeListening) {
       if (!isListening) {
@@ -357,7 +355,7 @@ export default function VoiceChatModal({
         setTranscript('')
       }
     }
-  }, [isOpen, step, isMuted, isPlaying, isProcessing, isListening, initRecognition])
+  }, [isOpen, step, isPlaying, isProcessing, ttsLoading, isListening, initRecognition])
 
   useEffect(() => {
     recognitionRef.current = initRecognition()
@@ -369,9 +367,6 @@ export default function VoiceChatModal({
     }
   }, [initRecognition])
 
-  const toggleMute = () => {
-    setIsMuted(prev => !prev)
-  }
 
   const handlePrev = () => {
     setVoiceIndex(prev => (prev === 0 ? VOICE_MODELS.length - 1 : prev - 1))
@@ -578,16 +573,12 @@ export default function VoiceChatModal({
                 </div>
 
                 {/* End Session button */}
-                <div className="flex flex-col items-center gap-4">
+                <div className="flex items-center justify-center mt-4">
                   <motion.button
                     onClick={handleBackToSelect}
-                    className="px-6 py-2.5 rounded-full text-sm font-semibold text-white/70 hover:text-white transition-all"
-                    style={{
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                    }}
+                    className="px-6 py-2.5 rounded-full text-sm font-semibold text-white/70 hover:text-white transition-all bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/15"
                     whileTap={{ scale: 0.97 }}
-                    whileHover={{ scale: 1.03, background: 'rgba(255,255,255,0.10)' }}
+                    whileHover={{ scale: 1.03 }}
                   >
                     End Session
                   </motion.button>
