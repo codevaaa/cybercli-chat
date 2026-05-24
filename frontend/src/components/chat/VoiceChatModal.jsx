@@ -309,7 +309,9 @@ export default function VoiceChatModal({
     }
     rec.onend = () => {
       if (!isPlayingRef.current && !isProcessingRef.current && stepRef.current === 'active') {
-        try { rec.start() } catch {}
+        setTimeout(() => {
+          try { rec.start() } catch {}
+        }, 100)
       } else {
         setIsListening(false)
       }

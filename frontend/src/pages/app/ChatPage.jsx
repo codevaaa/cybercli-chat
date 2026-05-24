@@ -5,7 +5,8 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, Mic, Paperclip, Radio,
   Copy, Check, GitBranch, Volume2, VolumeX, Trash2, Pin, X,
   Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder,
-  Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen, Menu
+  Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen, Menu,
+  Pencil, GraduationCap, Coffee, Lightbulb
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
@@ -46,11 +47,11 @@ const EXTRA_MODELS = [
 
 
 const QUICK_ACTIONS = [
-  { id: 'write', label: 'Write', value: 'Write a ', icon: '✍️' },
-  { id: 'learn', label: 'Learn', value: 'Explain the concept of ', icon: '🎓' },
-  { id: 'code', label: 'Code', value: 'Help me write code for ', icon: '</>' },
-  { id: 'life', label: 'Life stuff', value: 'Give me advice on ', icon: '☕' },
-  { id: 'choice', label: "CyberCli's choice", value: "Give me a creative idea or recommendation ", icon: '💡' },
+  { id: 'write', label: 'Write', value: 'Write a ', icon: Pencil },
+  { id: 'learn', label: 'Learn', value: 'Explain the concept of ', icon: GraduationCap },
+  { id: 'code', label: 'Code', value: 'Help me write code for ', icon: Code2 },
+  { id: 'life', label: 'Life stuff', value: 'Give me advice on ', icon: Coffee },
+  { id: 'choice', label: "CyberCli's choice", value: "Give me a creative idea or recommendation ", icon: Lightbulb },
 ]
 
 const NAV_ITEMS = [
@@ -1176,8 +1177,9 @@ function InputArea({
       </div>
 
       {/* Quick Action Pills (below input card) */}
-      <div className="flex items-center justify-center gap-2 flex-wrap">
+      <div className="flex items-center justify-center gap-2.5 flex-wrap mt-3">
         {QUICK_ACTIONS.map((action) => {
+          const Icon = action.icon;
           const isChoice = action.id === 'choice';
           return (
             <button
@@ -1186,13 +1188,13 @@ function InputArea({
                 setInput(action.value)
                 textareaRef.current?.focus()
               }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                 isChoice
-                  ? 'border border-amber-500/30 bg-amber-500/5 text-amber-400 hover:text-amber-300 hover:border-amber-500/50 hover:bg-amber-500/10'
-                  : 'border border-white/[0.06] text-gray-400 hover:text-white hover:border-white/12 hover:bg-white/5'
+                  ? 'bg-amber-500/5 border border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/35 hover:text-amber-300'
+                  : 'bg-[#1c1c24]/50 border border-white/[0.05] text-gray-300 hover:bg-[#1c1c24] hover:border-white/10 hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] font-sans'
               }`}
             >
-              <span>{action.icon}</span>
+              <Icon className={`w-3.5 h-3.5 ${isChoice ? 'text-amber-400' : 'text-gray-400'}`} />
               <span>{action.label}</span>
             </button>
           );

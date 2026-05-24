@@ -1,426 +1,484 @@
 import { useState, useRef, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Copy, Check, ChevronRight, Lock, Zap, Globe, MessageSquare, Settings, List, Plus, Users, BookOpen } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Copy, Check, Lock, Globe, MessageSquare, Settings, List, Users, BookOpen, Terminal, Sparkles, Code, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import ScrollReveal from '@components/ui/ScrollReveal'
 
 const BASE_URL = 'https://api.cybercli.chat'
 
-/* ── Syntax-highlighted JSON ────────────────────────────────── */
-function JsonBlock({ json }) {
-  const formatted = JSON.stringify(json, null, 2)
-  const [copied, setCopied] = useState(false)
-
-  const copy = () => {
-    navigator.clipboard.writeText(formatted)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  // Simple syntax highlighting
-  const highlighted = formatted
-    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
-      if (/^"/.test(match)) {
-        if (/:$/.test(match)) return `<span style="color:#a78bfa">${match}</span>`
-        return `<span style="color:#86efac">${match}</span>`
-      }
-      if (/true|false/.test(match)) return `<span style="color:#fb923c">${match}</span>`
-      if (/null/.test(match)) return `<span style="color:#94a3b8">${match}</span>`
-      return `<span style="color:#f472b6">${match}</span>`
-    })
-
-  return (
-    <div className="relative group rounded-xl overflow-hidden border border-[rgba(255,255,255,0.06)] bg-[#0d0d14]">
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[rgba(255,255,255,0.03)] border-b border-[rgba(255,255,255,0.05)]">
-        <span className="text-[#475569] text-xs font-mono">JSON</span>
-        <button onClick={copy}
-          className="flex items-center gap-1.5 text-xs text-[#475569] hover:text-[#94a3b8] transition-colors"
-        >
-          {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
-          {copied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
-      <pre className="p-4 overflow-x-auto text-xs leading-relaxed font-mono text-[#e2e8f0]">
-        <code dangerouslySetInnerHTML={{ __html: highlighted }} />
-      </pre>
-    </div>
-  )
-}
-
-/* ── Method badge ───────────────────────────────────────────── */
-function MethodBadge({ method }) {
-  const colors = {
-    GET: 'bg-[rgba(34,197,94,0.1)] text-[#4ade80] border-[rgba(34,197,94,0.25)]',
-    POST: 'bg-[rgba(124,58,237,0.15)] text-[#a78bfa] border-[rgba(124,58,237,0.3)]',
-    PUT: 'bg-[rgba(251,191,36,0.1)] text-[#fbbf24] border-[rgba(251,191,36,0.25)]',
-    DELETE: 'bg-[rgba(239,68,68,0.1)] text-[#f87171] border-[rgba(239,68,68,0.25)]',
-  }
-  return (
-    <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-bold border font-mono ${colors[method] || colors.GET}`}>
-      {method}
-    </span>
-  )
-}
-
-/* ── Endpoint data ──────────────────────────────────────────── */
-const GROUPS = [
-  {
-    id: 'auth',
-    label: 'Authentication',
-    icon: Lock,
-    endpoints: [
-      {
-        id: 'auth-signup',
-        method: 'POST',
-        path: '/api/v1/auth/signup',
-        description: 'Create a new user account. Returns a JWT access token and sets a refresh cookie.',
-        request: {
-          email: 'user@example.com',
-          password: 'mysecurepassword123',
-          name: 'Jane Doe',
-        },
-        response: {
-          user: { id: 'usr_01HXQFK2...', email: 'user@example.com', name: 'Jane Doe' },
-          access_token: 'eyJhbGci...',
-          token_type: 'Bearer',
-        },
-        notes: 'Password must be at least 8 characters. Email must be unique.',
-      },
-      {
-        id: 'auth-login',
-        method: 'POST',
-        path: '/api/v1/auth/login',
-        description: 'Sign in with email and password. Returns a JWT access token.',
-        request: {
-          email: 'user@example.com',
-          password: 'mysecurepassword123',
-        },
-        response: {
-          user: { id: 'usr_01HXQFK2...', email: 'user@example.com', name: 'Jane Doe' },
-          access_token: 'eyJhbGci...',
-          expires_in: 3600,
-        },
-        notes: 'Rate limited to 10 requests per minute per IP.',
-      },
-    ],
-  },
-  {
-    id: 'chat',
-    label: 'Chat Threads',
-    icon: MessageSquare,
-    endpoints: [
-      {
-        id: 'chat-list',
-        method: 'GET',
-        path: '/api/v1/chat',
-        description: 'List all conversation threads for the authenticated user.',
-        request: null,
-        response: {
-          threads: [
-            { id: 'thr_01ABC...', title: 'My first chat', created_at: '2026-05-21T10:00:00Z', message_count: 12 },
-          ],
-          total: 1,
-          page: 1,
-        },
-        notes: 'Results paginated — use ?page=N&limit=20 query params.',
-      },
-      {
-        id: 'chat-create',
-        method: 'POST',
-        path: '/api/v1/chat',
-        description: 'Create a new conversation thread.',
-        request: {
-          title: 'New chat',
-          model: 'gemini/gemini-2.5-pro',
-        },
-        response: {
-          id: 'thr_01ABC...',
-          title: 'New chat',
-          model: 'gemini/gemini-2.5-pro',
-          created_at: '2026-05-21T10:00:00Z',
-        },
-        notes: 'Omit title to auto-generate from first message.',
-      },
-      {
-        id: 'chat-message',
-        method: 'POST',
-        path: '/api/v1/chat/:id/messages',
-        description: 'Send a message and stream the AI response via Server-Sent Events (SSE).',
-        request: {
-          content: 'Explain quantum computing in simple terms.',
-          model: 'gemini/gemini-2.5-pro',
-          stream: true,
-        },
-        response: {
-          _note: 'SSE stream — one chunk per event',
-          event: 'message',
-          data: '{ "delta": "Quantum", "finish_reason": null }',
-        },
-        notes: 'Set Accept: text/event-stream header. Each data event contains a delta string.',
-      },
-    ],
-  },
-  {
-    id: 'completions',
-    label: 'Completions',
-    icon: Users,
-    endpoints: [
-      {
-        id: 'council',
-        method: 'POST',
-        path: '/api/v1/completions/council',
-        description: 'Council Mode — query multiple models simultaneously and receive a synthesized response.',
-        request: {
-          content: 'What is the best programming language for AI?',
-          models: ['gemini/gemini-2.5-pro', 'groq/llama-3.1-70b', 'gemini/gemini-2.5-flash'],
-          synthesize: true,
-        },
-        response: {
-          individual: [
-            { model: 'gemini/gemini-2.5-pro', content: 'Python is the most...' },
-            { model: 'groq/llama-3.1-70b', content: 'Python excels due to...' },
-          ],
-          synthesis: 'All models agree that Python is the dominant language...',
-          consensus_score: 0.87,
-        },
-        notes: 'Council Mode is available on Pro and Enterprise plans. Streams each model in parallel.',
-      },
-    ],
-  },
-  {
-    id: 'models',
-    label: 'Models',
-    icon: List,
-    endpoints: [
-      {
-        id: 'models-list',
-        method: 'GET',
-        path: '/api/v1/models',
-        description: 'Returns all available AI models and their metadata.',
-        request: null,
-        response: {
-          models: [
-            { id: 'gemini/gemini-2.5-pro', provider: 'Cyber Intelligence Hub', context: 1000000, available: true },
-            { id: 'groq/llama-3.1-70b', provider: 'Cyber Reasoning Engine', context: 131000, available: true },
-            { id: 'gemini/gemini-2.5-flash', provider: 'Cyber Distributed Core', context: 1000000, available: true },
-          ],
-        },
-        notes: 'No authentication required for this endpoint.',
-      },
-    ],
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    icon: Settings,
-    endpoints: [
-      {
-        id: 'settings-get',
-        method: 'GET',
-        path: '/api/v1/settings',
-        description: 'Retrieve all user settings and preferences.',
-        request: null,
-        response: {
-          theme: 'dark',
-          default_model: 'gemini/gemini-2.5-pro',
-          tts_enabled: true,
-          tts_voice: 'aria',
-          council_mode: false,
-          stream: true,
-        },
-        notes: 'Returns merged defaults + user overrides.',
-      },
-    ],
-  },
+const SECTIONS = [
+  { id: 'welcome', label: 'Welcome' },
+  { id: 'auth', label: 'Authentication' },
+  { id: 'chat-completions', label: 'Chat Completions' },
+  { id: 'council-mode', label: 'Council Mode' },
+  { id: 'list-models', label: 'List Models' },
+  { id: 'account-usage', label: 'Account & Usage' },
 ]
 
-/* ── Endpoint block ─────────────────────────────────────────── */
-function EndpointBlock({ ep }) {
-  return (
-    <div id={ep.id} className="mb-14 scroll-mt-24">
-      <div className="flex items-center gap-3 mb-3">
-        <MethodBadge method={ep.method} />
-        <code className="text-[#e2e8f0] text-sm font-mono">{ep.path}</code>
-      </div>
-      <p className="text-[#64748b] text-sm leading-relaxed mb-5">{ep.description}</p>
+const LANGUAGES = [
+  { id: 'curl', label: 'cURL' },
+  { id: 'javascript', label: 'Node.js' },
+  { id: 'python', label: 'Python' }
+]
 
-      {ep.notes && (
-        <div className="mb-5 p-3.5 rounded-lg bg-[rgba(124,58,237,0.06)] border border-[rgba(124,58,237,0.2)] text-xs text-[#94a3b8]">
-          <span className="text-[#a78bfa] font-medium">Note:</span> {ep.notes}
-        </div>
-      )}
+const ENDPOINTS_DATA = {
+  'chat-completions': {
+    method: 'POST',
+    path: '/api/v1/chat/:id/messages',
+    desc: 'Send a prompt to the model and retrieve responses. Supports streaming via Server-Sent Events (SSE) for real-time output.',
+    params: [
+      { name: 'content', type: 'string', required: true, desc: 'The user message to send to the assistant.' },
+      { name: 'model', type: 'string', required: false, default: 'groq/llama-3.1-8b', desc: 'ID of the model to use. See Models page for all options.' },
+      { name: 'stream', type: 'boolean', required: false, default: 'true', desc: 'Whether to stream responses back in real-time.' }
+    ],
+    code: {
+      curl: `curl -X POST "${BASE_URL}/api/v1/chat/thr_01HX/messages" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "content": "Hello! Explain quantum computing.",
+    "model": "groq/llama-3.1-8b",
+    "stream": true
+  }'`,
+      javascript: `import { CyberCli } from '@cybercli/sdk';
 
-      <div className="space-y-4">
-        {ep.request && (
-          <div>
-            <p className="text-xs text-[#475569] font-semibold uppercase tracking-wider mb-2">Request body</p>
-            <JsonBlock json={ep.request} />
-          </div>
-        )}
-        <div>
-          <p className="text-xs text-[#475569] font-semibold uppercase tracking-wider mb-2">Response</p>
-          <JsonBlock json={ep.response} />
-        </div>
-      </div>
-    </div>
-  )
+const cyber = new CyberCli({ apiKey: 'YOUR_API_KEY' });
+
+const stream = await cyber.chat.messages.create({
+  threadId: 'thr_01HX',
+  content: 'Hello! Explain quantum computing.',
+  model: 'groq/llama-3.1-8b',
+  stream: true
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.content);
+}`,
+      python: `from cybercli import CyberCli
+
+client = CyberCli(api_key="YOUR_API_KEY")
+
+stream = client.chat.messages.create(
+    thread_id="thr_01HX",
+    content="Hello! Explain quantum computing.",
+    model="groq/llama-3.1-8b",
+    stream=True
+)
+
+for chunk in stream:
+    print(chunk.content, end="", flush=True)`
+    },
+    response: {
+      event: 'message',
+      data: {
+        delta: 'Quantum computing is a type of computing...',
+        finish_reason: null
+      }
+    }
+  },
+  'council-mode': {
+    method: 'POST',
+    path: '/api/v1/completions/council',
+    desc: 'Query multiple expert models simultaneously and retrieve a single synthesized consensus answer.',
+    params: [
+      { name: 'content', type: 'string', required: true, desc: 'The prompt to submit to the debating council.' },
+      { name: 'models', type: 'array', required: false, default: '["openrouter/gpt-4o-mini", "groq/llama-3.1-8b", "gemini/gemini-2.5-flash"]', desc: 'List of model IDs to participate in the council debate.' },
+      { name: 'synthesize', type: 'boolean', required: false, default: 'true', desc: 'If true, compiles responses into a final consensus.' }
+    ],
+    code: {
+      curl: `curl -X POST "${BASE_URL}/api/v1/completions/council" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "content": "Should I use SQL or NoSQL?",
+    "models": ["groq/llama-3.1-70b", "gemini/gemini-2.5-pro"],
+    "synthesize": true
+  }'`,
+      javascript: `const response = await fetch('${BASE_URL}/api/v1/completions/council', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    content: 'Should I use SQL or NoSQL?',
+    models: ['groq/llama-3.1-70b', 'gemini/gemini-2.5-pro'],
+    synthesize: true
+  })
+});
+const data = await response.json();
+console.log(data.synthesis);`,
+      python: `import requests
+
+res = requests.post(
+    "${BASE_URL}/api/v1/completions/council",
+    headers={"Authorization": "Bearer YOUR_API_KEY"},
+    json={
+        "content": "Should I use SQL or NoSQL?",
+        "models": ["groq/llama-3.1-70b", "gemini/gemini-2.5-pro"],
+        "synthesize": True
+    }
+)
+print(res.json()["synthesis"])`
+    },
+    response: {
+      individual: [
+        { model: 'groq/llama-3.1-70b', content: 'SQL is best for transactional systems...' },
+        { model: 'gemini/gemini-2.5-pro', content: 'NoSQL fits horizontal scaling needs...' }
+      ],
+      synthesis: 'For robust relational integrity, SQL is preferred. For scale, NoSQL...',
+      consensus_score: 0.92
+    }
+  },
+  'list-models': {
+    method: 'GET',
+    path: '/api/v1/models',
+    desc: 'Retrieve metadata for all supported AI models in the unified gateway, including tier and context details.',
+    params: [],
+    code: {
+      curl: `curl "${BASE_URL}/api/v1/models" \\
+  -H "Authorization: Bearer YOUR_API_KEY"`,
+      javascript: `const response = await fetch('${BASE_URL}/api/v1/models', {
+  headers: { 'Authorization': 'Bearer YOUR_API_KEY' }
+});
+const { models } = await response.json();
+console.log(models);`,
+      python: `import requests
+
+res = requests.get(
+    "${BASE_URL}/api/v1/models",
+    headers={"Authorization": "Bearer YOUR_API_KEY"}
+)
+print(res.json()["models"])`
+    },
+    response: {
+      models: [
+        { id: 'groq/llama-3.1-8b', name: 'CyberCli-Swift', context: 131072, tier: 'Free' },
+        { id: 'gemini/gemini-2.5-pro', name: 'CyberCli-Pro', context: 1048576, tier: 'Pro' }
+      ]
+    }
+  }
 }
 
-/* ── Main page ──────────────────────────────────────────────── */
 export default function ApiReferencePage() {
-  const [activeGroup, setActiveGroup] = useState('auth')
-  const contentRef = useRef(null)
+  const [activeTab, setActiveTab] = useState('curl')
+  const [activeSection, setActiveSection] = useState('welcome')
+  const [copiedCode, setCopiedCode] = useState(false)
+  const [copiedResponse, setCopiedResponse] = useState(false)
 
-  const scrollTo = (id) => {
-    const el = document.getElementById(id)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    setActiveGroup(id.split('-')[0] === 'auth' ? 'auth' : id.split('-')[0])
+  const sectionRefs = {
+    welcome: useRef(null),
+    auth: useRef(null),
+    'chat-completions': useRef(null),
+    'council-mode': useRef(null),
+    'list-models': useRef(null),
+    'account-usage': useRef(null),
   }
 
-  // Track active section on scroll
+  const handleScrollTo = (id) => {
+    setActiveSection(id)
+    sectionRefs[id]?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const gid = GROUPS.find(g => g.endpoints.some(e => e.id === entry.target.id))?.id
-            if (gid) setActiveGroup(gid)
+    const handleScroll = () => {
+      const scrollPos = window.scrollY + 200
+      for (const section of SECTIONS) {
+        const el = sectionRefs[section.id]?.current
+        if (el) {
+          const top = el.offsetTop
+          const height = el.offsetHeight
+          if (scrollPos >= top && scrollPos < top + height) {
+            setActiveSection(section.id)
+            break
           }
-        })
-      },
-      { rootMargin: '-20% 0px -70% 0px' }
-    )
-    document.querySelectorAll('[data-endpoint]').forEach(el => observer.observe(el))
-    return () => observer.disconnect()
+        }
+      }
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  const handleCopyText = (text, type) => {
+    navigator.clipboard.writeText(text)
+    if (type === 'code') {
+      setCopiedCode(true)
+      setTimeout(() => setCopiedCode(false), 2000)
+    } else {
+      setCopiedResponse(true)
+      setTimeout(() => setCopiedResponse(false), 2000)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-[#0A0A0F] pt-20">
-      {/* Header */}
-      <motion.div className="border-b border-[rgba(255,255,255,0.06)] px-6 py-12 text-center"
-        initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[rgba(124,58,237,0.3)] bg-[rgba(124,58,237,0.08)] text-[#a78bfa] text-xs font-medium mb-5">
-          <BookOpen className="w-3 h-3" /> API Reference v1
-        </div>
-        <h1 className="text-4xl font-bold text-white mb-3">API Reference</h1>
-        <p className="text-[#64748b] text-base mb-4">
-          Programmatic access to CyberCli's AI gateway and chat infrastructure.
-        </p>
-        <code className="text-xs font-mono px-3 py-1.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-[#a78bfa]">
-          Base URL: {BASE_URL}
-        </code>
-      </motion.div>
-
-      <div className="flex max-w-[1400px] mx-auto">
-        {/* Sticky sidebar */}
-        <aside className="hidden lg:block w-64 flex-shrink-0 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto py-8 px-4 border-r border-[rgba(255,255,255,0.05)]">
-          {/* Auth note */}
-          <div className="mb-6 p-3 rounded-lg bg-[rgba(124,58,237,0.08)] border border-[rgba(124,58,237,0.2)]">
-            <div className="flex items-center gap-2 text-[#a78bfa] text-xs font-semibold mb-1">
-              <Lock className="w-3 h-3" /> Authentication
+    <div className="min-h-screen bg-[#07070a] text-gray-300 font-sans antialiased overflow-x-hidden">
+      {/* Background design */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.015]"
+        style={{
+          backgroundImage: `radial-gradient(ellipse at 50% -20%, #7C3AED 0%, transparent 60%),
+                            linear-gradient(#fff 1px, transparent 1px),
+                            linear-gradient(90deg, #fff 1px, transparent 1px)`,
+          backgroundSize: '100% 100%, 40px 40px, 40px 40px'
+        }}
+      />
+      
+      {/* Page Header */}
+      <header className="relative pt-32 pb-16 border-b border-white/[0.04] bg-[#0A0A0F]/60 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <ScrollReveal>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-orange-500/20 bg-orange-500/5 text-orange-400 text-xs font-semibold mb-4 tracking-wide">
+              <Terminal className="w-3.5 h-3.5" />
+              The Gateway
             </div>
-            <p className="text-[#64748b] text-[11px] leading-relaxed">
-              Include <code className="text-[#86efac]">Authorization: Bearer {'<token>'}</code> on protected endpoints.
+          </ScrollReveal>
+          <ScrollReveal delay={0.08}>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
+              API Reference
+            </h1>
+          </ScrollReveal>
+          <ScrollReveal delay={0.15}>
+            <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
+              Programmatic access to the CyberCli multi-provider AI orchestrator, enabling custom tool calls, parallel debate, and low-latency LLM gateway endpoints.
             </p>
-          </div>
+          </ScrollReveal>
+        </div>
+      </header>
 
+      {/* Main Grid Workspace */}
+      <div className="max-w-7xl mx-auto px-6 flex flex-col lg:flex-row gap-8 py-10 relative">
+        
+        {/* Sticky Sidebar Left */}
+        <aside className="w-full lg:w-60 flex-shrink-0 lg:sticky lg:top-24 lg:h-[calc(100vh-8rem)] overflow-y-auto pr-2 pb-6 border-b lg:border-b-0 lg:border-r border-white/[0.05]">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest px-3 mb-3">Endpoints</h3>
           <nav className="space-y-1">
-            {GROUPS.map(group => (
-              <div key={group.id} className="mb-4">
-                <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-[#475569] uppercase tracking-wider">
-                  <group.icon className="w-3.5 h-3.5" />
-                  {group.label}
-                </div>
-                {group.endpoints.map(ep => (
-                  <button
-                    key={ep.id}
-                    onClick={() => scrollTo(ep.id)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs transition-all ${
-                      activeGroup === group.id
-                        ? 'bg-[rgba(124,58,237,0.1)] text-[#e2e8f0]'
-                        : 'text-[#64748b] hover:text-[#94a3b8] hover:bg-[rgba(255,255,255,0.03)]'
-                    }`}
-                  >
-                    <MethodBadge method={ep.method} />
-                    <span className="font-mono truncate">{ep.path.replace('/api/v1', '')}</span>
-                  </button>
-                ))}
-              </div>
+            {SECTIONS.map((sec) => (
+              <button
+                key={sec.id}
+                onClick={() => handleScrollTo(sec.id)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-sm font-medium transition-all group ${
+                  activeSection === sec.id
+                    ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
+                    : 'text-gray-400 hover:bg-white/[0.03] hover:text-white border border-transparent'
+                }`}
+              >
+                <span>{sec.label}</span>
+                <ChevronRight className={`w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity ${activeSection === sec.id ? 'opacity-100 text-orange-400' : 'text-gray-500'}`} />
+              </button>
             ))}
           </nav>
         </aside>
 
-        {/* Content */}
-        <main ref={contentRef} className="flex-1 min-w-0 px-6 lg:px-12 py-12">
-          {/* Auth note */}
-          <motion.div
-            className="mb-12 p-5 rounded-xl border border-[rgba(124,58,237,0.25)] bg-[rgba(124,58,237,0.06)]"
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          >
-            <div className="flex items-center gap-2 text-[#a78bfa] font-semibold mb-2">
-              <Lock className="w-4 h-4" /> Authentication
+        {/* 2-Column Split Pane Content */}
+        <main className="flex-1 space-y-24 pb-20">
+          
+          {/* Welcome section */}
+          <section ref={sectionRefs.welcome} className="scroll-mt-28 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-7 space-y-4">
+              <h2 className="text-2xl font-bold text-white tracking-tight">Introduction</h2>
+              <p className="text-sm leading-relaxed text-gray-400">
+                The CyberCli API allows you to integrate state-of-the-art language processing, code synthesis, and multi-model consensus checks straight into your applications.
+              </p>
+              <p className="text-sm leading-relaxed text-gray-400">
+                All requests must be sent securely via HTTPS. Formats are standard JSON, and responses utilize standard HTTP return codes. If you have questions, join our developer Discord.
+              </p>
             </div>
-            <p className="text-[#94a3b8] text-sm leading-relaxed mb-3">
-              Protected endpoints require a Bearer token in the Authorization header. Obtain your token from the <Link to="/auth/login" className="text-[#a78bfa] hover:underline">login endpoint</Link> or the <Link to="/settings" className="text-[#a78bfa] hover:underline">API Keys</Link> settings page.
-            </p>
-            <div className="rounded-lg bg-[#0d0d14] border border-[rgba(255,255,255,0.06)] p-4">
-              <code className="text-xs text-[#e2e8f0] font-mono">
-                Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            <div className="lg:col-span-5 border border-white/[0.05] bg-[#0c0c12]/80 backdrop-blur rounded-2xl p-5 space-y-3">
+              <div className="flex items-center gap-2 text-white font-semibold text-sm">
+                <Terminal className="w-4 h-4 text-orange-400" />
+                <span>Base Environment URL</span>
+              </div>
+              <code className="block text-xs font-mono p-3 rounded-xl bg-black/40 border border-white/[0.04] text-orange-400 break-all select-all">
+                {BASE_URL}
               </code>
             </div>
-          </motion.div>
+          </section>
 
-          {GROUPS.map((group, gi) => (
-            <motion.section key={group.id} id={group.id}
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }} transition={{ delay: gi * 0.05 }}
-              className="mb-16"
-            >
-              <div className="flex items-center gap-3 mb-8 pb-4 border-b border-[rgba(255,255,255,0.06)]">
-                <div className="w-8 h-8 rounded-lg bg-[rgba(124,58,237,0.15)] border border-[rgba(124,58,237,0.25)] flex items-center justify-center">
-                  <group.icon className="w-4 h-4 text-[#a78bfa]" />
-                </div>
-                <h2 className="text-xl font-bold text-white">{group.label}</h2>
+          {/* Authentication section */}
+          <section ref={sectionRefs.auth} className="scroll-mt-28 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-7 space-y-4">
+              <h2 className="text-2xl font-bold text-white tracking-tight">Authentication</h2>
+              <p className="text-sm leading-relaxed text-gray-400">
+                All protected endpoints require a Bearer token inside the HTTP `Authorization` header.
+              </p>
+              <p className="text-sm leading-relaxed text-gray-400">
+                You can generate API keys directly inside the chat user dashboard under the API Keys settings panel. Keep your API keys confidential and do not share them in public repositories.
+              </p>
+              
+              {/* Table of Headers */}
+              <div className="overflow-hidden border border-white/[0.05] rounded-xl mt-4">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="bg-white/[0.02] border-b border-white/[0.05] text-gray-500 font-semibold uppercase tracking-wider">
+                      <th className="px-4 py-2.5">Header Name</th>
+                      <th className="px-4 py-2.5">Type</th>
+                      <th className="px-4 py-2.5">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.03]">
+                    <tr>
+                      <td className="px-4 py-3 font-mono text-orange-400 font-semibold">Authorization</td>
+                      <td className="px-4 py-3 text-gray-400">string</td>
+                      <td className="px-4 py-3 text-gray-400">Bearer token format (e.g. `Bearer sk_cyber_...`)</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 font-mono text-gray-400">Content-Type</td>
+                      <td className="px-4 py-3 text-gray-400">string</td>
+                      <td className="px-4 py-3 text-gray-400">Must be set to `application/json`</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              {group.endpoints.map(ep => (
-                <div key={ep.id} id={ep.id} data-endpoint>
-                  <EndpointBlock ep={ep} />
+            </div>
+            
+            <div className="lg:col-span-5 border border-white/[0.05] bg-[#0c0c12]/80 backdrop-blur rounded-2xl p-5 space-y-3.5">
+              <div className="flex items-center gap-2 text-white font-semibold text-sm">
+                <Lock className="w-4 h-4 text-orange-400" />
+                <span>Example Header Authorization</span>
+              </div>
+              <pre className="p-3.5 rounded-xl bg-black/40 border border-white/[0.04] text-xs font-mono text-gray-300 overflow-x-auto leading-relaxed select-all">
+                Authorization: Bearer sk_cyber_7c3aed...
+              </pre>
+            </div>
+          </section>
+
+          {/* Endpoints Sections */}
+          {['chat-completions', 'council-mode', 'list-models'].map((epKey) => {
+            const ep = ENDPOINTS_DATA[epKey]
+            const isPost = ep.method === 'POST'
+            const methodColor = isPost 
+              ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' 
+              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+
+            return (
+              <section key={epKey} ref={sectionRefs[epKey]} className="scroll-mt-28 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start border-t border-white/[0.04] pt-12">
+                
+                {/* Left Column: Docs & Params */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className={`px-2 py-0.5 rounded-lg text-xs font-bold font-mono border ${methodColor}`}>
+                      {ep.method}
+                    </span>
+                    <code className="text-white text-sm font-semibold font-mono bg-white/[0.03] px-2 py-1 rounded-md border border-white/[0.04]">
+                      {ep.path}
+                    </code>
+                  </div>
+                  
+                  <p className="text-sm leading-relaxed text-gray-400">
+                    {ep.desc}
+                  </p>
+
+                  {ep.params.length > 0 && (
+                    <div className="mt-6 space-y-4">
+                      <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Request Parameters</h4>
+                      <div className="overflow-hidden border border-white/[0.05] rounded-xl">
+                        <table className="w-full text-xs text-left border-collapse">
+                          <thead>
+                            <tr className="bg-white/[0.02] border-b border-white/[0.05] text-gray-500 font-semibold uppercase tracking-wider">
+                              <th className="px-4 py-2.5">Field</th>
+                              <th className="px-4 py-2.5">Type</th>
+                              <th className="px-4 py-2.5">Description</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/[0.03]">
+                            {ep.params.map(p => (
+                              <tr key={p.name}>
+                                <td className="px-4 py-3 font-mono font-semibold text-gray-200">
+                                  {p.name} {p.required && <span className="text-rose-400">*</span>}
+                                </td>
+                                <td className="px-4 py-3 font-mono text-gray-500 text-[11px]">{p.type}</td>
+                                <td className="px-4 py-3 text-gray-400 leading-normal">
+                                  {p.desc}
+                                  {p.default && <div className="text-[10px] text-gray-600 mt-0.5">Default: {p.default}</div>}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column: Code Snippet Card */}
+                <div className="lg:col-span-5 space-y-5">
+                  
+                  {/* Snippet Card */}
+                  <div className="border border-white/[0.06] bg-[#0d0d12]/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.05] bg-white/[0.02]">
+                      <div className="flex items-center gap-1.5">
+                        {LANGUAGES.map((lang) => (
+                          <button
+                            key={lang.id}
+                            onClick={() => setActiveTab(lang.id)}
+                            className={`text-xs px-2.5 py-1 rounded-md font-medium transition-colors ${
+                              activeTab === lang.id
+                                ? 'bg-orange-500/10 text-orange-400'
+                                : 'text-gray-500 hover:text-gray-300'
+                            }`}
+                          >
+                            {lang.label}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => handleCopyText(ep.code[activeTab], 'code')}
+                        className="text-gray-500 hover:text-white transition-colors p-1"
+                      >
+                        {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+
+                    <pre className="p-4 text-xs font-mono text-orange-200 overflow-x-auto leading-relaxed select-all max-h-[280px]">
+                      {ep.code[activeTab]}
+                    </pre>
+                  </div>
+
+                  {/* Response Card */}
+                  <div className="border border-white/[0.06] bg-[#09090c]/90 rounded-2xl overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.04] bg-white/[0.01]">
+                      <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Example Response</span>
+                      <button
+                        onClick={() => handleCopyText(JSON.stringify(ep.response, null, 2), 'response')}
+                        className="text-gray-500 hover:text-white transition-colors p-1"
+                      >
+                        {copiedResponse ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <pre className="p-4 text-xs font-mono text-gray-400 overflow-x-auto leading-relaxed max-h-[220px]">
+                      {JSON.stringify(ep.response, null, 2)}
+                    </pre>
+                  </div>
+
+                </div>
+              </section>
+            )
+          })}
+
+          {/* Account and Usage section */}
+          <section ref={sectionRefs['account-usage']} className="scroll-mt-28 border-t border-white/[0.04] pt-12 space-y-6">
+            <div className="max-w-2xl">
+              <h2 className="text-2xl font-bold text-white tracking-tight">Account & Usage Policy</h2>
+              <p className="text-sm leading-relaxed text-gray-400 mt-2">
+                All developer accounts are bound by standard rate limits. High-frequency users or enterprise callers can contact sales to configure customized SLA guarantees, high-bandwidth compute nodes, and specialized dedicated channels.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {[
+                { plan: 'Free', limit: '50 req / hour', latency: 'Standard speed', desc: 'Ideal for basic testing.' },
+                { plan: 'Pro', limit: '500 req / hour', latency: 'Priority queueing', desc: 'Perfect for power-users.' },
+                { plan: 'Developer', limit: '1500 req / hour', latency: 'Dedicated queueing', desc: 'Custom key integrations.' }
+              ].map(plan => (
+                <div key={plan.plan} className="border border-white/[0.04] bg-white/[0.01] rounded-2xl p-5 hover:border-white/[0.08] transition-colors">
+                  <div className="text-sm font-bold text-white mb-1">{plan.plan}</div>
+                  <div className="text-xs text-orange-400 font-semibold mb-2">{plan.limit}</div>
+                  <div className="text-[11px] text-gray-400 font-medium mb-1">{plan.latency}</div>
+                  <div className="text-[10px] text-gray-600 leading-normal">{plan.desc}</div>
                 </div>
               ))}
-            </motion.section>
-          ))}
-
-          {/* Rate limits section */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="mt-4 p-8 rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]"
-          >
-            <h3 className="text-lg font-bold text-white mb-4">Rate Limits</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[rgba(255,255,255,0.06)]">
-                    <th className="text-left py-2 pr-8 text-[#475569] font-medium text-xs uppercase tracking-wider">Plan</th>
-                    <th className="text-left py-2 pr-8 text-[#475569] font-medium text-xs uppercase tracking-wider">Requests / hour</th>
-                    <th className="text-left py-2 text-[#475569] font-medium text-xs uppercase tracking-wider">Council Mode</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
-                  {[
-                    { plan: 'Free', rpm: '50', council: '—' },
-                    { plan: 'Pro', rpm: '500', council: '✓' },
-                    { plan: 'Enterprise', rpm: 'Unlimited', council: '✓' },
-                  ].map(row => (
-                    <tr key={row.plan}>
-                      <td className="py-3 pr-8 text-[#94a3b8]">{row.plan}</td>
-                      <td className="py-3 pr-8 text-[#e2e8f0] font-mono">{row.rpm}</td>
-                      <td className="py-3 text-[#4ade80]">{row.council}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-          </motion.section>
+          </section>
+
         </main>
       </div>
     </div>

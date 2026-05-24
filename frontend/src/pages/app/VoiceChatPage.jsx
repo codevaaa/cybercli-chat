@@ -214,7 +214,7 @@ export default function VoiceChatPage() {
         prompt: `You are Sol, a warm, natural, and friendly conversational AI assistant. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
       },
       cove: {
-        model: 'groq/llama-3.1-70b',
+        model: 'groq/llama-3.1-8b',
         prompt: `You are Cove, a clear, professional, and expert technical advisor. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
       },
       breeze: {
@@ -222,7 +222,7 @@ export default function VoiceChatPage() {
         prompt: `You are Breeze, an animated, enthusiastic, and empathetic creative partner. Keep your responses warm, energetic, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in an animated, warm tone.`
       },
       orion: {
-        model: 'groq/llama-3.1-70b',
+        model: 'groq/llama-3.1-8b',
         prompt: `You are Orion, a deep, authoritative, and strategic AI planner. Provide brief but strong guidance (maximum 1-2 sentences). Absolutely DO NOT use markdown syntax, bullet points, or complex formatting. Speak with confidence and authority.`
       },
       echo: {
@@ -336,7 +336,9 @@ export default function VoiceChatPage() {
 
     rec.onend = () => {
       if (!isPlayingRef.current && !isProcessingRef.current && stepRef.current === 'active') {
-        try { rec.start() } catch {}
+        setTimeout(() => {
+          try { rec.start() } catch {}
+        }, 100)
       } else {
         setIsListening(false)
       }

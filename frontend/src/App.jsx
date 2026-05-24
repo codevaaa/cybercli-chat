@@ -10,6 +10,7 @@ import HomePage from '@pages/public/HomePage'
 import FeaturesPage from '@pages/public/FeaturesPage'
 import FeatureDetailPage from '@pages/public/FeatureDetailPage'
 import ModelsPage from '@pages/public/ModelsPage'
+import ModelDetailPage from '@pages/public/ModelDetailPage'
 import PricingPage from '@pages/public/PricingPage'
 import ContactPage from '@pages/public/ContactPage'
 import AboutPage from '@pages/public/AboutPage'
@@ -68,6 +69,7 @@ function App() {
       || location.pathname.startsWith('/blog/')
       || location.pathname.startsWith('/docs/')
       || location.pathname.startsWith('/features/')
+      || location.pathname.startsWith('/models/')
   }
 
   return (
@@ -80,6 +82,7 @@ function App() {
           <Route path="/features" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
           <Route path="/features/:slug" element={<PublicLayout><FeatureDetailPage /></PublicLayout>} />
           <Route path="/models" element={<PublicLayout><ModelsPage /></PublicLayout>} />
+          <Route path="/models/:id" element={<PublicLayout><ModelDetailPage /></PublicLayout>} />
           <Route path="/pricing" element={<PublicLayout><PricingPage /></PublicLayout>} />
           <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
           <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />

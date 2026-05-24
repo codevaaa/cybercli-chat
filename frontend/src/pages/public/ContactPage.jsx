@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, MessageSquare, MapPin, Send, Check, ArrowUpRight, Globe, Twitter, Github } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import api from '../../lib/api.js'
 
 const CONTACT_CHANNELS = [
   {
@@ -41,11 +42,17 @@ export default function ContactPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSending(true)
-    await new Promise(r => setTimeout(r, 1200))
-    setSending(false)
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 4000)
-    setForm({ name: '', email: '', subject: '', message: '' })
+    try {
+      await api.post('/contact', form)
+      setSending(false)
+      setSubmitted(true)
+      setTimeout(() => setSubmitted(false), 4000)
+      setForm({ name: '', email: '', subject: '', message: '' })
+    } catch (err) {
+      console.error('Contact submission error:', err)
+      setSending(false)
+      alert(err.response?.data?.error || err.message || 'Something went wrong. Please try again.')
+    }
   }
 
   const InputField = ({ label, id, type = 'text', value, onChange, placeholder, required, as: As = 'input', rows }) => (

@@ -1,13 +1,14 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { Sparkles, Wrench, Bug, Zap, ArrowRight } from 'lucide-react'
+import { Sparkles, Wrench, Bug, Zap, ArrowRight, Rss, BookOpen, Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import ScrollReveal from '@components/ui/ScrollReveal'
 
 const BADGE_COLORS = {
-  New: 'bg-[rgba(124,58,237,0.15)] text-[#a78bfa] border-[rgba(124,58,237,0.3)]',
-  Improved: 'bg-[rgba(34,197,94,0.1)] text-[#4ade80] border-[rgba(34,197,94,0.25)]',
-  Fixed: 'bg-[rgba(251,191,36,0.1)] text-[#fbbf24] border-[rgba(251,191,36,0.25)]',
-  Breaking: 'bg-[rgba(239,68,68,0.1)] text-[#f87171] border-[rgba(239,68,68,0.25)]',
+  New: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  Improved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  Fixed: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  Breaking: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
 }
 
 const TYPE_ICONS = {
@@ -17,11 +18,11 @@ const TYPE_ICONS = {
 }
 
 const VERSION_BADGE_COLORS = {
-  '1.3.0': 'bg-[rgba(124,58,237,0.2)] text-[#a78bfa] border-[rgba(124,58,237,0.4)]',
-  '1.2.0': 'bg-[rgba(217,119,87,0.15)] text-[#fb923c] border-[rgba(217,119,87,0.35)]',
-  '1.1.0': 'bg-[rgba(34,197,94,0.1)] text-[#4ade80] border-[rgba(34,197,94,0.25)]',
-  '1.0.0': 'bg-[rgba(251,191,36,0.1)] text-[#fbbf24] border-[rgba(251,191,36,0.25)]',
-  '0.9.0': 'bg-[rgba(148,163,184,0.1)] text-[#94a3b8] border-[rgba(148,163,184,0.2)]',
+  '1.3.0': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  '1.2.0': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  '1.1.0': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  '1.0.0': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  '0.9.0': 'bg-gray-500/10 text-gray-400 border-gray-500/20',
 }
 
 const ENTRIES = [
@@ -91,7 +92,7 @@ const ENTRIES = [
 
 function ChangelogEntry({ entry, index }) {
   const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-80px' })
+  const inView = useInView(ref, { once: true, margin: '-100px' })
   const vColor = VERSION_BADGE_COLORS[entry.version] || VERSION_BADGE_COLORS['0.9.0']
 
   return (
@@ -99,47 +100,52 @@ function ChangelogEntry({ entry, index }) {
       ref={ref}
       initial={{ opacity: 0, y: 40 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
-      className="relative pl-8 md:pl-0 md:grid md:grid-cols-[200px_1fr] md:gap-12"
+      transition={{ duration: 0.65, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
+      className="relative pl-10 md:pl-0 md:grid md:grid-cols-[200px_1fr] md:gap-12"
     >
-      {/* Left: date + version */}
-      <div className="hidden md:flex flex-col items-end pt-1 pr-4 gap-3 flex-shrink-0">
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${vColor}`}>
+      {/* Left Column: Date & version */}
+      <div className="hidden md:flex flex-col items-end pt-1 pr-6 gap-2">
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold font-mono border ${vColor}`}>
           v{entry.label || entry.version}
         </span>
-        <span className="text-[#475569] text-xs text-right">{entry.date}</span>
+        <span className="text-gray-500 text-xs font-medium">{entry.date}</span>
       </div>
 
-      {/* Timeline dot */}
-      <div className="hidden md:block absolute left-[200px] top-2 w-3 h-3 rounded-full bg-[#D97757] border-2 border-[#0A0A0F] shadow-[0_0_10px_rgba(217,119,87,0.6)]" style={{ transform: 'translateX(-6px)' }} />
+      {/* Vertical Timeline Dot */}
+      <div className="absolute left-[200px] top-2 w-3.5 h-3.5 rounded-full bg-orange-600 border-[3.5px] border-[#07070a] shadow-[0_0_12px_rgba(217,119,87,0.5)] hidden md:block" style={{ transform: 'translateX(-7px)' }} />
 
-      {/* Mobile header */}
+      {/* Mobile headers */}
       <div className="flex items-center gap-3 mb-4 md:hidden">
-        <div className="w-2 h-2 rounded-full bg-[#D97757] shadow-[0_0_8px_rgba(217,119,87,0.7)] flex-shrink-0 -ml-5" />
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${vColor}`}>
+        <div className="w-2.5 h-2.5 rounded-full bg-orange-600 shadow-[0_0_8px_rgba(217,119,87,0.7)] flex-shrink-0 -ml-[27px]" />
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold font-mono border ${vColor}`}>
           v{entry.label || entry.version}
         </span>
-        <span className="text-[#475569] text-xs">{entry.date}</span>
+        <span className="text-gray-500 text-xs font-medium">{entry.date}</span>
       </div>
 
-      {/* Right: content */}
-      <div className="pb-16">
-        <h2 className="text-xl font-bold text-white mb-5">{entry.headline}</h2>
-        <ul className="space-y-3">
+      {/* Right Column: Detailed updates */}
+      <div className="pb-16 border-l border-white/[0.04] md:border-l-0 pl-6 md:pl-0">
+        <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight mb-6">
+          {entry.headline}
+        </h2>
+        <ul className="space-y-4">
           {entry.changes.map((change, ci) => {
             const Icon = TYPE_ICONS[change.type] || Sparkles
             return (
-              <motion.li key={ci}
+              <motion.li
+                key={ci}
                 initial={{ opacity: 0, x: -10 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
-                transition={{ delay: index * 0.05 + ci * 0.06 + 0.2 }}
-                className="flex items-start gap-3"
+                transition={{ delay: index * 0.05 + ci * 0.06 + 0.15 }}
+                className="flex items-start gap-3.5 group"
               >
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border flex-shrink-0 mt-0.5 ${BADGE_COLORS[change.type]}`}>
-                  <Icon className="w-2.5 h-2.5" />
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold border flex-shrink-0 mt-0.5 uppercase tracking-wider ${BADGE_COLORS[change.type]}`}>
+                  <Icon className="w-3 h-3" />
                   {change.type}
                 </span>
-                <span className="text-[#94a3b8] text-sm leading-relaxed">{change.text}</span>
+                <span className="text-gray-400 text-sm leading-relaxed font-medium group-hover:text-gray-350 transition-colors">
+                  {change.text}
+                </span>
               </motion.li>
             )
           })}
@@ -150,54 +156,64 @@ function ChangelogEntry({ entry, index }) {
 }
 
 export default function ChangelogPage() {
+  const [email, setEmail] = useState('')
+  const [subscribed, setSubscribed] = useState(false)
+
+  const handleSubscribe = (e) => {
+    e.preventDefault()
+    if (!email) return
+    setSubscribed(true)
+    setTimeout(() => {
+      setSubscribed(false)
+      setEmail('')
+    }, 3000)
+  }
+
   return (
-    <div className="min-h-screen bg-[#0A0A0F] pt-28 pb-24">
+    <div className="min-h-screen bg-[#07070a] pt-32 pb-24 relative overflow-x-hidden">
       {/* Background grid */}
-      <div className="fixed inset-0 opacity-[0.025] pointer-events-none"
+      <div className="fixed inset-0 opacity-[0.02] pointer-events-none"
         style={{
           backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
+          backgroundSize: '50px 50px',
         }}
       />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.08) 0%, transparent 70%)' }}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] pointer-events-none opacity-20"
+        style={{ background: 'radial-gradient(ellipse, #7C3AED 0%, transparent 70%)' }}
       />
 
-      <div className="relative max-w-5xl mx-auto px-6">
-        {/* Header */}
-        <motion.div className="text-center mb-20"
-          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+      <div className="relative max-w-4xl mx-auto px-6">
+        {/* Header section */}
+        <motion.div className="text-center mb-24"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[rgba(124,58,237,0.3)] bg-[rgba(124,58,237,0.08)] text-[#a78bfa] text-xs font-medium mb-6">
-            <Zap className="w-3 h-3" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-purple-500/20 bg-purple-500/5 text-purple-400 text-xs font-semibold mb-6 tracking-wide">
+            <Zap className="w-3.5 h-3.5" />
             Product Updates
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-5 tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
             Changelog
           </h1>
-          <p className="text-[#64748b] text-lg max-w-2xl mx-auto">
+          <p className="text-gray-400 max-w-xl mx-auto text-sm md:text-base leading-relaxed">
             Everything new in CyberCli — new features, improvements, and bug fixes delivered continuously.
           </p>
-          <div className="flex items-center justify-center gap-4 mt-8">
-            <Link to="/docs"
-              className="inline-flex items-center gap-2 text-sm text-[#D97757] hover:text-[#E8896A] transition-colors"
-            >
+          <div className="flex items-center justify-center gap-5 mt-6 text-sm">
+            <Link to="/docs" className="inline-flex items-center gap-1 text-orange-400 hover:text-orange-350 transition-colors font-medium">
               Read the docs <ArrowRight className="w-4 h-4" />
             </Link>
-            <span className="text-[#1e293b]">|</span>
-            <Link to="/blog"
-              className="inline-flex items-center gap-2 text-sm text-[#475569] hover:text-[#94a3b8] transition-colors"
-            >
+            <span className="text-gray-700">|</span>
+            <Link to="/blog" className="inline-flex items-center gap-1 text-gray-450 hover:text-gray-300 transition-colors font-medium">
               Read the blog <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </motion.div>
 
-        {/* Timeline */}
-        <div className="relative">
-          {/* Vertical line */}
-          <div className="hidden md:block absolute left-[200px] top-0 bottom-0 w-px bg-[rgba(255,255,255,0.06)]" />
+        {/* Timeline Grid */}
+        <div className="relative mb-24">
+          {/* Vertical timeline bar */}
+          <div className="hidden md:block absolute left-[200px] top-4 bottom-12 w-[1px] bg-white/[0.04]" />
 
           <div className="space-y-0">
             {ENTRIES.map((entry, i) => (
@@ -206,24 +222,46 @@ export default function ChangelogPage() {
           </div>
 
           {/* Timeline end dot */}
-          <div className="hidden md:block absolute left-[200px] bottom-12 w-2 h-2 rounded-full bg-[#1e293b] border border-[rgba(255,255,255,0.1)]" style={{ transform: 'translateX(-5px)' }} />
+          <div className="hidden md:block absolute left-[200px] bottom-12 w-2.5 h-2.5 rounded-full bg-white/[0.08] border border-white/[0.05]" style={{ transform: 'translateX(-5px)' }} />
         </div>
 
-        {/* CTA */}
-        <motion.div
-          className="mt-8 text-center p-10 rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]"
-          initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }} transition={{ duration: 0.6 }}
-        >
-          <h3 className="text-2xl font-bold text-white mb-3">Stay in the loop</h3>
-          <p className="text-[#64748b] text-sm mb-6">Get notified about new features and updates.</p>
-          <Link to="/auth/signup"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, #D97757, #B85D3D)' }}
-          >
-            Start for free <ArrowRight className="w-4 h-4" />
-          </Link>
-        </motion.div>
+        {/* Stay in loop card */}
+        <ScrollReveal>
+          <div className="border border-white/[0.05] bg-[#0c0c12]/80 backdrop-blur-xl rounded-3xl p-8 md:p-10 text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-600/5 rounded-full blur-[80px] pointer-events-none" />
+            <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">Stay in the loop</h3>
+            <p className="text-gray-400 text-sm max-w-md mx-auto mb-8 leading-relaxed">
+              Get notified immediately about new features, model upgrades, and platform releases.
+            </p>
+            <form onSubmit={handleSubscribe} className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="flex-1 px-4 py-3 rounded-xl bg-black/40 border border-white/[0.06] text-white text-sm placeholder:text-gray-650 focus:outline-none focus:border-orange-500/50 transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={subscribed}
+                className="px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm transition-all duration-200 hover:shadow-[0_0_20px_rgba(217,119,87,0.4)] flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0"
+              >
+                {subscribed ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    Subscribed!
+                  </>
+                ) : (
+                  <>
+                    Start for free
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </ScrollReveal>
       </div>
     </div>
   )
