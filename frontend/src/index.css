@@ -481,3 +481,43 @@ html.lenis { height: auto; }
   box-shadow: 0 0 20px rgba(0, 255, 102, 0.15) !important;
 }
 
+/* ─── Kali Mode Theme (Uncensored — blood red) ─── */
+.kali-theme {
+  --bg-primary: #070005 !important;
+  --bg-secondary: #0d0009 !important;
+  --bg-tertiary: #120010 !important;
+  --bg-elevated: #0a0008 !important;
+  --border-subtle: rgba(255, 0, 60, 0.12) !important;
+  --border-medium: rgba(255, 0, 60, 0.28) !important;
+  --accent: #FF0055 !important;
+  --accent-light: #FF3377 !important;
+  --accent-dark: #CC0044 !important;
+  --text-primary: #FFD6E3 !important;
+  --text-secondary: #FF8AAD !important;
+  --text-muted: #994466 !important;
+}
+
+.kali-theme * {
+  text-shadow: 0 0 6px rgba(255, 0, 60, 0.2);
+}
+
+.kali-theme input,
+.kali-theme textarea {
+  border-color: rgba(255, 0, 60, 0.25) !important;
+}
+.kali-theme input:focus,
+.kali-theme textarea:focus {
+  border-color: rgba(255, 0, 60, 0.5) !important;
+  box-shadow: 0 0 12px rgba(255, 0, 60, 0.15) !important;
+}
+.kali-theme button:hover {
+  background: rgba(255, 0, 60, 0.06) !important;
+}
+.kali-theme .card-glass {
+  background: rgba(255, 0, 60, 0.02) !important;
+  border-color: rgba(255, 0, 60, 0.08) !important;
+}
+.kali-theme .card-glass:hover {
+  border-color: rgba(255, 0, 60, 0.25) !important;
+  box-shadow: 0 0 24px rgba(255, 0, 60, 0.12) !important;
+}

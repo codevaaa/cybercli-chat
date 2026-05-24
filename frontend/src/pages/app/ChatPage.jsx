@@ -6,7 +6,7 @@ import {
   Copy, Check, GitBranch, Volume2, VolumeX, Trash2, Pin, X,
   Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder,
   Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen, Menu,
-  Pencil, GraduationCap, Coffee, Lightbulb
+  Pencil, GraduationCap, Coffee, Lightbulb, Skull, FileCode, GitBranch as GitIcon, FolderTree
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
@@ -21,28 +21,27 @@ import { useAuthStore } from '@stores/authStore.js'
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const MODELS = [
-  { id: 'groq/llama-3.1-70b',       name: 'CyberCli-Prime',     tag: 'Prime',     color: '#8B5CF6', desc: 'Most capable model for complex and ambitious intelligence work.' },
-  { id: 'openrouter/gpt-4o-mini',   name: 'CyberCli-Core',      tag: 'Core',      color: '#3B82F6', desc: 'Versatile, Capable everyday engine.' },
-  { id: 'groq/llama-3.1-8b',        name: 'CyberCli-Swift',     tag: 'Swift',     color: '#10B981', desc: 'Blazing fast, lightweight, and efficient.' },
-  { id: 'council',                  name: 'CyberCli-Council',   tag: 'Council',   color: '#D97757', desc: 'Simultaneous multi-model consensus debate engine.' },
+  { id: 'gemini/gemini-2.5-pro',     name: 'Madhav',    tag: 'Madhav',   color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery. Use for your most ambitious challenges.', kali: false },
+  { id: 'groq/llama-3.1-70b',        name: 'Nakul',     tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Supreme reasoning depth for complex logic, technical writing, and thorough analysis.', kali: false },
+  { id: 'openrouter/gpt-4o-mini',    name: 'Bheem',     tag: 'Bheem',    color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
+  { id: 'groq/llama-3.1-8b',         name: 'Arjun',     tag: 'Arjun',    color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise for rapid fire conversations.', kali: false },
+  { id: 'council',                   name: 'Panchayat', tag: 'Panchayat', color: '#D97757', desc: 'The council of minds. Streams your query to multiple minds simultaneously and synthesizes a consensus answer.', kali: false },
 ]
 
 const EXTRA_MODELS = [
-  { id: 'nvidia/llama-3.1-nemotron-70b',                        name: 'CyberCli-Nemotron',    tag: 'Nemotron',    color: '#76B900', desc: 'NVIDIA research-grade coding & reasoning.' },
-  { id: 'gemini/gemini-2.5-flash',                              name: 'CyberCli-Flash',        tag: 'Flash',       color: '#4285F4', desc: 'Google next-gen high speed multimodal.' },
-  { id: 'gemini/gemini-2.5-pro',                                name: 'CyberCli-Pro',          tag: 'Pro',         color: '#1A73E8', desc: 'Google high intelligence reasoning.' },
-  { id: 'cerebras/llama-3.1-8b',                                name: 'CyberCli-HyperSwift',   tag: 'HyperSwift',  color: '#EC4899', desc: 'Sub-second wafer-scale speed inference.' },
-  { id: 'huggingface/meta-llama/Llama-3.3-70B-Instruct',        name: 'CyberCli-Llama70B',     tag: 'Llama-70B',   color: '#FFD21E', desc: 'Meta Llama 3.3 70B — open weights flagship.' },
-  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',                name: 'CyberCli-Qwen72B',      tag: 'Qwen72B',     color: '#FF6B35', desc: 'Alibaba Qwen 2.5 72B — best open multilingual.' },
-  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',name: 'CyberCli-DeepSeek',     tag: 'DeepSeek-R1', color: '#00A3FF', desc: 'DeepSeek R1 distilled — chain-of-thought reasoning.' },
-  { id: 'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1',     name: 'CyberCli-Mixtral',      tag: 'Mixtral',     color: '#FF4D88', desc: 'Mistral mixture-of-experts model.' },
-  { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-70B',      name: 'CyberCli-Hermes',       tag: 'Hermes-70B',  color: '#9F7AEA', desc: 'Nous Research Hermes 3 — tool use & function calling.' },
-  { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-8B',       name: 'CyberCli-Hermes-8B',    tag: 'Hermes-8B',   color: '#805AD5', desc: 'Nous Research Hermes 3 8B — fast uncensored model.' },
-  { id: 'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b', name: 'CyberCli-DolphinLlama', tag: 'DolphinLlama', color: '#38B2AC', desc: 'Dolphin 2.9.4 Llama 3 70B — fully uncensored debate.' },
-  { id: 'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b', name: 'CyberCli-DolphinQwen',  tag: 'DolphinQwen',  color: '#4FD1C5', desc: 'Dolphin 2.9.2 Qwen 2.5 72B — fully uncensored flagship.' },
-  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',          name: 'CyberCli-QwenCoder',    tag: 'QwenCoder',   color: '#ED8936', desc: 'Qwen 2.5 Coder 32B — supreme open-source coder.' },
-  { id: 'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', name: 'CyberCli-DolphinNemo', tag: 'DolphinNemo', color: '#319795', desc: 'Dolphin Mistral Nemo 12B — uncensored edge agent.' },
-  { id: 'huggingface/defog/sqlcoder-70b-v1.5',                  name: 'CyberCli-SqlCoder',     tag: 'SqlCoder',    color: '#D69E2E', desc: 'Defog SQLCoder 70B — text-to-SQL specialized reasoning.' },
+  { id: 'gemini/gemini-2.5-flash',                               name: 'Sahadeva',      tag: 'Sahadeva',    color: '#4285F4', desc: 'The wise seer. High-speed multimodal intelligence with enormous context window for documents and media.', kali: false },
+  { id: 'nvidia/llama-3.1-nemotron-70b',                         name: 'Dronacharya',   tag: 'Dronacharya', color: '#76B900', desc: 'The grand master. Research-grade academic reasoning for deep technical tasks and complex instruction.', kali: false },
+  { id: 'cerebras/llama-3.1-8b',                                 name: 'Abhimanyu',     tag: 'Abhimanyu',   color: '#EC4899', desc: 'The lightning striker. Powered by wafer-scale silicon delivering unmatched sub-100ms response speed.', kali: false },
+  { id: 'huggingface/meta-llama/Llama-3.3-70B-Instruct',         name: 'Yudhishthira',  tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. High-parameter open-weights flagship model built for balanced, ethical, quality output.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',                 name: 'Vikrama',       tag: 'Vikrama',     color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence with 72B parameter depth.', kali: false },
+  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya',      tag: 'Chanakya',    color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving and planning.', kali: false },
+  { id: 'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1',      name: 'Saptarishi',    tag: 'Saptarishi',  color: '#FF4D88', desc: 'The seven sages. Mixture-of-experts architecture combining the wisdom of seven specialized expert models.', kali: false },
+  { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-70B',       name: 'Parashurama',   tag: 'Parashurama', color: '#9F7AEA', desc: 'The agentic warrior. Specialized for tool use, function calling, and autonomous agentic orchestration.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',           name: 'Vishwakarma',   tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories across every major programming language.', kali: false },
+  { id: 'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b', name: 'Ashwatthama',   tag: 'Ashwatthama', color: '#38B2AC', desc: 'The free warrior. Uncensored high-parameter intelligence for unrestricted debate and creative thinking.', kali: true },
+  { id: 'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b', name: 'Kali',         tag: 'Kali',        color: '#FF0055', desc: '🔥 The destroyer of limits. Fully uncensored 72B flagship — maximum freedom of thought, unfiltered intelligence.', kali: true },
+  { id: 'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', name: 'Rudra',    tag: 'Rudra',       color: '#EF4444', desc: 'The fierce one. Uncensored edge model built for raw unconstrained intelligence at high speed.', kali: true },
+  { id: 'huggingface/defog/sqlcoder-70b-v1.5',                   name: 'Agastya',       tag: 'Agastya',     color: '#D69E2E', desc: 'The sage of data. Specialized in translating natural language into precise, optimized SQL queries.', kali: false },
 ]
 
 
@@ -2617,6 +2616,7 @@ export default function ChatPage() {
   // Claude & Cyber Mode Upgrades
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [cyberMode, setCyberMode] = useState(false)
+  const [kaliMode, setKaliMode] = useState(false)
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [workspaceTab, setWorkspaceTab] = useState('terminal')
   const [terminalHistory, setTerminalHistory] = useState([
@@ -2626,6 +2626,38 @@ export default function ChatPage() {
   const [terminalLoading, setTerminalLoading] = useState(false)
   const [activePreviewFile, setActivePreviewFile] = useState(null)
   const [profileMenuTab, setProfileMenuTab] = useState('main')
+
+  const [workspaceWidth, setWorkspaceWidth] = useState(600) // Default 600px
+  const [isResizing, setIsResizing] = useState(false)
+
+  const startResizing = useCallback((e) => {
+    setIsResizing(true)
+    e.preventDefault()
+  }, [])
+
+  const stopResizing = useCallback(() => {
+    setIsResizing(false)
+  }, [])
+
+  const resize = useCallback((e) => {
+    if (isResizing) {
+      const newWidth = window.innerWidth - e.clientX
+      if (newWidth > 300 && newWidth < window.innerWidth * 0.8) {
+        setWorkspaceWidth(newWidth)
+      }
+    }
+  }, [isResizing])
+
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener('mousemove', resize)
+      window.addEventListener('mouseup', stopResizing)
+    }
+    return () => {
+      window.removeEventListener('mousemove', resize)
+      window.removeEventListener('mouseup', stopResizing)
+    }
+  }, [isResizing, resize, stopResizing])
   
   const activeThreadIdRef = useRef(null)
   const isCreatingThreadRef = useRef(false)
@@ -2936,6 +2968,11 @@ export default function ChatPage() {
   useEffect(() => {
     if (isLoggedIn()) {
       loadThreads()
+    }
+    const params = new URLSearchParams(window.location.search)
+    const urlPrompt = params.get('prompt')
+    if (urlPrompt) {
+      setInput(urlPrompt)
     }
   }, [])
 
@@ -3429,7 +3466,7 @@ export default function ChatPage() {
   const recentThreads = threads.filter(t => !t.is_pinned).slice(0, 30)
 
   return (
-    <div className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''}`} style={{ background: 'var(--bg-primary)' }}>
+    <div className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${kaliMode ? 'kali-theme' : ''}`} style={{ background: 'var(--bg-primary)' }}>
 
       {/* ── Sidebar ── */}
       {isMobile && sidebarOpen && (
@@ -3827,12 +3864,51 @@ export default function ChatPage() {
           <div className="flex-1" />
           
           <div className="flex items-center gap-2">
+            {/* Active mode badges */}
+            <AnimatePresence>
+              {cyberMode && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="hidden sm:flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase tracking-widest"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  CYBER ACTIVE
+                </motion.span>
+              )}
+              {kaliMode && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="hidden sm:flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 uppercase tracking-widest"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  KALI MODE
+                </motion.span>
+              )}
+            </AnimatePresence>
+
+            {/* Kali Mode Toggle */}
+            <button
+              onClick={() => { setKaliMode(prev => !prev); if (!kaliMode) setCyberMode(false) }}
+              className={`p-2 rounded-xl border transition-all duration-200 ${
+                kaliMode
+                  ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_12px_rgba(239,68,68,0.35)]'
+                  : 'bg-white/5 border-white/10 text-gray-400 hover:text-red-400 hover:border-red-500/20'
+              }`}
+              title="Toggle Kali Mode (Uncensored)"
+            >
+              <Skull className="w-4 h-4" />
+            </button>
+
             {/* Cyber Mode Toggle */}
             <button
-              onClick={() => setCyberMode(prev => !prev)}
+              onClick={() => { setCyberMode(prev => !prev); if (!cyberMode) setKaliMode(false) }}
               className={`p-2 rounded-xl border transition-all duration-200 ${
                 cyberMode 
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)] animate-pulse'
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
                   : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
               }`}
               title="Toggle Cyber Mode"
@@ -4035,119 +4111,173 @@ export default function ChatPage() {
                 className={`${
                   isMobile
                     ? 'fixed inset-y-0 right-0 z-40 w-full sm:w-[85%] shadow-2xl animate-fade-in'
-                    : 'w-[45%] border-l border-white/[0.06]'
+                    : 'relative border-l border-white/[0.06]'
                 } h-full bg-[#0D0D14] flex flex-col overflow-hidden`}
+                style={{ width: isMobile ? undefined : workspaceWidth }}
               >
-                {/* Workspace Panel Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04] bg-[#0A0A0F]/80 backdrop-blur-md flex-shrink-0">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setWorkspaceTab('terminal')}
-                      className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all ${
-                        workspaceTab === 'terminal'
-                          ? 'bg-[#D97757]/15 text-[#D97757] border border-[#D97757]/20'
-                          : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      Terminal
-                    </button>
-                    <button
-                      onClick={() => setWorkspaceTab('preview')}
-                      className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all ${
-                        workspaceTab === 'preview'
-                          ? 'bg-[#D97757]/15 text-[#D97757] border border-[#D97757]/20'
-                          : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      File Preview
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => setWorkspaceOpen(false)}
-                    className="p-1 rounded-lg text-gray-500 hover:text-white transition-colors"
+                {!isMobile && (
+                  <div
+                    onMouseDown={startResizing}
+                    className="absolute top-0 bottom-0 left-0 w-1.5 cursor-col-resize hover:bg-[#D97757]/40 active:bg-[#D97757] transition-colors z-50 flex items-center justify-center group"
+                    style={{ touchAction: 'none' }}
                   >
-                    <X className="w-4 h-4" />
-                  </button>
+                    <div className="w-[1px] h-8 bg-white/10 group-hover:bg-[#D97757]/60 group-active:bg-[#D97757]" />
+                  </div>
+                )}
+                {/* Workspace Panel Header — Claude Code style */}
+                <div className="flex-shrink-0 bg-[#08080E] border-b border-white/[0.04]">
+                  {/* macOS traffic lights + breadcrumb */}
+                  <div className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.03]">
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => setWorkspaceOpen(false)} className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 transition-colors" title="Close" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-500/40" />
+                      <div className="w-3 h-3 rounded-full bg-emerald-500/40" />
+                    </div>
+                    <div className="flex items-center gap-1 text-[11px] text-gray-500 font-mono">
+                      <span className="text-gray-600">~</span>
+                      <span>/</span>
+                      <span className="text-gray-400">workspace</span>
+                      {daemonConnected && <span className="text-emerald-400/60 ml-1">● live</span>}
+                    </div>
+                    <div className="ml-auto flex items-center gap-1">
+                      <button onClick={() => setWorkspaceOpen(false)} className="p-1 rounded text-gray-600 hover:text-gray-400 transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Tab bar */}
+                  <div className="flex items-center px-2 gap-0.5 py-1">
+                    {[
+                      { id: 'terminal', label: 'Terminal', Icon: Terminal },
+                      { id: 'files', label: 'Files', Icon: FolderTree },
+                      { id: 'preview', label: 'Preview', Icon: FileCode },
+                      { id: 'git', label: 'Git', Icon: GitIcon },
+                    ].map(({ id, label, Icon }) => (
+                      <button
+                        key={id}
+                        onClick={() => setWorkspaceTab(id)}
+                        className={`flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-md transition-all ${
+                          workspaceTab === id
+                            ? 'bg-white/[0.06] text-white border border-white/[0.08]'
+                            : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
+                        }`}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Workspace Panel Body */}
                 <div className="flex-1 overflow-hidden relative flex flex-col">
                   {workspaceTab === 'terminal' ? (
-                    <div className="flex-1 flex flex-col overflow-hidden bg-black/40 p-4 font-mono text-xs text-left">
+                    <div className="flex-1 flex flex-col overflow-hidden bg-[#020204] p-3 font-mono text-xs text-left">
                       {/* Terminal scrollable logs */}
-                      <div className="flex-1 overflow-y-auto mb-3 space-y-2 pr-1">
+                      <div className="flex-1 overflow-y-auto mb-2 space-y-1.5 pr-1">
                         {terminalHistory.map((item, idx) => {
                           if (item.type === 'input') {
                             return (
-                              <div key={idx} className="text-gray-400 flex items-start gap-1">
-                                <span className="text-[#D97757] font-bold">$</span>
-                                <span className="whitespace-pre-wrap select-all">{item.text}</span>
+                              <div key={idx} className="flex items-start gap-1.5">
+                                <span className="text-emerald-400 font-bold select-none shrink-0">user@cybercli:~/workspace$</span>
+                                <span className="text-gray-200 whitespace-pre-wrap select-all">{item.text}</span>
                               </div>
                             )
                           } else if (item.type === 'error') {
                             return (
-                              <pre key={idx} className="text-rose-400 whitespace-pre-wrap leading-relaxed select-text pr-2">{item.text}</pre>
+                              <pre key={idx} className="text-rose-400 whitespace-pre-wrap leading-relaxed select-text pl-1">{item.text}</pre>
                             )
                           } else {
                             return (
-                              <pre key={idx} className="text-emerald-400 whitespace-pre-wrap leading-relaxed select-text pr-2">{item.text}</pre>
+                              <pre key={idx} className="text-gray-300 whitespace-pre-wrap leading-relaxed select-text pl-1">{item.text}</pre>
                             )
                           }
                         })}
                         {terminalLoading && (
-                          <div className="text-[#D97757] animate-pulse flex items-center gap-1.5 mt-2">
-                            <span className="w-2 h-2 rounded-full bg-[#D97757] animate-ping" />
-                            Executing command... (waiting for local daemon terminal confirmation)
+                          <div className="text-amber-400 animate-pulse flex items-center gap-1.5 mt-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                            executing...
                           </div>
                         )}
                       </div>
 
                       {/* Link helper warning if daemon offline */}
                       {!daemonConnected && (
-                        <div className="mb-4 p-4 rounded-xl border border-red-500/20 bg-red-500/5 space-y-2.5 font-sans">
+                        <div className="mb-3 p-3 rounded-lg border border-red-500/20 bg-red-500/5 space-y-2 font-sans">
                           <p className="text-xs font-semibold text-rose-400 flex items-center gap-2">
-                            <AlertCircle className="w-4 h-4" />
-                            Daemon Offline
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            Daemon Offline — Link your workspace
                           </p>
-                          <p className="text-[11px] text-gray-400 leading-normal">
-                            Link your local workspace directory using your API Access Key. Link commands:
-                          </p>
-                          <pre className="p-3 bg-black/40 border border-white/5 rounded-lg text-xs font-mono text-gray-300 leading-relaxed whitespace-pre-wrap select-all">
-                            # Install CyberCli globally{"\n"}
-                            npm install -g cybercli{"\n\n"}
-                            # Link current directory{"\n"}
-                            cybercli link --key YOUR_API_KEY
-                          </pre>
-                          <p className="text-[10px] text-gray-500">
-                            Go to the "Code" tab in the sidebar to generate or copy an API access key.
-                          </p>
+                          <pre className="p-2.5 bg-black/40 border border-white/5 rounded text-xs font-mono text-gray-300 leading-relaxed whitespace-pre-wrap select-all text-[10px]">
+npm install -g cybercli{"\n"}
+cybercli link --key YOUR_API_KEY</pre>
                         </div>
                       )}
 
                       {/* Terminal input bar */}
-                      <form onSubmit={handleTerminalSubmit} className="flex items-center gap-1 bg-black/30 border border-white/[0.06] rounded-xl p-2 flex-shrink-0">
-                        <span className="text-[#D97757] font-bold select-none px-1">$</span>
+                      <form onSubmit={handleTerminalSubmit} className="flex items-center gap-1.5 bg-black/50 border border-white/[0.08] rounded-lg p-2 flex-shrink-0">
+                        <span className="text-emerald-400 font-bold select-none text-[11px] shrink-0">$</span>
                         <input
                           type="text"
                           value={terminalInput}
                           onChange={(e) => setTerminalInput(e.target.value)}
-                          placeholder="Type command (e.g. npm run test)..."
+                          placeholder={daemonConnected ? "Type command..." : "Connect daemon to run commands"}
                           disabled={terminalLoading || !daemonConnected}
-                          className="flex-1 bg-transparent border-0 outline-none p-0 text-white font-mono text-xs focus:ring-0 placeholder-gray-600 disabled:cursor-not-allowed"
+                          className="flex-1 bg-transparent border-0 outline-none p-0 text-white font-mono text-[11px] focus:ring-0 placeholder-gray-600 disabled:cursor-not-allowed"
                         />
                       </form>
                     </div>
-                  ) : (
+                  ) : workspaceTab === 'files' ? (
+                    /* File Tree */
+                    <div className="flex-1 flex flex-col overflow-hidden bg-[#06060A]">
+                      {!daemonConnected ? (
+                        <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
+                          <FolderTree className="w-10 h-10 text-gray-700" />
+                          <p className="text-xs text-gray-500 font-medium">Daemon offline</p>
+                          <p className="text-[10px] text-gray-600 max-w-xs leading-normal">Connect your local workspace daemon to browse the file tree.</p>
+                        </div>
+                      ) : (
+                        <div className="flex-1 overflow-y-auto p-3 font-mono text-xs">
+                          <div className="space-y-0.5">
+                            {[
+                              { name: 'src/', type: 'dir', depth: 0 },
+                              { name: 'components/', type: 'dir', depth: 1 },
+                              { name: 'pages/', type: 'dir', depth: 1 },
+                              { name: 'hooks/', type: 'dir', depth: 1 },
+                              { name: 'index.css', type: 'file', depth: 1 },
+                              { name: 'main.jsx', type: 'file', depth: 1 },
+                              { name: 'package.json', type: 'file', depth: 0 },
+                              { name: 'vite.config.js', type: 'file', depth: 0 },
+                            ].map((item, i) => (
+                              <div
+                                key={i}
+                                className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-white/[0.04] cursor-pointer text-gray-400 hover:text-white transition-colors"
+                                style={{ paddingLeft: `${8 + item.depth * 16}px` }}
+                                onClick={() => item.type === 'file' && setPreviewFilePath(item.name) && setWorkspaceTab('preview')}
+                              >
+                                {item.type === 'dir'
+                                  ? <FolderTree className="w-3.5 h-3.5 text-yellow-500/70 shrink-0" />
+                                  : <FileCode className="w-3.5 h-3.5 text-blue-400/70 shrink-0" />
+                                }
+                                <span className={item.type === 'dir' ? 'text-yellow-200/80' : 'text-gray-300'}>{item.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-gray-700 mt-4 px-2">File tree is populated from daemon. Click a file to open in Preview.</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : workspaceTab === 'preview' ? (
                     /* File Preview */
-                    <div className="flex-1 flex flex-col overflow-hidden bg-black/20">
+                    <div className="flex-1 flex flex-col overflow-hidden bg-[#06060A]">
                       {/* Path search / control bar */}
-                      <div className="p-2 border-b border-white/[0.04] bg-[#0A0A0F]/60 flex items-center gap-2 flex-shrink-0">
+                      <div className="p-2 border-b border-white/[0.04] flex items-center gap-2 flex-shrink-0">
                         <input
                           type="text"
                           value={previewFilePath}
                           onChange={(e) => setPreviewFilePath(e.target.value)}
                           placeholder="Path to file (e.g. src/index.js)..."
-                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-accent"
+                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-accent font-mono"
                         />
                         <button
                           onClick={() => handleLoadPreviewFile()}
@@ -4170,59 +4300,38 @@ export default function ChatPage() {
                           <div className="p-5 text-center flex flex-col items-center justify-center h-full gap-2">
                             <AlertCircle className="w-8 h-8 text-rose-400" />
                             <p className="text-xs text-rose-300 font-semibold">{previewFileError}</p>
-                            <p className="text-[10px] text-gray-500 max-w-xs">Verify the file path is correct and your workspace daemon is connected.</p>
                           </div>
                         )}
 
                         {!previewFileLoading && !previewFileError && !previewFileContent && (
                           <div className="p-5 text-center flex flex-col items-center justify-center h-full text-gray-500 gap-2">
-                            <Folder className="w-8 h-8 opacity-30" />
-                            <p className="text-xs">No active file previewed</p>
-                            <p className="text-[10px] max-w-xs leading-normal">Load a file from the path bar above, or run a daemon read/write action from the chat bubbles.</p>
+                            <FileCode className="w-8 h-8 opacity-30" />
+                            <p className="text-xs">No file loaded</p>
+                            <p className="text-[10px] max-w-xs leading-normal">Enter a file path above and click Load to view its content with syntax highlighting.</p>
                           </div>
                         )}
 
                         {!previewFileLoading && !previewFileError && previewFileContent && (
                           <div className="h-full select-text">
-                            {/* Diff check */}
-                            {activePreviewFile?.endsWith('.diff') || activePreviewFile?.endsWith('.dff') || previewFileContent.startsWith('diff') ? (
+                            {activePreviewFile?.endsWith('.diff') || previewFileContent.startsWith('diff') ? (
                               <div className="font-mono text-xs p-4 space-y-0.5 whitespace-pre overflow-auto h-full text-left">
                                 {previewFileContent.split('\n').map((line, idx) => {
                                   let colorClass = "text-gray-300"
-                                  if (line.startsWith('+')) {
-                                    colorClass = "text-emerald-400 bg-emerald-950/30 px-1 rounded-sm border-l-2 border-emerald-500"
-                                  } else if (line.startsWith('-')) {
-                                    colorClass = "text-rose-400 bg-rose-950/30 px-1 rounded-sm border-l-2 border-rose-500"
-                                  }
-                                  return (
-                                    <div key={idx} className={colorClass}>
-                                      {line}
-                                    </div>
-                                  )
+                                  if (line.startsWith('+')) colorClass = "text-emerald-400 bg-emerald-950/30 px-1 rounded-sm border-l-2 border-emerald-500"
+                                  else if (line.startsWith('-')) colorClass = "text-rose-400 bg-rose-950/30 px-1 rounded-sm border-l-2 border-rose-500"
+                                  return <div key={idx} className={colorClass}>{line}</div>
                                 })}
                               </div>
                             ) : activePreviewFile?.endsWith('.md') ? (
                               <div className="prose-custom p-5 overflow-auto h-full text-gray-300 text-left">
-                                <ReactMarkdown
-                                  components={{
-                                    code({ node, inline, className, children, ...props }) {
-                                      return (
-                                        <code className="px-1.5 py-0.5 rounded text-xs font-mono bg-background-tertiary text-foreground-primary" {...props}>
-                                          {children}
-                                        </code>
-                                      )
-                                    }
-                                  }}
-                                >
-                                  {previewFileContent}
-                                </ReactMarkdown>
+                                <ReactMarkdown>{previewFileContent}</ReactMarkdown>
                               </div>
                             ) : (
                               <div className="overflow-auto h-full text-left">
                                 <SyntaxHighlighter
                                   language={activePreviewFile?.split('.').pop() || 'javascript'}
                                   style={oneDark}
-                                  customStyle={{ margin: 0, padding: '16px', background: '#0a0a0f', fontSize: '0.8125rem', height: '100%' }}
+                                  customStyle={{ margin: 0, padding: '16px', background: '#050508', fontSize: '0.8125rem', height: '100%' }}
                                   showLineNumbers={previewFileContent.split('\n').length > 3}
                                 >
                                   {previewFileContent}
@@ -4233,7 +4342,50 @@ export default function ChatPage() {
                         )}
                       </div>
                     </div>
-                  )}
+                  ) : workspaceTab === 'git' ? (
+                    /* Git Tab */
+                    <div className="flex-1 flex flex-col overflow-hidden bg-[#06060A] p-4 font-mono text-xs">
+                      {!daemonConnected ? (
+                        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
+                          <GitIcon className="w-10 h-10 text-gray-700" />
+                          <p className="text-xs text-gray-500">Daemon offline</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                            <GitIcon className="w-4 h-4 text-orange-400" />
+                            <div>
+                              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Current Branch</p>
+                              <p className="text-sm font-bold text-white">main</p>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-sans">Staged Changes</p>
+                            <div className="space-y-1">
+                              {['M  src/index.js', 'A  src/components/Chat.jsx'].map((f, i) => (
+                                <div key={i} className="flex items-center gap-2 text-emerald-400">
+                                  <span className="text-emerald-500 font-bold">{f.slice(0, 1)}</span>
+                                  <span>{f.slice(3)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-sans">Unstaged</p>
+                            <div className="space-y-1">
+                              {['M  src/hooks/useTTS.js'].map((f, i) => (
+                                <div key={i} className="flex items-center gap-2 text-amber-400">
+                                  <span className="text-amber-500 font-bold">{f.slice(0, 1)}</span>
+                                  <span>{f.slice(3)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-gray-600 border-t border-white/[0.04] pt-3">Git data synced via workspace daemon. Run git commands from Terminal tab.</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               </motion.div>
             )}

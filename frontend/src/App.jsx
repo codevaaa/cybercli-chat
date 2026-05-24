@@ -27,6 +27,8 @@ import AcceptableUsePage from '@pages/public/AcceptableUsePage'
 import GDPRPage from '@pages/public/GDPRPage'
 import ChangelogPage from '@pages/public/ChangelogPage'
 import ApiReferencePage from '@pages/public/ApiReferencePage'
+import DevelopersPage from '@pages/public/DevelopersPage'
+import AiAgentsPage from '@pages/public/AiAgentsPage'
 
 import SignupPage from '@pages/auth/SignupPage'
 import LoginPage from '@pages/auth/LoginPage'
@@ -44,12 +46,16 @@ import AgentsPage from '@pages/app/AgentsPage'
 import VoicePage from '@pages/app/VoicePage'
 import VoiceChatPage from '@pages/app/VoiceChatPage'
 import VoiceSettingsPage from '@pages/app/VoiceSettingsPage'
+import ProjectsPage from '@pages/app/ProjectsPage'
+import UsagePage from '@pages/app/UsagePage'
+import WorkflowsPage from '@pages/app/WorkflowsPage'
+import DiscoverPage from '@pages/app/DiscoverPage'
 
 const PUBLIC_PATHS = [
   '/', '/features', '/models', '/pricing', '/contact', '/about',
   '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy',
   '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr',
-  '/changelog', '/api-reference'
+  '/changelog', '/api-reference', '/developers', '/ai-agents'
 ]
 const AUTH_PATHS = [
   '/auth/signup', '/auth/login', '/auth/forgot-password',
@@ -99,6 +105,8 @@ function App() {
           <Route path="/gdpr" element={<PublicLayout><GDPRPage /></PublicLayout>} />
           <Route path="/changelog" element={<PublicLayout><ChangelogPage /></PublicLayout>} />
           <Route path="/api-reference" element={<PublicLayout><ApiReferencePage /></PublicLayout>} />
+          <Route path="/developers" element={<PublicLayout><DevelopersPage /></PublicLayout>} />
+          <Route path="/ai-agents" element={<PublicLayout><AiAgentsPage /></PublicLayout>} />
 
           {/* ── Auth Routes ── */}
           <Route path="/auth/signup" element={<SignupPage />} />
@@ -122,6 +130,10 @@ function App() {
           <Route path="/voice" element={<ProtectedRoute><VoicePage /></ProtectedRoute>} />
           <Route path="/voice-chat" element={<ProtectedRoute><VoiceChatPage /></ProtectedRoute>} />
           <Route path="/voice-settings" element={<ProtectedRoute><VoiceSettingsPage /></ProtectedRoute>} />
+          <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+          <Route path="/usage" element={<ProtectedRoute><UsagePage /></ProtectedRoute>} />
+          <Route path="/workflows" element={<ProtectedRoute><WorkflowsPage /></ProtectedRoute>} />
+          <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
         </Routes>
       </main>
       {isPublicRoute() && !window.location.pathname.startsWith('/auth') && <Footer />}

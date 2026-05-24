@@ -4,7 +4,7 @@ import {
   Menu, X, ChevronDown, LogOut, User, 
   Sparkles, Cpu, CreditCard, History, 
   BookOpen, Terminal, Rss, Gift, 
-  Building2, Briefcase, Mail 
+  Building2, Briefcase, Mail, Bot, Code2
 } from 'lucide-react'
 import { useAuthStore } from '@stores/authStore.js'
 import { CyberCliWordmark } from '@components/ui/CyberCliLogo'
@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 const ICON_MAP = {
   Sparkles, Cpu, CreditCard, History,
   BookOpen, Terminal, Rss, Gift,
-  Building2, Briefcase, Mail
+  Building2, Briefcase, Mail, Bot, Code2
 }
 
 const MENU_GROUPS = [
@@ -22,6 +22,8 @@ const MENU_GROUPS = [
     items: [
       { label: 'Features', href: '/features', desc: 'Explore the ultimate agentic capabilities', icon: 'Sparkles' },
       { label: 'Models', href: '/models', desc: 'Browse our unified 200K+ model proxy', icon: 'Cpu' },
+      { label: 'AI Agents', href: '/ai-agents', desc: 'Deploy custom autonomous agents', icon: 'Bot' },
+      { label: 'Developers', href: '/developers', desc: 'Unified SDK & builder portal', icon: 'Code2' },
       { label: 'Pricing', href: '/pricing', desc: 'Flexible free and Pro options', icon: 'CreditCard' },
       { label: 'Changelog', href: '/changelog', desc: 'See what\'s new in the platform', icon: 'History' },
     ]
