@@ -33,6 +33,7 @@ import ForgotPasswordPage from '@pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from '@pages/auth/ResetPasswordPage'
 import MagicLinkPage from '@pages/auth/MagicLinkPage'
 import VerifyEmailPage from '@pages/auth/VerifyEmailPage'
+import AuthCallbackPage from '@pages/auth/AuthCallbackPage'
 
 import ChatPage from '@pages/app/ChatPage'
 import SettingsPage from '@pages/app/SettingsPage'
@@ -51,7 +52,7 @@ const PUBLIC_PATHS = [
 ]
 const AUTH_PATHS = [
   '/auth/signup', '/auth/login', '/auth/forgot-password',
-  '/auth/reset-password', '/auth/magic-link', '/auth/verify-email'
+  '/auth/reset-password', '/auth/magic-link', '/auth/verify-email', '/auth/callback'
 ]
 
 function App() {
@@ -103,6 +104,7 @@ function App() {
           <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
           <Route path="/auth/magic-link" element={<MagicLinkPage />} />
           <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
           {/* ── Protected App Routes (no Lenis — native scroll for chat) ── */}
           <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />

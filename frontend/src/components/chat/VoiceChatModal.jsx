@@ -20,17 +20,17 @@ function StarIcon({ size = 16, color = '#D97757' }) {
 }
 
 const VOICE_MODELS = [
-  { id: 'eleven_ava',   label: 'Ava',    desc: 'Warm & Natural',          color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
-  { id: 'eleven_nova',  label: 'Nova',   desc: 'Clear & Professional',    color: '#06B6D4', orbColors: ['#06B6D4', '#0EA5E9', '#22D3EE'] },
-  { id: 'eleven_luna',  label: 'Luna',   desc: 'Soft & Soothing',         color: '#10B981', orbColors: ['#10B981', '#059669', '#34D399'] },
-  { id: 'eleven_orion', label: 'Orion',  desc: 'Deep & Authoritative',    color: '#F59E0B', orbColors: ['#F59E0B', '#D97706', '#FCD34D'] },
-  { id: 'eleven_echo',  label: 'Echo',   desc: 'Energetic & Dynamic',     color: '#EF4444', orbColors: ['#EF4444', '#DC2626', '#F87171'] },
-  { id: 'gemini_flash', label: 'Gemini', desc: 'AI Native Voice',         color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
+  { id: 'eleven_sol',    label: 'Sol',    desc: 'Savvy and relaxed',       color: '#0EA5E9', orbColors: ['#0EA5E9', '#0288D1', '#B3E5FC'] },
+  { id: 'eleven_cove',   label: 'Cove',   desc: 'Composed and direct',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
+  { id: 'eleven_breeze', label: 'Breeze', desc: 'Animated and earnest',    color: '#10B981', orbColors: ['#10B981', '#059669', '#34D399'] },
+  { id: 'eleven_orion',  label: 'Orion',  desc: 'Deep & Authoritative',    color: '#F59E0B', orbColors: ['#F59E0B', '#D97706', '#FCD34D'] },
+  { id: 'eleven_echo',   label: 'Echo',   desc: 'Energetic & Dynamic',     color: '#EF4444', orbColors: ['#EF4444', '#DC2626', '#F87171'] },
+  { id: 'gemini_flash',  label: 'Gemini', desc: 'AI Native Voice',         color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
 ]
 
 const BAR_COUNT = 36
 
-function WaveformBars({ isActive, color = '#D97757', intensity = 1 }) {
+function WaveformBars({ isActive, color = '#22d3ee', intensity = 1 }) {
   const barsRef = useRef([])
   if (barsRef.current.length !== BAR_COUNT) {
     barsRef.current = Array.from({ length: BAR_COUNT }, (_, i) => ({
@@ -42,7 +42,7 @@ function WaveformBars({ isActive, color = '#D97757', intensity = 1 }) {
   }
 
   return (
-    <div className="flex items-center justify-center gap-[2px] h-16 w-full px-4">
+    <div className="flex items-center justify-center gap-[4px] h-16 w-full px-4">
       {barsRef.current.map((bar, i) => (
         <motion.div
           key={i}
@@ -67,30 +67,19 @@ function WaveformBars({ isActive, color = '#D97757', intensity = 1 }) {
   )
 }
 
-// Animated orb like ChatGPT voice mode
-function VoiceOrb({ status, color, orbColors }) {
-  const isListening = status === 'listening'
-  const isSpeaking = status === 'speaking'
-  const isProcessing = status === 'processing'
-  const isActive = isListening || isSpeaking
-
-  const [c1, c2, c3] = isSpeaking
-    ? ['#FF7043', '#FF5722', '#FF8A65']
-    : isListening
-      ? ['#FFFFFF', '#E0E0FF', '#CCCCFF']
-      : orbColors
-
+// Cloudy sky visualizer sphere
+function VoiceSphere({ isActive, orbColors }) {
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 200, height: 200 }}>
+    <div className="relative flex items-center justify-center" style={{ width: 220, height: 220 }}>
       {/* Outer pulse rings */}
       {isActive && [1, 2, 3].map(ring => (
         <motion.div
           key={ring}
           className="absolute rounded-full"
-          style={{ border: `1px solid ${c1}30` }}
+          style={{ border: `1px solid ${orbColors[0]}20` }}
           animate={{
-            width: [200, 200 + ring * 40],
-            height: [200, 200 + ring * 40],
+            width: [220, 220 + ring * 40],
+            height: [220, 220 + ring * 40],
             opacity: [0.4, 0],
           }}
           transition={{
@@ -102,106 +91,67 @@ function VoiceOrb({ status, color, orbColors }) {
         />
       ))}
 
-      {/* Main orb */}
+      {/* Main sphere */}
       <motion.div
-        className="rounded-full flex items-center justify-center overflow-hidden relative"
-        style={{ width: 200, height: 200 }}
+        className="rounded-full flex items-center justify-center overflow-hidden relative shadow-[0_0_50px_rgba(2,136,209,0.35)]"
+        style={{ width: 220, height: 220 }}
         animate={isActive ? {
-          scale: [1, 1.04, 0.98, 1.02, 1],
+          scale: [1, 1.03, 0.97, 1.02, 1],
         } : { scale: 1 }}
         transition={isActive ? {
-          duration: 2.5,
+          duration: 3,
           repeat: Infinity,
           ease: 'easeInOut',
         } : { duration: 0.5 }}
       >
-        {/* Base gradient */}
+        {/* Base cloudy sky gradient */}
         <div
           className="absolute inset-0 rounded-full"
           style={{
-            background: `radial-gradient(circle at 40% 35%, ${c1}CC 0%, ${c2}99 40%, ${c3}66 70%, transparent 100%)`,
+            background: 'radial-gradient(circle at 35% 30%, #ffffff 0%, #b3e5fc 30%, #0288d1 75%, #01579b 100%)',
           }}
         />
 
-        {/* Shimmer blob 1 */}
+        {/* Shimmer clouds overlay */}
         <motion.div
-          className="absolute rounded-full"
+          className="absolute rounded-full opacity-60 mix-blend-overlay filter blur-xl"
           style={{
-            width: 120,
-            height: 120,
-            background: `radial-gradient(circle, ${c1}88 0%, transparent 70%)`,
-            filter: 'blur(20px)',
+            width: '140%',
+            height: '140%',
+            background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 60%)',
           }}
           animate={isActive ? {
-            x: [-20, 20, -10, 15, -20],
-            y: [-15, 10, -20, 5, -15],
-          } : { x: 0, y: 0 }}
+            x: [-35, 25, -15, 20, -35],
+            y: [-30, 15, -25, 10, -30],
+          } : { x: -10, y: -10 }}
           transition={{
-            duration: 3,
+            duration: 7,
             repeat: Infinity,
             ease: 'easeInOut',
           }}
         />
 
-        {/* Shimmer blob 2 */}
-        <motion.div
-          className="absolute rounded-full"
-          style={{
-            width: 80,
-            height: 80,
-            background: `radial-gradient(circle, ${c3}66 0%, transparent 70%)`,
-            filter: 'blur(16px)',
-          }}
-          animate={isActive ? {
-            x: [20, -25, 15, -10, 20],
-            y: [10, -20, 15, -10, 10],
-          } : { x: 0, y: 0 }}
-          transition={{
-            duration: 2.2,
-            repeat: Infinity,
-            ease: 'easeInOut',
-            delay: 0.8,
-          }}
+        {/* Dynamic theme accent coloring */}
+        <div
+          className="absolute inset-0 rounded-full mix-blend-color opacity-30"
+          style={{ backgroundColor: orbColors[0] }}
         />
 
-        {/* Glass highlight */}
+        {/* Glass reflection highlight */}
         <div
           className="absolute rounded-full pointer-events-none"
           style={{
-            width: '60%',
+            width: '70%',
             height: '40%',
-            top: '12%',
+            top: '8%',
             left: '15%',
-            background: 'radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.35) 0%, transparent 70%)',
-            filter: 'blur(4px)',
+            background: 'radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.4) 0%, transparent 75%)',
+            filter: 'blur(3px)',
           }}
         />
-
-        {/* Processing spinner */}
-        {isProcessing && !isActive && (
-          <motion.div
-            className="absolute rounded-full border-2 border-t-transparent"
-            style={{ width: 40, height: 40, borderColor: `${c1} transparent transparent transparent` }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          />
-        )}
       </motion.div>
     </div>
   )
-}
-
-// ── Browser Web Speech TTS (Primary) ──────────────────────────────────────────
-function browserSpeak(text, onEnd) {
-  if (!window.speechSynthesis) return false
-  window.speechSynthesis.cancel()
-  const utt = new SpeechSynthesisUtterance(text)
-  utt.rate = 1.0
-  utt.pitch = 1.0
-  utt.volume = 1.0
-  if (onEnd) utt.onend = onEnd
-  window.speechSynthesis.speak(utt)
-  return true
 }
 
 function browserStop() {
@@ -221,42 +171,50 @@ export default function VoiceChatModal({
 }) {
   const [step, setStep] = useState('select')
   const [isListening, setIsListening] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [voiceIndex, setVoiceIndex] = useState(0)
   const [status, setStatus] = useState('idle') // idle | listening | processing | speaking
   const [countdown, setCountdown] = useState(null)
-  const [localPlaying, setLocalPlaying] = useState(false)
 
   const recognitionRef = useRef(null)
   const finalTranscriptRef = useRef('')
   const silenceTimerRef = useRef(null)
-  const wasListeningRef = useRef(false)
   const countdownRef = useRef(null)
 
-  const selectedVoice = VOICE_MODELS[voiceIndex] || VOICE_MODELS[0]
-  const effectivePlaying = isPlaying || localPlaying
+  const isMutedRef = useRef(isMuted)
+  const isPlayingRef = useRef(isPlaying)
+  const isProcessingRef = useRef(isProcessing)
+  const stepRef = useRef(step)
 
-  const effectivePlayingRef = useRef(effectivePlaying)
-  useEffect(() => {
-    effectivePlayingRef.current = effectivePlaying
-  }, [effectivePlaying])
+  const prevIndex = (voiceIndex - 1 + VOICE_MODELS.length) % VOICE_MODELS.length
+  const nextIndex = (voiceIndex + 1) % VOICE_MODELS.length
+  
+  const prevVoice = VOICE_MODELS[prevIndex]
+  const selectedVoice = VOICE_MODELS[voiceIndex] || VOICE_MODELS[0]
+  const nextVoice = VOICE_MODELS[nextIndex]
 
   const handleInterrupt = useCallback(() => {
     browserStop()
     if (externalStop) externalStop()
-    setLocalPlaying(false)
     clearTimeout(silenceTimerRef.current)
     clearInterval(countdownRef.current)
     setCountdown(null)
   }, [externalStop])
+
+  // Sync ref values for access inside recognition closures
+  useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
+  useEffect(() => { isPlayingRef.current = isPlaying }, [isPlaying])
+  useEffect(() => { isProcessingRef.current = isProcessing }, [isProcessing])
+  useEffect(() => { stepRef.current = step }, [step])
 
   // Reset to selection step when modal is opened
   useEffect(() => {
     if (isOpen) {
       setStep('select')
       setIsListening(false)
+      setIsMuted(false)
       setTranscript('')
-      wasListeningRef.current = false
       finalTranscriptRef.current = ''
     }
   }, [isOpen])
@@ -269,7 +227,7 @@ export default function VoiceChatModal({
     const voice = model.label.toLowerCase()
     if (updateProvider) updateProvider(provider)
     if (updateVoice) updateVoice(voice)
-  }, [voiceIndex])
+  }, [voiceIndex, updateProvider, updateVoice])
 
   // Save/load voice from localStorage
   useEffect(() => {
@@ -284,35 +242,15 @@ export default function VoiceChatModal({
     localStorage.setItem('voice_modal_index', String(voiceIndex))
   }, [voiceIndex])
 
-  // Update status
+  // Update status label
   useEffect(() => {
     setStatus(
-      effectivePlaying ? 'speaking' :
-      isListening ? 'listening' :
+      isPlaying ? 'speaking' :
       isProcessing ? 'processing' :
+      isListening ? 'listening' :
       'idle'
     )
-  }, [isListening, isProcessing, effectivePlaying])
-
-  // Auto-pause mic during speech and resume after
-  useEffect(() => {
-    if (effectivePlaying) {
-      wasListeningRef.current = isListening
-      if (recognitionRef.current && isListening) {
-        try { recognitionRef.current.stop() } catch {}
-      }
-      clearTimeout(silenceTimerRef.current)
-      clearInterval(countdownRef.current)
-      setCountdown(null)
-    } else if (wasListeningRef.current && recognitionRef.current && step === 'active') {
-      setTimeout(() => {
-        finalTranscriptRef.current = ''
-        setTranscript('')
-        try { recognitionRef.current.start() } catch {}
-        setIsListening(true)
-      }, 350)
-    }
-  }, [effectivePlaying, step])
+  }, [isListening, isProcessing, isPlaying])
 
   const startSilenceTimer = useCallback(() => {
     clearTimeout(silenceTimerRef.current)
@@ -332,7 +270,6 @@ export default function VoiceChatModal({
         finalTranscriptRef.current = ''
         setTranscript('')
         setIsListening(false)
-        wasListeningRef.current = false
         try { recognitionRef.current?.stop() } catch {}
       }
     }, 1000)
@@ -347,7 +284,7 @@ export default function VoiceChatModal({
     rec.lang = 'en-US'
     rec.onresult = (event) => {
       // Auto interrupt if AI is speaking
-      if (effectivePlayingRef.current) {
+      if (isPlayingRef.current) {
         handleInterrupt()
       }
 
@@ -373,14 +310,54 @@ export default function VoiceChatModal({
       setCountdown(null)
     }
     rec.onend = () => {
-      if (wasListeningRef.current && !effectivePlayingRef.current && step === 'active') {
+      if (!isMutedRef.current && !isPlayingRef.current && !isProcessingRef.current && stepRef.current === 'active') {
         try { rec.start() } catch {}
       } else {
         setIsListening(false)
       }
     }
     return rec
-  }, [startSilenceTimer, step, handleInterrupt])
+  }, [startSilenceTimer, handleInterrupt])
+
+  // Continuous loop trigger effect
+  useEffect(() => {
+    if (!isOpen || step !== 'active') {
+      if (recognitionRef.current && isListening) {
+        try { recognitionRef.current.stop() } catch {}
+      }
+      setIsListening(false)
+      return
+    }
+
+    const shouldBeListening = !isMuted && !isPlaying && !isProcessing
+
+    if (shouldBeListening) {
+      if (!isListening) {
+        finalTranscriptRef.current = ''
+        setTranscript('')
+        try {
+          if (!recognitionRef.current) {
+            recognitionRef.current = initRecognition()
+          }
+          recognitionRef.current?.start()
+          setIsListening(true)
+        } catch (e) {
+          // If already running
+        }
+      }
+    } else {
+      if (isListening) {
+        try {
+          recognitionRef.current?.stop()
+        } catch (e) {}
+        setIsListening(false)
+      }
+      if (isPlaying) {
+        finalTranscriptRef.current = ''
+        setTranscript('')
+      }
+    }
+  }, [isOpen, step, isMuted, isPlaying, isProcessing, isListening, initRecognition])
 
   useEffect(() => {
     recognitionRef.current = initRecognition()
@@ -392,77 +369,37 @@ export default function VoiceChatModal({
     }
   }, [initRecognition])
 
-  const toggleListening = () => {
-    if (!recognitionRef.current) {
-      alert('Speech recognition not supported. Please use Chrome or Edge.')
-      return
-    }
-    if (isListening) {
-      recognitionRef.current.stop()
-      setIsListening(false)
-      wasListeningRef.current = false
-      clearTimeout(silenceTimerRef.current)
-      clearInterval(countdownRef.current)
-      setCountdown(null)
-    } else {
-      finalTranscriptRef.current = ''
-      setTranscript('')
-      wasListeningRef.current = true
-      try {
-        recognitionRef.current.start()
-        setIsListening(true)
-      } catch (e) {
-        recognitionRef.current = initRecognition()
-        if (recognitionRef.current) {
-          recognitionRef.current.start()
-          setIsListening(true)
-        }
-      }
-    }
+  const toggleMute = () => {
+    setIsMuted(prev => !prev)
   }
 
-  const handleSend = () => {
-    if (transcript.trim()) {
-      clearTimeout(silenceTimerRef.current)
-      clearInterval(countdownRef.current)
-      setCountdown(null)
-      onSendMessage(transcript)
-      setTranscript('')
-      finalTranscriptRef.current = ''
-      setIsListening(false)
-      wasListeningRef.current = false
-      recognitionRef.current?.stop()
-    }
+  const handlePrev = () => {
+    setVoiceIndex(prev => (prev === 0 ? VOICE_MODELS.length - 1 : prev - 1))
+  }
+
+  const handleNext = () => {
+    setVoiceIndex(prev => (prev === VOICE_MODELS.length - 1 ? 0 : prev + 1))
   }
 
   const handleContinue = () => {
     setStep('active')
+    setIsMuted(false)
     finalTranscriptRef.current = ''
     setTranscript('')
-    wasListeningRef.current = true
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.start()
-        setIsListening(true)
-      } catch (e) {
-        console.error(e)
-      }
-    }
   }
 
   const handleBackToSelect = () => {
     handleInterrupt()
     setIsListening(false)
-    wasListeningRef.current = false
     try { recognitionRef.current?.stop() } catch {}
     setStep('select')
   }
 
   const statusLabel = {
-    idle: 'Tap mic to speak',
+    idle: 'Listening...',
     listening: countdown !== null ? `Sending in ${countdown.toFixed(1)}s…` : 'Listening…',
     processing: 'Thinking…',
-    speaking: 'Speaking — tap to interrupt',
+    speaking: 'Speaking...',
   }[status]
 
   return (
@@ -475,7 +412,7 @@ export default function VoiceChatModal({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-50 flex flex-col items-center justify-between"
-          style={{ background: '#0a0a0f' }}
+          style={{ background: '#1c1b1b' }}
         >
           {/* Subtle ambient bg glow */}
           <div
@@ -512,47 +449,47 @@ export default function VoiceChatModal({
             {step === 'select' ? (
               <div className="w-full flex flex-col items-center gap-6">
                 {/* Header */}
-                <div className="text-center max-w-sm">
-                  <h2 className="text-2xl font-bold text-white tracking-tight font-sans">Select Voice Agent</h2>
-                  <p className="text-sm text-white/40 mt-1">Choose a persona for your voice-to-voice conversation session.</p>
+                <div className="text-center max-w-md">
+                  <h2 className="text-3xl font-bold text-white tracking-tight font-sans">Try voice mode for free</h2>
                 </div>
 
-                {/* Grid of 6 agents */}
-                <div className="grid grid-cols-2 gap-3.5 w-full mt-2">
-                  {VOICE_MODELS.map((model, idx) => {
-                    const isSelected = idx === voiceIndex
-                    return (
-                      <motion.button
-                        key={model.id}
-                        onClick={() => setVoiceIndex(idx)}
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="p-4 rounded-xl text-left border relative overflow-hidden transition-all flex flex-col justify-between h-28"
-                        style={{
-                          backgroundColor: isSelected ? `${model.color}0A` : 'rgba(255,255,255,0.02)',
-                          borderColor: isSelected ? model.color : 'rgba(255,255,255,0.06)',
-                          boxShadow: isSelected ? `0 0 16px ${model.color}15` : 'none',
-                        }}
-                      >
-                        {/* Selected Indicator Checkmark */}
-                        {isSelected && (
-                          <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: model.color }}>
-                            <Check className="w-3 h-3 text-white stroke-[3px]" />
-                          </div>
-                        )}
-                        
-                        {/* Color dot indicator */}
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: model.color, boxShadow: `0 0 8px ${model.color}` }} />
-                          <span className="text-sm font-bold text-white">{model.label}</span>
-                        </div>
+                {/* Slider Carousel */}
+                <div className="flex items-center justify-between w-full mt-4 select-none">
+                  {/* Left chevron & preview */}
+                  <div
+                    className="flex items-center gap-1 cursor-pointer opacity-30 hover:opacity-75 transition-opacity w-1/4 justify-end text-right"
+                    onClick={handlePrev}
+                  >
+                    <ChevronLeft className="w-6 h-6 text-white flex-shrink-0" />
+                    <div className="hidden sm:block overflow-hidden">
+                      <div className="text-sm font-semibold text-white truncate">{prevVoice.label}</div>
+                      <div className="text-[10px] text-white/60 truncate max-w-[80px]">{prevVoice.desc}</div>
+                    </div>
+                  </div>
 
-                        <div className="mt-auto">
-                          <p className="text-xs text-white/50 leading-snug">{model.desc}</p>
-                        </div>
-                      </motion.button>
-                    )
-                  })}
+                  {/* Center Voice Sphere & Details */}
+                  <div className="flex flex-col items-center justify-center w-2/4">
+                    {/* Cloudy sky visualizer sphere */}
+                    <VoiceSphere isActive={true} orbColors={selectedVoice.orbColors} />
+
+                    {/* Center label */}
+                    <div className="text-center h-14 mt-6">
+                      <h3 className="text-xl font-bold text-white tracking-wide">{selectedVoice.label}</h3>
+                      <p className="text-sm text-white/60 mt-0.5">{selectedVoice.desc}</p>
+                    </div>
+                  </div>
+
+                  {/* Right chevron & preview */}
+                  <div
+                    className="flex items-center gap-1 cursor-pointer opacity-30 hover:opacity-75 transition-opacity w-1/4 justify-start text-left"
+                    onClick={handleNext}
+                  >
+                    <div className="hidden sm:block overflow-hidden">
+                      <div className="text-sm font-semibold text-white truncate">{nextVoice.label}</div>
+                      <div className="text-[10px] text-white/60 truncate max-w-[80px]">{nextVoice.desc}</div>
+                    </div>
+                    <ChevronRight className="w-6 h-6 text-white flex-shrink-0" />
+                  </div>
                 </div>
 
                 {/* Continue Button */}
@@ -560,21 +497,24 @@ export default function VoiceChatModal({
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleContinue}
-                  className="w-full py-3.5 rounded-xl font-bold text-white transition-all shadow-lg hover:shadow-xl mt-4 flex items-center justify-center gap-2 relative z-20"
-                  style={{
-                    background: selectedVoice.color,
-                    boxShadow: `0 4px 20px ${selectedVoice.color}35`,
-                  }}
+                  className="w-full max-w-[240px] py-3.5 rounded-full font-bold text-black bg-white hover:bg-white/95 transition-all shadow-lg hover:shadow-xl mt-6 flex items-center justify-center gap-2 relative z-20"
                 >
-                  <span>Continue with {selectedVoice.label}</span>
+                  <span>Continue</span>
                 </motion.button>
+
+                {/* Back to chat link */}
+                <button
+                  onClick={onClose}
+                  className="text-sm text-white/50 hover:text-white transition-colors mt-2"
+                >
+                  Back to chat
+                </button>
               </div>
             ) : (
               <div className="w-full flex flex-col items-center gap-8">
-                {/* Animated orb */}
-                <VoiceOrb
-                  status={status}
-                  color={selectedVoice.color}
+                {/* Visualizer sphere */}
+                <VoiceSphere
+                  isActive={status === 'listening' || status === 'speaking' || status === 'processing'}
                   orbColors={selectedVoice.orbColors}
                 />
 
@@ -596,8 +536,8 @@ export default function VoiceChatModal({
                 {/* Waveform */}
                 <WaveformBars
                   isActive={status === 'listening' || status === 'speaking'}
-                  color={status === 'speaking' ? '#D97757' : selectedVoice.color}
-                  intensity={status === 'speaking' ? 0.6 : 1.0}
+                  color="#22d3ee"
+                  intensity={status === 'speaking' ? 0.7 : 1.2}
                 />
 
                 {/* Status text + transcript */}
@@ -611,8 +551,8 @@ export default function VoiceChatModal({
                       transition={{ duration: 0.15 }}
                       className="text-sm font-medium"
                       style={{
-                        color: status === 'speaking' ? '#D97757'
-                          : status === 'listening' ? selectedVoice.color
+                        color: status === 'speaking' ? '#ffffff'
+                          : status === 'listening' ? '#22d3ee'
                           : 'rgba(255,255,255,0.5)'
                       }}
                     >
@@ -628,7 +568,7 @@ export default function VoiceChatModal({
                     <div className="mt-2 mx-auto w-32 h-0.5 bg-white/10 rounded-full overflow-hidden">
                       <motion.div
                         className="h-full rounded-full"
-                        style={{ background: selectedVoice.color }}
+                        style={{ background: '#22d3ee' }}
                         initial={{ width: '100%' }}
                         animate={{ width: `${(countdown / 1.0) * 100}%` }}
                         transition={{ duration: 0.1, ease: 'linear' }}
@@ -637,57 +577,25 @@ export default function VoiceChatModal({
                   )}
                 </div>
 
-                {/* Mic button */}
+                {/* Mic mute/unmute button */}
                 <div className="flex flex-col items-center gap-4">
                   <motion.button
-                    onClick={status === 'speaking' ? handleInterrupt : toggleListening}
-                    className="relative w-20 h-20 rounded-full flex items-center justify-center"
+                    onClick={toggleMute}
+                    className="relative w-20 h-20 rounded-full flex items-center justify-center transition-colors"
                     style={{
-                      background: isListening
-                        ? `radial-gradient(circle, ${selectedVoice.color}30, ${selectedVoice.color}10)`
-                        : 'rgba(255,255,255,0.05)',
-                      border: `2px solid ${isListening ? selectedVoice.color : 'rgba(255,255,255,0.10)'}`,
-                      boxShadow: isListening ? `0 0 40px ${selectedVoice.color}35` : 'none',
+                      background: isMuted ? '#ef4444' : 'rgba(255,255,255,0.05)',
+                      border: `2px solid ${isMuted ? '#ef4444' : 'rgba(255,255,255,0.1)'}`,
+                      boxShadow: !isMuted ? '0 0 30px rgba(34,211,238,0.2)' : 'none',
                     }}
                     whileTap={{ scale: 0.9 }}
-                    whileHover={{ scale: 1.07 }}
+                    whileHover={{ scale: 1.05 }}
                   >
-                    {isListening && (
-                      <motion.div
-                        className="absolute inset-0 rounded-full"
-                        style={{ border: `2px solid ${selectedVoice.color}` }}
-                        animate={{ scale: [1, 1.45], opacity: [0.5, 0] }}
-                        transition={{ duration: 1.3, repeat: Infinity, ease: 'easeOut' }}
-                      />
+                    {isMuted ? (
+                      <MicOff className="w-8 h-8 text-white" />
+                    ) : (
+                      <Mic className="w-8 h-8 text-white" />
                     )}
-                    {isListening
-                      ? <MicOff className="w-8 h-8 text-white" />
-                      : status === 'speaking'
-                        ? <VolumeX className="w-8 h-8 text-white" />
-                        : <Mic className="w-8 h-8 text-white/60" />
-                    }
                   </motion.button>
-
-                  {/* Manual send */}
-                  <AnimatePresence>
-                    {transcript && !isListening && (
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.85, y: 8 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.85, y: 8 }}
-                        transition={{ duration: 0.2 }}
-                        onClick={handleSend}
-                        className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white"
-                        style={{
-                          background: selectedVoice.color,
-                          boxShadow: `0 4px 24px ${selectedVoice.color}40`,
-                        }}
-                      >
-                        <Send className="w-4 h-4" />
-                        Send Message
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
                 </div>
               </div>
             )}

@@ -742,10 +742,10 @@ function InputArea({
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto flex flex-col gap-4">
+    <div className="w-full max-w-3xl mx-auto flex flex-col gap-4 px-4 sm:px-0">
       {/* Input container card */}
       <div
-        className="rounded-2xl border border-white/[0.06] transition-all relative flex flex-col p-4 gap-3 bg-[#1e1e1e]"
+        className="rounded-2xl border border-border-subtle transition-all relative flex flex-col p-4 gap-3 bg-background-elevated"
         style={{
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.24)',
         }}
@@ -760,7 +760,7 @@ function InputArea({
             placeholder="How can I help you today?"
             rows={1}
             disabled={loading}
-            className="flex-1 bg-transparent text-sm text-gray-200 placeholder:text-gray-500 resize-none focus:outline-none leading-relaxed py-1 min-h-[36px]"
+            className="flex-1 bg-transparent text-sm text-foreground-primary placeholder:text-foreground-muted resize-none focus:outline-none leading-relaxed py-1 min-h-[36px]"
             style={{ maxHeight: '200px' }}
           />
           {/* Teal dot */}
@@ -773,14 +773,16 @@ function InputArea({
         </div>
 
         {/* Bottom Row: Controls */}
-        <div className="flex items-center justify-between border-t border-white/[0.04] pt-3 mt-1 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-border-subtle pt-3 mt-1 gap-3 flex-shrink-0">
           {/* Left: Plus attachment */}
-          <button className="p-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all">
-            <Plus className="w-4 h-4" />
-          </button>
+          <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto">
+            <button className="p-2 rounded-xl text-foreground-muted hover:text-foreground-primary hover:bg-white/5 transition-all">
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
 
           {/* Right: Model dropdown, Research, Ghost, Mic, Waveform, Send */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2 justify-end w-full sm:w-auto">
             <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} />
 
             {/* Deep Research toggle */}
@@ -858,7 +860,7 @@ function InputArea({
               className={`p-1.5 rounded-xl transition-all ${
                 input.trim() && !loading
                   ? 'bg-accent text-white hover:bg-accent-light'
-                  : 'bg-white/5 text-gray-605 cursor-not-allowed'
+                  : 'bg-white/5 text-gray-600 cursor-not-allowed'
               }`}
             >
               {loading ? (

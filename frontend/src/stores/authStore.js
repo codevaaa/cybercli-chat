@@ -70,7 +70,7 @@ export const useAuthStore = create(
             password,
             options: {
               data: { name },
-              emailRedirectTo: `${window.location.origin}/chat`,
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
             },
           })
           if (error) throw error

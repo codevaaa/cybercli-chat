@@ -13,7 +13,10 @@ router.post('/generate', optionalAuth, async (req, res) => {
 
   try {
     let isFree = true
-    let identifier = req.ip // Guest fallback identifier is IP address
+    let identifier = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || 'unknown_ip'
+    if (Array.isArray(identifier)) {
+      identifier = identifier[0]
+    }
 
     if (req.user) {
       isFree = req.user.plan === 'free'
@@ -22,24 +25,30 @@ router.post('/generate', optionalAuth, async (req, res) => {
 
     if (isFree) {
       const today = new Date().toISOString().split('T')[0]
-      let usage = await ImageUsage.findOne({ identifier })
 
-      if (usage) {
-        if (usage.date === today) {
-          if (usage.count >= 5) {
-            return res.status(429).json({ 
-              error: 'Daily limit of 5 free image generations reached. Please upgrade to Pro for unlimited image generation.' 
-            })
-          }
-          usage.count += 1
-        } else {
-          usage.date = today
-          usage.count = 1
-        }
-        await usage.save()
-      } else {
-        usage = new ImageUsage({ identifier, date: today, count: 1 })
-        await usage.save()
+      // 1. Try to increment count if the document already exists for today
+      let usage = await ImageUsage.findOneAndUpdate(
+        { identifier, date: today },
+        { $inc: { count: 1 } },
+        { new: true }
+      )
+
+      // 2. If it doesn't exist for today, upsert/reset it to today with count 1
+      if (!usage) {
+        usage = await ImageUsage.findOneAndUpdate(
+          { identifier },
+          { $set: { date: today, count: 1 } },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        )
+      }
+
+      // 3. Enforce the limit of 5 images per day
+      if (usage.count > 5) {
+        // Caps it at 5 so it doesn't keep increasing
+        await ImageUsage.updateOne({ identifier, date: today }, { $set: { count: 5 } })
+        return res.status(429).json({ 
+          error: 'Daily limit of 5 free image generations reached. Please upgrade to Pro for unlimited image generation.' 
+        })
       }
     }
 

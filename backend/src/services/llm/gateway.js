@@ -86,10 +86,36 @@ function injectIdentity(messages) {
 
 export const llmGateway = {
   async *complete({ messages, model: modelId = 'auto', temperature = 0.7 }) {
-    const enriched = injectIdentity(messages)
-    const targetModel = MODEL_MAP[modelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
-    const client = getClient(targetModel.provider)
+    let activeModelId = modelId
+    const totalChars = messages.reduce((sum, m) => sum + (m.content || '').length, 0)
+    
+    // Auto-route large contexts to Gemini
+    if (totalChars > 25000 && !activeModelId.startsWith('gemini/')) {
+      activeModelId = 'gemini/gemini-2.5-flash'
+    }
 
+    const enriched = injectIdentity(messages)
+    const targetModel = MODEL_MAP[activeModelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
+
+    // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
+    if (targetModel.provider === 'gemini' && PROVIDER_KEYS.gemini) {
+      try {
+        const { streamCompletion } = await import('./gemini.js')
+        const stream = streamCompletion({
+          messages: enriched,
+          model: targetModel.model,
+          temperature,
+        })
+        for await (const chunk of stream) {
+          yield chunk
+        }
+        return
+      } catch (err) {
+        console.error('Direct Gemini SDK stream completion failed, falling back to proxy:', err.message)
+      }
+    }
+
+    const client = getClient(targetModel.provider)
     if (!client) {
       yield { type: 'error', content: 'No API key configured for any provider' }
       return
@@ -115,10 +141,34 @@ export const llmGateway = {
     } catch (error) {
       console.error(`Provider ${targetModel.provider} failed:`, error.message)
 
+      const activeFallbackChain = totalChars > 25000
+        ? ['gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini']
+        : FALLBACK_CHAIN
+
       // Try fallback chain
-      for (const fallbackId of FALLBACK_CHAIN) {
-        if (fallbackId === modelId) continue
+      for (const fallbackId of activeFallbackChain) {
+        if (fallbackId === activeModelId) continue
         const fallback = MODEL_MAP[fallbackId]
+
+        // Direct SDK fallback for Gemini if possible
+        if (fallback.provider === 'gemini' && PROVIDER_KEYS.gemini) {
+          try {
+            yield { type: 'info', content: `Switching providers for best response...` }
+            const { streamCompletion } = await import('./gemini.js')
+            const stream = streamCompletion({
+              messages: enriched,
+              model: fallback.model,
+              temperature,
+            })
+            for await (const chunk of stream) {
+              yield chunk
+            }
+            return
+          } catch (geminiErr) {
+            console.error('Gemini fallback direct SDK failed:', geminiErr.message)
+          }
+        }
+
         const fallbackClient = getClient(fallback.provider)
         if (!fallbackClient) continue
 
@@ -152,10 +202,44 @@ export const llmGateway = {
   },
 
   async completeNonStream({ messages, model: modelId = 'auto', temperature = 0.7 }) {
-    const enriched = injectIdentity(messages)
-    const targetModel = MODEL_MAP[modelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
-    const client = getClient(targetModel.provider)
+    let activeModelId = modelId
+    const totalChars = messages.reduce((sum, m) => sum + (m.content || '').length, 0)
+    
+    // Auto-route large contexts to Gemini
+    if (totalChars > 25000 && !activeModelId.startsWith('gemini/')) {
+      activeModelId = 'gemini/gemini-2.5-flash'
+    }
 
+    const enriched = injectIdentity(messages)
+    const targetModel = MODEL_MAP[activeModelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
+
+    // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
+    if (targetModel.provider === 'gemini' && PROVIDER_KEYS.gemini) {
+      try {
+        const { GoogleGenAI } = await import('@google/genai')
+        const genAI = new GoogleGenAI({ apiKey: PROVIDER_KEYS.gemini })
+        const contents = enriched.map(m => ({
+          role: m.role === 'assistant' ? 'model' : m.role,
+          parts: [{ text: m.content }],
+        }))
+        const response = await genAI.models.generateContent({
+          model: targetModel.model,
+          contents,
+          config: { temperature, maxOutputTokens: 4096 },
+        })
+        return {
+          content: response.text,
+          model: targetModel.model,
+          provider: 'gemini',
+          tokens_in: 0,
+          tokens_out: 0,
+        }
+      } catch (err) {
+        console.error('Direct Gemini SDK non-stream completion failed, falling back to proxy:', err.message)
+      }
+    }
+
+    const client = getClient(targetModel.provider)
     if (!client) {
       return { error: 'No API key configured for any provider' }
     }

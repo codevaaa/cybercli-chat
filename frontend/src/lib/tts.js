@@ -5,14 +5,11 @@ const TTS_PROVIDERS = {
     name: 'Puter.js (Free)',
     description: 'Free ElevenLabs TTS via Puter.js - no API key needed',
     voices: [
-      { id: 'ava', name: 'Ava', gender: 'female', accent: 'american' },
-      { id: 'bella', name: 'Bella', gender: 'female', accent: 'american' },
-      { id: 'emma', name: 'Emma', gender: 'female', accent: 'british' },
-      { id: 'rachel', name: 'Rachel', gender: 'female', accent: 'american' },
-      { id: 'charlotte', name: 'Charlotte', gender: 'female', accent: 'american' },
-      { id: 'adam', name: 'Adam', gender: 'male', accent: 'american' },
-      { id: 'josh', name: 'Josh', gender: 'male', accent: 'american' },
-      { id: 'fin', name: 'Fin', gender: 'male', accent: 'irish' },
+      { id: 'sol', name: 'Sol', gender: 'female', accent: 'american' },
+      { id: 'cove', name: 'Cove', gender: 'female', accent: 'american' },
+      { id: 'breeze', name: 'Breeze', gender: 'female', accent: 'british' },
+      { id: 'orion', name: 'Orion', gender: 'male', accent: 'american' },
+      { id: 'echo', name: 'Echo', gender: 'male', accent: 'american' },
     ],
   },
   gemini: {
@@ -20,7 +17,7 @@ const TTS_PROVIDERS = {
     description: 'Google Gemini Flash Text-to-Speech (Server-side)',
     voices: [
       { id: 'gemini', name: 'Gemini Voice', gender: 'female', accent: 'american' },
-      { id: 'ava', name: 'Ava', gender: 'female', accent: 'american' },
+      { id: 'sol', name: 'Sol', gender: 'female', accent: 'american' },
       { id: 'orion', name: 'Orion', gender: 'male', accent: 'american' },
     ],
   },
@@ -105,11 +102,11 @@ class TTSService {
       
       // Map shortnames to real ElevenLabs voice IDs
       const PUTER_VOICES_MAP = {
-        ava: 'H6QPv2pQZDcGqLwDTIJQ',
-        nova: 'FZkK3TvQ0pjyDmT8fzIW',
-        luna: 'CwhRBWXzGAHq8TQ4Fs17',
+        sol: 'H6QPv2pQZDcGqLwDTIJQ',
+        cove: 'FZkK3TvQ0pjyDmT8fzIW',
+        breeze: 'CwhRBWXzGAHq8TQ4Fs17',
         orion: 'wbOlq3nIga8HKqcDhASI',
-        echo: 'TxGEqn7nUaNZTR5JgIec', // Keep echo as is or if user didn't request a change
+        echo: 'TxGEqn7nUaNZTR5JgIec',
       }
       
       const realVoiceId = PUTER_VOICES_MAP[voice.toLowerCase()] || voice
