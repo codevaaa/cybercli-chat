@@ -444,7 +444,7 @@ export default function ModelsPage() {
           </ScrollReveal>
 
           {/* Model cards grid */}
-          <motion.div layout className="grid lg:grid-cols-2 gap-5">
+          <motion.div layout className="grid sm:grid-cols-1 lg:grid-cols-2 gap-5">
             <AnimatePresence mode="popLayout">
               {filteredModels.map((model, i) => (
                 <ModelCard key={model.id} model={model} index={i} />

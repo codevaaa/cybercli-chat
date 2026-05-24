@@ -263,81 +263,127 @@ export default function Navbar() {
         </nav>
       </div>
 
-      {/* ── Mobile drawer ── */}
+      {/* ── Mobile full-screen slide-in panel ── */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-[#0f0f15]/95 backdrop-blur-xl border-b border-white/[0.08] overflow-hidden"
-          >
-            <div className="section-padding py-4 space-y-2 max-h-[85vh] overflow-y-auto">
-              {/* Accordion groups */}
-              {MENU_GROUPS.map((group) => {
-                const isOpen = mobileAccordions[group.label]
-                return (
-                  <div key={group.label} className="border-b border-white/[0.04] pb-1">
-                    <button
-                      onClick={() => toggleMobileAccordion(group.label)}
-                      className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-white hover:bg-white/5 rounded-lg transition-colors"
-                    >
-                      <span>{group.label}</span>
-                      <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180 text-white' : ''}`} />
-                    </button>
-                    
-                    <AnimatePresence>
-                      {isOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="pl-4 pr-2 py-1 grid gap-1 overflow-hidden"
-                        >
-                          {group.items.map((item) => {
-                            const IconComponent = ICON_MAP[item.icon]
-                            return (
-                              <Link
-                                key={item.href}
-                                to={item.href}
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-all"
-                              >
-                                {IconComponent && <IconComponent className="w-4 h-4 text-gray-500 flex-shrink-0" />}
-                                <div>
-                                  <div className="font-medium text-white">{item.label}</div>
-                                  <div className="text-[11px] text-gray-500 truncate max-w-[240px] mt-0.5">{item.desc}</div>
-                                </div>
-                              </Link>
-                            )
-                          })}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )
-              })}
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="mobile-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setMobileOpen(false)}
+            />
 
-              <div className="pt-3 space-y-2">
+            {/* Panel */}
+            <motion.div
+              key="mobile-panel"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="lg:hidden fixed top-0 right-0 bottom-0 z-50 w-[85vw] max-w-sm flex flex-col overflow-y-auto"
+              style={{ background: '#0f0f15', borderLeft: '1px solid rgba(255,255,255,0.07)' }}
+            >
+              {/* Panel Header */}
+              <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.06] flex-shrink-0">
+                <Link to="/" onClick={() => setMobileOpen(false)}>
+                  <CyberCliWordmark size={22} />
+                </Link>
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Nav Groups */}
+              <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                {MENU_GROUPS.map((group) => {
+                  const isOpen = mobileAccordions[group.label]
+                  return (
+                    <div key={group.label}>
+                      <button
+                        onClick={() => toggleMobileAccordion(group.label)}
+                        className="w-full flex items-center justify-between px-3 py-3 text-sm font-semibold text-white hover:bg-white/[0.05] rounded-xl transition-colors"
+                      >
+                        <span>{group.label}</span>
+                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180 text-white' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {isOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="overflow-hidden ml-1"
+                          >
+                            <div className="py-1 space-y-0.5">
+                              {group.items.map((item) => {
+                                const IconComponent = ICON_MAP[item.icon]
+                                return (
+                                  <Link
+                                    key={item.href}
+                                    to={item.href}
+                                    onClick={() => setMobileOpen(false)}
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-all"
+                                  >
+                                    {IconComponent && (
+                                      <div className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center flex-shrink-0">
+                                        <IconComponent className="w-4 h-4" />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <div className="font-medium text-white text-sm">{item.label}</div>
+                                      <div className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">{item.desc}</div>
+                                    </div>
+                                  </Link>
+                                )
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Bottom CTAs */}
+              <div className="px-4 py-5 border-t border-white/[0.06] flex-shrink-0 space-y-3">
                 {user ? (
                   <>
-                    <Link to="/chat" className="block btn-primary text-center text-sm font-medium">
+                    <Link
+                      to="/chat"
+                      onClick={() => setMobileOpen(false)}
+                      className="block btn-primary text-center text-sm font-semibold w-full"
+                    >
                       Go to Chat
                     </Link>
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-3 rounded-lg text-sm font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-                    >
-                      Profile
-                    </Link>
-                    <Link
-                      to="/settings"
-                      className="block px-4 py-3 rounded-lg text-sm font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-                    >
-                      Settings
-                    </Link>
+                    <div className="flex gap-2">
+                      <Link
+                        to="/profile"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex-1 text-center px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06]"
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        to="/settings"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex-1 text-center px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06]"
+                      >
+                        Settings
+                      </Link>
+                    </div>
                     <button
                       onClick={() => { handleSignOut(); setMobileOpen(false) }}
-                      className="w-full flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors border border-red-500/20"
                     >
                       <LogOut className="w-4 h-4" />
                       Sign out
@@ -346,19 +392,24 @@ export default function Navbar() {
                 ) : (
                   <>
                     <Link
+                      to="/auth/signup"
+                      onClick={() => setMobileOpen(false)}
+                      className="block btn-primary text-center text-sm font-semibold w-full"
+                    >
+                      Get Started — It's Free
+                    </Link>
+                    <Link
                       to="/auth/login"
-                      className="block px-4 py-3 rounded-lg text-sm font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                      onClick={() => setMobileOpen(false)}
+                      className="block text-center px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06] w-full"
                     >
                       Log in
-                    </Link>
-                    <Link to="/auth/signup" className="block btn-primary text-center text-sm font-medium">
-                      Get Started
                     </Link>
                   </>
                 )}
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </header>

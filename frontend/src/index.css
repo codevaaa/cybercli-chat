@@ -239,7 +239,36 @@
 
   /* ─── Layout ─── */
   .section-padding { @apply px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-20; }
-  .container-custom { @apply mx-auto max-w-7xl; }
+  .container-custom { @apply mx-auto max-w-7xl w-full; }
+
+  /* ─── Mobile text scaling ─── */
+  .hero-headline {
+    font-size: clamp(2rem, 8vw, 4.5rem);
+    line-height: 1.08;
+  }
+  .section-headline {
+    font-size: clamp(1.75rem, 6vw, 3.75rem);
+    line-height: 1.15;
+  }
+  .subsection-headline {
+    font-size: clamp(1.25rem, 4vw, 2rem);
+  }
+
+  /* ─── Mobile card grid ─── */
+  .card-grid-2 { @apply grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6; }
+  .card-grid-3 { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6; }
+  .card-grid-4 { @apply grid grid-cols-2 md:grid-cols-4 gap-4; }
+
+  /* ─── Chat page mobile ─── */
+  @media (max-width: 767px) {
+    /* Chat sidebar hidden on mobile */
+    .chat-sidebar-mobile { display: none; }
+  }
+
+  /* ─── Responsive pricing grid ─── */
+  @media (max-width: 767px) {
+    .pricing-grid { grid-template-columns: 1fr !important; }
+  }
 
   /* ─── Input styles ─── */
   .input-premium {

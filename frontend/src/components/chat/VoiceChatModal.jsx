@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Mic, MicOff, VolumeX, ChevronLeft, ChevronRight, Send, Check } from 'lucide-react'
+import { X, VolumeX, ChevronLeft, ChevronRight, Send, Check } from 'lucide-react'
 
 function StarIcon({ size = 16, color = '#D97757' }) {
   return (
@@ -577,24 +577,19 @@ export default function VoiceChatModal({
                   )}
                 </div>
 
-                {/* Mic mute/unmute button */}
+                {/* End Session button */}
                 <div className="flex flex-col items-center gap-4">
                   <motion.button
-                    onClick={toggleMute}
-                    className="relative w-20 h-20 rounded-full flex items-center justify-center transition-colors"
+                    onClick={handleBackToSelect}
+                    className="px-6 py-2.5 rounded-full text-sm font-semibold text-white/70 hover:text-white transition-all"
                     style={{
-                      background: isMuted ? '#ef4444' : 'rgba(255,255,255,0.05)',
-                      border: `2px solid ${isMuted ? '#ef4444' : 'rgba(255,255,255,0.1)'}`,
-                      boxShadow: !isMuted ? '0 0 30px rgba(34,211,238,0.2)' : 'none',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.1)',
                     }}
-                    whileTap={{ scale: 0.9 }}
-                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: 1.03, background: 'rgba(255,255,255,0.10)' }}
                   >
-                    {isMuted ? (
-                      <MicOff className="w-8 h-8 text-white" />
-                    ) : (
-                      <Mic className="w-8 h-8 text-white" />
-                    )}
+                    End Session
                   </motion.button>
                 </div>
               </div>

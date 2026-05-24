@@ -37,7 +37,13 @@ const MODEL_MAP = {
   'gemini/gemini-2.5-pro': { provider: 'gemini', model: 'gemini-2.5-pro-preview-05-06', purpose: 'reasoning' },
   'cerebras/llama-3.1-8b': { provider: 'cerebras', model: 'llama3.1-8b', purpose: 'speed' },
   'cloudflare/@cf/meta/llama-3.1-8b-instruct': { provider: 'cloudflare', model: '@cf/meta/llama-3.1-8b-instruct', purpose: 'general' },
-  'huggingface/meta-llama/Llama-3.1-8B-Instruct': { provider: 'huggingface', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
+  // HuggingFace models
+  'huggingface/meta-llama/Llama-3.1-8B-Instruct':         { provider: 'huggingface', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
+  'huggingface/meta-llama/Llama-3.3-70B-Instruct':        { provider: 'huggingface', model: 'meta-llama/Llama-3.3-70B-Instruct', purpose: 'reasoning' },
+  'huggingface/Qwen/Qwen2.5-72B-Instruct':                { provider: 'huggingface', model: 'Qwen/Qwen2.5-72B-Instruct', purpose: 'reasoning' },
+  'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B':{ provider: 'huggingface', model: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B', purpose: 'reasoning' },
+  'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1':     { provider: 'huggingface', model: 'mistralai/Mixtral-8x7B-Instruct-v0.1', purpose: 'general' },
+  'huggingface/NousResearch/Hermes-3-Llama-3.1-70B':      { provider: 'huggingface', model: 'NousResearch/Hermes-3-Llama-3.1-70B', purpose: 'reasoning' },
   'nvidia/llama-3.1-nemotron-70b': { provider: 'nvidia', model: 'llama-3.1-nemotron-70b-instruct', purpose: 'reasoning' },
   'bytez/meta-llama/Llama-3.1-8B-Instruct': { provider: 'bytez', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
 }

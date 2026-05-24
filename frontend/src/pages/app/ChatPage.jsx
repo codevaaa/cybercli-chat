@@ -27,11 +27,15 @@ const MODELS = [
 ]
 
 const EXTRA_MODELS = [
-  { id: 'nvidia/llama-3.1-nemotron-70b', name: 'CyberCli-Nemotron', tag: 'Nemotron', color: '#76B900', desc: 'NVIDIA research-grade coding & reasoning.' },
-  { id: 'gemini/gemini-2.5-flash',       name: 'CyberCli-Flash',    tag: 'Flash',    color: '#4285F4', desc: 'Google next-gen high speed multimodal.' },
-  { id: 'gemini/gemini-2.5-pro',         name: 'CyberCli-Pro',      tag: 'Pro',      color: '#1A73E8', desc: 'Google high intelligence reasoning.' },
-  { id: 'cerebras/llama-3.1-8b',        name: 'CyberCli-HyperSwift', tag: 'HyperSwift', color: '#EC4899', desc: 'Sub-second wafer-scale speed inference.' },
-  { id: 'huggingface/meta-llama/Llama-3.1-8B-Instruct', name: 'CyberCli-Hugging', tag: 'Hugging', color: '#FFD21E', desc: 'Meta open-weights community run model.' },
+  { id: 'nvidia/llama-3.1-nemotron-70b',                        name: 'CyberCli-Nemotron',    tag: 'Nemotron',    color: '#76B900', desc: 'NVIDIA research-grade coding & reasoning.' },
+  { id: 'gemini/gemini-2.5-flash',                              name: 'CyberCli-Flash',        tag: 'Flash',       color: '#4285F4', desc: 'Google next-gen high speed multimodal.' },
+  { id: 'gemini/gemini-2.5-pro',                                name: 'CyberCli-Pro',          tag: 'Pro',         color: '#1A73E8', desc: 'Google high intelligence reasoning.' },
+  { id: 'cerebras/llama-3.1-8b',                                name: 'CyberCli-HyperSwift',   tag: 'HyperSwift',  color: '#EC4899', desc: 'Sub-second wafer-scale speed inference.' },
+  { id: 'huggingface/meta-llama/Llama-3.3-70B-Instruct',        name: 'CyberCli-Llama70B',     tag: 'Llama-70B',   color: '#FFD21E', desc: 'Meta Llama 3.3 70B — open weights flagship.' },
+  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',                name: 'CyberCli-Qwen72B',      tag: 'Qwen72B',     color: '#FF6B35', desc: 'Alibaba Qwen 2.5 72B — best open multilingual.' },
+  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',name: 'CyberCli-DeepSeek',     tag: 'DeepSeek-R1', color: '#00A3FF', desc: 'DeepSeek R1 distilled — chain-of-thought reasoning.' },
+  { id: 'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1',     name: 'CyberCli-Mixtral',      tag: 'Mixtral',     color: '#FF4D88', desc: 'Mistral mixture-of-experts model.' },
+  { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-70B',      name: 'CyberCli-Hermes',       tag: 'Hermes-70B',  color: '#9F7AEA', desc: 'Nous Research Hermes 3 — tool use & function calling.' },
 ]
 
 
@@ -219,8 +223,33 @@ function ImageGeneratorWidget({ src, alt }) {
         }
 
         const data = await response.json()
+
+        let puterUrl = null
+        try {
+          if (!window.puter) {
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script')
+              script.src = 'https://js.puter.com/v2/'
+              script.onload = () => resolve(window.puter)
+              script.onerror = (e) => reject(e)
+              document.head.appendChild(script)
+            })
+          }
+
+          if (window.puter && window.puter.ai && window.puter.ai.txt2img) {
+            const imgElement = await window.puter.ai.txt2img(prompt, { 
+              model: 'black-forest-labs/flux-schnell' 
+            })
+            if (imgElement && imgElement.src) {
+              puterUrl = imgElement.src
+            }
+          }
+        } catch (puterErr) {
+          console.warn('Puter.js image generation failed, falling back to Pollinations AI:', puterErr)
+        }
+
         if (active) {
-          setImageUrl(data.url)
+          setImageUrl(puterUrl || data.url)
           setLoading(false)
         }
       } catch (err) {
@@ -290,18 +319,232 @@ function ImageGeneratorWidget({ src, alt }) {
   )
 }
 
+// ─── Daemon Action Widget ────────────────────────────────────────────────────
+
+function DaemonActionWidget({ action, payload, daemonConnected }) {
+  const [status, setStatus] = useState('idle') // idle | executing | success | error
+  const [result, setResult] = useState(null)
+  const [errMessage, setErrMessage] = useState(null)
+  const [showContent, setShowContent] = useState(false)
+
+  const handleExecute = async () => {
+    setStatus('executing')
+    setErrMessage(null)
+    setResult(null)
+
+    try {
+      const token = localStorage.getItem('sb-access-token')
+      const response = await fetch(`${API_BASE}/daemon/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ action, payload })
+      })
+
+      const data = await response.json()
+      if (!data.success) {
+        throw new Error(data.error || 'Execution failed')
+      }
+
+      setStatus('success')
+      setResult(data.data)
+    } catch (err) {
+      setStatus('error')
+      setErrMessage(err.message)
+    }
+  }
+
+  const renderPayload = () => {
+    if (action === 'read_file') {
+      return (
+        <div className="text-xs text-foreground-secondary">
+          Action: <span className="font-semibold text-accent">Read File</span>
+          <div className="mt-1 font-mono text-[11px] bg-black/25 px-2.5 py-1.5 rounded border border-white/[0.03]">
+            {payload.path}
+          </div>
+        </div>
+      )
+    } else if (action === 'write_file') {
+      return (
+        <div className="text-xs text-foreground-secondary w-full">
+          Action: <span className="font-semibold text-accent">Write File</span>
+          <div className="mt-1 font-mono text-[11px] bg-black/25 px-2.5 py-1.5 rounded border border-white/[0.03] truncate">
+            {payload.path}
+          </div>
+          <div className="mt-2">
+            <button
+              onClick={() => setShowContent(!showContent)}
+              className="text-[10px] text-accent hover:underline flex items-center gap-1"
+            >
+              {showContent ? 'Hide file content' : `Show file content (${payload.content?.length || 0} chars)`}
+            </button>
+            {showContent && (
+              <pre className="mt-1.5 p-2 bg-black/40 border border-white/[0.03] rounded font-mono text-[10px] max-h-36 overflow-y-auto whitespace-pre-wrap text-foreground-muted w-full">
+                {payload.content}
+              </pre>
+            )}
+          </div>
+        </div>
+      )
+    } else if (action === 'run_command') {
+      return (
+        <div className="text-xs text-foreground-secondary">
+          Action: <span className="font-semibold text-accent">Run Command</span>
+          <div className="mt-1 font-mono text-[11px] bg-black/25 px-2.5 py-1.5 rounded border border-white/[0.03] text-emerald-400">
+            $ {payload.command}
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
+  return (
+    <div className="my-3 rounded-xl border border-border-subtle bg-background-secondary p-4.5 max-w-lg flex flex-col gap-3.5 animate-fade-in w-full">
+      <div className="flex items-center justify-between border-b border-white/[0.03] pb-2">
+        <div className="flex items-center gap-2">
+          <Terminal className="w-4 h-4 text-accent" />
+          <span className="text-xs font-semibold text-foreground-primary">Local Workspace Daemon Action</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className={`w-1.5 h-1.5 rounded-full ${daemonConnected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+          <span className="text-[10px] text-foreground-muted">{daemonConnected ? 'Daemon connected' : 'Daemon offline'}</span>
+        </div>
+      </div>
+
+      {renderPayload()}
+
+      {status === 'idle' && (
+        <button
+          disabled={!daemonConnected}
+          onClick={handleExecute}
+          className={`w-full py-2 rounded-lg text-xs font-bold text-center transition-all ${
+            daemonConnected
+              ? 'bg-accent text-white hover:bg-accent-dark active:scale-[0.98]'
+              : 'bg-white/5 text-white/30 border border-white/5 cursor-not-allowed'
+          }`}
+        >
+          {daemonConnected ? 'Execute Workspace Action' : 'Connect Daemon to Execute'}
+        </button>
+      )}
+
+      {status === 'executing' && (
+        <div className="flex flex-col items-center justify-center py-2 gap-2">
+          <div className="w-5 h-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+          <span className="text-[10px] text-foreground-muted animate-pulse">
+            Waiting for terminal approval (y/n) on your local machine...
+          </span>
+        </div>
+      )}
+
+      {status === 'success' && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-semibold">
+            <Check className="w-4 h-4" />
+            <span>Successfully Executed!</span>
+          </div>
+          {result && (result.stdout || result.stderr || result.content) && (
+            <div className="bg-[#0f0f13] border border-white/[0.03] rounded-lg p-3 font-mono text-[10px] max-h-48 overflow-y-auto whitespace-pre text-foreground-muted">
+              {result.content && (
+                <div>
+                  <div className="text-[9px] text-[#D97757] mb-1 font-semibold">File Content:</div>
+                  {result.content}
+                </div>
+              )}
+              {result.stdout && (
+                <div>
+                  <div className="text-[9px] text-emerald-400 mb-0.5 font-semibold">STDOUT:</div>
+                  {result.stdout}
+                </div>
+              )}
+              {result.stderr && (
+                <div className="mt-2">
+                  <div className="text-[9px] text-rose-400 mb-0.5 font-semibold">STDERR:</div>
+                  {result.stderr}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {status === 'error' && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 text-red-400 text-xs font-semibold">
+            <AlertCircle className="w-4 h-4" />
+            <span>Execution Failed</span>
+          </div>
+          <div className="bg-red-950/20 border border-red-500/10 p-2.5 rounded-lg text-[10px] text-red-300 font-mono break-words leading-relaxed">
+            {errMessage}
+          </div>
+          <button
+            onClick={() => setStatus('idle')}
+            className="text-[10px] text-accent hover:underline text-left"
+          >
+            Reset and retry
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Daemon Action Tag Parser ────────────────────────────────────────────────
+
+const parseDaemonActions = (text) => {
+  if (!text) return [];
+  const regex = /(<read_file\s+path="([^"]+)"\s*\/?>|<write_file\s+path="([^"]+)"\s*>([\s\S]*?)<\/write_file>|<run_command\s+cmd="([^"]+)"\s*\/?>)/g;
+  const blocks = [];
+  let lastIndex = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const startIndex = match.index;
+    if (startIndex > lastIndex) {
+      blocks.push({
+        type: 'markdown',
+        content: text.substring(lastIndex, startIndex)
+      });
+    }
+    const fullTag = match[0];
+    if (fullTag.startsWith('<read_file')) {
+      blocks.push({
+        type: 'read_file',
+        path: match[2]
+      });
+    } else if (fullTag.startsWith('<write_file')) {
+      blocks.push({
+        type: 'write_file',
+        path: match[3],
+        content: match[4]
+      });
+    } else if (fullTag.startsWith('<run_command')) {
+      blocks.push({
+        type: 'run_command',
+        command: match[5]
+      });
+    }
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    blocks.push({
+      type: 'markdown',
+      content: text.substring(lastIndex)
+    });
+  }
+  return blocks;
+};
+
 // ─── Message Bubble ──────────────────────────────────────────────────────────
 
-function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled }) {
+function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled, daemonConnected }) {
   const [hovering, setHovering] = useState(false)
   const isUser = msg.role === 'user'
   const isAssistant = msg.role === 'assistant'
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+    <div
       className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'} group`}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
@@ -330,52 +573,87 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
           </div>
         ) : (
           <div className="text-sm leading-relaxed text-foreground-primary prose-custom w-full">
-            <ReactMarkdown
-              components={{
-                img: ({ src, alt }) => <ImageGeneratorWidget src={src} alt={alt} />,
-                code({ node, inline, className, children, ...props }) {
-                  const match = /language-(\w+)/.exec(className || '')
-                  if (!inline && match) {
-                    return (
-                      <CodeBlock
-                        language={match[1]}
-                        value={String(children).replace(/\n$/, '')}
-                        codeExecutionEnabled={codeExecutionEnabled}
-                      />
-                    )
-                  }
-                  return (
-                    <code
-                      className="px-1.5 py-0.5 rounded text-xs font-mono bg-background-tertiary text-foreground-primary"
-                      {...props}
-                    >
-                      {children}
-                    </code>
-                  )
-                },
-                p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
-                ul: ({ children }) => <ul className="mb-3 pl-5 space-y-1 list-disc">{children}</ul>,
-                ol: ({ children }) => <ol className="mb-3 pl-5 space-y-1 list-decimal">{children}</ol>,
-                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                h1: ({ children }) => <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>,
-                h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h2>,
-                h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-3 first:mt-0">{children}</h3>,
-                blockquote: ({ children }) => (
-                  <blockquote className="border-l-2 border-accent pl-4 my-3 text-foreground-secondary italic">
-                    {children}
-                  </blockquote>
-                ),
-                strong: ({ children }) => <strong className="font-semibold text-foreground-primary">{children}</strong>,
-                a: ({ href, children }) => (
-                  <a href={href} target="_blank" rel="noopener noreferrer"
-                    className="text-accent hover:text-accent-light underline underline-offset-2">
-                    {children}
-                  </a>
-                ),
-              }}
-            >
-              {msg.content}
-            </ReactMarkdown>
+            {parseDaemonActions(msg.content).map((block, bIdx) => {
+              if (block.type === 'markdown') {
+                return (
+                  <ReactMarkdown
+                    key={`md-${bIdx}`}
+                    components={{
+                      img: ({ src, alt }) => <ImageGeneratorWidget src={src} alt={alt} />,
+                      code({ node, inline, className, children, ...props }) {
+                        const match = /language-(\w+)/.exec(className || '')
+                        if (!inline && match) {
+                          return (
+                            <CodeBlock
+                              language={match[1]}
+                              value={String(children).replace(/\n$/, '')}
+                              codeExecutionEnabled={codeExecutionEnabled}
+                            />
+                          )
+                        }
+                        return (
+                          <code
+                            className="px-1.5 py-0.5 rounded text-xs font-mono bg-background-tertiary text-foreground-primary"
+                            {...props}
+                          >
+                            {children}
+                          </code>
+                        )
+                      },
+                      p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                      ul: ({ children }) => <ul className="mb-3 pl-5 space-y-1 list-disc">{children}</ul>,
+                      ol: ({ children }) => <ol className="mb-3 pl-5 space-y-1 list-decimal">{children}</ol>,
+                      li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                      h1: ({ children }) => <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>,
+                      h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h2>,
+                      h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-3 first:mt-0">{children}</h3>,
+                      blockquote: ({ children }) => (
+                        <blockquote className="border-l-2 border-accent pl-4 my-3 text-foreground-secondary italic">
+                          {children}
+                        </blockquote>
+                      ),
+                      strong: ({ children }) => <strong className="font-semibold text-foreground-primary">{children}</strong>,
+                      a: ({ href, children }) => (
+                        <a href={href} target="_blank" rel="noopener noreferrer"
+                          className="text-accent hover:text-accent-light underline underline-offset-2">
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
+                    {block.content}
+                  </ReactMarkdown>
+                )
+              } else if (block.type === 'read_file') {
+                return (
+                  <DaemonActionWidget
+                    key={`read-${bIdx}`}
+                    action="read_file"
+                    payload={{ path: block.path }}
+                    daemonConnected={daemonConnected}
+                  />
+                )
+              } else if (block.type === 'write_file') {
+                return (
+                  <DaemonActionWidget
+                    key={`write-${bIdx}`}
+                    action="write_file"
+                    payload={{ path: block.path, content: block.content }}
+                    daemonConnected={daemonConnected}
+                  />
+                )
+              } else if (block.type === 'run_command') {
+                return (
+                  <DaemonActionWidget
+                    key={`run-${bIdx}`}
+                    action="run_command"
+                    payload={{ command: block.command }}
+                    daemonConnected={daemonConnected}
+                  />
+                )
+              }
+              return null
+            })}
             {isStreaming && <BlinkCursor />}
           </div>
         )}
@@ -398,52 +676,48 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
           </Link>
         )}
 
-        {/* Action row */}
-        <AnimatePresence>
-          {hovering && !isStreaming && (
-            <motion.div
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 4 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center gap-0.5 mt-1.5"
+        {/* Action row — always renders to avoid layout jump, visibility via opacity */}
+        {!isStreaming && (
+          <div
+            className="flex items-center gap-0.5 mt-1.5 transition-opacity duration-150"
+            style={{ opacity: hovering ? 1 : 0, pointerEvents: hovering ? 'auto' : 'none' }}
+          >
+            <button
+              onClick={() => onCopy(msg.content, index)}
+              className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-background-secondary transition-all"
+              title="Copy"
             >
-              <button
-                onClick={() => onCopy(msg.content, index)}
-                className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-background-secondary transition-all"
-                title="Copy"
-              >
-                {copied === index ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
+              {copied === index ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
 
-              {isAssistant && (
-                <>
-                  <button
-                    onClick={() => isPlaying ? onStop() : onSpeak(msg.content)}
-                    disabled={ttsLoading && !isPlaying}
-                    className="p-1.5 rounded-lg text-foreground-muted hover:text-accent hover:bg-background-secondary transition-all"
-                    title={isPlaying ? 'Stop' : 'Speak'}
-                  >
-                    {isPlaying ? <VolumeX className="w-3.5 h-3.5 text-accent" /> : <Volume2 className="w-3.5 h-3.5" />}
-                  </button>
-                  <button
-                    onClick={() => onFork(msg._id)}
-                    className="p-1.5 rounded-lg text-foreground-muted hover:text-accent hover:bg-background-secondary transition-all"
-                    title="Branch from here"
-                  >
-                    <GitBranch className="w-3.5 h-3.5" />
-                  </button>
-                </>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {isAssistant && (
+              <>
+                <button
+                  onClick={() => isPlaying ? onStop() : onSpeak(msg.content)}
+                  disabled={ttsLoading && !isPlaying}
+                  className="p-1.5 rounded-lg text-foreground-muted hover:text-accent hover:bg-background-secondary transition-all"
+                  title={isPlaying ? 'Stop' : 'Speak'}
+                >
+                  {isPlaying ? <VolumeX className="w-3.5 h-3.5 text-accent" /> : <Volume2 className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  onClick={() => onFork(msg._id)}
+                  className="p-1.5 rounded-lg text-foreground-muted hover:text-accent hover:bg-background-secondary transition-all"
+                  title="Branch from here"
+                >
+                  <GitBranch className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
-    </motion.div>
+    </div>
   )
 }
 
 // ─── Model Selector Dropdown ─────────────────────────────────────────────────
+
 
 function ModelSelector({ selectedModel, onSelect }) {
   const [open, setOpen] = useState(false)
@@ -486,6 +760,7 @@ function ModelSelector({ selectedModel, onSelect }) {
 
   const handleToggleAdaptiveThinking = () => {
     isAdaptive ? onSelect(baseModels[currentIndex].id) : onSelect('council')
+    setOpen(false)
   }
 
   const getCardProps = (idx) => {
@@ -1789,14 +2064,17 @@ function ArtifactsView({ messages }) {
 
 // ─── Code Sub-View Component (CLI & API Keys) ─────────────────────────────────
 
-function CodeView() {
+function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: parentLoadDaemonStatus }) {
   const [daemonConnected, setDaemonConnected] = useState(false)
   const [apiKeys, setApiKeys] = useState([])
   const [newKeyName, setNewKeyName] = useState('')
   const [generatedKey, setGeneratedKey] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const loadDaemonStatus = async () => {
+  const isConnected = parentDaemonConnected !== undefined ? parentDaemonConnected : daemonConnected
+  const loadStatus = parentLoadDaemonStatus || loadDaemonStatus
+
+  async function loadDaemonStatus() {
     try {
       const { data } = await api.get('/daemon/status')
       setDaemonConnected(data.connected)
@@ -1815,10 +2093,15 @@ function CodeView() {
   }
 
   useEffect(() => {
-    loadDaemonStatus()
+    if (parentDaemonConnected === undefined) {
+      loadDaemonStatus()
+      const intv = setInterval(loadDaemonStatus, 5000)
+      return () => clearInterval(intv)
+    }
+  }, [parentDaemonConnected])
+
+  useEffect(() => {
     loadApiKeys()
-    const intv = setInterval(loadDaemonStatus, 5000)
-    return () => clearInterval(intv)
   }, [])
 
   const handleGenerateKey = async (e) => {
@@ -1857,16 +2140,16 @@ function CodeView() {
       {/* Daemon Status Card */}
       <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: daemonConnected ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)', border: `1px solid ${daemonConnected ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
-            <Terminal className={`w-6 h-6 ${daemonConnected ? 'text-emerald-400' : 'text-rose-400'}`} />
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: isConnected ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)', border: `1px solid ${isConnected ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
+            <Terminal className={`w-6 h-6 ${isConnected ? 'text-emerald-400' : 'text-rose-400'}`} />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground-primary flex items-center gap-2">
               Daemon Linkage
-              <span className={`w-2 h-2 rounded-full inline-block ${daemonConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+              <span className={`w-2 h-2 rounded-full inline-block ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
             </h3>
             <p className="text-xs text-foreground-muted mt-1 max-w-md">
-              {daemonConnected
+              {isConnected
                 ? 'Your local terminal daemon is actively connected. CyberCli is armed to safely read/write workspace files.'
                 : 'No daemon linked. Start the secure daemon process in your local workspace to enable file edits.'}
             </p>
@@ -2299,6 +2582,28 @@ export default function ChatPage() {
   const [streamingIndex, setStreamingIndex] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState('general')
+  const [daemonConnected, setDaemonConnected] = useState(false)
+
+  const loadDaemonStatus = async () => {
+    try {
+      const token = localStorage.getItem('sb-access-token')
+      if (token) {
+        const { data } = await api.get('/daemon/status')
+        setDaemonConnected(data.connected)
+      } else {
+        setDaemonConnected(false)
+      }
+    } catch (err) {
+      console.error('Error loading daemon status:', err)
+      setDaemonConnected(false)
+    }
+  }
+
+  useEffect(() => {
+    loadDaemonStatus()
+    const intv = setInterval(loadDaemonStatus, 5000)
+    return () => clearInterval(intv)
+  }, [])
 
   const openSettings = (tab = 'general') => {
     setSettingsTab(tab)
@@ -2615,34 +2920,40 @@ export default function ChatPage() {
     const extraSystemMessages = []
     
     if (voiceChatOpenRef.current) {
-      const voice = currentVoice ? currentVoice.toLowerCase() : 'ava'
+      const voice = currentVoice ? currentVoice.toLowerCase() : 'eleven_sol'
       const VOICE_AGENTS_BRAINS = {
-        ava: {
+        // Sol — warm, friendly (maps to former "ava")
+        eleven_sol: {
           model: 'openrouter/gpt-4o-mini',
-          prompt: `You are Ava, a warm, natural, and friendly conversational AI developer assistant. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
+          prompt: `You are Sol, a warm, natural, and friendly conversational AI assistant. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
         },
-        nova: {
+        // Cove — composed, professional (maps to former "nova")
+        eleven_cove: {
           model: 'groq/llama-3.1-70b',
-          prompt: `You are Nova, a clear, professional, and expert technical advisor. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
+          prompt: `You are Cove, a clear, professional, and expert technical advisor. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
         },
-        luna: {
+        // Breeze — animated, empathetic (maps to former "luna")
+        eleven_breeze: {
           model: 'gemini/gemini-2.5-flash',
-          prompt: `You are Luna, a soft, soothing, and empathetic creative partner. Keep your responses warm, comforting, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in a gentle, warm tone.`
+          prompt: `You are Breeze, an animated, enthusiastic, and empathetic creative partner. Keep your responses warm, energetic, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in an animated, warm tone.`
         },
-        orion: {
+        // Orion — deep, authoritative (unchanged)
+        eleven_orion: {
           model: 'groq/llama-3.1-70b',
           prompt: `You are Orion, a deep, authoritative, and strategic AI planner. Provide brief but strong guidance (maximum 1-2 sentences). Absolutely DO NOT use markdown syntax, bullet points, or complex formatting. Speak with confidence and authority.`
         },
-        echo: {
+        // Echo — energetic, fast (unchanged)
+        eleven_echo: {
           model: 'groq/llama-3.1-8b',
           prompt: `You are Echo, an energetic, dynamic, and fast-paced brainstorming buddy. Keep responses highly energetic, extremely short and punchy (often just a few words, maximum 1 sentence). Absolutely DO NOT use markdown, formatting, or lists. Speak dynamically and quickly.`
         },
-        gemini: {
+        // Gemini — AI native voice (unchanged)
+        gemini_flash: {
           model: 'gemini/gemini-2.5-flash',
           prompt: `You are Gemini, an AI-native voice companion. Keep your responses natural, conversational, fluid, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown formatting, bullet points, or code blocks. Speak naturally and dynamically.`
         }
       }
-      const brain = VOICE_AGENTS_BRAINS[voice] || VOICE_AGENTS_BRAINS.ava
+      const brain = VOICE_AGENTS_BRAINS[voice] || VOICE_AGENTS_BRAINS.eleven_sol
       activeModel = brain.model
       extraSystemMessages.push({ role: 'system', content: brain.prompt, _skip_inject: true })
     }
@@ -2781,7 +3092,8 @@ export default function ChatPage() {
       return
     }
 
-    let currentId = activeThreadId
+    // Use the ref as fallback so rapid consecutive sends don't create duplicate threads
+    let currentId = activeThreadId || creatingThreadRef.current
     if (!currentId) {
       try {
         const { data } = await api.post('/chat', { title: userText.substring(0, 50), model_id: activeModel })
@@ -3276,6 +3588,7 @@ export default function ChatPage() {
                         isPlaying={isPlaying}
                         copied={copied}
                         codeExecutionEnabled={codeExecutionEnabled}
+                        daemonConnected={daemonConnected}
                       />
                     ))
                   )}
@@ -3323,7 +3636,7 @@ export default function ChatPage() {
               messages={messages}
             />
           ) : activeNav === 'code' ? (
-            <CodeView />
+            <CodeView daemonConnected={daemonConnected} loadDaemonStatus={loadDaemonStatus} />
           ) : activeNav === 'customize' ? (
             <CustomizeView
               webSearchEnabled={webSearchEnabled}

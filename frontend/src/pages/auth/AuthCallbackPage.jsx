@@ -25,14 +25,51 @@ export default function AuthCallbackPage() {
         const errorDescription = params.get('error_description') || hashParams.get('error_description')
         const errorCode = params.get('error') || hashParams.get('error')
 
+        if (errorCode === 'otp_expired' || (errorDescription && (errorDescription.includes('expired') || errorDescription.includes('already used')))) {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            setStatus('success')
+            await initialize()
+            setTimeout(() => {
+              navigate(next)
+            }, 1500)
+            return
+          } else {
+            setStatus('already_verified')
+            return
+          }
+        }
+
         if (errorCode || errorDescription) {
           throw new Error(errorDescription || 'Authentication failed')
         }
 
         if (code) {
-          // Exchange code for session
-          const { error } = await supabase.auth.exchangeCodeForSession(code)
-          if (error) throw error
+          try {
+            // Exchange code for session
+            const { error } = await supabase.auth.exchangeCodeForSession(code)
+            if (error) throw error
+          } catch (exchangeErr) {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session) {
+              setStatus('success')
+              await initialize()
+              setTimeout(() => {
+                navigate(next)
+              }, 1500)
+              return
+            } else if (
+              exchangeErr.message?.toLowerCase().includes('already') ||
+              exchangeErr.message?.toLowerCase().includes('expired') ||
+              exchangeErr.message?.toLowerCase().includes('invalid grant') ||
+              exchangeErr.message?.toLowerCase().includes('flow_state_not_found')
+            ) {
+              setStatus('already_verified')
+              return
+            } else {
+              throw exchangeErr
+            }
+          }
         }
 
         // Fetch session to confirm auth is successful
@@ -105,6 +142,24 @@ export default function AuthCallbackPage() {
               </div>
               <p className="text-foreground-primary font-medium">Session secured successfully!</p>
               <p className="text-xs text-foreground-muted mt-2">Redirecting you to the console...</p>
+            </div>
+          )}
+
+          {status === 'already_verified' && (
+            <div className="flex flex-col items-center w-full">
+              <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mb-4">
+                <ShieldCheck className="w-8 h-8 text-green-500" />
+              </div>
+              <p className="text-foreground-primary font-medium">Email Confirmed!</p>
+              <p className="text-xs text-foreground-muted mt-2 text-center max-w-[320px]">
+                Your email is already verified. This often happens if your email client pre-scanned the confirmation link.
+              </p>
+              <button
+                onClick={() => navigate('/auth/login')}
+                className="mt-6 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-accent hover:bg-accent-dark transition-all shadow-sm"
+              >
+                Go to Login
+              </button>
             </div>
           )}
 
