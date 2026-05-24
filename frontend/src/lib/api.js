@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { supabase } from './supabase.js'
+import { useAuthStore } from '../stores/authStore.js'
 
 const getApiBase = () => {
   if (import.meta.env.VITE_API_URL) {
@@ -23,7 +24,7 @@ const api = axios.create({
   },
 })
 
-async function getFreshToken() {
+export async function getFreshToken() {
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (session?.access_token) {
@@ -49,6 +50,11 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('sb-access-token')
+      try {
+        useAuthStore.setState({ user: null, session: null })
+      } catch (err) {
+        console.error('[API] Failed to clear authStore state:', err)
+      }
       if (!window.location.pathname.startsWith('/auth')) {
         window.location.href = '/auth/login'
       }

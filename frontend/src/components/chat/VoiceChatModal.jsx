@@ -1,23 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, VolumeX, ChevronLeft, ChevronRight, Send, Check, Mic, MicOff } from 'lucide-react'
+import CyberCliMark from '../ui/CyberCliLogo.jsx'
 
-function StarIcon({ size = 16, color = '#D97757' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-      <path
-        d="M32 4 L35.5 28.5 L60 32 L35.5 35.5 L32 60 L28.5 35.5 L4 32 L28.5 28.5 Z"
-        fill={color}
-        opacity="0.9"
-      />
-      <path
-        d="M32 12 L34 30 L52 32 L34 34 L32 52 L30 34 L12 32 L30 30 Z"
-        fill="white"
-        opacity="0.25"
-      />
-    </svg>
-  )
-}
+
 
 const VOICE_MODELS = [
   { id: 'eleven_sol',    label: 'Sol',    desc: 'Savvy and relaxed',       color: '#0EA5E9', orbColors: ['#0EA5E9', '#0288D1', '#B3E5FC'] },
@@ -252,8 +238,8 @@ export default function VoiceChatModal({
   const startSilenceTimer = useCallback(() => {
     clearTimeout(silenceTimerRef.current)
     clearInterval(countdownRef.current)
-    setCountdown(1.0)
-    let remaining = 1.0
+    setCountdown(1.8)
+    let remaining = 1.8
     countdownRef.current = setInterval(() => {
       remaining -= 0.1
       setCountdown(Math.max(0, remaining))
@@ -269,7 +255,7 @@ export default function VoiceChatModal({
         setIsListening(false)
         try { recognitionRef.current?.stop() } catch {}
       }
-    }, 1000)
+    }, 1800)
   }, [onSendMessage])
 
   const initRecognition = useCallback(() => {
@@ -278,7 +264,21 @@ export default function VoiceChatModal({
     const rec = new SR()
     rec.continuous = true
     rec.interimResults = true
-    rec.lang = 'en-US'
+    const savedLang = localStorage.getItem('user_language') || 'EN'
+    const langMap = {
+      'EN': 'en-US',
+      'HI': 'hi-IN',
+      'FR': 'fr-FR',
+      'DE': 'de-DE',
+      'ID': 'id-ID',
+      'ES': 'es-ES',
+      'IT': 'it-IT',
+      'JA': 'ja-JP',
+      'KO': 'ko-KR',
+      'PT': 'pt-BR',
+      'UR': 'ur-PK'
+    }
+    rec.lang = langMap[savedLang.toUpperCase()] || 'en-US'
     rec.onresult = (event) => {
       // Auto interrupt if AI is speaking
       if (isPlayingRef.current) {
@@ -422,7 +422,7 @@ export default function VoiceChatModal({
             {/* Brand */}
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-[#D97757]/15 flex items-center justify-center border border-[#D97757]/20">
-                <StarIcon size={18} color="#D97757" />
+                <CyberCliMark size={18} />
               </div>
               <div>
                 <span className="text-sm font-semibold text-white/80 font-sans">CyberCli</span>

@@ -1,4 +1,4 @@
-import fetch from 'node-fetch'
+
 
 /**
  * Perform a web search using DuckDuckGo free search interface.

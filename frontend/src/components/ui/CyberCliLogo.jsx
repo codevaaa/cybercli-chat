@@ -2,7 +2,7 @@
  * CyberCli brand logo components
  *
  * Exports:
- *   CyberCliMark      — 8-pointed asterisk SVG icon only
+ *   CyberCliMark      — Animated Sudarshan Chakra SVG icon
  *   CyberCliWordmark  — icon + "CyberCli" text side-by-side
  *   default           — CyberCliMark
  *
@@ -13,59 +13,104 @@
 
 /**
  * CyberCliMark
- * Eight arms, each arm is a thin elongated diamond/rhombus radiating from center.
- * Rendered purely with SVG paths — no external deps.
+ * Stylized, animated Sudarshan Chakra in terracotta (#D97757).
  */
 export function CyberCliMark({ size = 28, className = '' }) {
   const s = size
-  const cx = s / 2
-  const cy = s / 2
-  // Outer reach of each arm tip
-  const outerR = s * 0.46
-  // Half-width of each arm at its base (controls "thinness")
-  const innerR = s * 0.09
-  const numArms = 8
-
-  // Build one elongated diamond per arm:
-  // The diamond has 4 vertices:
-  //   – tip   (along the arm direction, outerR from center)
-  //   – left  (90° to the arm, innerR from center)
-  //   – base  (opposite tip, a tiny stub inward at the center)
-  //   – right (–90° to the arm, innerR from center)
-  const arms = Array.from({ length: numArms }, (_, i) => {
-    const angle = (i / numArms) * Math.PI * 2 - Math.PI / 2
-    const perpL = angle + Math.PI / 2
-    const perpR = angle - Math.PI / 2
-
-    const tipX  = cx + Math.cos(angle) * outerR
-    const tipY  = cy + Math.sin(angle) * outerR
-    const leftX = cx + Math.cos(perpL) * innerR
-    const leftY = cy + Math.sin(perpL) * innerR
-    const rightX = cx + Math.cos(perpR) * innerR
-    const rightY = cy + Math.sin(perpR) * innerR
-    // Base knot: a tiny point opposite the tip, very close to center
-    const baseX = cx + Math.cos(angle + Math.PI) * (s * 0.04)
-    const baseY = cy + Math.sin(angle + Math.PI) * (s * 0.04)
-
-    return `M ${leftX.toFixed(2)} ${leftY.toFixed(2)} L ${tipX.toFixed(2)} ${tipY.toFixed(2)} L ${rightX.toFixed(2)} ${rightY.toFixed(2)} L ${baseX.toFixed(2)} ${baseY.toFixed(2)} Z`
-  })
-
+  
   return (
     <svg
       width={s}
       height={s}
-      viewBox={`0 0 ${s} ${s}`}
+      viewBox="0 0 100 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={`${className} logo-chakra-spin`}
       aria-label="CyberCli logo mark"
       role="img"
+      style={{
+        display: 'inline-block',
+        verticalAlign: 'middle',
+      }}
     >
-      {arms.map((d, i) => (
-        <path key={i} d={d} fill="#D97757" />
-      ))}
-      {/* Tiny centre dot for crispness */}
-      <circle cx={cx} cy={cy} r={s * 0.055} fill="#D97757" />
+      <style>{`
+        @keyframes chakra-rotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .logo-chakra-spin {
+          animation: chakra-rotate 24s linear infinite;
+          transform-origin: center;
+        }
+        .logo-chakra-spin:hover {
+          animation: chakra-rotate 4s linear infinite;
+        }
+      `}</style>
+      
+      {/* 12 Outer Serrated Blades of the Sudarshan Chakra */}
+      <g fill="#D97757">
+        {Array.from({ length: 12 }).map((_, i) => {
+          const angle = (i / 12) * Math.PI * 2
+          const nextAngle = ((i + 0.55) / 12) * Math.PI * 2
+          const innerR = 38
+          const outerR = 48
+          
+          // Each blade is a curved triangular wing pointing clockwise
+          const x1 = 50 + Math.cos(angle) * innerR
+          const y1 = 50 + Math.sin(angle) * innerR
+          const x2 = 50 + Math.cos(nextAngle) * outerR
+          const y2 = 50 + Math.sin(nextAngle) * outerR
+          const x3 = 50 + Math.cos((i + 1) / 12 * Math.PI * 2) * innerR
+          const y3 = 50 + Math.sin((i + 1) / 12 * Math.PI * 2) * innerR
+          
+          return (
+            <path
+              key={i}
+              d={`M ${x1.toFixed(2)} ${y1.toFixed(2)} Q ${x2.toFixed(2)} ${y2.toFixed(2)} ${x3.toFixed(2)} ${y3.toFixed(2)} Z`}
+            />
+          )
+        })}
+      </g>
+
+      {/* Main outer ring body */}
+      <circle cx="50" cy="50" r="38" stroke="#D97757" strokeWidth="3.5" />
+      
+      {/* Inner dashed ring decoration for depth */}
+      <circle cx="50" cy="50" r="28" stroke="#D97757" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
+
+      {/* 8 Inner spokes (diamond rays connecting center to outer ring) */}
+      <g fill="#D97757">
+        {Array.from({ length: 8 }).map((_, i) => {
+          const angle = (i / 8) * Math.PI * 2
+          const perpAngle = angle + Math.PI / 2
+          
+          const tipX = 50 + Math.cos(angle) * 36
+          const tipY = 50 + Math.sin(angle) * 36
+          const baseX = 50 + Math.cos(angle) * 12
+          const baseY = 50 + Math.sin(angle) * 12
+          const leftX = 50 + Math.cos(perpAngle) * 3 + Math.cos(angle) * 24
+          const leftY = 50 + Math.sin(perpAngle) * 3 + Math.sin(angle) * 24
+          const rightX = 50 - Math.cos(perpAngle) * 3 + Math.cos(angle) * 24
+          const rightY = 50 - Math.sin(perpAngle) * 3 + Math.sin(angle) * 24
+          
+          return (
+            <path
+              key={i}
+              d={`M ${baseX.toFixed(2)} ${baseY.toFixed(2)} L ${leftX.toFixed(2)} ${leftY.toFixed(2)} L ${tipX.toFixed(2)} ${tipY.toFixed(2)} L ${rightX.toFixed(2)} ${rightY.toFixed(2)} Z`}
+            />
+          )
+        })}
+      </g>
+
+      {/* Multi-layered transparent central hub */}
+      {/* Ring with outer radius 12, inner radius 8 */}
+      <path
+        d="M 50 38 A 12 12 0 1 0 50 62 A 12 12 0 1 0 50 38 M 50 42 A 8 8 0 1 1 50 58 A 8 8 0 1 1 50 42"
+        fill="#D97757"
+        fillRule="evenodd"
+      />
+      {/* Central hub dot */}
+      <circle cx="50" cy="50" r="4.5" fill="#D97757" />
     </svg>
   )
 }

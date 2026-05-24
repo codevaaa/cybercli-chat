@@ -210,7 +210,7 @@ export default function VoiceChatPage() {
     // Setup speech agent config
     const VOICE_AGENTS_BRAINS = {
       sol: {
-        model: 'openrouter/gpt-4o-mini',
+        model: 'groq/llama-3.1-8b',
         prompt: `You are Sol, a warm, natural, and friendly conversational AI assistant. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
       },
       cove: {
@@ -218,7 +218,7 @@ export default function VoiceChatPage() {
         prompt: `You are Cove, a clear, professional, and expert technical advisor. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
       },
       breeze: {
-        model: 'gemini/gemini-2.5-flash',
+        model: 'groq/llama-3.1-8b',
         prompt: `You are Breeze, an animated, enthusiastic, and empathetic creative partner. Keep your responses warm, energetic, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in an animated, warm tone.`
       },
       orion: {
@@ -275,8 +275,8 @@ export default function VoiceChatPage() {
   const startSilenceTimer = useCallback(() => {
     clearTimeout(silenceTimerRef.current)
     clearInterval(countdownRef.current)
-    setCountdown(1.0)
-    let remaining = 1.0
+    setCountdown(1.8)
+    let remaining = 1.8
     countdownRef.current = setInterval(() => {
       remaining -= 0.1
       setCountdown(Math.max(0, remaining))
@@ -293,7 +293,7 @@ export default function VoiceChatPage() {
         setIsListening(false)
         try { recognitionRef.current?.stop() } catch {}
       }
-    }, 1200)
+    }, 1800)
   }, [handleSendMessage])
 
   const initRecognition = useCallback(() => {
@@ -302,7 +302,21 @@ export default function VoiceChatPage() {
     const rec = new SR()
     rec.continuous = true
     rec.interimResults = true
-    rec.lang = 'en-US'
+    const savedLang = localStorage.getItem('user_language') || 'EN'
+    const langMap = {
+      'EN': 'en-US',
+      'HI': 'hi-IN',
+      'FR': 'fr-FR',
+      'DE': 'de-DE',
+      'ID': 'id-ID',
+      'ES': 'es-ES',
+      'IT': 'it-IT',
+      'JA': 'ja-JP',
+      'KO': 'ko-KR',
+      'PT': 'pt-BR',
+      'UR': 'ur-PK'
+    }
+    rec.lang = langMap[savedLang.toUpperCase()] || 'en-US'
 
     rec.onresult = (event) => {
       // Interrupt speaker if user starts talking

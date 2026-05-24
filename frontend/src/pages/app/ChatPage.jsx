@@ -12,11 +12,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import api, { smartStream, createThread, getThreads, getMessages, isLoggedIn, API_BASE } from '../../lib/api.js'
+import api, { smartStream, createThread, getThreads, getMessages, isLoggedIn, API_BASE, getFreshToken } from '../../lib/api.js'
 import { useTTS } from '../../hooks/useTTS.js'
 import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
 import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
 import { useAuthStore } from '@stores/authStore.js'
+import CyberCliMark from '../../components/ui/CyberCliLogo.jsx'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -76,24 +77,7 @@ const LANGUAGES = [
   { name: 'Español (España)', code: 'ES' }
 ]
 
-// ─── Star SVG Icon ───────────────────────────────────────────────────────────
 
-function StarIcon({ size = 64, color = '#D97757' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-      <path
-        d="M32 4 L35.5 28.5 L60 32 L35.5 35.5 L32 60 L28.5 35.5 L4 32 L28.5 28.5 Z"
-        fill={color}
-        opacity="0.9"
-      />
-      <path
-        d="M32 12 L34 30 L52 32 L34 34 L32 52 L30 34 L12 32 L30 30 Z"
-        fill="white"
-        opacity="0.25"
-      />
-    </svg>
-  )
-}
 
 // ─── Blink Cursor ────────────────────────────────────────────────────────────
 
@@ -574,7 +558,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
         <div className="flex-shrink-0 mt-1">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center"
             style={{ background: 'rgba(217,119,87,0.12)' }}>
-            <StarIcon size={16} color="#D97757" />
+            <CyberCliMark size={16} className="logo-chakra-spin" />
           </div>
         </div>
       )}
@@ -1732,7 +1716,7 @@ function HeroState({ userName }) {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="mb-6"
       >
-        <StarIcon size={72} color="#D97757" />
+        <CyberCliMark size={72} className="logo-chakra-spin" />
       </motion.div>
 
       <motion.h1
@@ -2616,7 +2600,6 @@ export default function ChatPage() {
   // Claude & Cyber Mode Upgrades
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [cyberMode, setCyberMode] = useState(false)
-  const [kaliMode, setKaliMode] = useState(false)
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [workspaceTab, setWorkspaceTab] = useState('terminal')
   const [terminalHistory, setTerminalHistory] = useState([
@@ -2866,7 +2849,21 @@ export default function ChatPage() {
       const rec = new SR()
       rec.continuous = true
       rec.interimResults = true
-      rec.lang = 'en-US'
+      const savedLang = localStorage.getItem('user_language') || 'EN'
+      const langMap = {
+        'EN': 'en-US',
+        'HI': 'hi-IN',
+        'FR': 'fr-FR',
+        'DE': 'de-DE',
+        'ID': 'id-ID',
+        'ES': 'es-ES',
+        'IT': 'it-IT',
+        'JA': 'ja-JP',
+        'KO': 'ko-KR',
+        'PT': 'pt-BR',
+        'UR': 'ur-PK'
+      }
+      rec.lang = langMap[savedLang.toUpperCase()] || 'en-US'
 
       rec.onstart = () => {
         setInlineSpeechListening(true)
@@ -3126,22 +3123,22 @@ export default function ChatPage() {
       const VOICE_AGENTS_BRAINS = {
         // Sol — warm, friendly (maps to former "ava")
         eleven_sol: {
-          model: 'openrouter/gpt-4o-mini',
+          model: 'groq/llama-3.1-8b',
           prompt: `You are Sol, a warm, natural, and friendly conversational AI assistant. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
         },
         // Cove — composed, professional (maps to former "nova")
         eleven_cove: {
-          model: 'groq/llama-3.1-70b',
+          model: 'groq/llama-3.1-8b',
           prompt: `You are Cove, a clear, professional, and expert technical advisor. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
         },
         // Breeze — animated, empathetic (maps to former "luna")
         eleven_breeze: {
-          model: 'gemini/gemini-2.5-flash',
+          model: 'groq/llama-3.1-8b',
           prompt: `You are Breeze, an animated, enthusiastic, and empathetic creative partner. Keep your responses warm, energetic, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in an animated, warm tone.`
         },
         // Orion — deep, authoritative (unchanged)
         eleven_orion: {
-          model: 'groq/llama-3.1-70b',
+          model: 'groq/llama-3.1-8b',
           prompt: `You are Orion, a deep, authoritative, and strategic AI planner. Provide brief but strong guidance (maximum 1-2 sentences). Absolutely DO NOT use markdown syntax, bullet points, or complex formatting. Speak with confidence and authority.`
         },
         // Echo — energetic, fast (unchanged)
@@ -3174,7 +3171,7 @@ export default function ChatPage() {
       setStreamingIndex(assistantIdx)
       let fullReply = ''
       try {
-        const token = localStorage.getItem('sb-access-token')
+        const token = await getFreshToken()
         const res = await fetch(`${API_BASE}/completions`, {
           method: 'POST',
           headers: {
@@ -3183,7 +3180,15 @@ export default function ChatPage() {
           },
           body: JSON.stringify({ messages: history, model: activeModel })
         })
-        if (!res.ok) throw new Error('Stream failed')
+        if (!res.ok) {
+          if (res.status === 401) {
+            localStorage.removeItem('sb-access-token')
+            useAuthStore.setState({ user: null, session: null })
+            navigate('/auth/login')
+            return
+          }
+          throw new Error('Stream failed')
+        }
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
         let streamBuffer = ''
@@ -3239,7 +3244,7 @@ export default function ChatPage() {
     setLoading(true)
     setError(null)
 
-    const token = localStorage.getItem('sb-access-token')
+    const token = await getFreshToken()
 
     // Guest mode: no token → use completions endpoint directly (same as incognito)
     if (!token) {
@@ -3257,7 +3262,15 @@ export default function ChatPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messages: history, model: activeModel, webSearchEnabled, deepResearchEnabled })
         })
-        if (!res.ok) throw new Error('Stream failed')
+        if (!res.ok) {
+          if (res.status === 401) {
+            localStorage.removeItem('sb-access-token')
+            useAuthStore.setState({ user: null, session: null })
+            navigate('/auth/login')
+            return
+          }
+          throw new Error('Stream failed')
+        }
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
         let streamBuffer = ''
@@ -3356,7 +3369,15 @@ export default function ChatPage() {
           memoryEnabled
         })
       })
-      if (!res.ok) throw new Error('Stream failed')
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('sb-access-token')
+          useAuthStore.setState({ user: null, session: null })
+          navigate('/auth/login')
+          return
+        }
+        throw new Error('Stream failed')
+      }
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
@@ -3466,7 +3487,7 @@ export default function ChatPage() {
   const recentThreads = threads.filter(t => !t.is_pinned).slice(0, 30)
 
   return (
-    <div className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${kaliMode ? 'kali-theme' : ''}`} style={{ background: 'var(--bg-primary)' }}>
+    <div className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''}`} style={{ background: 'var(--bg-primary)' }}>
 
       {/* ── Sidebar ── */}
       {isMobile && sidebarOpen && (
@@ -3492,10 +3513,8 @@ export default function ChatPage() {
                 <motion.div
                   className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: 'rgba(217,119,87,0.15)' }}
-                  animate={{ rotate: [0, 360] }}
-                  transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
                 >
-                  <StarIcon size={18} color="#D97757" />
+                  <CyberCliMark size={18} />
                 </motion.div>
                 <div className="flex flex-col">
                   <span className="font-semibold text-sm leading-tight" style={{ color: '#FAF9F7' }}>CyberCli</span>
@@ -3877,35 +3896,11 @@ export default function ChatPage() {
                   CYBER ACTIVE
                 </motion.span>
               )}
-              {kaliMode && (
-                <motion.span
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="hidden sm:flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 uppercase tracking-widest"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                  KALI MODE
-                </motion.span>
-              )}
             </AnimatePresence>
-
-            {/* Kali Mode Toggle */}
-            <button
-              onClick={() => { setKaliMode(prev => !prev); if (!kaliMode) setCyberMode(false) }}
-              className={`p-2 rounded-xl border transition-all duration-200 ${
-                kaliMode
-                  ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_12px_rgba(239,68,68,0.35)]'
-                  : 'bg-white/5 border-white/10 text-gray-400 hover:text-red-400 hover:border-red-500/20'
-              }`}
-              title="Toggle Kali Mode (Uncensored)"
-            >
-              <Skull className="w-4 h-4" />
-            </button>
 
             {/* Cyber Mode Toggle */}
             <button
-              onClick={() => { setCyberMode(prev => !prev); if (!cyberMode) setKaliMode(false) }}
+              onClick={() => setCyberMode(prev => !prev)}
               className={`p-2 rounded-xl border transition-all duration-200 ${
                 cyberMode 
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'

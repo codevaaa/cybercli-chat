@@ -122,15 +122,15 @@ export const useAuthStore = create(
 
         try {
           await supabase.auth.signOut()
+        } catch (error) {
+          console.error('[AuthStore] Supabase signOut error:', error)
+        } finally {
           localStorage.removeItem('sb-access-token')
           localStorage.removeItem('user_name')
           localStorage.removeItem('user_email')
           set({ user: null, session: null, loading: false })
-          return { success: true }
-        } catch (error) {
-          set({ error: error.message, loading: false })
-          return { success: false, error: error.message }
         }
+        return { success: true }
       },
 
       resetPassword: async (email) => {
