@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { supabase } from './supabase.js'
 
 const getApiBase = () => {
   if (import.meta.env.VITE_API_URL) {
@@ -22,8 +23,21 @@ const api = axios.create({
   },
 })
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('sb-access-token')
+async function getFreshToken() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.access_token) {
+      localStorage.setItem('sb-access-token', session.access_token)
+      return session.access_token
+    }
+  } catch (err) {
+    console.error('[API] Error getting fresh token:', err)
+  }
+  return localStorage.getItem('sb-access-token')
+}
+
+api.interceptors.request.use(async (config) => {
+  const token = await getFreshToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -35,15 +49,17 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('sb-access-token')
-      window.location.href = '/auth/login'
+      if (!window.location.pathname.startsWith('/auth')) {
+        window.location.href = '/auth/login'
+      }
     }
     return Promise.reject(error)
   }
 )
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function getAuthHeaders() {
-  const token = localStorage.getItem('sb-access-token')
+async function getAuthHeaders() {
+  const token = await getFreshToken()
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -93,9 +109,10 @@ async function readSSEStream(response, callbacks = {}) {
 
 // ── Guest / Incognito stream (no auth, no thread, uses /completions) ──────────
 export const streamChat = async (messages, model = 'auto', onChunk, onInfo) => {
+  const headers = await getAuthHeaders()
   const response = await fetch(`${API_BASE}/completions`, {
     method: 'POST',
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify({ messages, model, stream: true }),
   })
   await readSSEStream(response, {
@@ -107,9 +124,10 @@ export const streamChat = async (messages, model = 'auto', onChunk, onInfo) => {
 
 // ── Authenticated stream (thread-based, saves history) ────────────────────────
 export const streamThreadChat = async (threadId, payload, callbacks = {}) => {
+  const headers = await getAuthHeaders()
   const response = await fetch(`${API_BASE}/chat/${threadId}/messages`, {
     method: 'POST',
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify(payload),
   })
   await readSSEStream(response, callbacks)
@@ -133,9 +151,10 @@ export const smartStream = async ({
     await streamThreadChat(threadId, { messages, model, ...options }, callbacks)
   } else {
     // Guest / incognito: use completions endpoint
+    const headers = await getAuthHeaders()
     const response = await fetch(`${API_BASE}/completions`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers,
       body: JSON.stringify({ messages, model, stream: true }),
     })
     await readSSEStream(response, callbacks)

@@ -4,7 +4,8 @@ import {
   Menu, X, ChevronDown, LogOut, User, 
   Sparkles, Cpu, CreditCard, History, 
   BookOpen, Terminal, Rss, Gift, 
-  Building2, Briefcase, Mail, Bot, Code2
+  Building2, Briefcase, Mail, Bot, Code2,
+  FolderOpen, Layers, Globe
 } from 'lucide-react'
 import { useAuthStore } from '@stores/authStore.js'
 import { CyberCliWordmark } from '@components/ui/CyberCliLogo'
@@ -13,7 +14,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 const ICON_MAP = {
   Sparkles, Cpu, CreditCard, History,
   BookOpen, Terminal, Rss, Gift,
-  Building2, Briefcase, Mail, Bot, Code2
+  Building2, Briefcase, Mail, Bot, Code2,
+  FolderOpen, Layers, Globe
 }
 
 const MENU_GROUPS = [
@@ -23,9 +25,12 @@ const MENU_GROUPS = [
       { label: 'Features', href: '/features', desc: 'Explore the ultimate agentic capabilities', icon: 'Sparkles' },
       { label: 'Models', href: '/models', desc: 'Browse our unified 200K+ model proxy', icon: 'Cpu' },
       { label: 'AI Agents', href: '/ai-agents', desc: 'Deploy custom autonomous agents', icon: 'Bot' },
+      { label: 'Projects', href: '/projects', desc: 'Manage your isolated workspaces', icon: 'FolderOpen' },
+      { label: 'Workflows', href: '/workflows', desc: 'Automate multi-agent operations', icon: 'Layers' },
+      { label: 'Discover', href: '/discover', desc: 'Find custom agents and prompt cards', icon: 'Globe' },
       { label: 'Developers', href: '/developers', desc: 'Unified SDK & builder portal', icon: 'Code2' },
       { label: 'Pricing', href: '/pricing', desc: 'Flexible free and Pro options', icon: 'CreditCard' },
-      { label: 'Changelog', href: '/changelog', desc: 'See what\'s new in the platform', icon: 'History' },
+      { label: 'Usage Statistics', href: '/usage', desc: 'Track your agent execution token usage', icon: 'History' },
     ]
   },
   {
@@ -214,14 +219,42 @@ export default function Navbar() {
                       >
                         <Link
                           to="/profile"
-                          className="block px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                          className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 transition-colors"
                           onClick={() => setUserDropdownOpen(false)}
                         >
                           Profile
                         </Link>
                         <Link
+                          to="/projects"
+                          className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          Projects
+                        </Link>
+                        <Link
+                          to="/workflows"
+                          className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          Workflows
+                        </Link>
+                        <Link
+                          to="/discover"
+                          className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          Discover
+                        </Link>
+                        <Link
+                          to="/usage"
+                          className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          Usage & Stats
+                        </Link>
+                        <Link
                           to="/settings"
-                          className="block px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                          className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 transition-colors"
                           onClick={() => setUserDropdownOpen(false)}
                         >
                           Settings
@@ -367,18 +400,46 @@ export default function Navbar() {
                     >
                       Go to Chat
                     </Link>
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <Link
                         to="/profile"
                         onClick={() => setMobileOpen(false)}
-                        className="flex-1 text-center px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06]"
+                        className="text-center px-3 py-2.5 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06]"
                       >
                         Profile
                       </Link>
                       <Link
+                        to="/projects"
+                        onClick={() => setMobileOpen(false)}
+                        className="text-center px-3 py-2.5 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06]"
+                      >
+                        Projects
+                      </Link>
+                      <Link
+                        to="/workflows"
+                        onClick={() => setMobileOpen(false)}
+                        className="text-center px-3 py-2.5 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06]"
+                      >
+                        Workflows
+                      </Link>
+                      <Link
+                        to="/discover"
+                        onClick={() => setMobileOpen(false)}
+                        className="text-center px-3 py-2.5 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06]"
+                      >
+                        Discover
+                      </Link>
+                      <Link
+                        to="/usage"
+                        onClick={() => setMobileOpen(false)}
+                        className="text-center px-3 py-2.5 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06]"
+                      >
+                        Usage
+                      </Link>
+                      <Link
                         to="/settings"
                         onClick={() => setMobileOpen(false)}
-                        className="flex-1 text-center px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06]"
+                        className="text-center px-3 py-2.5 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06]"
                       >
                         Settings
                       </Link>

@@ -211,7 +211,6 @@ export default function VoiceChatModal({
     if (isOpen) {
       setStep('select')
       setIsListening(false)
-      setIsMuted(false)
       setTranscript('')
       finalTranscriptRef.current = ''
     }
@@ -380,7 +379,6 @@ export default function VoiceChatModal({
 
   const handleContinue = () => {
     setStep('active')
-    setIsMuted(false)
     finalTranscriptRef.current = ''
     setTranscript('')
   }

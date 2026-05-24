@@ -17,23 +17,28 @@ export const FOOTER_SECTIONS = [
     links: [
       { label: 'Features', href: '/features' },
       { label: 'Models', href: '/models' },
+      { label: 'AI Agents', href: '/ai-agents' },
+      { label: 'Developers', href: '/developers' },
       { label: 'Pricing', href: '/pricing' },
       { label: 'Changelog', href: '/changelog' },
     ],
   },
   {
-    title: 'Resources',
+    title: 'Workspace',
+    links: [
+      { label: 'Projects', href: '/projects' },
+      { label: 'Workflows', href: '/workflows' },
+      { label: 'Discover', href: '/discover' },
+      { label: 'Usage & Stats', href: '/usage' },
+    ],
+  },
+  {
+    title: 'Resources & Company',
     links: [
       { label: 'Documentation', href: '/docs' },
       { label: 'API Reference', href: '/api-reference' },
       { label: 'Blog', href: '/blog' },
-      { label: 'Affiliate Program', href: '/affiliate' },
-    ],
-  },
-  {
-    title: 'Company',
-    links: [
-      { label: 'About', href: '/about' },
+      { label: 'About Us', href: '/about' },
       { label: 'Careers', href: '/careers' },
       { label: 'Contact', href: '/contact' },
     ],
