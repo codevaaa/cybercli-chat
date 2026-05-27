@@ -33,8 +33,8 @@ const MENU_GROUPS = [
     items: [
       { label: 'CyberCli Chat', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
       { label: 'Models', href: '/models', desc: 'Browse our 200K+ model proxy', icon: 'Cpu' },
-      { label: 'Workflows', href: '/workflows', desc: 'Automate multi-agent tasks', icon: 'Layers' },
-      { label: 'Discover', href: '/discover', desc: 'Find custom agents', icon: 'Globe' },
+      { label: 'Workflows', href: '/chat', desc: 'Automate multi-agent tasks', icon: 'Layers' },
+      { label: 'Discover', href: '/models', desc: 'Find custom agents', icon: 'Globe' },
     ]
   },
   {
@@ -43,13 +43,13 @@ const MENU_GROUPS = [
     featured: {
       title: 'Enterprise AI Solutions',
       desc: 'Secure, scalable AI deployment for modern organizations.',
-      href: '/use-cases/enterprise',
+      href: '/features',
       img: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=400&h=300'
     },
     items: [
-      { label: 'For Developers', href: '/use-cases/developers', desc: 'Ship code faster', icon: 'Code2' },
-      { label: 'For Enterprise', href: '/use-cases/enterprise', desc: 'Secure AI deployment', icon: 'Building2' },
-      { label: 'For Researchers', href: '/use-cases/researchers', desc: 'Deep data analysis', icon: 'BookOpen' },
+      { label: 'For Developers', href: '/developers', desc: 'Ship code faster', icon: 'Code2' },
+      { label: 'For Enterprise', href: '/features', desc: 'Secure AI deployment', icon: 'Building2' },
+      { label: 'For Researchers', href: '/models', desc: 'Deep data analysis', icon: 'BookOpen' },
     ]
   },
   {
@@ -58,12 +58,12 @@ const MENU_GROUPS = [
     featured: {
       title: 'Build with CyberCli API',
       desc: 'Integrate advanced multi-agent intelligence directly into your apps.',
-      href: '/api',
+      href: '/api-reference',
       img: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=400&h=300'
     },
     items: [
-      { label: 'API Reference', href: '/api', desc: 'Integrate into your app', icon: 'Terminal' },
-      { label: 'SDKs', href: '/sdks', desc: 'Official libraries', icon: 'FolderOpen' },
+      { label: 'API Reference', href: '/api-reference', desc: 'Integrate into your app', icon: 'Terminal' },
+      { label: 'SDKs', href: '/downloads', desc: 'Official libraries', icon: 'FolderOpen' },
       { label: 'Documentation', href: '/docs', desc: 'Guides and tutorials', icon: 'BookOpen' },
     ]
   },
@@ -78,8 +78,8 @@ const MENU_GROUPS = [
     },
     items: [
       { label: 'Blog', href: '/blog', desc: 'Latest updates', icon: 'Rss' },
-      { label: 'Community', href: '/community', desc: 'Join the discussion', icon: 'Globe' },
-      { label: 'Help Center', href: '/help', desc: 'Support & FAQs', icon: 'Sparkles' },
+      { label: 'Community', href: '/contact', desc: 'Join the discussion', icon: 'Globe' },
+      { label: 'Help Center', href: '/docs', desc: 'Support & FAQs', icon: 'Sparkles' },
     ]
   },
   {

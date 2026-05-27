@@ -3902,7 +3902,9 @@ export default function ChatPage() {
               >
                 <Menu className="w-4 h-4" />
               </button>
-              <CyberCliWordmark size={24} />
+              <Link to="/" className="flex items-center group transition-opacity hover:opacity-90">
+                <CyberCliWordmark size={24} />
+              </Link>
             </div>
           )}
 
