@@ -3269,7 +3269,12 @@ export default function ChatPage() {
     setLoading(true)
     setError(null)
 
-    const token = await getFreshToken()
+    let token = null
+    try {
+      token = await getFreshToken()
+    } catch (e) {
+      console.error('Failed to get token:', e)
+    }
 
     // ── OVERRIDES ──
     if (deepResearchEnabled && !activeModel.startsWith('puter/perplexity')) {
