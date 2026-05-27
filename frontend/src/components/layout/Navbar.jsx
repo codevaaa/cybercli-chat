@@ -318,10 +318,9 @@ export default function Navbar() {
 
       {/* ── Mobile full-screen slide-in panel ── */}
       <AnimatePresence>
-        {mobileOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
+        {mobileOpen && [
+          /* Backdrop */
+          <motion.div
               key="mobile-overlay"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -491,7 +490,7 @@ export default function Navbar() {
                 )}
               </div>
             </motion.div>
-          </>
+          ]
         )}
       </AnimatePresence>
     </>
