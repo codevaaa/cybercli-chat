@@ -296,7 +296,6 @@ function StatCard({ stat, delay }) {
 /* ─── Main HeroSection ──────────────────────────────────────── */
 export default function HeroSection() {
   const navigate = useNavigate()
-  const { session } = useAuthStore()
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
   const sectionRef = useRef(null)
@@ -308,205 +307,203 @@ export default function HeroSection() {
     mouseY.set(e.clientY - rect.top - rect.height / 2)
   }
 
-  // Animated orb follows mouse
-  const orbX = useSpring(useMotionValue(0), { stiffness: 30, damping: 25 })
-  const orbY = useSpring(useMotionValue(0), { stiffness: 30, damping: 25 })
+  const orbX = useSpring(useMotionValue(0), { stiffness: 20, damping: 20 })
+  const orbY = useSpring(useMotionValue(0), { stiffness: 20, damping: 20 })
+  
   useEffect(() => {
-    const unsubX = mouseX.on('change', (v) => orbX.set(v * 0.02))
-    const unsubY = mouseY.on('change', (v) => orbY.set(v * 0.02))
+    const unsubX = mouseX.on('change', (v) => orbX.set(v * 0.03))
+    const unsubY = mouseY.on('change', (v) => orbY.set(v * 0.03))
     return () => { unsubX(); unsubY() }
   }, [mouseX, mouseY, orbX, orbY])
 
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen flex items-center overflow-hidden bg-[#0A0A0F] py-24"
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background-primary pt-32 pb-24"
       onMouseMove={handleMouseMove}
     >
-      {/* ── Background layers (NO particles) ── */}
+      {/* ── Immersive Background ── */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Animated gradient orb */}
+        {/* Dynamic mesh gradient orb */}
         <motion.div
-          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] rounded-full blur-[130px]"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-[120px] opacity-40 mix-blend-screen"
           style={{
-            background: 'radial-gradient(ellipse, rgba(217,119,87,0.25) 0%, rgba(217,119,87,0.05) 55%, transparent 100%)',
+            background: 'radial-gradient(circle, rgba(124,58,237,0.4) 0%, rgba(217,119,87,0.2) 40%, transparent 70%)',
             x: orbX,
             y: orbY,
           }}
-          animate={{ scale: [1, 1.06, 1], opacity: [0.6, 0.85, 0.6] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+          animate={{ scale: [1, 1.1, 1], rotate: [0, 90, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
         />
-
-        {/* Subtle radial gradient mesh behind text */}
-        <div
-          className="absolute inset-0"
+        
+        {/* Grid pattern overlay */}
+        <div 
+          className="absolute inset-0 opacity-[0.03]"
           style={{
-            background:
-              'radial-gradient(ellipse 60% 50% at 25% 50%, rgba(217,119,87,0.06) 0%, transparent 70%),' +
-              'radial-gradient(ellipse 40% 40% at 75% 50%, rgba(217,119,87,0.06) 0%, transparent 70%)',
-          }}
-        />
-
-        {/* Grid line pattern (CSS only) */}
-        <div
-          className="absolute inset-0 opacity-[0.055]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(217,119,87,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(217,119,87,0.35) 1px, transparent 1px)',
-            backgroundSize: '80px 80px',
+            backgroundImage: 'linear-gradient(var(--foreground-primary) 1px, transparent 1px), linear-gradient(90deg, var(--foreground-primary) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+            maskImage: 'radial-gradient(ellipse at center, black 40%, transparent 80%)',
+            WebkitMaskImage: 'radial-gradient(ellipse at center, black 40%, transparent 80%)'
           }}
         />
       </div>
 
       {/* ── Content ── */}
-      <div className="relative z-10 section-padding pt-20 pb-16 w-full">
-        <div className="container-custom">
-          {/* Desktop: two-column split | Mobile: stacked */}
-          <div className="relative grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="relative z-10 w-full container-custom flex flex-col items-center text-center">
+        
+        {/* Top Badge */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 backdrop-blur-md shadow-[0_0_30px_rgba(217,119,87,0.15)] cursor-pointer hover:bg-accent/15 transition-all"
+        >
+          <Sparkles className="w-4 h-4 text-accent animate-pulse" />
+          <span className="text-sm font-semibold text-accent tracking-wide">
+            Next-Gen AI Workspace
+          </span>
+          <ArrowRight className="w-4 h-4 text-accent/70" />
+        </motion.div>
 
-            {/* ── Large decorative Sudarshan Chakra watermark (desktop only) ── */}
-            <div
-              className="hidden lg:block absolute pointer-events-none"
-              style={{
-                right: '-40px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                opacity: 0.06,
-                zIndex: 1,
-              }}
-            >
-              <CyberCliMark size={360} />
+        {/* Headline */}
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="text-[clamp(3rem,8vw,6rem)] font-extrabold tracking-tight leading-[1.05] max-w-5xl text-foreground-primary mb-6"
+        >
+          The intelligent <br className="hidden md:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-[#F4A37A] to-accent bg-[length:200%_auto] animate-gradient-x">
+            supercomputer
+          </span>
+          {' '}for your mind.
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="text-lg md:text-xl text-foreground-muted max-w-2xl mb-12 font-medium leading-relaxed"
+        >
+          CyberCli brings 200K+ elite AI models into a single, unified interface. Experience ultra-fast streaming, Council Mode debates, and stunning aesthetics.
+        </motion.p>
+
+        {/* CTA Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col sm:flex-row items-center gap-4 mb-20"
+        >
+          <Link
+            to="/auth/signup"
+            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-bold text-white bg-accent overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_40px_rgba(217,119,87,0.4)]"
+          >
+            <span className="relative z-10 text-lg">Launch CyberCli</span>
+            <ArrowRight className="relative z-10 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:translate-x-[150%] transition-transform duration-700 ease-in-out" />
+          </Link>
+          
+          <Link
+            to="/features"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-semibold text-foreground-primary bg-background-secondary border border-border-subtle hover:bg-background-tertiary hover:border-border-medium transition-all"
+          >
+            Explore Capabilities
+          </Link>
+        </motion.div>
+
+        {/* Centerpiece Showcase Panel */}
+        <motion.div
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-4xl relative"
+        >
+          {/* Glass panel wrapper */}
+          <div className="relative rounded-3xl border border-white/10 bg-background-primary/40 backdrop-blur-3xl overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.6)]">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-6 py-4 border-b border-border-subtle bg-background-secondary/50">
+              <div className="flex gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                <div className="w-3 h-3 rounded-full bg-green-500/80" />
+              </div>
+              <div className="mx-auto flex items-center gap-2 px-3 py-1 bg-background-primary rounded-md border border-border-subtle">
+                <Sparkles className="w-3 h-3 text-accent" />
+                <span className="text-xs font-medium text-foreground-secondary">cybercli.ai / workspace</span>
+              </div>
             </div>
-
-            {/* ── LEFT: copy ── */}
-            <div>
-              {/* Badge pill */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-6"
-              >
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/8 border border-accent/15 backdrop-blur-sm">
-                  <Sparkles className="w-3.5 h-3.5 text-accent animate-pulse" />
-                  <span className="text-xs font-semibold text-accent uppercase tracking-wider">
-                    Introducing Council Mode — 3 models debate, 1 synthesis
-                  </span>
+            
+            {/* Mock content inside the glass pane */}
+            <div className="p-8 text-left space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5 text-accent" />
                 </div>
-              </motion.div>
-
-              {/* Small animated Sudarshan Chakra above headline */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.15 }}
-                className="mb-4"
-              >
-                <CyberCliMark size={64} />
-              </motion.div>
-
-              {/* Headline */}
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-6"
-              >
-                <h1 className="text-[clamp(2.5rem,5vw,4.5rem)] font-extrabold tracking-[-0.03em] leading-[1.08] text-white">
-                  <span className="font-serif italic font-normal text-white/50 block">
-                    Deliberate with the
-                  </span>
-                  <span
-                    className="block mt-1"
-                    style={{
-                      background: 'linear-gradient(135deg, #F4A37A 0%, #D97757 40%, #E8A590 80%, #B85D3D 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}
-                  >
-                    Council of AI Experts
-                  </span>
-                </h1>
-              </motion.div>
-
-              {/* Subtitle */}
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="text-base sm:text-lg text-[#9CA3AF] max-w-xl mb-10 leading-relaxed font-light"
-              >
-                Access 8+ premier models, stream multi-model consensus debates, branch
-                timelines, and experience natural voice responses — all completely free.
-              </motion.p>
-
-              {/* CTA buttons */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-wrap gap-4"
-              >
-                <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}>
-                  <Link
-                    to="/auth/signup"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white"
-                    style={{
-                      background: 'linear-gradient(135deg, #D97757 0%, #B85D3D 100%)',
-                      boxShadow: '0 8px 28px rgba(217,119,87,0.35)',
-                    }}
-                  >
-                    Start for Free
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </motion.div>
-
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Link
-                    to="/features"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white border border-white/[0.12] bg-white/[0.04] backdrop-blur-sm hover:bg-white/[0.08] hover:border-white/[0.2] transition-all duration-300"
-                  >
-                    Explore Features
-                  </Link>
-                </motion.div>
-              </motion.div>
-            </div>
-
-            {/* ── RIGHT: Mock chat panel (hidden on mobile) ── */}
-            <div className="hidden lg:block">
-              <MockChatPanel mouseX={mouseX} mouseY={mouseY} />
+                <div className="pt-2">
+                  <p className="text-foreground-primary font-medium">Design a resilient microservices architecture for a global SaaS.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-background-secondary border border-border-subtle flex items-center justify-center shrink-0 shadow-inner">
+                  <CyberCliMark size={20} />
+                </div>
+                <div className="bg-background-secondary border border-border-subtle rounded-2xl rounded-tl-sm p-5 w-full">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-accent">Council Mode</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-background-tertiary text-foreground-muted">GPT-4o + Claude 3.5 Sonnet + Gemini 1.5 Pro</span>
+                  </div>
+                  <p className="text-foreground-secondary leading-relaxed mb-4">
+                    Based on our multi-model consensus, here is a highly resilient, globally distributed microservices architecture tailored for high availability and low latency:
+                  </p>
+                  <div className="space-y-3">
+                    <div className="h-2 bg-background-tertiary rounded-full w-3/4 animate-pulse" />
+                    <div className="h-2 bg-background-tertiary rounded-full w-5/6 animate-pulse" />
+                    <div className="h-2 bg-background-tertiary rounded-full w-2/3 animate-pulse" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* ── Floating parallax cards (decorative, desktop only) ── */}
+          {/* Floating Accents around panel */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="relative h-40 mt-8 hidden md:block lg:hidden"
+            style={{ x: orbX, y: orbY }}
+            className="absolute -right-12 -top-12 z-20"
           >
-            {MOCK_MESSAGES.map((card) => (
-              <FloatingCard key={card.id} card={card} mouseX={mouseX} mouseY={mouseY} />
-            ))}
+            <div className="p-4 rounded-2xl bg-background-secondary/80 backdrop-blur-xl border border-border-subtle shadow-xl flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground-primary">Ultra-fast</p>
+                <p className="text-xs text-foreground-muted">~200ms TTFT</p>
+              </div>
+            </div>
+          </motion.div>
+          
+          <motion.div
+            style={{ x: useSpring(useMotionValue(0), { stiffness: 15, damping: 25 }), y: useSpring(useMotionValue(0), { stiffness: 15, damping: 25 }) }}
+            className="absolute -left-12 bottom-12 z-20"
+          >
+            <div className="p-4 rounded-2xl bg-background-secondary/80 backdrop-blur-xl border border-border-subtle shadow-xl flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <Cpu className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground-primary">200K+ Models</p>
+                <p className="text-xs text-foreground-muted">Via OpenRouter</p>
+              </div>
+            </div>
           </motion.div>
 
-          {/* ── Stats row ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mt-16"
-          >
-            {STATS.map((stat, i) => (
-              <StatCard key={stat.label} stat={stat} delay={i * 150} />
-            ))}
-          </motion.div>
-        </div>
+        </motion.div>
       </div>
-
+      
       {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0A0A0F] to-transparent z-10 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background-primary to-transparent z-10 pointer-events-none" />
     </section>
   )
 }

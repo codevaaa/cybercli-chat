@@ -266,17 +266,18 @@ export default function VoiceChatPage() {
       speak(reply)
     } catch (err) {
       console.error('Error fetching voice completions:', err)
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Connection issue. Please repeat.' }])
+      const errText = err.message.includes('Failed to fetch') ? 'Connection issue.' : err.message
+      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${errText}` }])
       setIsProcessing(false)
-      speak('Connection issue. Please repeat.')
+      speak('I encountered an error. Please try again.')
     }
   }, [selectedVoice, isProcessing, speak, messages])
 
   const startSilenceTimer = useCallback(() => {
     clearTimeout(silenceTimerRef.current)
     clearInterval(countdownRef.current)
-    setCountdown(1.8)
-    let remaining = 1.8
+    setCountdown(0.8)
+    let remaining = 0.8
     countdownRef.current = setInterval(() => {
       remaining -= 0.1
       setCountdown(Math.max(0, remaining))
@@ -293,7 +294,7 @@ export default function VoiceChatPage() {
         setIsListening(false)
         try { recognitionRef.current?.stop() } catch {}
       }
-    }, 1800)
+    }, 800)
   }, [handleSendMessage])
 
   const initRecognition = useCallback(() => {
@@ -574,7 +575,7 @@ export default function VoiceChatPage() {
                         className="h-full rounded-full"
                         style={{ background: selectedVoice.color }}
                         initial={{ width: '100%' }}
-                        animate={{ width: `${(countdown / 1.8) * 100}%` }}
+                        animate={{ width: `${(countdown / 0.8) * 100}%` }}
                         transition={{ duration: 0.1, ease: 'linear' }}
                       />
                     </div>

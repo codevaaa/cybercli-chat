@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowLeft, Mic, MicOff, Volume2, Settings, Play, Pause, User, Zap } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Mic, MicOff, Volume2, Settings, Play, Pause, User, Zap, ArrowRight } from 'lucide-react'
+import tts from '../../lib/tts.js'
 
 const VOICES = [
   { id: 'ava', name: 'Ava', gender: 'Female', provider: 'Gemini Flash TTS', description: 'Warm, empathetic, conversational', lang: 'EN, HI, ES' },
@@ -11,11 +12,36 @@ const VOICES = [
 ]
 
 export default function VoicePage() {
+  const navigate = useNavigate()
   const [selectedVoice, setSelectedVoice] = useState('ava')
-  const [isRecording, setIsRecording] = useState(false)
   const [speed, setSpeed] = useState(1.0)
+  const [previewPlaying, setPreviewPlaying] = useState(false)
 
   const activeVoice = VOICES.find(v => v.id === selectedVoice)
+
+  const handleSpeedChange = (e) => {
+    const val = parseFloat(e.target.value)
+    setSpeed(val)
+    tts.setSpeed(val)
+  }
+
+  const handlePreview = async () => {
+    if (previewPlaying) {
+      tts.stop()
+      setPreviewPlaying(false)
+      return
+    }
+    setPreviewPlaying(true)
+    tts.setProvider(activeVoice.provider.includes('Gemini') ? 'gemini' : 'puter')
+    // Fallback to sol if ID not exact match
+    tts.setVoice(activeVoice.id === 'ava' ? 'sol' : activeVoice.id)
+    
+    try {
+      await tts.speak(`Hello, my name is ${activeVoice.name}. ${activeVoice.description}.`)
+    } finally {
+      setPreviewPlaying(false)
+    }
+  }
 
   return (
     <div className="min-h-screen pt-20 pb-12 bg-background-primary">
@@ -32,31 +58,24 @@ export default function VoicePage() {
           <div className="grid lg:grid-cols-[1fr_320px] gap-8">
             <div>
               <div className="card p-8 mb-6 min-h-[320px] flex flex-col items-center justify-center relative">
-                <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-all ${
-                  isRecording ? 'bg-accent/20 animate-pulse' : 'bg-accent/10'
-                }`}>
-                  {isRecording ? (
-                    <Mic className="w-10 h-10 text-accent" />
-                  ) : (
-                    <MicOff className="w-10 h-10 text-foreground-muted" />
-                  )}
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 bg-accent/10 transition-all hover:bg-accent/20 cursor-pointer`}
+                     onClick={() => navigate('/voice-chat')}>
+                  <Mic className="w-10 h-10 text-accent animate-pulse" />
                 </div>
                 <p className="text-lg font-medium text-foreground-primary mb-2">
-                  {isRecording ? 'Listening...' : 'Hold Spacebar to talk'}
+                  Ready to talk?
                 </p>
-                <p className="text-sm text-foreground-muted">
-                  {isRecording ? 'Release to send' : 'Or click the button below'}
+                <p className="text-sm text-foreground-muted mb-6 text-center">
+                  Configure your preferred voice settings here, then enter the full-screen voice chat mode.
                 </p>
 
                 <button
-                  onClick={() => setIsRecording(!isRecording)}
-                  className={`mt-6 w-16 h-16 rounded-full flex items-center justify-center transition-all ${
-                    isRecording
-                      ? 'bg-error text-white'
-                      : 'bg-accent text-white hover:bg-accent-light'
-                  }`}
+                  onClick={() => navigate('/voice-chat')}
+                  className="w-full max-w-[240px] h-14 rounded-xl flex items-center justify-center gap-2 font-bold bg-accent text-white hover:bg-accent-light transition-all hover:shadow-[0_0_20px_rgba(217,119,87,0.3)]"
                 >
-                  {isRecording ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                  <Mic className="w-5 h-5" />
+                  Start Voice Chat
+                  <ArrowRight className="w-4 h-4 ml-1" />
                 </button>
               </div>
 
@@ -74,7 +93,7 @@ export default function VoicePage() {
                       max="2.0"
                       step="0.1"
                       value={speed}
-                      onChange={(e) => setSpeed(parseFloat(e.target.value))}
+                      onChange={handleSpeedChange}
                       className="w-full accent-accent"
                     />
                   </div>
@@ -130,9 +149,9 @@ export default function VoicePage() {
                 <div className="card p-4 mt-4">
                   <p className="text-sm text-foreground-secondary mb-2">{activeVoice.description}</p>
                   <p className="text-xs text-foreground-muted">Languages: {activeVoice.lang}</p>
-                  <button className="btn-secondary w-full mt-4 text-sm py-2.5">
-                    <Play className="w-4 h-4" />
-                    Preview Voice
+                  <button onClick={handlePreview} className="btn-secondary w-full mt-4 text-sm py-2.5">
+                    {previewPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    {previewPlaying ? 'Stop Preview' : 'Preview Voice'}
                   </button>
                 </div>
               )}

@@ -30,6 +30,7 @@ import ApiReferencePage from '@pages/public/ApiReferencePage'
 import DevelopersPage from '@pages/public/DevelopersPage'
 import AiAgentsPage from '@pages/public/AiAgentsPage'
 import SystemStatusPage from '@pages/public/SystemStatusPage'
+import DownloadsPage from '@pages/public/DownloadsPage'
 
 import SignupPage from '@pages/auth/SignupPage'
 import LoginPage from '@pages/auth/LoginPage'
@@ -56,7 +57,7 @@ const PUBLIC_PATHS = [
   '/', '/features', '/models', '/pricing', '/contact', '/about',
   '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy',
   '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr',
-  '/changelog', '/api-reference', '/developers', '/ai-agents', '/status'
+  '/changelog', '/api-reference', '/developers', '/ai-agents', '/status', '/downloads'
 ]
 const AUTH_PATHS = [
   '/auth/signup', '/auth/login', '/auth/forgot-password',
@@ -77,6 +78,7 @@ function App() {
       || location.pathname.startsWith('/docs/')
       || location.pathname.startsWith('/features/')
       || location.pathname.startsWith('/models/')
+      || location.pathname === '/downloads'
   }
 
   return (
@@ -89,7 +91,7 @@ function App() {
           <Route path="/features" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
           <Route path="/features/:slug" element={<PublicLayout><FeatureDetailPage /></PublicLayout>} />
           <Route path="/models" element={<PublicLayout><ModelsPage /></PublicLayout>} />
-          <Route path="/models/:id" element={<PublicLayout><ModelDetailPage /></PublicLayout>} />
+          <Route path="/models/*" element={<PublicLayout><ModelDetailPage /></PublicLayout>} />
           <Route path="/pricing" element={<PublicLayout><PricingPage /></PublicLayout>} />
           <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
           <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
@@ -109,6 +111,7 @@ function App() {
           <Route path="/developers" element={<PublicLayout><DevelopersPage /></PublicLayout>} />
           <Route path="/ai-agents" element={<PublicLayout><AiAgentsPage /></PublicLayout>} />
           <Route path="/status" element={<PublicLayout><SystemStatusPage /></PublicLayout>} />
+          <Route path="/downloads" element={<PublicLayout><DownloadsPage /></PublicLayout>} />
 
           {/* ── Auth Routes ── */}
           <Route path="/auth/signup" element={<SignupPage />} />

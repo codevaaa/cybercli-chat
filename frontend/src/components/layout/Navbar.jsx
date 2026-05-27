@@ -115,7 +115,7 @@ export default function Navbar() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-[#0f0f15]/80 backdrop-blur-md border-b border-white/[0.06] py-3'
+          ? 'bg-background-primary/80 backdrop-blur-lg border-b border-border-subtle py-3'
           : 'bg-transparent py-5'
       }`}
     >
@@ -140,13 +140,13 @@ export default function Navbar() {
                 onMouseLeave={() => setActiveDropdown(null)}
               >
                 <button
-                  className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors hover:text-white ${
-                    activeDropdown === group.label ? 'text-white bg-white/5' : 'text-gray-400'
+                  className={`flex items-center gap-1.5 px-4 py-2 text-[15px] font-medium rounded-xl transition-all ${
+                    activeDropdown === group.label ? 'text-foreground-primary bg-background-secondary' : 'text-foreground-secondary hover:text-foreground-primary hover:bg-background-secondary/50'
                   }`}
                 >
                   {group.label}
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                    activeDropdown === group.label ? 'rotate-180 text-white' : 'text-gray-500'
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${
+                    activeDropdown === group.label ? 'rotate-180 text-foreground-primary' : 'text-foreground-muted'
                   }`} />
                 </button>
 
@@ -158,7 +158,7 @@ export default function Navbar() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.2, ease: 'easeOut' }}
-                      className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 bg-[#0f0f14]/95 backdrop-blur-xl border border-white/[0.08] rounded-xl p-3 shadow-[0_16px_36px_rgba(0,0,0,0.4)] overflow-hidden"
+                      className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 bg-background-secondary/95 backdrop-blur-2xl border border-border-subtle rounded-2xl p-2 shadow-2xl overflow-hidden"
                     >
                       <div className="grid gap-1">
                         {group.items.map((item) => {
@@ -167,16 +167,16 @@ export default function Navbar() {
                             <Link
                               key={item.href}
                               to={item.href}
-                              className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors group/item"
+                              className="flex items-start gap-3 p-3 rounded-xl hover:bg-background-tertiary transition-all group/item"
                             >
-                              <div className="mt-0.5 p-1.5 rounded-md bg-white/5 text-gray-400 group-hover/item:text-accent group-hover/item:bg-accent/10 transition-colors">
+                              <div className="mt-0.5 p-2 rounded-lg bg-background-primary text-foreground-muted group-hover/item:text-accent group-hover/item:bg-accent/10 transition-colors border border-border-subtle group-hover/item:border-accent/20">
                                 {IconComponent && <IconComponent className="w-4 h-4" />}
                               </div>
                               <div>
-                                <div className="text-sm font-semibold text-white group-hover/item:text-accent transition-colors">
+                                <div className="text-sm font-semibold text-foreground-primary group-hover/item:text-accent transition-colors">
                                   {item.label}
                                 </div>
-                                <div className="text-xs text-gray-500 mt-0.5 font-medium leading-normal">
+                                <div className="text-xs text-foreground-muted mt-1 font-medium leading-relaxed">
                                   {item.desc}
                                 </div>
                               </div>
@@ -277,11 +277,11 @@ export default function Navbar() {
               <>
                 <Link
                   to="/auth/login"
-                  className="text-sm font-medium text-gray-400 hover:text-white transition-colors px-4 py-2"
+                  className="text-sm font-medium text-foreground-secondary hover:text-foreground-primary transition-colors px-4 py-2 hover:bg-background-secondary rounded-xl"
                 >
                   Log in
                 </Link>
-                <Link to="/auth/signup" className="btn-primary text-sm font-medium">
+                <Link to="/auth/signup" className="btn-primary text-sm font-medium px-5 py-2">
                   Get Started
                 </Link>
               </>

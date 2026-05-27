@@ -550,172 +550,159 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
   const isAssistant = msg.role === 'assistant'
 
   return (
-    <div
-      className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'} group`}
-    >
-      {/* Assistant avatar */}
-      {isAssistant && (
-        <div className="flex-shrink-0 mt-1">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ background: 'rgba(217,119,87,0.12)' }}>
-            <CyberCliMark size={20} className="logo-chakra-spin" />
+    <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} mb-6 group`}>
+      <div className={`flex max-w-[85%] md:max-w-[75%] ${isUser ? 'flex-row-reverse gap-3' : 'gap-4'} relative`}>
+        
+        {/* Assistant Avatar */}
+        {isAssistant && (
+          <div className="flex-shrink-0 mt-1">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#ECECEC]">
+              <CyberCliMark size={20} className="text-[#2D2D2D]" />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[85%] relative pb-8`}>
-        {/* Content */}
-        {isUser ? (
-          <div
-            className="px-4 py-3 rounded-2xl rounded-br-sm text-sm leading-relaxed text-foreground-primary"
-            style={{
-              background: 'var(--bg-secondary)',
-              border: '1px solid rgba(217,119,87,0.25)',
-            }}
-          >
-            {msg.content}
-          </div>
-        ) : (
-          <div className="text-sm leading-relaxed text-foreground-primary prose-custom w-full">
-            {parseDaemonActions(msg.content).map((block, bIdx) => {
-              if (block.type === 'markdown') {
-                return (
-                  <ReactMarkdown
-                    key={`md-${bIdx}`}
-                    components={{
-                      img: ({ src, alt }) => <ImageGeneratorWidget src={src} alt={alt} />,
-                      code({ node, inline, className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || '')
-                        if (!inline && match) {
+        <div className={`flex flex-col w-full ${isUser ? 'items-end' : 'items-start'}`}>
+          {/* Content */}
+          {isUser ? (
+            <div className="px-5 py-3.5 rounded-3xl bg-[#2D2D2D] text-[15px] leading-relaxed text-[#ECECEC] whitespace-pre-wrap shadow-sm">
+              {msg.content}
+            </div>
+          ) : (
+            <div className="text-[15px] leading-relaxed text-[#ECECEC] prose-custom w-full pt-1">
+              {parseDaemonActions(msg.content).map((block, bIdx) => {
+                if (block.type === 'markdown') {
+                  return (
+                    <ReactMarkdown
+                      key={`md-${bIdx}`}
+                      components={{
+                        img: ({ src, alt }) => <ImageGeneratorWidget src={src} alt={alt} />,
+                        code({ node, inline, className, children, ...props }) {
+                          const match = /language-(\w+)/.exec(className || '')
+                          if (!inline && match) {
+                            return (
+                              <CodeBlock
+                                language={match[1]}
+                                value={String(children).replace(/\n$/, '')}
+                                codeExecutionEnabled={codeExecutionEnabled}
+                              />
+                            )
+                          }
                           return (
-                            <CodeBlock
-                              language={match[1]}
-                              value={String(children).replace(/\n$/, '')}
-                              codeExecutionEnabled={codeExecutionEnabled}
-                            />
+                            <code
+                              className="px-1.5 py-0.5 rounded text-[13px] font-mono bg-[#2D2D2D] text-[#ECECEC] border border-white/[0.05]"
+                              {...props}
+                            >
+                              {children}
+                            </code>
                           )
-                        }
-                        return (
-                          <code
-                            className="px-1.5 py-0.5 rounded text-xs font-mono bg-background-tertiary text-foreground-primary"
-                            {...props}
-                          >
+                        },
+                        p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+                        ul: ({ children }) => <ul className="mb-4 pl-5 space-y-1.5 list-disc">{children}</ul>,
+                        ol: ({ children }) => <ol className="mb-4 pl-5 space-y-1.5 list-decimal">{children}</ol>,
+                        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                        h1: ({ children }) => <h1 className="text-xl font-bold mb-4 mt-6 first:mt-0 text-white">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-lg font-semibold mb-3 mt-6 first:mt-0 text-white">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-4 first:mt-0 text-white">{children}</h3>,
+                        blockquote: ({ children }) => (
+                          <blockquote className="border-l-[3px] border-[#404040] pl-4 my-4 text-[#A0A0A0] italic">
                             {children}
-                          </code>
-                        )
-                      },
-                      p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
-                      ul: ({ children }) => <ul className="mb-3 pl-5 space-y-1 list-disc">{children}</ul>,
-                      ol: ({ children }) => <ol className="mb-3 pl-5 space-y-1 list-decimal">{children}</ol>,
-                      li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                      h1: ({ children }) => <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>,
-                      h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h2>,
-                      h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-3 first:mt-0">{children}</h3>,
-                      blockquote: ({ children }) => (
-                        <blockquote className="border-l-2 border-accent pl-4 my-3 text-foreground-secondary italic">
-                          {children}
-                        </blockquote>
-                      ),
-                      strong: ({ children }) => <strong className="font-semibold text-foreground-primary">{children}</strong>,
-                      a: ({ href, children }) => (
-                        <a href={href} target="_blank" rel="noopener noreferrer"
-                          className="text-accent hover:text-accent-light underline underline-offset-2">
-                          {children}
-                        </a>
-                      ),
-                    }}
-                  >
-                    {block.content}
-                  </ReactMarkdown>
-                )
-              } else if (block.type === 'read_file') {
-                return (
-                  <DaemonActionWidget
-                    key={`read-${bIdx}`}
-                    action="read_file"
-                    payload={{ path: block.path }}
-                    daemonConnected={daemonConnected}
-                    onExecuteSuccess={onExecuteSuccess}
-                  />
-                )
-              } else if (block.type === 'write_file') {
-                return (
-                  <DaemonActionWidget
-                    key={`write-${bIdx}`}
-                    action="write_file"
-                    payload={{ path: block.path, content: block.content }}
-                    daemonConnected={daemonConnected}
-                    onExecuteSuccess={onExecuteSuccess}
-                  />
-                )
-              } else if (block.type === 'run_command') {
-                return (
-                  <DaemonActionWidget
-                    key={`run-${bIdx}`}
-                    action="run_command"
-                    payload={{ command: block.command }}
-                    daemonConnected={daemonConnected}
-                  />
-                )
-              }
-              return null
-            })}
-            {isStreaming && <BlinkCursor />}
-          </div>
-        )}
+                          </blockquote>
+                        ),
+                        strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                        a: ({ href, children }) => (
+                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">
+                            {children}
+                          </a>
+                        ),
+                      }}
+                    >
+                      {block.content}
+                    </ReactMarkdown>
+                  )
+                } else if (block.type === 'read_file') {
+                  return (
+                    <DaemonActionWidget
+                      key={`read-${bIdx}`}
+                      action="read_file"
+                      payload={{ path: block.path }}
+                      daemonConnected={daemonConnected}
+                      onExecuteSuccess={onExecuteSuccess}
+                    />
+                  )
+                } else if (block.type === 'write_file') {
+                  return (
+                    <DaemonActionWidget
+                      key={`write-${bIdx}`}
+                      action="write_file"
+                      payload={{ path: block.path, content: block.content }}
+                      daemonConnected={daemonConnected}
+                      onExecuteSuccess={onExecuteSuccess}
+                    />
+                  )
+                } else if (block.type === 'run_command') {
+                  return (
+                    <DaemonActionWidget
+                      key={`run-${bIdx}`}
+                      action="run_command"
+                      payload={{ command: block.command }}
+                      daemonConnected={daemonConnected}
+                    />
+                  )
+                }
+                return null
+              })}
+              {isStreaming && <BlinkCursor />}
+            </div>
+          )}
 
-        {/* Model badge for assistant */}
-        {isAssistant && msg.model && !isStreaming && (
-          <div className="mt-1.5 text-[10px] text-foreground-muted font-medium px-2 py-0.5 rounded bg-background-secondary border border-border-subtle">
-            {MODELS.find(m => m.id === msg.model)?.name || EXTRA_MODELS.find(m => m.id === msg.model)?.name || msg.model}
-          </div>
-        )}
+          {/* Model badge and Action row */}
+          <div className="flex items-center gap-3 mt-2 h-6">
+            {isAssistant && msg.model && !isStreaming && (
+              <span className="text-[11px] text-[#707070] font-medium tracking-wide">
+                {MODELS.find(m => m.id === msg.model)?.name || EXTRA_MODELS.find(m => m.id === msg.model)?.name || msg.model}
+              </span>
+            )}
+            
+            {msg.is_fork_point && msg.forked_thread_id && (
+              <Link to={`/chat/${msg.forked_thread_id}`} className="flex items-center gap-1.5 text-[11px] text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                <GitBranch className="w-3 h-3" />
+                Go to branch →
+              </Link>
+            )}
 
-        {/* Fork link */}
-        {msg.is_fork_point && msg.forked_thread_id && (
-          <Link
-            to={`/chat/${msg.forked_thread_id}`}
-            className="mt-2 inline-flex items-center gap-1.5 text-xs text-accent hover:text-accent-light font-medium"
-          >
-            <GitBranch className="w-3.5 h-3.5" />
-            Go to branched thread →
-          </Link>
-        )}
-
-        {/* Action row — absolute position inside the pb-8 padding to avoid layout jump */}
-        {!isStreaming && (
-          <div
-            className={`absolute bottom-0.5 ${isUser ? 'right-0' : 'left-0'} flex items-center gap-0.5 transition-opacity duration-150 z-10 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto`}
-          >
-            <button
-              onClick={() => onCopy(msg.content, index)}
-              className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-background-secondary transition-all"
-              title="Copy"
-            >
-              {copied === index ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
-
-            {isAssistant && (
-              <>
+            {!isStreaming && (
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
-                  onClick={() => isPlaying ? onStop() : onSpeak(msg.content)}
-                  disabled={ttsLoading && !isPlaying}
-                  className="p-1.5 rounded-lg text-foreground-muted hover:text-accent hover:bg-background-secondary transition-all"
-                  title={isPlaying ? 'Stop' : 'Speak'}
+                  onClick={() => onCopy(msg.content, index)}
+                  className="p-1 rounded-md text-[#707070] hover:text-[#ECECEC] hover:bg-white/5 transition-colors"
+                  title="Copy"
                 >
-                  {isPlaying ? <VolumeX className="w-3.5 h-3.5 text-accent" /> : <Volume2 className="w-3.5 h-3.5" />}
+                  {copied === index ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
-                <button
-                  onClick={() => onFork(msg._id)}
-                  className="p-1.5 rounded-lg text-foreground-muted hover:text-accent hover:bg-background-secondary transition-all"
-                  title="Branch from here"
-                >
-                  <GitBranch className="w-3.5 h-3.5" />
-                </button>
-              </>
+                {isAssistant && (
+                  <>
+                    <button
+                      onClick={() => isPlaying ? onStop() : onSpeak(msg.content)}
+                      disabled={ttsLoading && !isPlaying}
+                      className="p-1 rounded-md text-[#707070] hover:text-[#ECECEC] hover:bg-white/5 transition-colors"
+                      title={isPlaying ? 'Stop' : 'Speak'}
+                    >
+                      {isPlaying ? <VolumeX className="w-3.5 h-3.5 text-blue-400" /> : <Volume2 className="w-3.5 h-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => onFork(msg._id)}
+                      className="p-1 rounded-md text-[#707070] hover:text-[#ECECEC] hover:bg-white/5 transition-colors"
+                      title="Branch from here"
+                    >
+                      <GitBranch className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
@@ -1022,15 +1009,15 @@ function InputArea({
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto flex flex-col gap-4 px-4 sm:px-0">
+    <div className="w-full max-w-[800px] mx-auto flex flex-col gap-4 px-4 sm:px-0">
       {/* Input container card */}
       <div
-        className="rounded-2xl border border-border-subtle transition-all relative flex flex-col p-4 gap-3 bg-background-elevated"
+        className="rounded-2xl transition-all relative flex flex-col p-3.5 gap-2 bg-[#2D2D2D] hover:bg-[#333333] focus-within:bg-[#333333] border border-white/[0.05]"
         style={{
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.24)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
         }}
       >
-        {/* Top Row: Textarea & Teal Dot */}
+        {/* Top Row: Textarea */}
         <div className="flex items-start justify-between gap-4">
           <textarea
             ref={textareaRef}
@@ -1040,52 +1027,45 @@ function InputArea({
             placeholder="How can I help you today?"
             rows={1}
             disabled={loading}
-            className="flex-1 bg-transparent text-sm text-foreground-primary placeholder:text-foreground-muted resize-none focus:outline-none leading-relaxed py-1 min-h-[36px]"
+            className="flex-1 bg-transparent text-[15px] text-[#ECECEC] placeholder:text-[#A0A0A0] resize-none focus:outline-none leading-relaxed py-1 min-h-[40px]"
             style={{ maxHeight: '200px' }}
           />
-          {/* Teal dot */}
-          <div className="flex-shrink-0 mt-2 pr-1 flex items-center justify-center">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-          </div>
         </div>
 
         {/* Bottom Row: Controls */}
-        <div className="flex items-center justify-between border-t border-border-subtle pt-2.5 mt-1 gap-2 flex-shrink-0 flex-wrap">
-          {/* Left: Plus attachment & Model dropdown */}
+        <div className="flex items-center justify-between mt-1 gap-2 flex-shrink-0 flex-wrap">
+          {/* Left: Attachment & Model dropdown */}
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <button className="p-1.5 rounded-xl text-foreground-muted hover:text-foreground-primary hover:bg-white/5 transition-all">
-              <Plus className="w-4 h-4" />
+            <button className="p-1.5 rounded-lg text-[#A0A0A0] hover:text-[#ECECEC] hover:bg-white/5 transition-all" title="Add attachment">
+              <Plus className="w-5 h-5" />
             </button>
             <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} />
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-1.5 justify-end">
+          <div className="flex items-center gap-1 justify-end">
             {/* Deep Research toggle */}
             <button
               onClick={onToggleDeepResearch}
-              title="Deep Research — multi-angle web synthesis"
-              className={`flex items-center gap-1 p-1.5 rounded-xl text-xs font-semibold transition-all border ${
+              title="Deep Research"
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
                 deepResearchEnabled
-                  ? 'bg-blue-500/15 text-blue-400 border-blue-500/25'
-                  : 'text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent'
+                  ? 'bg-blue-500/15 text-blue-400'
+                  : 'text-[#A0A0A0] hover:text-[#ECECEC] hover:bg-white/5'
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              {deepResearchEnabled && <span className="hidden sm:inline text-[11px]">Deep</span>}
+              <span className="hidden sm:inline">Research</span>
             </button>
 
             {/* Incognito / Ghost mode */}
             <button
               onClick={onToggleIncognito}
-              title={incognitoMode ? 'Incognito ON — click to disable' : 'Enable Incognito (no history)'}
-              className={`p-1.5 rounded-xl transition-all border ${
+              title="Incognito Mode"
+              className={`p-1.5 rounded-lg transition-all ${
                 incognitoMode
-                  ? 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'
-                  : 'text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent'
+                  ? 'text-yellow-400 bg-yellow-400/10'
+                  : 'text-[#A0A0A0] hover:text-[#ECECEC] hover:bg-white/5'
               }`}
             >
               <Ghost className="w-4 h-4" />
@@ -1094,55 +1074,24 @@ function InputArea({
             {/* Mic */}
             <button
               onClick={onMicClick}
-              className={`p-1.5 rounded-xl transition-all relative border border-transparent ${
+              className={`p-1.5 rounded-lg transition-all relative ${
                 inlineSpeechListening
-                  ? 'text-accent bg-accent/10 border-accent/20'
-                  : 'text-gray-500 hover:text-white hover:bg-white/5'
+                  ? 'text-[#D97757] bg-[#D97757]/10'
+                  : 'text-[#A0A0A0] hover:text-[#ECECEC] hover:bg-white/5'
               }`}
-              title="Voice input (Speech-to-Text)"
+              title="Voice input"
             >
-              {inlineSpeechListening && (
-                <motion.div
-                  className="absolute inset-0 rounded-xl"
-                  style={{ border: '2px solid #D97757' }}
-                  animate={{ scale: [1, 1.3], opacity: [0.6, 0] }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
-                />
-              )}
               <Mic className={`w-4 h-4 ${inlineSpeechListening ? 'animate-pulse' : ''}`} />
-            </button>
-
-            {/* Waveform */}
-            <button
-              onClick={onWaveformClick}
-              className="p-1.5 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-[2px] h-7 w-8"
-              title="Voice-to-Voice Mode"
-            >
-              {[0, 1, 2, 3, 4].map((bar) => (
-                <motion.div
-                  key={bar}
-                  className="w-[2px] rounded-full bg-current"
-                  animate={{
-                    height: ['6px', '16px', '4px', '12px', '6px'],
-                  }}
-                  transition={{
-                    duration: 1.0,
-                    repeat: Infinity,
-                    delay: bar * 0.12,
-                    ease: 'easeInOut',
-                  }}
-                />
-              ))}
             </button>
 
             {/* Send */}
             <button
               onClick={onSend}
               disabled={!input.trim() || loading}
-              className={`p-1.5 rounded-xl transition-all ${
+              className={`ml-1 p-2 rounded-xl transition-all ${
                 input.trim() && !loading
-                  ? 'bg-accent text-white hover:bg-accent-light'
-                  : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                  ? 'bg-[#ECECEC] text-[#2D2D2D] hover:bg-white'
+                  : 'bg-[#404040] text-[#707070] cursor-not-allowed'
               }`}
             >
               {loading ? (
@@ -1152,9 +1101,7 @@ function InputArea({
                   transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
                 />
               ) : (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 2L8 14M2 8L8 2L14 8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                </svg>
+                <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
               )}
             </button>
           </div>
@@ -1162,10 +1109,9 @@ function InputArea({
       </div>
 
       {/* Quick Action Pills (below input card) */}
-      <div className="flex items-center justify-center gap-2.5 flex-wrap mt-3">
+      <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
         {QUICK_ACTIONS.map((action) => {
           const Icon = action.icon;
-          const isChoice = action.id === 'choice';
           return (
             <button
               key={action.id}
@@ -1173,22 +1119,14 @@ function InputArea({
                 setInput(action.value)
                 textareaRef.current?.focus()
               }}
-              className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-                isChoice
-                  ? 'bg-amber-500/5 border border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/35 hover:text-amber-300'
-                  : 'bg-[#1c1c24]/50 border border-white/[0.05] text-gray-300 hover:bg-[#1c1c24] hover:border-white/10 hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] font-sans'
-              }`}
+              className="px-3.5 py-2 rounded-xl text-[13px] transition-all flex items-center gap-2 cursor-pointer bg-[#2D2D2D] border border-white/[0.04] text-[#A0A0A0] hover:bg-[#333333] hover:border-white/[0.08] hover:text-[#ECECEC]"
             >
-              <Icon className={`w-3.5 h-3.5 ${isChoice ? 'text-amber-400' : 'text-gray-400'}`} />
+              <Icon className="w-4 h-4 opacity-80" />
               <span>{action.label}</span>
             </button>
           );
         })}
       </div>
-
-      <p className="text-center text-[10px] text-gray-600 mt-1 uppercase tracking-wider font-semibold">
-        CyberCli can make mistakes. Consider checking important information.
-      </p>
     </div>
   )
 }
@@ -1703,9 +1641,16 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
 
 function HeroState({ userName }) {
   const firstName = userName ? userName.split(' ')[0] : 'User'
+  
+  // Greeting based on time of day (Claude style)
+  const hour = new Date().getHours()
+  let greeting = 'Good evening'
+  if (hour < 12) greeting = 'Good morning'
+  else if (hour < 17) greeting = 'Good afternoon'
+
   return (
     <motion.div
-      className="flex flex-col items-center justify-center text-center px-4"
+      className="flex flex-col items-center justify-center text-center px-4 w-full mt-10 md:mt-20"
       initial="hidden"
       animate="visible"
       variants={{
@@ -1713,30 +1658,14 @@ function HeroState({ userName }) {
         visible: { transition: { staggerChildren: 0.1 } }
       }}
     >
-      <motion.div
-        variants={{ hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1 } }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-6"
-      >
-        <CyberCliMark size={90} className="logo-chakra-spin" />
-      </motion.div>
-
       <motion.h1
-        variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="font-serif text-4xl md:text-5xl mb-3"
-        style={{ color: '#FAF3E8', letterSpacing: '-0.02em', lineHeight: 1.15 }}
+        variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="font-serif text-3xl md:text-[40px] mb-8 font-normal"
+        style={{ color: '#E5E5E5', letterSpacing: '-0.01em', lineHeight: 1.2 }}
       >
-        Back at it, {firstName.toLowerCase()}
+        {greeting}, {firstName}
       </motion.h1>
-
-      <motion.p
-        variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="text-sm text-foreground-muted max-w-sm"
-      >
-        Select a model, ask anything, or pick a quick action below.
-      </motion.p>
     </motion.div>
   )
 }
@@ -3238,6 +3167,12 @@ export default function ChatPage() {
                   if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: parsed.content }
                   return next
                 })
+              } else if (parsed.type === 'error') {
+                setMessages(prev => {
+                  const next = [...prev]
+                  if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${parsed.content}` }
+                  return next
+                })
               }
             } catch {}
           }
@@ -3343,6 +3278,12 @@ export default function ChatPage() {
                   if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: parsed.content }
                   return next
                 })
+              } else if (parsed.type === 'error') {
+                setMessages(prev => {
+                  const next = [...prev]
+                  if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${parsed.content}` }
+                  return next
+                })
               }
             } catch {}
           }
@@ -3381,6 +3322,7 @@ export default function ChatPage() {
         navigate(`/chat/${currentId}`, { replace: true })
       } catch (err) {
         console.error('Failed to create thread silently:', err)
+        setError('Failed to start conversation. Server may be unreachable.')
         setLoading(false)
         isCreatingThreadRef.current = false
         return
@@ -3482,6 +3424,14 @@ export default function ChatPage() {
                 }
                 return next
               })
+            } else if (parsed.type === 'error') {
+              setMessages(prev => {
+                const next = [...prev]
+                if (next.length > 0) {
+                  next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${parsed.content}` }
+                }
+                return next
+              })
             }
           } catch {}
         }
@@ -3499,14 +3449,19 @@ export default function ChatPage() {
       }
     } catch (err) {
       console.error('Chat stream error:', err)
+      const isNetworkError = err.message.includes('Failed to fetch')
+      const errorMessage = isNetworkError 
+        ? 'Cannot reach server. Check your connection or ensure backend is running.' 
+        : `Error: ${err.message}`
+        
       setMessages(prev => {
         const next = [...prev]
         if (next.length > 0) {
-          next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${err.message}` }
+          next[next.length - 1] = { ...next[next.length - 1], content: errorMessage }
         }
         return next
       })
-      setError('Failed to get response.')
+      setError(errorMessage)
     } finally {
       setStreamingIndex(null)
       setLoading(false)

@@ -161,9 +161,10 @@ class TTSService {
 
   async loadPuter() {
     return new Promise((resolve, reject) => {
+      if (window.puter) return resolve(window.puter)
       const script = document.createElement('script')
       script.src = 'https://js.puter.com/v2/'
-      script.onload = resolve
+      script.onload = () => resolve(window.puter)
       script.onerror = reject
       document.head.appendChild(script)
     })

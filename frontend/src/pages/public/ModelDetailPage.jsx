@@ -9,7 +9,9 @@ import { MODEL_CARDS } from './ModelsPage.jsx'
 import ScrollReveal from '@components/ui/ScrollReveal'
 
 export default function ModelDetailPage() {
-  const { id } = useParams()
+  const params = useParams()
+  const rawId = params['*'] || params.id
+  const id = decodeURIComponent(rawId || '')
   
   const model = MODEL_CARDS.find(m => m.id === id)
 
@@ -304,7 +306,7 @@ export default function ModelDetailPage() {
               {similarModels.map(m => (
                 <Link
                   key={m.id}
-                  to={`/models/${m.id}`}
+                  to={`/models/${encodeURIComponent(m.id)}`}
                   className="p-5 rounded-2xl border border-white/[0.03] bg-[#0c0c12]/50 hover:border-white/[0.1] hover:bg-[#0c0c12]/80 transition-all duration-300 group"
                 >
                   <div className="flex justify-between items-start mb-2">
