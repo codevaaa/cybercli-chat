@@ -29,8 +29,8 @@ const path = require('path');
   page.on('requestfailed', request => console.log('BROWSER REQUEST_FAILED:', request.url(), request.failure().errorText));
 
   try {
-    console.log('Navigating to http://localhost:5174 ...');
-    await page.goto('http://localhost:5174', { waitUntil: 'networkidle' });
+    console.log('Navigating to http://localhost:5174/chat ...');
+    await page.goto('http://localhost:5174/chat', { waitUntil: 'networkidle' });
     const content = await page.content();
     console.log('DOM length:', content.length);
     console.log('Has #root?', content.includes('id="root"'));

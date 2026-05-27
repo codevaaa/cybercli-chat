@@ -10,6 +10,7 @@ import {
 import { useAuthStore } from '@stores/authStore.js'
 import { motion, AnimatePresence } from 'framer-motion'
 import SubNavbar from './SubNavbar'
+import { CyberCliWordmark } from '@components/ui/CyberCliLogo'
 
 const ICON_MAP = {
   Sparkles, Cpu, CreditCard, History,
@@ -24,7 +25,7 @@ const MENU_GROUPS = [
     items: [
       { label: 'Features', href: '/features', desc: 'Explore the ultimate agentic capabilities', icon: 'Sparkles' },
       { label: 'Models', href: '/models', desc: 'Browse our unified 200K+ model proxy', icon: 'Cpu' },
-      { label: 'AI Agents', href: '/ai-agents', desc: 'Deploy custom autonomous agents', icon: 'Bot' },
+      { label: 'CyberCli Code', href: '/code', desc: 'The agentic AI coding assistant', icon: 'Terminal' },
       { label: 'Projects', href: '/projects', desc: 'Manage your isolated workspaces', icon: 'FolderOpen' },
       { label: 'Workflows', href: '/workflows', desc: 'Automate multi-agent operations', icon: 'Layers' },
       { label: 'Discover', href: '/discover', desc: 'Find custom agents and prompt cards', icon: 'Globe' },
@@ -116,7 +117,7 @@ export default function Navbar() {
     { label: 'Overview', href: '/' },
     { label: 'Features', href: '/features' },
     { label: 'Models', href: '/models' },
-    { label: 'Agents', href: '/ai-agents' },
+    { label: 'CyberCli Code', href: '/code' },
     { label: 'Downloads', href: '/downloads' },
     { label: 'Documentation', href: '/docs' }
   ]
@@ -135,11 +136,10 @@ export default function Navbar() {
             {/* ── Logo ── */}
             <Link
               to="/"
-              className="flex items-center gap-2.5 group transition-opacity hover:opacity-90"
+              className="flex items-center group transition-opacity hover:opacity-90"
               aria-label="CyberCli – go to homepage"
             >
-              <img src="/logo.png" alt="CyberCli Logo" className="w-6 h-6 object-contain" />
-              <span className="font-serif italic text-xl font-medium tracking-wide text-[#e5e5e5]">CyberCli</span>
+              <CyberCliWordmark size={32} />
             </Link>
 
           {/* ── Desktop nav links ── */}
@@ -179,16 +179,16 @@ export default function Navbar() {
                             <Link
                               key={item.href}
                               to={item.href}
-                              className="flex items-start gap-3 p-3 rounded-xl hover:bg-background-tertiary transition-all group/item"
+                              className="flex items-start gap-3 p-3 rounded-xl hover:bg-[#D97757]/10 transition-all group/item"
                             >
-                              <div className="mt-0.5 p-2 rounded-lg bg-background-primary text-foreground-muted group-hover/item:text-accent group-hover/item:bg-accent/10 transition-colors border border-border-subtle group-hover/item:border-accent/20">
+                              <div className="mt-0.5 p-2 rounded-lg bg-[#1a1a1a] text-[#888888] group-hover/item:text-[#D97757] group-hover/item:bg-[#D97757]/20 transition-colors border border-white/5 group-hover/item:border-[#D97757]/30">
                                 {IconComponent && <IconComponent className="w-4 h-4" />}
                               </div>
                               <div>
-                                <div className="text-sm font-semibold text-foreground-primary group-hover/item:text-accent transition-colors">
+                                <div className="text-sm font-semibold text-[#e5e5e5] group-hover/item:text-white transition-colors">
                                   {item.label}
                                 </div>
-                                <div className="text-xs text-foreground-muted mt-1 font-medium leading-relaxed">
+                                <div className="text-xs text-[#888888] mt-1 font-medium leading-relaxed group-hover/item:text-[#a1a1a1]">
                                   {item.desc}
                                 </div>
                               </div>
@@ -342,9 +342,8 @@ export default function Navbar() {
             >
               {/* Panel Header */}
               <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.06] flex-shrink-0">
-                <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-                  <img src="/logo.png" alt="CyberCli Logo" className="w-7 h-7 object-contain" />
-                  <span className="font-serif italic text-2xl font-medium tracking-wide text-white">CyberCli</span>
+                <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center">
+                  <CyberCliWordmark size={30} />
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}

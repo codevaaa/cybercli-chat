@@ -28,7 +28,7 @@ import GDPRPage from '@pages/public/GDPRPage'
 import ChangelogPage from '@pages/public/ChangelogPage'
 import ApiReferencePage from '@pages/public/ApiReferencePage'
 import DevelopersPage from '@pages/public/DevelopersPage'
-import AiAgentsPage from '@pages/public/AiAgentsPage'
+import CyberCliCodePage from '@pages/public/CyberCliCodePage'
 import SystemStatusPage from '@pages/public/SystemStatusPage'
 import DownloadsPage from '@pages/public/DownloadsPage'
 
@@ -57,7 +57,7 @@ const PUBLIC_PATHS = [
   '/', '/features', '/models', '/pricing', '/contact', '/about',
   '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy',
   '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr',
-  '/changelog', '/api-reference', '/developers', '/ai-agents', '/status', '/downloads'
+  '/changelog', '/api-reference', '/developers', '/code', '/status', '/downloads'
 ]
 const AUTH_PATHS = [
   '/auth/signup', '/auth/login', '/auth/forgot-password',
@@ -109,7 +109,7 @@ function App() {
           <Route path="/changelog" element={<Navigate to="/docs/changelog" replace />} />
           <Route path="/api-reference" element={<PublicLayout><ApiReferencePage /></PublicLayout>} />
           <Route path="/developers" element={<PublicLayout><DevelopersPage /></PublicLayout>} />
-          <Route path="/ai-agents" element={<PublicLayout><AiAgentsPage /></PublicLayout>} />
+          <Route path="/code" element={<PublicLayout><CyberCliCodePage /></PublicLayout>} />
           <Route path="/status" element={<PublicLayout><SystemStatusPage /></PublicLayout>} />
           <Route path="/downloads" element={<PublicLayout><DownloadsPage /></PublicLayout>} />
 
