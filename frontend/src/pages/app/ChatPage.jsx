@@ -2226,10 +2226,11 @@ function CustomizeView({
   imageGenerationEnabled,
   setImageGenerationEnabled,
   memoryEnabled,
-  setMemoryEnabled
+  setMemoryEnabled,
+  customInstructions,
+  setCustomInstructions
 }) {
   const [settings, setSettings] = useState(null)
-  const [customInstructions, setCustomInstructions] = useState('')
   const [memories, setMemories] = useState([])
   const [newMemory, setNewMemory] = useState('')
   const [loading, setLoading] = useState(false)
@@ -2748,6 +2749,7 @@ export default function ChatPage() {
   }
   const [error, setError] = useState(null)
   const [incognitoMode, setIncognitoMode] = useState(false)
+  const [customInstructions, setCustomInstructions] = useState('')
   const incognitoMessagesRef = useRef([])
 
   // Capability states
@@ -2956,6 +2958,7 @@ export default function ChatPage() {
         setCodeExecutionEnabled(data.code_execution_enabled || false)
         setImageGenerationEnabled(data.image_generation_enabled || false)
         setMemoryEnabled(data.memories && data.memories.length > 0)
+        setCustomInstructions(data.custom_instructions || '')
         setCurrentTheme(data.appearance || 'system')
         setCurrentFont(data.chat_font || 'inter')
         // Sync language pill in profile bar
@@ -3280,6 +3283,23 @@ export default function ChatPage() {
     
     // ── PUTER & COUNCIL INTERCEPTION (GUEST & AUTHENTICATED) ──
     if (isImageRequest || activeModel.startsWith('puter/') || activeModel === 'council') {
+      if (!window.puter) {
+        try {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script')
+            script.src = 'https://js.puter.com/v2/'
+            script.onload = () => resolve(window.puter)
+            script.onerror = (e) => reject(e)
+            document.head.appendChild(script)
+          })
+        } catch (e) {
+          console.error('Failed to load Puter.js SDK:', e)
+          setError('Failed to load Puter.js SDK. Please check your internet connection or ad-blocker.')
+          setLoading(false)
+          return
+        }
+      }
+
       const isGuest = !token
       let currentId = activeThreadId || activeThreadIdRef.current || creatingThreadRef.current
       
@@ -3658,7 +3678,7 @@ export default function ChatPage() {
       setStreamingIndex(null)
       setLoading(false)
     }
-  }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice])
+  }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions])
 
   // ── User info (from localStorage) ──
   const userName = localStorage.getItem('user_name') || 'User'
@@ -4323,6 +4343,8 @@ export default function ChatPage() {
                   setImageGenerationEnabled={setImageGenerationEnabled}
                   memoryEnabled={memoryEnabled}
                   setMemoryEnabled={setMemoryEnabled}
+                  customInstructions={customInstructions}
+                  setCustomInstructions={setCustomInstructions}
                 />
               ) : null}
             </div>
