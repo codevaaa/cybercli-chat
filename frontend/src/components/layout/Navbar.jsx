@@ -39,7 +39,13 @@ const MENU_GROUPS = [
   },
   {
     label: 'Use Cases',
-    columns: 1,
+    columns: 2,
+    featured: {
+      title: 'Enterprise AI Solutions',
+      desc: 'Secure, scalable AI deployment for modern organizations.',
+      href: '/use-cases/enterprise',
+      img: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=400&h=300'
+    },
     items: [
       { label: 'For Developers', href: '/use-cases/developers', desc: 'Ship code faster', icon: 'Code2' },
       { label: 'For Enterprise', href: '/use-cases/enterprise', desc: 'Secure AI deployment', icon: 'Building2' },
@@ -48,7 +54,13 @@ const MENU_GROUPS = [
   },
   {
     label: 'Developers',
-    columns: 1,
+    columns: 2,
+    featured: {
+      title: 'Build with CyberCli API',
+      desc: 'Integrate advanced multi-agent intelligence directly into your apps.',
+      href: '/api',
+      img: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=400&h=300'
+    },
     items: [
       { label: 'API Reference', href: '/api', desc: 'Integrate into your app', icon: 'Terminal' },
       { label: 'SDKs', href: '/sdks', desc: 'Official libraries', icon: 'FolderOpen' },
@@ -57,7 +69,13 @@ const MENU_GROUPS = [
   },
   {
     label: 'Resources',
-    columns: 1,
+    columns: 2,
+    featured: {
+      title: 'CyberCli Masterclass',
+      desc: 'Learn how to maximize your productivity with agentic AI.',
+      href: '/blog',
+      img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=400&h=300'
+    },
     items: [
       { label: 'Blog', href: '/blog', desc: 'Latest updates', icon: 'Rss' },
       { label: 'Community', href: '/community', desc: 'Join the discussion', icon: 'Globe' },
@@ -66,7 +84,13 @@ const MENU_GROUPS = [
   },
   {
     label: 'Company',
-    columns: 1,
+    columns: 2,
+    featured: {
+      title: 'Join Our Mission',
+      desc: 'Help us democratize access to advanced artificial intelligence.',
+      href: '/careers',
+      img: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=400&h=300'
+    },
     items: [
       { label: 'About', href: '/about', desc: 'Our mission', icon: 'Building2' },
       { label: 'Careers', href: '/careers', desc: 'Join the team', icon: 'Briefcase' },

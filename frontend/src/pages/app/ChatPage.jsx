@@ -60,6 +60,7 @@ const NAV_ITEMS = [
   { id: 'projects',  label: 'Projects',  icon: FolderOpen    },
   { id: 'artifacts', label: 'Artifacts', icon: Layers        },
   { id: 'code',      label: 'Code',      icon: Code2,  badge: 'Pro' },
+  { id: 'voice',     label: 'Voice',     icon: Radio         },
   { id: 'customize', label: 'Customize', icon: Sliders       },
 ]
 
@@ -1109,24 +1110,26 @@ function InputArea({
       </div>
 
       {/* Quick Action Pills (below input card) */}
-      <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
-        {QUICK_ACTIONS.map((action) => {
-          const Icon = action.icon;
-          return (
-            <button
-              key={action.id}
-              onClick={() => {
-                setInput(action.value)
-                textareaRef.current?.focus()
-              }}
-              className="px-3.5 py-2 rounded-xl text-[13px] transition-all flex items-center gap-2 cursor-pointer bg-[#2D2D2D] border border-white/[0.04] text-[#A0A0A0] hover:bg-[#333333] hover:border-white/[0.08] hover:text-[#ECECEC]"
-            >
-              <Icon className="w-4 h-4 opacity-80" />
-              <span>{action.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {messages.length === 0 && (
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+          {QUICK_ACTIONS.map((action) => {
+            const Icon = action.icon;
+            return (
+              <button
+                key={action.id}
+                onClick={() => {
+                  setInput(action.value)
+                  textareaRef.current?.focus()
+                }}
+                className="px-3.5 py-2 rounded-xl text-[13px] transition-all flex items-center gap-2 cursor-pointer bg-[#2D2D2D] border border-white/[0.04] text-[#A0A0A0] hover:bg-[#333333] hover:border-white/[0.08] hover:text-[#ECECEC]"
+              >
+                <Icon className="w-4 h-4 opacity-80" />
+                <span>{action.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   )
 }

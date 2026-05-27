@@ -133,22 +133,55 @@ function getClient(provider) {
  */
 function injectIdentity(messages) {
   const identityMsg = { role: 'system', content: CYBERCLI_SYSTEM_PROMPT }
+  
+  // Sanitize messages: OpenRouter/OpenAI strictly expect only role/content/name
+  const sanitized = messages.map(m => {
+    const cleanMsg = { role: m.role, content: m.content || '' }
+    if (m.name) cleanMsg.name = m.name
+    return cleanMsg
+  })
+
   // Remove any existing system messages that conflict, then prepend ours
-  const filtered = messages.filter(m => m.role !== 'system' || m._skip_inject)
+  const filtered = sanitized.filter(m => m.role !== 'system')
   return [identityMsg, ...filtered]
 }
 
 export const llmGateway = {
   async *complete({ messages, model: modelId = 'auto', temperature = 0.7 }) {
     let activeModelId = modelId
-    const totalChars = messages.reduce((sum, m) => sum + (m.content || '').length, 0)
+    let workingMessages = messages
+    
+    // Council Mode Real Implementation
+    if (activeModelId === 'council') {
+      yield { type: 'info', content: 'Summoning the Council of Minds (Nakul, Bheem, Sahadeva)...' }
+      try {
+        const p1 = this.completeNonStream({ messages: workingMessages, model: 'groq/llama-3.1-70b', temperature });
+        const p2 = this.completeNonStream({ messages: workingMessages, model: 'openrouter/gpt-4o-mini', temperature });
+        const p3 = this.completeNonStream({ messages: workingMessages, model: 'gemini/gemini-2.5-flash', temperature });
+        
+        const [r1, r2, r3] = await Promise.all([p1, p2, p3]);
+        
+        const lastUserMessage = workingMessages[workingMessages.length - 1].content;
+        const synthesisPrompt = `You are the ultimate CyberCli Council Synthesizer (Panchayat). The user asked: "${lastUserMessage}"\n\nExpert 1 (Nakul/Llama) says:\n${r1.content}\n\nExpert 2 (Bheem/GPT-4o) says:\n${r2.content}\n\nExpert 3 (Sahadeva/Gemini) says:\n${r3.content}\n\nSynthesize their responses into a single, comprehensive, and highly accurate ultimate answer. Be authoritative, organized, and do not just repeat them one by one—merge their insights.`;
+        
+        workingMessages = [...workingMessages.slice(0, -1), { role: 'user', content: synthesisPrompt }];
+        activeModelId = 'openrouter/gpt-4o-mini'; // Fast and capable synthesizer
+        yield { type: 'info', content: 'Council consensus reached. Synthesizing final response...' }
+      } catch (err) {
+        console.error("Council Mode Failed:", err);
+        yield { type: 'info', content: 'Council synthesis failed, falling back to standard reasoning.' }
+        activeModelId = 'openrouter/gpt-4o-mini';
+      }
+    }
+
+    const totalChars = workingMessages.reduce((sum, m) => sum + (m.content || '').length, 0)
     
     // Auto-route large contexts to Gemini
     if (totalChars > 25000 && !activeModelId.startsWith('gemini/')) {
       activeModelId = 'gemini/gemini-2.5-flash'
     }
 
-    const enriched = injectIdentity(messages)
+    const enriched = injectIdentity(workingMessages)
     const targetModel = MODEL_MAP[activeModelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
