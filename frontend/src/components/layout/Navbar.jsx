@@ -8,8 +8,8 @@ import {
   FolderOpen, Layers, Globe
 } from 'lucide-react'
 import { useAuthStore } from '@stores/authStore.js'
-import { CyberCliWordmark } from '@components/ui/CyberCliLogo'
 import { motion, AnimatePresence } from 'framer-motion'
+import SubNavbar from './SubNavbar'
 
 const ICON_MAP = {
   Sparkles, Cpu, CreditCard, History,
@@ -111,37 +111,49 @@ export default function Navbar() {
 
   if (isAppRoute || isAuthRoute) return null
 
+  // Define global sub-navbar items (similar to Claude Code's sub-nav)
+  const subNavItems = [
+    { label: 'Overview', href: '/' },
+    { label: 'Features', href: '/features' },
+    { label: 'Models', href: '/models' },
+    { label: 'Agents', href: '/ai-agents' },
+    { label: 'Downloads', href: '/downloads' },
+    { label: 'Documentation', href: '/docs' }
+  ]
+
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'bg-background-primary/80 backdrop-blur-lg border-b border-border-subtle py-3'
-          : 'bg-transparent py-5'
-      }`}
-    >
-      <div className="section-padding">
-        <nav className="container-custom flex items-center justify-between">
-          {/* ── Logo ── */}
-          <Link
-            to="/"
-            className="group transition-opacity hover:opacity-90"
-            aria-label="CyberCli – go to homepage"
-          >
-            <CyberCliWordmark size={32} />
-          </Link>
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? 'bg-[#0f0f14]/95 backdrop-blur-md border-b border-white/[0.04]'
+            : 'bg-[#0a0a0f] border-b border-white/[0.02]'
+        }`}
+      >
+        <div className="section-padding">
+          <nav className="container-custom flex items-center justify-between h-14">
+            {/* ── Logo ── */}
+            <Link
+              to="/"
+              className="flex items-center gap-2.5 group transition-opacity hover:opacity-90"
+              aria-label="CyberCli – go to homepage"
+            >
+              <img src="/logo.png" alt="CyberCli Logo" className="w-6 h-6 object-contain" />
+              <span className="font-serif italic text-xl font-medium tracking-wide text-[#e5e5e5]">CyberCli</span>
+            </Link>
 
           {/* ── Desktop nav links ── */}
           <div className="hidden lg:flex items-center gap-2">
             {MENU_GROUPS.map((group) => (
               <div
                 key={group.label}
-                className="relative"
+                className="relative h-full flex items-center"
                 onMouseEnter={() => setActiveDropdown(group.label)}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
                 <button
-                  className={`flex items-center gap-1.5 px-4 py-2 text-[15px] font-medium rounded-xl transition-all ${
-                    activeDropdown === group.label ? 'text-foreground-primary bg-background-secondary' : 'text-foreground-secondary hover:text-foreground-primary hover:bg-background-secondary/50'
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[14px] font-medium transition-colors rounded-md ${
+                    activeDropdown === group.label ? 'text-white bg-white/5' : 'text-[#a3a3a3] hover:text-white hover:bg-white/5'
                   }`}
                 >
                   {group.label}
@@ -191,11 +203,10 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* ── Desktop auth buttons ── */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2">
             {user ? (
               <>
-                <Link to="/chat" className="btn-primary text-sm font-medium">
+                <Link to="/chat" className="btn-primary text-[13px] font-medium h-8 px-4 rounded-md">
                   Go to Chat
                 </Link>
                 <div className="relative" ref={userDropdownRef}>
@@ -277,11 +288,11 @@ export default function Navbar() {
               <>
                 <Link
                   to="/auth/login"
-                  className="text-sm font-medium text-foreground-secondary hover:text-foreground-primary transition-colors px-4 py-2 hover:bg-background-secondary rounded-xl"
+                  className="text-[13px] font-medium text-[#a3a3a3] hover:text-white transition-colors px-3 py-1.5 hover:bg-white/5 rounded-md"
                 >
                   Log in
                 </Link>
-                <Link to="/auth/signup" className="btn-primary text-sm font-medium px-5 py-2">
+                <Link to="/auth/signup" className="btn-primary text-[13px] font-medium h-8 px-4 rounded-md flex items-center justify-center">
                   Get Started
                 </Link>
               </>
@@ -297,6 +308,11 @@ export default function Navbar() {
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </nav>
+      </header>
+
+      {/* ── Sub Navbar (Claude Code style) ── */}
+      <div className="fixed top-14 left-0 right-0 z-40 hidden lg:block">
+        <SubNavbar items={subNavItems} />
       </div>
 
       {/* ── Mobile full-screen slide-in panel ── */}
@@ -326,8 +342,9 @@ export default function Navbar() {
             >
               {/* Panel Header */}
               <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.06] flex-shrink-0">
-                <Link to="/" onClick={() => setMobileOpen(false)}>
-                  <CyberCliWordmark size={28} />
+                <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
+                  <img src="/logo.png" alt="CyberCli Logo" className="w-7 h-7 object-contain" />
+                  <span className="font-serif italic text-2xl font-medium tracking-wide text-white">CyberCli</span>
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}
@@ -476,6 +493,6 @@ export default function Navbar() {
           </>
         )}
       </AnimatePresence>
-    </header>
+    </>
   )
 }
