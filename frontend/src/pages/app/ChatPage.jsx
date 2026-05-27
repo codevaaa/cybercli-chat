@@ -3098,22 +3098,22 @@ export default function ChatPage() {
         },
         // Cove — composed, professional (maps to former "nova")
         eleven_cove: {
-          model: 'groq/llama-3.1-8b',
+          model: 'openrouter/gpt-4o-mini',
           prompt: `You are Cove, a clear, professional, and expert technical advisor. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
         },
         // Breeze — animated, empathetic (maps to former "luna")
         eleven_breeze: {
-          model: 'groq/llama-3.1-8b',
+          model: 'gemini/gemini-2.5-flash',
           prompt: `You are Breeze, an animated, enthusiastic, and empathetic creative partner. Keep your responses warm, energetic, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in an animated, warm tone.`
         },
         // Orion — deep, authoritative (unchanged)
         eleven_orion: {
-          model: 'groq/llama-3.1-8b',
+          model: 'groq/llama-3.1-70b-versatile',
           prompt: `You are Orion, a deep, authoritative, and strategic AI planner. Provide brief but strong guidance (maximum 1-2 sentences). Absolutely DO NOT use markdown syntax, bullet points, or complex formatting. Speak with confidence and authority.`
         },
         // Echo — energetic, fast (unchanged)
         eleven_echo: {
-          model: 'groq/llama-3.1-8b',
+          model: 'groq/mixtral-8x7b-32768',
           prompt: `You are Echo, an energetic, dynamic, and fast-paced brainstorming buddy. Keep responses highly energetic, extremely short and punchy (often just a few words, maximum 1 sentence). Absolutely DO NOT use markdown, formatting, or lists. Speak dynamically and quickly.`
         },
         // Gemini — AI native voice (unchanged)
@@ -4485,6 +4485,7 @@ cybercli link --key YOUR_API_KEY</pre>
         stop={stop}
         updateProvider={updateProvider}
         updateVoice={updateVoice}
+        assistantReply={streamingIndex !== null ? messages[streamingIndex]?.content : null}
       />
 
       {/* Keyboard Shortcuts Modal */}

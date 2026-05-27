@@ -154,7 +154,8 @@ export default function VoiceChatModal({
   speak: externalSpeak,
   stop: externalStop,
   updateProvider,
-  updateVoice
+  updateVoice,
+  assistantReply
 }) {
   const [step, setStep] = useState('select')
   const [isListening, setIsListening] = useState(false)
@@ -601,6 +602,26 @@ export default function VoiceChatModal({
                         transition={{ duration: 0.1, ease: 'linear' }}
                       />
                     </div>
+                  )}
+
+                  {/* AI Response Text (Typewriter effect) */}
+                  {assistantReply && (status === 'processing' || status === 'speaking') && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-6 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] max-w-md mx-auto w-full backdrop-blur-md shadow-2xl"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400/80">CyberCli AI</span>
+                      </div>
+                      <p className="text-sm text-white/90 leading-relaxed font-sans text-left break-words">
+                        {assistantReply}
+                        {(status === 'processing' || status === 'speaking') && (
+                          <span className="inline-block w-1.5 h-4 ml-1 align-middle bg-white/70 animate-pulse" />
+                        )}
+                      </p>
+                    </motion.div>
                   )}
                 </div>
 

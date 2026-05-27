@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Sparkles, ArrowRight, Shield, Zap, Globe, Briefcase } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
-import { useAuthStore } from '@stores/authStore.js'
+import { isLoggedIn } from '../../lib/api.js'
 
 const INDIVIDUAL_PLANS = [
   {
@@ -110,8 +110,8 @@ const FAQ = [
 ]
 
 export default function PricingPage() {
-  const [billingGroup, setBillingGroup] = useState('individual') // 'individual' | 'team'
-  const user = useAuthStore(state => state.user)
+  const [billingGroup, setBillingGroup] = useState('individual')
+  const isAuth = isLoggedIn()
 
   const activePlans = billingGroup === 'individual' ? INDIVIDUAL_PLANS : TEAM_PLANS
 
@@ -231,7 +231,7 @@ export default function PricingPage() {
 
                 {/* Action button */}
                 <Link
-                  to={user && tier.href === '/auth/signup' ? '/chat' : tier.href}
+                  to={isAuth && tier.href === '/auth/signup' ? '/chat' : tier.href}
                   className={`w-full py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     tier.popular
                       ? 'bg-orange-600 text-white hover:bg-orange-500 hover:shadow-[0_0_15px_rgba(217,119,87,0.4)]'
