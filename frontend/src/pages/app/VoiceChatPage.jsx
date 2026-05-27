@@ -316,7 +316,14 @@ export default function VoiceChatPage() {
       'PT': 'pt-BR',
       'UR': 'ur-PK'
     }
-    rec.lang = langMap[savedLang.toUpperCase()] || 'en-US'
+    let resolvedLang = langMap[savedLang.toUpperCase()] || 'en-US'
+    if (savedLang.toUpperCase() === 'EN') {
+      const navLang = navigator.language || 'en-US'
+      if (navLang.toLowerCase().includes('in') || navLang.toLowerCase().startsWith('hi') || navLang.toLowerCase().startsWith('ur')) {
+        resolvedLang = 'hi-IN'
+      }
+    }
+    rec.lang = resolvedLang
 
     rec.onresult = (event) => {
       // Interrupt speaker if user starts talking
@@ -567,7 +574,7 @@ export default function VoiceChatPage() {
                         className="h-full rounded-full"
                         style={{ background: selectedVoice.color }}
                         initial={{ width: '100%' }}
-                        animate={{ width: `${(countdown / 1.0) * 100}%` }}
+                        animate={{ width: `${(countdown / 1.8) * 100}%` }}
                         transition={{ duration: 0.1, ease: 'linear' }}
                       />
                     </div>

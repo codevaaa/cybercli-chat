@@ -278,7 +278,14 @@ export default function VoiceChatModal({
       'PT': 'pt-BR',
       'UR': 'ur-PK'
     }
-    rec.lang = langMap[savedLang.toUpperCase()] || 'en-US'
+    let resolvedLang = langMap[savedLang.toUpperCase()] || 'en-US'
+    if (savedLang.toUpperCase() === 'EN') {
+      const navLang = navigator.language || 'en-US'
+      if (navLang.toLowerCase().includes('in') || navLang.toLowerCase().startsWith('hi') || navLang.toLowerCase().startsWith('ur')) {
+        resolvedLang = 'hi-IN'
+      }
+    }
+    rec.lang = resolvedLang
     rec.onresult = (event) => {
       // Auto interrupt if AI is speaking
       if (isPlayingRef.current) {
@@ -565,7 +572,7 @@ export default function VoiceChatModal({
                         className="h-full rounded-full"
                         style={{ background: '#22d3ee' }}
                         initial={{ width: '100%' }}
-                        animate={{ width: `${(countdown / 1.0) * 100}%` }}
+                        animate={{ width: `${(countdown / 1.8) * 100}%` }}
                         transition={{ duration: 0.1, ease: 'linear' }}
                       />
                     </div>

@@ -92,30 +92,43 @@ class TTSService {
 
   // Puter.js TTS (Free ElevenLabs)
   async speakWithPuter(text) {
-    try {
-      // Load Puter.js dynamically
-      if (!window.puter) {
-        await this.loadPuter()
-      }
+    let fallbackTimeout = null;
+    return new Promise(async (resolve, reject) => {
+      // Set a hard timeout of 7 seconds to get the audio and start playing it, otherwise fallback
+      fallbackTimeout = setTimeout(() => {
+        console.warn('Puter TTS timed out, falling back to Browser SpeechSynthesis');
+        if (this.activePuterAudio) {
+          try { this.activePuterAudio.pause() } catch (e) {}
+          this.activePuterAudio = null;
+        }
+        this.speakWithBrowser(text).then(resolve).catch(reject);
+      }, 7000);
 
-      let voice = this.currentVoice || 'sol'
-      
-      // Map shortnames to real ElevenLabs voice IDs
-      const PUTER_VOICES_MAP = {
-        sol: 'H6QPv2pQZDcGqLwDTIJQ',
-        cove: 'FZkK3TvQ0pjyDmT8fzIW',
-        breeze: 'CwhRBWXzGAHq8TQ4Fs17',
-        orion: 'wbOlq3nIga8HKqcDhASI',
-        echo: 'TxGEqn7nUaNZTR5JgIec',
-      }
-      
-      const realVoiceId = PUTER_VOICES_MAP[voice.toLowerCase()] || voice
+      try {
+        // Load Puter.js dynamically
+        if (!window.puter) {
+          await this.loadPuter()
+        }
 
-      // Call the real puter.ai.txt2speech endpoint
-      const audio = await window.puter.ai.txt2speech(text, { provider: 'elevenlabs', voice: realVoiceId })
-      
-      return new Promise((resolve, reject) => {
-        // Handle stopping
+        let voice = this.currentVoice || 'sol'
+        
+        // Map shortnames to real ElevenLabs voice IDs
+        const PUTER_VOICES_MAP = {
+          sol: 'H6QPv2pQZDcGqLwDTIJQ',
+          cove: 'FZkK3TvQ0pjyDmT8fzIW',
+          breeze: 'CwhRBWXzGAHq8TQ4Fs17',
+          orion: 'wbOlq3nIga8HKqcDhASI',
+          echo: 'TxGEqn7nUaNZTR5JgIec',
+        }
+        
+        const realVoiceId = PUTER_VOICES_MAP[voice.toLowerCase()] || voice
+
+        // Call the real puter.ai.txt2speech endpoint
+        const audio = await window.puter.ai.txt2speech(text, { provider: 'elevenlabs', voice: realVoiceId })
+        
+        // Clear fallback timeout since we got the audio successfully
+        clearTimeout(fallbackTimeout);
+
         this.activePuterAudio = audio
         
         audio.onended = () => {
@@ -132,12 +145,13 @@ class TTSService {
           console.warn('Puter play error, falling back to Browser SpeechSynthesis', err)
           this.speakWithBrowser(text).then(resolve).catch(reject)
         })
-      })
-    } catch (error) {
-      console.error('Puter TTS error:', error)
-      // Fallback to browser TTS
-      return this.speakWithBrowser(text)
-    }
+      } catch (error) {
+        clearTimeout(fallbackTimeout);
+        console.error('Puter TTS error:', error)
+        // Fallback to browser TTS
+        this.speakWithBrowser(text).then(resolve).catch(reject)
+      }
+    })
   }
 
   async loadPuter() {
@@ -203,8 +217,21 @@ class TTSService {
       utterance.rate = this.currentSpeed
       utterance.pitch = this.currentPitch
 
-      utterance.onend = () => resolve()
-      utterance.onerror = (event) => reject(new Error(event.error))
+      // Safety timeout: resolve if onend doesn't fire within expected duration
+      const duration = Math.max(6000, text.length * 120)
+      const safetyTimeout = setTimeout(() => {
+        console.warn('Browser SpeechSynthesis safety timeout reached');
+        resolve()
+      }, duration)
+
+      utterance.onend = () => {
+        clearTimeout(safetyTimeout)
+        resolve()
+      }
+      utterance.onerror = (event) => {
+        clearTimeout(safetyTimeout)
+        reject(new Error(event.error))
+      }
 
       window.speechSynthesis.speak(utterance)
     })

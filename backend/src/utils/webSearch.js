@@ -18,36 +18,45 @@ export async function performWebSearch(query) {
       const html = await res.text()
       const results = []
       
-      // Match result divs
-      const resultBlockRegex = /<div class="result__body">([\s\S]*?)<\/div>/g
-      let match
+      // Find all titles and snippets by classes
+      const titleRegex = /<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g
+      const snippetRegex = /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g
       
-      while ((match = resultBlockRegex.exec(html)) !== null && results.length < 5) {
-        const block = match[1]
+      const titles = {} // href -> title
+      const snippets = {} // href -> snippet
+      
+      let match
+      while ((match = titleRegex.exec(html)) !== null) {
+        const href = match[1]
+        const text = match[2].replace(/<[^>]*>/g, '').trim()
+        titles[href] = text
+      }
+      
+      while ((match = snippetRegex.exec(html)) !== null) {
+        const href = match[1]
+        const text = match[2].replace(/<[^>]*>/g, '').trim()
+        snippets[href] = text
+      }
+      
+      // Merge by href
+      for (const href of Object.keys(titles)) {
+        if (results.length >= 5) break
         
-        // Extract title, snippet, and link
-        const titleMatch = /<a class="result__a"[^>]*>([\s\S]*?)<\/a>/.exec(block) || /<a class="result__url"[^>]*>([\s\S]*?)<\/a>/.exec(block)
-        const snippetMatch = /<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/.exec(block)
-        const linkMatch = /href="([^"]*)"/.exec(block)
+        const title = titles[href]
+        const snippet = snippets[href] || ''
+        let link = href
         
-        if (titleMatch && snippetMatch && linkMatch) {
-          const title = titleMatch[1].replace(/<[^>]*>/g, '').trim()
-          const snippet = snippetMatch[1].replace(/<[^>]*>/g, '').trim()
-          let link = linkMatch[1]
-          
-          // Clean up duckduckgo redirect link if present
-          if (link.includes('uddg=')) {
-            const redirectMatch = /uddg=([^&]*)/.exec(link)
-            if (redirectMatch) {
-              link = decodeURIComponent(redirectMatch[1])
-            }
+        if (link.includes('uddg=')) {
+          const redirectMatch = /uddg=([^&]*)/.exec(link)
+          if (redirectMatch) {
+            link = decodeURIComponent(redirectMatch[1])
           }
-          
-          if (link.startsWith('//')) link = 'https:' + link
-          if (!link.startsWith('http')) continue
-          
-          results.push({ title, snippet, link })
         }
+        
+        if (link.startsWith('//')) link = 'https:' + link
+        if (!link.startsWith('http')) continue
+        
+        results.push({ title, snippet, link })
       }
       
       if (results.length > 0) return results

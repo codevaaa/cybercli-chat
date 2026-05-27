@@ -3182,8 +3182,7 @@ export default function ChatPage() {
         })
         if (!res.ok) {
           if (res.status === 401) {
-            localStorage.removeItem('sb-access-token')
-            useAuthStore.setState({ user: null, session: null })
+            await useAuthStore.getState().signOut()
             navigate('/auth/login')
             return
           }
@@ -3264,8 +3263,7 @@ export default function ChatPage() {
         })
         if (!res.ok) {
           if (res.status === 401) {
-            localStorage.removeItem('sb-access-token')
-            useAuthStore.setState({ user: null, session: null })
+            await useAuthStore.getState().signOut()
             navigate('/auth/login')
             return
           }
@@ -3371,8 +3369,7 @@ export default function ChatPage() {
       })
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('sb-access-token')
-          useAuthStore.setState({ user: null, session: null })
+          await useAuthStore.getState().signOut()
           navigate('/auth/login')
           return
         }

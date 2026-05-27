@@ -125,9 +125,27 @@ export const useAuthStore = create(
         } catch (error) {
           console.error('[AuthStore] Supabase signOut error:', error)
         } finally {
+          // Clear all localStorage keys related to supabase auth to prevent session restore
+          const keysToRemove = []
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && (key.startsWith('sb-') || key.includes('supabase') || key.includes('sb-access-token'))) {
+              keysToRemove.push(key)
+            }
+          }
+          keysToRemove.forEach(key => localStorage.removeItem(key))
           localStorage.removeItem('sb-access-token')
           localStorage.removeItem('user_name')
           localStorage.removeItem('user_email')
+          // Clear Zustand persist storage so auth state isn't restored on reload
+          localStorage.removeItem('auth-storage')
+          // Wipe sb- and supabase cookies to prevent Supabase SDK from restoring session
+          document.cookie.split(';').forEach(c => {
+            const name = c.split('=')[0].trim()
+            if (name.startsWith('sb-') || name.includes('supabase')) {
+              document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
+            }
+          })
           set({ user: null, session: null, loading: false })
         }
         return { success: true }

@@ -10,7 +10,7 @@ export async function generateGeminiTTS(text, voiceId = 'ava', speed = 1.0) {
 
   try {
     const response = await genAI.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       contents: text,
       config: {
         responseModalities: ['AUDIO'],

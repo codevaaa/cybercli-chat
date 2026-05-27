@@ -210,7 +210,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
 
   try {
     // 1. Save user's prompt to DB
-    const lastUserMsg = messages[messages.length - 1]
+    const lastUserMsg = messages.slice().reverse().find(m => m.role === 'user') || { content: '' }
     const userMsg = new Message({
       thread_id: thread._id,
       user_id: req.user.id,

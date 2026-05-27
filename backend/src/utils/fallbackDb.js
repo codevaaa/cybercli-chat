@@ -354,11 +354,15 @@ function createFallbackModel(modelName, schema) {
     }
 
     toObject() {
-      return JSON.parse(JSON.stringify(this))
+      const obj = {}
+      for (const key of Object.keys(this)) {
+        obj[key] = this[key]
+      }
+      return obj
     }
 
     toJSON() {
-      return JSON.parse(JSON.stringify(this))
+      return this.toObject()
     }
   }
 

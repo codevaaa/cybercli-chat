@@ -47,13 +47,12 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('sb-access-token')
       try {
-        useAuthStore.setState({ user: null, session: null })
+        await useAuthStore.getState().signOut()
       } catch (err) {
-        console.error('[API] Failed to clear authStore state:', err)
+        console.error('[API] Failed to signOut:', err)
       }
       if (!window.location.pathname.startsWith('/auth')) {
         window.location.href = '/auth/login'

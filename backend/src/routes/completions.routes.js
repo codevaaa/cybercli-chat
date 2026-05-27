@@ -22,7 +22,7 @@ router.post('/', optionalAuth, async (req, res) => {
     return res.status(400).json({ error: 'messages array is required' })
   }
 
-  const lastUserMsg = messages[messages.length - 1]
+  const lastUserMsg = messages.slice().reverse().find(m => m.role === 'user') || { content: '' }
 
   if (stream) {
     res.setHeader('Content-Type', 'text/event-stream')
