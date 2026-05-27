@@ -318,8 +318,7 @@ export default function Navbar() {
 
       {/* ── Mobile full-screen slide-in panel ── */}
       <AnimatePresence>
-        {mobileOpen && [
-          /* Backdrop */
+        {mobileOpen && (
           <motion.div
               key="mobile-overlay"
               initial={{ opacity: 0 }}
@@ -328,9 +327,10 @@ export default function Navbar() {
               transition={{ duration: 0.25 }}
               className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               onClick={() => setMobileOpen(false)}
-            />,
+            />
+        )}
 
-            /* Panel */
+        {mobileOpen && (
             <motion.div
               key="mobile-panel"
               initial={{ x: '100%' }}
@@ -359,45 +359,40 @@ export default function Navbar() {
                 {MENU_GROUPS.map((group) => {
                   const isOpen = mobileAccordions[group.label]
                   return (
-                    <div key={group.label}>
+                    <div key={group.label} className="mb-2">
                       <button
-                        onClick={() => toggleMobileAccordion(group.label)}
-                        className="w-full flex items-center justify-between px-3 py-3 text-sm font-semibold text-white hover:bg-white/[0.05] rounded-xl transition-colors"
+                        onClick={() => setMobileAccordions(prev => ({ ...prev, [group.label]: !prev[group.label] }))}
+                        className="w-full flex items-center justify-between px-3 py-3 text-white font-medium hover:bg-white/5 rounded-lg transition-colors"
                       >
-                        <span>{group.label}</span>
-                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180 text-white' : ''}`} />
+                        <span className="text-[15px]">{group.label}</span>
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180 text-white' : 'text-gray-500'}`} />
                       </button>
-
+                      
                       <AnimatePresence>
                         {isOpen && (
                           <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="overflow-hidden ml-1"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
                           >
-                            <div className="py-1 space-y-0.5">
-                              {group.items.map((item) => {
-                                const IconComponent = ICON_MAP[item.icon]
-                                return (
-                                  <Link
-                                    key={item.href}
-                                    to={item.href}
-                                    onClick={() => setMobileOpen(false)}
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-all"
-                                  >
-                                    {IconComponent && (
-                                      <div className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center flex-shrink-0">
-                                        <IconComponent className="w-4 h-4" />
-                                      </div>
-                                    )}
-                                    <div>
-                                      <div className="font-medium text-white text-sm">{item.label}</div>
-                                      <div className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">{item.desc}</div>
-                                    </div>
-                                  </Link>
-                                )
-                              })}
+                            <div className="pl-3 py-2 pr-2 space-y-1">
+                              {group.items.map((item) => (
+                                <Link
+                                  key={item.label}
+                                  to={item.href}
+                                  onClick={() => setMobileOpen(false)}
+                                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors group/item"
+                                >
+                                  <div className="p-1.5 rounded-md bg-white/5 text-gray-400 group-hover/item:text-white group-hover/item:bg-[#D97757]/20 transition-colors">
+                                    {item.icon}
+                                  </div>
+                                  <div>
+                                    <div className="text-sm font-medium">{item.label}</div>
+                                    <div className="text-[11px] text-gray-500 line-clamp-1">{item.desc}</div>
+                                  </div>
+                                </Link>
+                              ))}
                             </div>
                           </motion.div>
                         )}
@@ -407,7 +402,7 @@ export default function Navbar() {
                 })}
               </div>
 
-              {/* Bottom CTAs */}
+              {/* Mobile Footer / Auth */}
               <div className="px-4 py-5 border-t border-white/[0.06] flex-shrink-0 space-y-3">
                 {user ? (
                   <>
@@ -490,8 +485,7 @@ export default function Navbar() {
                 )}
               </div>
             </motion.div>
-          ]
-        }
+        )}
       </AnimatePresence>
     </>
   )
