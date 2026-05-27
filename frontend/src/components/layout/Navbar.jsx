@@ -308,7 +308,8 @@ export default function Navbar() {
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </nav>
-      </header>
+      </div>
+    </header>
 
       {/* ── Sub Navbar (Claude Code style) ── */}
       <div className="fixed top-14 left-0 right-0 z-40 hidden lg:block">
