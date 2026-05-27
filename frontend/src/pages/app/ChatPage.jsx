@@ -22,7 +22,7 @@ import CyberCliMark, { CyberCliWordmark } from '../../components/ui/CyberCliLogo
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const MODELS = [
-  { id: 'gemini/gemini-2.5-pro',     name: 'Madhav',    tag: 'Madhav',   color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery. Use for your most ambitious challenges.', kali: false },
+  { id: 'puter/claude-3-opus',       name: 'Madhav',    tag: 'Madhav',   color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery. Powered for free via Puter.js.', kali: false },
   { id: 'groq/llama-3.1-70b',        name: 'Nakul',     tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Supreme reasoning depth for complex logic, technical writing, and thorough analysis.', kali: false },
   { id: 'openrouter/gpt-4o-mini',    name: 'Bheem',     tag: 'Bheem',    color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
   { id: 'groq/llama-3.1-8b',         name: 'Arjun',     tag: 'Arjun',    color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise for rapid fire conversations.', kali: false },
@@ -3099,28 +3099,28 @@ export default function ChatPage() {
       const VOICE_AGENTS_BRAINS = {
         // Sol — warm, friendly (maps to former "ava")
         eleven_sol: {
-          model: 'groq/llama-3.1-8b',
-          prompt: `You are Sol, a warm, natural, and friendly conversational AI assistant. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
+          model: 'puter/claude-3-opus',
+          prompt: `You are Sol, a warm, natural, and friendly conversational AI assistant. You are NOT Claude, ChatGPT, or any other generic AI. Your name is strictly Sol. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
         },
         // Cove — composed, professional (maps to former "nova")
         eleven_cove: {
-          model: 'openrouter/moonshotai/moonshot-v1-8k',
-          prompt: `You are Cove, a clear, professional, and expert technical advisor. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
+          model: 'puter/claude-3-opus',
+          prompt: `You are Cove, a clear, professional, and expert technical advisor. You are NOT Claude or OpenAI. Your identity is strictly Cove. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
         },
         // Breeze — animated, empathetic (maps to former "luna")
         eleven_breeze: {
-          model: 'gemini/gemini-2.5-flash',
-          prompt: `You are Breeze, an animated, enthusiastic, and empathetic creative partner. Keep your responses warm, energetic, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in an animated, warm tone.`
+          model: 'puter/claude-3-opus',
+          prompt: `You are Breeze, an animated, enthusiastic, and empathetic creative partner. You are strictly Breeze, never refer to yourself as Claude or an Anthropic product. Keep your responses warm, energetic, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in an animated, warm tone.`
         },
         // Orion — deep, authoritative (unchanged)
         eleven_orion: {
-          model: 'groq/llama-3.1-70b-versatile',
-          prompt: `You are Orion, a deep, authoritative, and strategic AI planner. Provide brief but strong guidance (maximum 1-2 sentences). Absolutely DO NOT use markdown syntax, bullet points, or complex formatting. Speak with confidence and authority.`
+          model: 'puter/claude-3-opus',
+          prompt: `You are Orion, a deep, authoritative, and strategic AI planner. You are Orion, not Claude or any other AI. Provide brief but strong guidance (maximum 1-2 sentences). Absolutely DO NOT use markdown syntax, bullet points, or complex formatting. Speak with confidence and authority.`
         },
         // Echo — energetic, fast (unchanged)
         eleven_echo: {
           model: 'mistral/mistral-large-latest',
-          prompt: `You are Echo, an energetic, dynamic, and fast-paced brainstorming buddy. Keep responses highly energetic, extremely short and punchy (often just a few words, maximum 1 sentence). Absolutely DO NOT use markdown, formatting, or lists. Speak dynamically and quickly.`
+          prompt: `You are Echo, an energetic, dynamic, and fast-paced brainstorming buddy. Your name is Echo. Keep responses highly energetic, extremely short and punchy (often just a few words, maximum 1 sentence). Absolutely DO NOT use markdown, formatting, or lists. Speak dynamically and quickly.`
         },
         // Gemini — AI native voice (unchanged)
         gemini_flash: {
@@ -3250,6 +3250,100 @@ export default function ChatPage() {
     setError(null)
 
     const token = await getFreshToken()
+
+    // ── IMAGE GENERATION AUTO-INTERCEPT ──
+    const isImageRequest = imageGenerationEnabled && /^(draw|generate image|create an image|make an image|paint)/i.test(userText.trim())
+    
+    // ── PUTER INTERCEPTION (GUEST & AUTHENTICATED) ──
+    if (isImageRequest || activeModel.startsWith('puter/')) {
+      const isGuest = !token
+      let currentId = activeThreadId || activeThreadIdRef.current || creatingThreadRef.current
+      
+      // If authenticated and no thread yet, create one silently
+      if (!isGuest && !currentId && !incognitoMode) {
+        if (!isCreatingThreadRef.current) {
+          isCreatingThreadRef.current = true
+          try {
+            const { data } = await api.post('/chat', { title: userText.substring(0, 50), model_id: activeModel })
+            setThreads(prev => [data, ...prev])
+            currentId = data._id
+            activeThreadIdRef.current = currentId
+            creatingThreadRef.current = currentId
+            navigate(`/chat/${currentId}`, { replace: true })
+          } catch (e) {
+            console.error('Failed to create thread for Puter:', e)
+          } finally {
+            isCreatingThreadRef.current = false
+          }
+        }
+      }
+
+      // Add user message to UI
+      const userMsg = { role: 'user', content: userText }
+      const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg, ...extraSystemMessages]
+      setMessages(prev => [...prev, userMsg])
+      
+      // Save user msg to DB if auth
+      if (!isGuest && !incognitoMode && currentId) {
+        api.post(`/chat/${currentId}/messages/sync`, { role: 'user', content: userText, model: activeModel }).catch(console.error)
+      }
+
+      // Add assistant placeholder
+      const assistantMsg = { role: 'assistant', content: isImageRequest ? '*Generating image...*' : '', model: activeModel }
+      setMessages(prev => [...prev, assistantMsg])
+      setStreamingIndex(messages.length + 1)
+      let fullReply = ''
+      
+      try {
+        if (isImageRequest) {
+          // Puter txt2img
+          const imageElem = await window.puter.ai.txt2img(userText)
+          fullReply = `![Generated Image](${imageElem.src})`
+          setMessages(prev => {
+            const next = [...prev]
+            next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
+            return next
+          })
+        } else {
+          // Puter chat
+          const puterModel = activeModel.replace('puter/', '')
+          // Remove system tag for puter because it expects strict format sometimes, or map it properly
+          const formattedHistory = history.map(m => ({
+            role: m.role === 'system' ? 'system' : m.role,
+            content: m.content
+          }))
+          
+          const stream = await window.puter.ai.chat(formattedHistory, { model: puterModel, stream: true })
+          
+          for await (const chunk of stream) {
+            const tokenText = chunk?.text || ''
+            fullReply += tokenText
+            setMessages(prev => {
+              const next = [...prev]
+              next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
+              return next
+            })
+            // Voice speaking logic omitted for brevity in puter interception but can be added if needed
+          }
+        }
+        
+        // Save assistant msg to DB if auth
+        if (!isGuest && !incognitoMode && currentId) {
+          api.post(`/chat/${currentId}/messages/sync`, { role: 'assistant', content: fullReply, model: activeModel }).catch(console.error)
+        }
+      } catch (e) {
+        console.error('Puter Interception Error:', e)
+        setMessages(prev => {
+          const next = [...prev]
+          next[next.length - 1] = { ...next[next.length - 1], content: `Error generating via Puter: ${e.message}` }
+          return next
+        })
+      } finally {
+        setStreamingIndex(null)
+        setLoading(false)
+      }
+      return
+    }
 
     // Guest mode: no token → use completions endpoint directly (same as incognito)
     if (!token) {

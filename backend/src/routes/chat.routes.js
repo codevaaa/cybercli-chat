@@ -198,6 +198,50 @@ router.delete('/:id/messages/after/:messageId', requireAuth, async (req, res) =>
   }
 })
 
+// Sync message from frontend (used for Puter.js client-side generation)
+router.post('/:id/messages/sync', requireAuth, async (req, res) => {
+  const { role, content, model } = req.body
+  if (!role || !content) return res.status(400).json({ error: 'role and content required' })
+  
+  try {
+    const thread = await Thread.findOne({ _id: req.params.id, user_id: req.user.id })
+    if (!thread) return res.status(404).json({ error: 'Thread not found' })
+
+    const newMsg = new Message({
+      thread_id: thread._id,
+      user_id: req.user.id,
+      role,
+      content,
+      model: model || thread.model_id
+    })
+    await newMsg.save()
+
+    // Optionally auto-generate title if it's the very first user message
+    if (role === 'user' && thread.title === 'New Chat') {
+      const llmGateway = (await import('../services/llm/gateway.js')).llmGateway
+      try {
+        const titleGen = await llmGateway.completeNonStream({
+          messages: [{ role: 'user', content: `Summarize this in 3 to 5 words for a chat title:\n\n"${content}"` }],
+          model: 'openrouter/gpt-4o-mini',
+          temperature: 0.5
+        })
+        if (titleGen && titleGen.content) {
+          let newTitle = titleGen.content.replace(/["']/g, '').trim()
+          thread.title = newTitle.slice(0, 50)
+          await thread.save()
+        }
+      } catch (e) {
+        console.error('Auto-title error during sync:', e)
+      }
+    }
+
+    res.json({ success: true, message: newMsg })
+  } catch (err) {
+    console.error('Error syncing message:', err)
+    res.status(500).json({ error: 'Failed to sync message' })
+  }
+})
+
 // Retrieve messages of a thread
 router.get('/:id/messages', requireAuth, async (req, res) => {
   try {
