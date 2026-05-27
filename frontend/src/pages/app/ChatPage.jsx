@@ -992,6 +992,7 @@ function InputArea({
   onToggleDeepResearch,
   incognitoMode = false,
   onToggleIncognito,
+  showQuickActions = true,
 }) {
   const textareaRef = useRef(null)
 
@@ -1110,7 +1111,7 @@ function InputArea({
       </div>
 
       {/* Quick Action Pills (below input card) */}
-      {messages.length === 0 && (
+      {showQuickActions && (
         <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
           {QUICK_ACTIONS.map((action) => {
             const Icon = action.icon;
@@ -4028,6 +4029,7 @@ export default function ChatPage() {
                         onToggleDeepResearch={() => setDeepResearchEnabled(v => !v)}
                         incognitoMode={incognitoMode}
                         onToggleIncognito={() => setIncognitoMode(v => !v)}
+                        showQuickActions={messages.length === 0}
                       />
                     </div>
                   </div>
@@ -4091,6 +4093,7 @@ export default function ChatPage() {
                         onToggleDeepResearch={() => setDeepResearchEnabled(v => !v)}
                         incognitoMode={incognitoMode}
                         onToggleIncognito={() => setIncognitoMode(v => !v)}
+                        showQuickActions={false}
                       />
                     </div>
                   </div>
