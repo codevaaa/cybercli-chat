@@ -197,5 +197,10 @@ export const forkThread = async (threadId, messageId) => {
   return data
 }
 
+export const truncateThread = async (threadId, messageId) => {
+  const { data } = await api.delete(`/chat/${threadId}/messages/after/${messageId}`)
+  return data
+}
+
 export { isLoggedIn }
 export default api

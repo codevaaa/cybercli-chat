@@ -146,6 +146,44 @@ function injectIdentity(messages) {
   return [identityMsg, ...filtered]
 }
 
+/**
+ * Prune context window to avoid token limit errors on long chats.
+ * Keeps system prompt (if present) and most recent messages.
+ */
+function pruneContextWindow(messages, maxChars = 20000) {
+  let systemMessage = null
+  let chatMessages = messages
+
+  if (messages.length > 0 && messages[0].role === 'system') {
+    systemMessage = messages[0]
+    chatMessages = messages.slice(1)
+  }
+
+  let currentChars = 0
+  const pruned = []
+
+  // Iterate backwards to keep the most recent messages
+  for (let i = chatMessages.length - 1; i >= 0; i--) {
+    const msg = chatMessages[i]
+    const chars = (msg.content || '').length
+    if (currentChars + chars > maxChars) {
+      break
+    }
+    pruned.unshift(msg)
+    currentChars += chars
+  }
+
+  // Always keep at least the very last user message if possible
+  if (pruned.length === 0 && chatMessages.length > 0) {
+    pruned.push(chatMessages[chatMessages.length - 1])
+  }
+
+  if (systemMessage) {
+    return [systemMessage, ...pruned]
+  }
+  return pruned
+}
+
 export const llmGateway = {
   async *complete({ messages, model: modelId = 'auto', temperature = 0.7 }) {
     let activeModelId = modelId
@@ -176,12 +214,15 @@ export const llmGateway = {
 
     const totalChars = workingMessages.reduce((sum, m) => sum + (m.content || '').length, 0)
     
-    // Auto-route large contexts to Gemini
-    if (totalChars > 25000 && !activeModelId.startsWith('gemini/')) {
+    // Auto-route extremely large contexts to Gemini if desired, though pruning handles most
+    if (totalChars > 35000 && !activeModelId.startsWith('gemini/')) {
       activeModelId = 'gemini/gemini-2.5-flash'
     }
 
-    const enriched = injectIdentity(workingMessages)
+    let enriched = injectIdentity(workingMessages)
+    // Prune context to prevent provider token crashes (Groq fails hard > 8K tokens)
+    enriched = pruneContextWindow(enriched, 24000)
+
     const targetModel = MODEL_MAP[activeModelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
@@ -328,12 +369,14 @@ export const llmGateway = {
     let activeModelId = modelId
     const totalChars = messages.reduce((sum, m) => sum + (m.content || '').length, 0)
     
-    // Auto-route large contexts to Gemini
-    if (totalChars > 25000 && !activeModelId.startsWith('gemini/')) {
+    if (totalChars > 35000 && !activeModelId.startsWith('gemini/')) {
       activeModelId = 'gemini/gemini-2.5-flash'
     }
 
-    const enriched = injectIdentity(messages)
+    let enriched = injectIdentity(messages)
+    // Prune context to prevent provider token crashes
+    enriched = pruneContextWindow(enriched, 24000)
+
     const targetModel = MODEL_MAP[activeModelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present

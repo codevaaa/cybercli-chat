@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   Plus, Search, MessageSquare, FolderOpen, Layers, Code2, Sliders,
   ChevronLeft, ChevronRight, ChevronDown, Mic, Paperclip, Radio,
-  Copy, Check, GitBranch, Volume2, VolumeX, Trash2, Pin, X,
+  Copy, Check, GitBranch, Volume2, VolumeX, Trash2, Pin, X, RotateCcw,
   Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder,
   Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen, Menu,
   Pencil, GraduationCap, Coffee, Lightbulb, Skull, FileCode, GitBranch as GitIcon, FolderTree, ArrowRight
@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import api, { smartStream, createThread, getThreads, getMessages, isLoggedIn, API_BASE, getFreshToken } from '../../lib/api.js'
+import api, { smartStream, createThread, getThreads, getMessages, isLoggedIn, API_BASE, getFreshToken, truncateThread } from '../../lib/api.js'
 import { useTTS } from '../../hooks/useTTS.js'
 import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
 import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
@@ -546,7 +546,7 @@ const parseDaemonActions = (text) => {
 
 // ─── Message Bubble ──────────────────────────────────────────────────────────
 
-function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled, daemonConnected, onExecuteSuccess }) {
+function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled, daemonConnected, onExecuteSuccess }) {
   const isUser = msg.role === 'user'
   const isAssistant = msg.role === 'assistant'
 
@@ -566,8 +566,17 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
         <div className={`flex flex-col w-full ${isUser ? 'items-end' : 'items-start'}`}>
           {/* Content */}
           {isUser ? (
-            <div className="px-5 py-3.5 rounded-3xl bg-[#2D2D2D] text-[15px] leading-relaxed text-[#ECECEC] whitespace-pre-wrap shadow-sm">
-              {msg.content}
+            <div className="flex items-center gap-2 group/user relative">
+              <button
+                onClick={() => onRevert && onRevert(index)}
+                className="opacity-0 group-hover/user:opacity-100 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all absolute right-[102%] top-1/2 -translate-y-1/2"
+                title="Rewind & Edit"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+              <div className="px-5 py-3.5 rounded-3xl bg-[#2D2D2D] text-[15px] leading-relaxed text-[#ECECEC] whitespace-pre-wrap shadow-sm">
+                {msg.content}
+              </div>
             </div>
           ) : (
             <div className="text-[15px] leading-relaxed text-[#ECECEC] prose-custom w-full pt-1">
@@ -3035,10 +3044,36 @@ export default function ChatPage() {
     }
   }
 
-  const handleCopy = (content, index) => {
-    navigator.clipboard.writeText(content)
-    setCopied(index)
-    setTimeout(() => setCopied(null), 2000)
+  const handleCopy = async (content, index) => {
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopied(index)
+      setTimeout(() => setCopied(null), 2000)
+    } catch (err) {
+      console.error("Failed to copy text:", err)
+    }
+  }
+
+  const handleRevert = async (index) => {
+    if (index === 0) return // cannot safely revert the very first message this simply if it affects thread title, but we allow it if wanted. Actually let's allow it.
+    const msgToRevert = messages[index]
+    if (!msgToRevert || msgToRevert.role !== 'user') return
+
+    // Set input to the reverted message
+    setInput(msgToRevert.content)
+    
+    // Slice messages to remove this message and everything after it
+    const newMessages = messages.slice(0, index)
+    setMessages(newMessages)
+    
+    // Attempt to update backend if threaded
+    if (activeThreadId && msgToRevert._id) {
+      try {
+        await truncateThread(activeThreadId, msgToRevert._id)
+      } catch(e) {
+        console.error("Failed to truncate thread in backend:", e)
+      }
+    }
   }
 
   // ── Send message ──
@@ -4061,6 +4096,7 @@ export default function ChatPage() {
                             index={i}
                             isStreaming={streamingIndex === i}
                             onCopy={handleCopy}
+                            onRevert={handleRevert}
                             onSpeak={(text) => speak(text)}
                             onFork={handleFork}
                             onStop={stop}

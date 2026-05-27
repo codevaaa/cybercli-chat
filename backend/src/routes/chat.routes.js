@@ -160,6 +160,44 @@ router.post('/:id/fork', requireAuth, async (req, res) => {
   }
 })
 
+// Truncate messages in a thread after a specific message
+router.delete('/:id/messages/after/:messageId', requireAuth, async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id) || !mongoose.Types.ObjectId.isValid(req.params.messageId)) {
+      return res.status(400).json({ error: 'Invalid ID format' })
+    }
+
+    const thread = await Thread.findOne({ _id: req.params.id, user_id: req.user.id })
+    if (!thread) {
+      return res.status(404).json({ error: 'Thread not found' })
+    }
+
+    const targetMsg = await Message.findOne({ _id: req.params.messageId, thread_id: req.params.id })
+    if (!targetMsg) {
+      return res.status(404).json({ error: 'Message not found in this thread' })
+    }
+
+    // Delete all messages in the thread created after the target message
+    const deleteResult = await Message.deleteMany({
+      thread_id: req.params.id,
+      createdAt: { $gt: targetMsg.createdAt }
+    })
+
+    // Optionally delete the target message itself if we want to "revert" the user's message as well
+    // Wait, the user wants the message back in their input box. We should delete the target message too!
+    await Message.deleteOne({ _id: req.params.messageId })
+    const totalDeleted = deleteResult.deletedCount + 1
+
+    // Update count
+    thread.message_count = Math.max(0, thread.message_count - totalDeleted)
+    await thread.save()
+
+    res.json({ deletedCount: totalDeleted })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Retrieve messages of a thread
 router.get('/:id/messages', requireAuth, async (req, res) => {
   try {

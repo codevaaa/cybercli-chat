@@ -9,9 +9,9 @@ const VOICE_MODELS = [
   { id: 'eleven_sol',    label: 'Sol',    desc: 'Savvy and relaxed',       color: '#0EA5E9', orbColors: ['#0EA5E9', '#0288D1', '#B3E5FC'] },
   { id: 'eleven_cove',   label: 'Cove',   desc: 'Composed and direct',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
   { id: 'eleven_breeze', label: 'Breeze', desc: 'Animated and earnest',    color: '#10B981', orbColors: ['#10B981', '#059669', '#34D399'] },
-  { id: 'eleven_orion',  label: 'Orion',  desc: 'Deep & Authoritative',    color: '#F59E0B', orbColors: ['#F59E0B', '#D97706', '#FCD34D'] },
-  { id: 'eleven_echo',   label: 'Echo',   desc: 'Energetic & Dynamic',     color: '#EF4444', orbColors: ['#EF4444', '#DC2626', '#F87171'] },
-  { id: 'gemini_flash',  label: 'Gemini', desc: 'AI Native Voice',         color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
+  { id: 'eleven_orion',  label: 'Orion',  desc: 'Deep & Authoritative',    color: '#F59E0B', orbColors: ['#F59E0B', '#D97706', '#FCD34D'], premium: true },
+  { id: 'eleven_echo',   label: 'Echo',   desc: 'Energetic & Dynamic',     color: '#EF4444', orbColors: ['#EF4444', '#DC2626', '#F87171'], premium: true },
+  { id: 'gemini_flash',  label: 'Gemini', desc: 'AI Native Voice',         color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'], premium: true },
 ]
 
 const BAR_COUNT = 36
@@ -384,7 +384,18 @@ export default function VoiceChatModal({
     setVoiceIndex(prev => (prev === VOICE_MODELS.length - 1 ? 0 : prev + 1))
   }
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    try {
+      // Force the browser to ask for Microphone permissions natively before doing anything
+      await navigator.mediaDevices.getUserMedia({ audio: true })
+    } catch (err) {
+      console.warn("Mic permission denied or unavailable", err)
+      // Proceed anyway, but it might not listen well
+    }
+
+    // TODO: Premium limit check logic can go here in the future
+    // if (selectedVoice.premium && !canUsePremium) { ... }
+
     setStep('active')
     finalTranscriptRef.current = ''
     setTranscript('')
@@ -476,7 +487,14 @@ export default function VoiceChatModal({
 
                     {/* Center label */}
                     <div className="text-center h-14 mt-6">
-                      <h3 className="text-xl font-bold text-white tracking-wide">{selectedVoice.label}</h3>
+                      <h3 className="text-xl font-bold text-white tracking-wide flex items-center justify-center gap-2">
+                        {selectedVoice.label}
+                        {selectedVoice.premium && (
+                          <span className="px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-400 text-[10px] font-bold uppercase tracking-wider border border-orange-500/30">
+                            Premium
+                          </span>
+                        )}
+                      </h3>
                       <p className="text-sm text-white/60 mt-0.5">{selectedVoice.desc}</p>
                     </div>
                   </div>
@@ -522,7 +540,14 @@ export default function VoiceChatModal({
 
                 {/* Voice name + description */}
                 <div className="text-center">
-                  <h2 className="text-2xl font-bold text-white">{selectedVoice.label}</h2>
+                  <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+                    {selectedVoice.label}
+                    {selectedVoice.premium && (
+                      <span className="px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-400 text-[10px] font-bold uppercase tracking-wider border border-orange-500/30">
+                        Premium
+                      </span>
+                    )}
+                  </h2>
                   <p className="text-sm text-white/40 mt-1">{selectedVoice.desc}</p>
                 </div>
 
