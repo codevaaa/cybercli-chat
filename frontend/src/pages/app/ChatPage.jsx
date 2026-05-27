@@ -43,6 +43,8 @@ const EXTRA_MODELS = [
   { id: 'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b', name: 'Kali',         tag: 'Kali',        color: '#FF0055', desc: '🔥 The destroyer of limits. Fully uncensored 72B flagship — maximum freedom of thought, unfiltered intelligence.', kali: true },
   { id: 'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', name: 'Rudra',    tag: 'Rudra',       color: '#EF4444', desc: 'The fierce one. Uncensored edge model built for raw unconstrained intelligence at high speed.', kali: true },
   { id: 'huggingface/defog/sqlcoder-70b-v1.5',                   name: 'Agastya',       tag: 'Agastya',     color: '#D69E2E', desc: 'The sage of data. Specialized in translating natural language into precise, optimized SQL queries.', kali: false },
+  { id: 'mistral/mistral-large-latest',                          name: 'Vayu',          tag: 'Vayu',        color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities powered by Mistral Large.', kali: false },
+  { id: 'openrouter/moonshotai/moonshot-v1-8k',                  name: 'Kimi',          tag: 'Kimi',        color: '#6366F1', desc: 'The focused archer. High-precision model from Moonshot AI, perfect for long-context understanding.', kali: false },
 ]
 
 
@@ -3086,6 +3088,10 @@ export default function ChatPage() {
     // Determine active model and system prompt override if voice chat is open
     let activeModel = selectedModel
     const extraSystemMessages = []
+
+    if (customInstructions && customInstructions.trim() !== '') {
+      extraSystemMessages.push({ role: 'system', content: `Custom User Instructions: ${customInstructions}`, _skip_inject: true })
+    }
     
     if (voiceChatOpenRef.current) {
       const voiceRaw = currentVoice ? currentVoice.toLowerCase() : 'sol'
@@ -3098,7 +3104,7 @@ export default function ChatPage() {
         },
         // Cove — composed, professional (maps to former "nova")
         eleven_cove: {
-          model: 'openrouter/gpt-4o-mini',
+          model: 'openrouter/moonshotai/moonshot-v1-8k',
           prompt: `You are Cove, a clear, professional, and expert technical advisor. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
         },
         // Breeze — animated, empathetic (maps to former "luna")
@@ -3113,7 +3119,7 @@ export default function ChatPage() {
         },
         // Echo — energetic, fast (unchanged)
         eleven_echo: {
-          model: 'groq/mixtral-8x7b-32768',
+          model: 'mistral/mistral-large-latest',
           prompt: `You are Echo, an energetic, dynamic, and fast-paced brainstorming buddy. Keep responses highly energetic, extremely short and punchy (often just a few words, maximum 1 sentence). Absolutely DO NOT use markdown, formatting, or lists. Speak dynamically and quickly.`
         },
         // Gemini — AI native voice (unchanged)

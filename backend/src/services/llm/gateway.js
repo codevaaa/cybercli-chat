@@ -24,11 +24,13 @@ const PROVIDER_KEYS = {
   huggingface: process.env.HUGGINGFACE_API_KEY,
   bytez: process.env.BYTEZ_API_KEY,
   nvidia: process.env.NVIDIA_API_KEY,
+  mistral: process.env.MISTRAL_API_KEY,
 }
 
 const BASE_URLS = {
   openrouter: 'https://openrouter.ai/api/v1',
   groq: 'https://api.groq.com/openai/v1',
+  mistral: 'https://api.mistral.ai/v1',
 }
 
 const MODEL_MAP = {
@@ -106,7 +108,7 @@ function getClient(provider) {
     })
   }
 
-  if (provider === 'openrouter' || provider === 'groq') {
+  if (provider === 'openrouter' || provider === 'groq' || provider === 'mistral') {
     return new OpenAI({
       apiKey: key,
       baseURL: BASE_URLS[provider],
@@ -191,20 +193,30 @@ export const llmGateway = {
     
     // Council Mode Real Implementation
     if (activeModelId === 'council') {
-      yield { type: 'info', content: 'Summoning the Council of Minds (Nakul, Bheem, Sahadeva)...' }
+      yield { type: 'info', content: 'Summoning the Council of Minds (Kimi, Mistral, Llama)...' }
       try {
-        const p1 = this.completeNonStream({ messages: workingMessages, model: 'groq/llama-3.1-70b', temperature });
-        const p2 = this.completeNonStream({ messages: workingMessages, model: 'openrouter/gpt-4o-mini', temperature });
-        const p3 = this.completeNonStream({ messages: workingMessages, model: 'gemini/gemini-2.5-flash', temperature });
+        const p1 = this.completeNonStream({ messages: workingMessages, model: 'openrouter/moonshotai/moonshot-v1-8k', temperature });
+        const p2 = this.completeNonStream({ messages: workingMessages, model: 'mistral/mistral-large-latest', temperature });
+        const p3 = this.completeNonStream({ messages: workingMessages, model: 'groq/llama-3.1-70b-versatile', temperature });
         
         const [r1, r2, r3] = await Promise.all([p1, p2, p3]);
         
-        const lastUserMessage = workingMessages[workingMessages.length - 1].content;
-        const synthesisPrompt = `You are the ultimate CyberCli Council Synthesizer (Panchayat). The user asked: "${lastUserMessage}"\n\nExpert 1 (Nakul/Llama) says:\n${r1.content}\n\nExpert 2 (Bheem/GPT-4o) says:\n${r2.content}\n\nExpert 3 (Sahadeva/Gemini) says:\n${r3.content}\n\nSynthesize their responses into a single, comprehensive, and highly accurate ultimate answer. Be authoritative, organized, and do not just repeat them one by one—merge their insights.`;
-        
-        workingMessages = [...workingMessages.slice(0, -1), { role: 'user', content: synthesisPrompt }];
-        activeModelId = 'openrouter/gpt-4o-mini'; // Fast and capable synthesizer
-        yield { type: 'info', content: 'Council consensus reached. Synthesizing final response...' }
+        // Assemble the comparative view instead of synthesizing a single paragraph
+        const comparativeView = `### 🌙 MoonshotAI (Kimi K2.6)
+${r1.content.trim()}
+
+---
+
+### 🌪️ Mistral (Large)
+${r2.content.trim()}
+
+---
+
+### 🦙 Groq (Llama 3.1 70B)
+${r3.content.trim()}`;
+
+        yield { type: 'content', content: comparativeView }
+        return // End stream directly
       } catch (err) {
         console.error("Council Mode Failed:", err);
         yield { type: 'info', content: 'Council synthesis failed, falling back to standard reasoning.' }
