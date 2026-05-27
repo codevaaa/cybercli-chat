@@ -11,6 +11,7 @@ import { useAuthStore } from '@stores/authStore.js'
 import { motion, AnimatePresence } from 'framer-motion'
 import SubNavbar from './SubNavbar'
 import { CyberCliWordmark } from '@components/ui/CyberCliLogo'
+import { MessageSquare } from 'lucide-react'
 
 const ICON_MAP = {
   Sparkles, Cpu, CreditCard, History,
@@ -22,35 +23,60 @@ const ICON_MAP = {
 const MENU_GROUPS = [
   {
     label: 'Product',
+    columns: 2,
+    featured: {
+      title: 'CyberCli Code',
+      desc: 'Meet the new agentic AI coding assistant that lives in your terminal.',
+      href: '/code',
+      img: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=400&h=300'
+    },
     items: [
-      { label: 'Features', href: '/features', desc: 'Explore the ultimate agentic capabilities', icon: 'Sparkles' },
-      { label: 'Models', href: '/models', desc: 'Browse our unified 200K+ model proxy', icon: 'Cpu' },
-      { label: 'CyberCli Code', href: '/code', desc: 'The agentic AI coding assistant', icon: 'Terminal' },
-      { label: 'Projects', href: '/projects', desc: 'Manage your isolated workspaces', icon: 'FolderOpen' },
-      { label: 'Workflows', href: '/workflows', desc: 'Automate multi-agent operations', icon: 'Layers' },
-      { label: 'Discover', href: '/discover', desc: 'Find custom agents and prompt cards', icon: 'Globe' },
-      { label: 'Developers', href: '/developers', desc: 'Unified SDK & builder portal', icon: 'Code2' },
-      { label: 'Pricing', href: '/pricing', desc: 'Flexible free and Pro options', icon: 'CreditCard' },
-      { label: 'Usage Statistics', href: '/usage', desc: 'Track your agent execution token usage', icon: 'History' },
+      { label: 'CyberCli Chat', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
+      { label: 'Models', href: '/models', desc: 'Browse our 200K+ model proxy', icon: 'Cpu' },
+      { label: 'Workflows', href: '/workflows', desc: 'Automate multi-agent tasks', icon: 'Layers' },
+      { label: 'Discover', href: '/discover', desc: 'Find custom agents', icon: 'Globe' },
+    ]
+  },
+  {
+    label: 'Use Cases',
+    columns: 1,
+    items: [
+      { label: 'For Developers', href: '/use-cases/developers', desc: 'Ship code faster', icon: 'Code2' },
+      { label: 'For Enterprise', href: '/use-cases/enterprise', desc: 'Secure AI deployment', icon: 'Building2' },
+      { label: 'For Researchers', href: '/use-cases/researchers', desc: 'Deep data analysis', icon: 'BookOpen' },
+    ]
+  },
+  {
+    label: 'Developers',
+    columns: 1,
+    items: [
+      { label: 'API Reference', href: '/api', desc: 'Integrate into your app', icon: 'Terminal' },
+      { label: 'SDKs', href: '/sdks', desc: 'Official libraries', icon: 'FolderOpen' },
+      { label: 'Documentation', href: '/docs', desc: 'Guides and tutorials', icon: 'BookOpen' },
     ]
   },
   {
     label: 'Resources',
+    columns: 1,
     items: [
-      { label: 'Documentation', href: '/docs', desc: 'Getting started guides & references', icon: 'BookOpen' },
-      { label: 'API Reference', href: '/api-reference', desc: 'Integrate CyberCli into your app', icon: 'Terminal' },
-      { label: 'Blog', href: '/blog', desc: 'Read research by Chandan Pandey', icon: 'Rss' },
-      { label: 'Affiliate', href: '/affiliate', desc: 'Earn by promoting CyberCli', icon: 'Gift' },
-      { label: 'System Status', href: '/status', desc: 'Monitor cluster load & uptime', icon: 'Cpu' },
+      { label: 'Blog', href: '/blog', desc: 'Latest updates', icon: 'Rss' },
+      { label: 'Community', href: '/community', desc: 'Join the discussion', icon: 'Globe' },
+      { label: 'Help Center', href: '/help', desc: 'Support & FAQs', icon: 'Sparkles' },
     ]
   },
   {
     label: 'Company',
+    columns: 1,
     items: [
-      { label: 'About Us', href: '/about', desc: 'Our mission and Chandan\'s bio', icon: 'Building2' },
-      { label: 'Careers', href: '/careers', desc: 'Join our team to shape the AI future', icon: 'Briefcase' },
-      { label: 'Contact', href: '/contact', desc: 'Get in touch with support & sales', icon: 'Mail' },
+      { label: 'About', href: '/about', desc: 'Our mission', icon: 'Building2' },
+      { label: 'Careers', href: '/careers', desc: 'Join the team', icon: 'Briefcase' },
+      { label: 'Contact', href: '/contact', desc: 'Get in touch', icon: 'Mail' },
     ]
+  },
+  {
+    label: 'Pricing',
+    href: '/pricing',
+    items: []
   }
 ]
 
@@ -143,8 +169,21 @@ export default function Navbar() {
             </Link>
 
           {/* ── Desktop nav links ── */}
-          <div className="hidden lg:flex items-center gap-2">
-            {MENU_GROUPS.map((group) => (
+          <div className="hidden lg:flex items-center gap-1.5">
+            {MENU_GROUPS.map((group) => {
+              if (!group.items || group.items.length === 0) {
+                return (
+                  <Link
+                    key={group.label}
+                    to={group.href}
+                    className="px-3 py-1.5 text-[14px] font-medium text-[#a3a3a3] hover:text-white hover:bg-white/5 transition-colors rounded-md"
+                  >
+                    {group.label}
+                  </Link>
+                )
+              }
+
+              return (
               <div
                 key={group.label}
                 className="relative h-full flex items-center"
@@ -162,17 +201,18 @@ export default function Navbar() {
                   }`} />
                 </button>
 
-                {/* Dropdown Menu */}
+                {/* Mega Menu Dropdown */}
                 <AnimatePresence>
                   {activeDropdown === group.label && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
                       transition={{ duration: 0.2, ease: 'easeOut' }}
-                      className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 bg-background-secondary/95 backdrop-blur-2xl border border-border-subtle rounded-2xl p-2 shadow-2xl overflow-hidden"
+                      className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 ${group.featured ? 'w-[640px]' : group.columns === 2 ? 'w-[500px]' : 'w-80'} bg-[#0a0a0f]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_24px_50px_rgba(0,0,0,0.8)] overflow-hidden flex`}
                     >
-                      <div className="grid gap-1">
+                      {/* Left: Link Grid */}
+                      <div className={`p-3 w-full grid ${group.columns === 2 && !group.featured ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5 flex-1`}>
                         {group.items.map((item) => {
                           const IconComponent = ICON_MAP[item.icon]
                           return (
@@ -181,14 +221,14 @@ export default function Navbar() {
                               to={item.href}
                               className="flex items-start gap-3 p-3 rounded-xl hover:bg-[#D97757]/10 transition-all group/item"
                             >
-                              <div className="mt-0.5 p-2 rounded-lg bg-[#1a1a1a] text-[#888888] group-hover/item:text-[#D97757] group-hover/item:bg-[#D97757]/20 transition-colors border border-white/5 group-hover/item:border-[#D97757]/30">
+                              <div className="mt-0.5 p-2 rounded-lg bg-[#151515] text-[#888888] group-hover/item:text-[#D97757] group-hover/item:bg-[#D97757]/20 transition-colors border border-white/5 group-hover/item:border-[#D97757]/30 shadow-inner">
                                 {IconComponent && <IconComponent className="w-4 h-4" />}
                               </div>
                               <div>
                                 <div className="text-sm font-semibold text-[#e5e5e5] group-hover/item:text-white transition-colors">
                                   {item.label}
                                 </div>
-                                <div className="text-xs text-[#888888] mt-1 font-medium leading-relaxed group-hover/item:text-[#a1a1a1]">
+                                <div className="text-[13px] text-[#888888] mt-0.5 font-medium leading-relaxed group-hover/item:text-[#a1a1a1]">
                                   {item.desc}
                                 </div>
                               </div>
@@ -196,11 +236,31 @@ export default function Navbar() {
                           )
                         })}
                       </div>
+
+                      {/* Right: Featured Banner */}
+                      {group.featured && (
+                        <div className="w-[280px] bg-[#12121a] border-l border-white/5 p-4 flex flex-col justify-between group/featured">
+                          <div>
+                            <div className="rounded-xl overflow-hidden mb-4 border border-white/10 h-32 relative">
+                              <div className="absolute inset-0 bg-[#D97757]/20 mix-blend-overlay z-10 group-hover/featured:bg-transparent transition-colors" />
+                              <img src={group.featured.img} alt="Featured" className="w-full h-full object-cover grayscale group-hover/featured:grayscale-0 transition-all duration-500 transform group-hover/featured:scale-105" />
+                            </div>
+                            <h4 className="text-sm font-bold text-white mb-1.5">{group.featured.title}</h4>
+                            <p className="text-xs text-[#888888] leading-relaxed mb-4">
+                              {group.featured.desc}
+                            </p>
+                          </div>
+                          <Link to={group.featured.href} className="text-xs font-bold text-[#D97757] hover:text-[#e08f75] flex items-center gap-1">
+                            Learn more <span className="text-lg leading-none transition-transform group-hover/featured:translate-x-1">→</span>
+                          </Link>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-            ))}
+              )
+            })}
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
@@ -356,9 +416,23 @@ export default function Navbar() {
               {/* Nav Groups */}
               <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                 {MENU_GROUPS.map((group) => {
+                  if (!group.items || group.items.length === 0) {
+                    return (
+                      <div key={group.label} className="mb-1">
+                        <Link
+                          to={group.href}
+                          onClick={() => setMobileOpen(false)}
+                          className="w-full flex items-center justify-between px-3 py-3 text-white font-medium hover:bg-white/5 rounded-lg transition-colors"
+                        >
+                          <span className="text-[15px]">{group.label}</span>
+                        </Link>
+                      </div>
+                    )
+                  }
+
                   const isOpen = mobileAccordions[group.label]
                   return (
-                    <div key={group.label} className="mb-2">
+                    <div key={group.label} className="mb-1">
                       <button
                         onClick={() => setMobileAccordions(prev => ({ ...prev, [group.label]: !prev[group.label] }))}
                         className="w-full flex items-center justify-between px-3 py-3 text-white font-medium hover:bg-white/5 rounded-lg transition-colors"
@@ -375,23 +449,25 @@ export default function Navbar() {
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="pl-3 py-2 pr-2 space-y-1">
-                              {group.items.map((item) => (
-                                <Link
-                                  key={item.label}
-                                  to={item.href}
-                                  onClick={() => setMobileOpen(false)}
-                                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors group/item"
-                                >
-                                  <div className="p-1.5 rounded-md bg-white/5 text-gray-400 group-hover/item:text-white group-hover/item:bg-[#D97757]/20 transition-colors">
-                                    {item.icon}
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-medium">{item.label}</div>
-                                    <div className="text-[11px] text-gray-500 line-clamp-1">{item.desc}</div>
-                                  </div>
-                                </Link>
-                              ))}
+                            <div className="pl-3 py-1 pr-2 space-y-1">
+                              {group.items.map((item) => {
+                                const IconComponent = ICON_MAP[item.icon]
+                                return (
+                                  <Link
+                                    key={item.label}
+                                    to={item.href}
+                                    onClick={() => setMobileOpen(false)}
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors group/item"
+                                  >
+                                    <div className="p-1.5 rounded-md bg-white/5 text-gray-400 group-hover/item:text-white group-hover/item:bg-[#D97757]/20 transition-colors">
+                                      {IconComponent && <IconComponent className="w-4 h-4" />}
+                                    </div>
+                                    <div>
+                                      <div className="text-sm font-medium">{item.label}</div>
+                                    </div>
+                                  </Link>
+                                )
+                              })}
                             </div>
                           </motion.div>
                         )}

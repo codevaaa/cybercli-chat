@@ -30,6 +30,18 @@ const path = require('path');
 
   try {
     console.log('Navigating to http://localhost:5174/chat ...');
+    
+    // Setup fake auth in localStorage before loading the page
+    await page.addInitScript(() => {
+      window.localStorage.setItem('auth-storage', JSON.stringify({
+        state: {
+          user: { id: '123', email: 'test@test.com' },
+          token: 'fake-token'
+        },
+        version: 0
+      }));
+    });
+    
     await page.goto('http://localhost:5174/chat', { waitUntil: 'networkidle' });
     const content = await page.content();
     console.log('DOM length:', content.length);
