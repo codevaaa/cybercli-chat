@@ -40,6 +40,7 @@ const MENU_GROUPS = [
       { label: 'API Reference', href: '/api-reference', desc: 'Integrate CyberCli into your app', icon: 'Terminal' },
       { label: 'Blog', href: '/blog', desc: 'Read research by Chandan Pandey', icon: 'Rss' },
       { label: 'Affiliate', href: '/affiliate', desc: 'Earn by promoting CyberCli', icon: 'Gift' },
+      { label: 'System Status', href: '/status', desc: 'Monitor cluster load & uptime', icon: 'Cpu' },
     ]
   },
   {
@@ -126,7 +127,7 @@ export default function Navbar() {
             className="group transition-opacity hover:opacity-90"
             aria-label="CyberCli – go to homepage"
           >
-            <CyberCliWordmark size={24} />
+            <CyberCliWordmark size={32} />
           </Link>
 
           {/* ── Desktop nav links ── */}
@@ -326,7 +327,7 @@ export default function Navbar() {
               {/* Panel Header */}
               <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.06] flex-shrink-0">
                 <Link to="/" onClick={() => setMobileOpen(false)}>
-                  <CyberCliWordmark size={22} />
+                  <CyberCliWordmark size={28} />
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}

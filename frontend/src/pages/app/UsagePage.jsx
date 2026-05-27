@@ -92,7 +92,7 @@ export default function UsagePage() {
                     <motion.path
                       d={svgPath}
                       fill="none"
-                      stroke="#7C3AED"
+                      stroke="#D97757"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"

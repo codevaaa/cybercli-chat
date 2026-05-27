@@ -31,7 +31,7 @@ export default function VerifyEmailPage() {
         {/* Brand Mark Logo */}
         <div className="flex flex-col items-center mb-8">
           <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
-            <CyberCliMark size={40} />
+            <CyberCliMark size={56} />
           </Link>
           <h1 className="text-3xl font-semibold text-foreground-primary tracking-tight font-serif mt-6">
             Verify your email

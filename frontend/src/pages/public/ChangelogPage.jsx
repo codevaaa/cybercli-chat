@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
 
 const BADGE_COLORS = {
-  New: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  New: 'bg-accent/10 text-accent border-accent/20',
   Improved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   Fixed: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
   Breaking: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
@@ -18,7 +18,7 @@ const TYPE_ICONS = {
 }
 
 const VERSION_BADGE_COLORS = {
-  '1.3.0': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  '1.3.0': 'bg-accent/10 text-accent border-accent/20',
   '1.2.0': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
   '1.1.0': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   '1.0.0': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
@@ -179,7 +179,7 @@ export default function ChangelogPage() {
         }}
       />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] pointer-events-none opacity-20"
-        style={{ background: 'radial-gradient(ellipse, #7C3AED 0%, transparent 70%)' }}
+        style={{ background: 'radial-gradient(ellipse, #D97757 0%, transparent 70%)' }}
       />
 
       <div className="relative max-w-4xl mx-auto px-6">
@@ -189,7 +189,7 @@ export default function ChangelogPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-purple-500/20 bg-purple-500/5 text-purple-400 text-xs font-semibold mb-6 tracking-wide">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-accent/20 bg-accent/5 text-accent text-xs font-semibold mb-6 tracking-wide">
             <Zap className="w-3.5 h-3.5" />
             Product Updates
           </div>

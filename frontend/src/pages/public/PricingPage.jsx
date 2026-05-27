@@ -117,7 +117,7 @@ export default function PricingPage() {
     <div className="pt-32 pb-20 bg-[#07070a] relative overflow-hidden">
       {/* Background design */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-purple-600/5 rounded-full blur-[120px]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-accent/5 rounded-full blur-[120px]" />
       </div>
 
       {/* Header */}

@@ -30,7 +30,7 @@ export const MODEL_CARDS = [
     name: 'Nakul',
     provider: 'CyberCli Compute Node High',
     providerKey: 'groq',
-    themeColor: '#8B5CF6',
+    themeColor: '#E05E36',
     description: 'The skilled strategist. Supreme reasoning depth for complex logic, technical writing, and thorough analysis.',
     capabilities: ['Reasoning', 'Technical', 'Pro'],
     contextWindow: '131K tokens',
@@ -180,7 +180,7 @@ export const MODEL_CARDS = [
     name: 'Parashurama',
     provider: 'CyberCli Agentic Cluster',
     providerKey: 'huggingface',
-    themeColor: '#9F7AEA',
+    themeColor: '#C58A59',
     description: 'The agentic warrior. Specialized for tool use, function calling, and autonomous agentic orchestration.',
     capabilities: ['Agentic', 'Tool Use', 'Pro'],
     contextWindow: '128K tokens',
@@ -304,7 +304,7 @@ function ModelCard({ model, index }) {
     ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
     : isPro
     ? 'bg-orange-500/10 text-orange-400 border-orange-500/20'
-    : 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+    : 'bg-accent/10 text-accent border-accent/20'
 
   return (
     <motion.div
@@ -389,9 +389,9 @@ function ModelCard({ model, index }) {
           <Link
             to="/chat"
             className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl text-white transition-all hover:shadow-[0_0_15px_rgba(124,58,237,0.3)]"
-            style={{
-              background: isEnt ? 'linear-gradient(135deg, #F59E0B, #D97757)' : isPro ? 'linear-gradient(135deg, #D97757, #B85D3D)' : 'linear-gradient(135deg, #7C3AED, #6D28D9)',
-            }}
+              style={{
+                background: isEnt ? 'linear-gradient(135deg, #F59E0B, #D97757)' : isPro ? 'linear-gradient(135deg, #D97757, #B85D3D)' : 'linear-gradient(135deg, #4B5563, #1F2937)',
+              }}
           >
             Try Now
             <ArrowRight className="w-3.5 h-3.5" />
@@ -413,7 +413,7 @@ function CouncilBanner() {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <div className="flex -space-x-2">
-                {['#7C3AED', '#D97757', '#F59E0B'].map((c, i) => (
+                {['#E05E36', '#D97757', '#F59E0B'].map((c, i) => (
                   <div
                     key={i}
                     className="w-6 h-6 rounded-full border border-[#07070a] flex items-center justify-center"
@@ -470,7 +470,7 @@ export default function ModelsPage() {
       {/* Hero */}
       <section className="relative mb-12">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-[500px] h-[300px] bg-purple-600/5 rounded-full blur-[120px]" />
+          <div className="absolute top-0 left-1/4 w-[500px] h-[300px] bg-accent/5 rounded-full blur-[120px]" />
           <div className="absolute top-0 right-1/4 w-[400px] h-[250px] bg-orange-500/5 rounded-full blur-[100px]" />
         </div>
         <div className="max-w-5xl mx-auto px-6 text-center relative z-10">

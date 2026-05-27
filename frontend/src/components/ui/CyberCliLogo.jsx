@@ -2,18 +2,20 @@
  * CyberCli brand logo components
  *
  * Exports:
- *   CyberCliMark      — Animated Sudarshan Chakra SVG icon
+ *   CyberCliMark      — Animated Sudarshan Chakra SVG icon (stealth geometric redesign)
  *   CyberCliWordmark  — icon + "CyberCli" text side-by-side
  *   default           — CyberCliMark
  *
  * Props:
- *   size        {number}  pixel size of the icon square  (default 40)
+ *   size        {number}  pixel size of the icon square (default 40)
  *   className   {string}  extra classes on the wrapper element
  */
 
+import { motion } from 'framer-motion'
+
 /**
  * CyberCliMark
- * Stylized, animated Sudarshan Chakra in terracotta (#D97757).
+ * Stylized, animated Sudarshan Chakra in terracotta (#D97757) with a stealth tech aesthetic.
  */
 export function CyberCliMark({ size = 40, className = '' }) {
   const s = size
@@ -37,8 +39,8 @@ export function CyberCliMark({ size = 40, className = '' }) {
         {/* Radial glow for central hub */}
         <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#D97757" stopOpacity="1" />
-          <stop offset="60%" stopColor="#D97757" stopOpacity="0.85" />
-          <stop offset="100%" stopColor="#D97757" stopOpacity="0.5" />
+          <stop offset="50%" stopColor="#D97757" stopOpacity="0.75" />
+          <stop offset="100%" stopColor="#D97757" stopOpacity="0" />
         </radialGradient>
       </defs>
 
@@ -49,115 +51,102 @@ export function CyberCliMark({ size = 40, className = '' }) {
         }
         @keyframes chakra-entrance {
           0%   { transform: scale(0); opacity: 0; }
-          60%  { transform: scale(1.15); opacity: 1; }
-          80%  { transform: scale(0.97); }
+          65%  { transform: scale(1.12); opacity: 1; }
+          85%  { transform: scale(0.98); }
           100% { transform: scale(1); }
         }
         .logo-chakra-entrance {
-          animation: chakra-entrance 0.8s ease-out forwards;
+          animation: chakra-entrance 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         .logo-chakra-spin {
-          animation: chakra-entrance 0.8s ease-out forwards, chakra-rotate 24s linear 0.8s infinite;
+          animation: chakra-entrance 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards, chakra-rotate 28s linear 0.75s infinite;
           transform-origin: center;
         }
         .logo-chakra-spin:hover {
-          animation: chakra-rotate 4s linear infinite;
+          animation: chakra-rotate 5s linear infinite;
         }
       `}</style>
       
-      {/* 12 Outer Serrated Blades of the Sudarshan Chakra */}
+      {/* Cardinal crosshair markers (radar/alignment style) */}
+      <g stroke="#D97757" strokeWidth="1.2" opacity="0.35">
+        <line x1="50" y1="12" x2="50" y2="28" />
+        <line x1="50" y1="72" x2="50" y2="88" />
+        <line x1="12" y1="50" x2="28" y2="50" />
+        <line x1="72" y1="50" x2="88" y2="50" />
+      </g>
+
+      {/* Decorative dashed outer ring */}
+      <circle cx="50" cy="50" r="44" stroke="#D97757" strokeWidth="1" strokeDasharray="3 6" opacity="0.2" />
+
+      {/* Symmetrical concentric rings */}
+      <circle cx="50" cy="50" r="36" stroke="#D97757" strokeWidth="1.5" opacity="0.15" />
+      <circle cx="50" cy="50" r="26" stroke="#D97757" strokeWidth="1" strokeDasharray="4 2" opacity="0.3" />
+      <circle cx="50" cy="50" r="18" stroke="#D97757" strokeWidth="1.2" opacity="0.45" />
+
+      {/* 8 Geometric Stealth Blades of the Sudarshan Chakra */}
       <g fill="#D97757">
-        {Array.from({ length: 12 }).map((_, i) => {
-          const angle = (i / 12) * Math.PI * 2
-          const nextAngle = ((i + 0.55) / 12) * Math.PI * 2
-          const innerR = 38
-          const outerR = 50
+        {Array.from({ length: 8 }).map((_, i) => {
+          const angle = (i / 8) * Math.PI * 2
           
-          // Each blade is a curved triangular wing pointing clockwise
-          const x1 = 50 + Math.cos(angle) * innerR
-          const y1 = 50 + Math.sin(angle) * innerR
-          const x2 = 50 + Math.cos(nextAngle) * outerR
-          const y2 = 50 + Math.sin(nextAngle) * outerR
-          const x3 = 50 + Math.cos((i + 1) / 12 * Math.PI * 2) * innerR
-          const y3 = 50 + Math.sin((i + 1) / 12 * Math.PI * 2) * innerR
-          
+          // Tip of the blade (radius 42, slightly offset for clockwise rotation feeling)
+          const angleTip = angle + 0.28
+          const tipX = 50 + Math.cos(angleTip) * 42
+          const tipY = 50 + Math.sin(angleTip) * 42
+
+          // Wide outer base corner (radius 36, slightly back)
+          const angleOuterCorner = angle + 0.12
+          const outX = 50 + Math.cos(angleOuterCorner) * 36
+          const outY = 50 + Math.sin(angleOuterCorner) * 36
+
+          // Inner base corner (radius 18, starting angle)
+          const baseX = 50 + Math.cos(angle) * 18
+          const baseY = 50 + Math.sin(angle) * 18
+
+          // Cutting edge inner corner (radius 26, clockwise direction)
+          const angleCut = angle + 0.24
+          const cutX = 50 + Math.cos(angleCut) * 26
+          const cutY = 50 + Math.sin(angleCut) * 26
+
           return (
-            <path
+            <polygon
               key={i}
-              d={`M ${x1.toFixed(2)} ${y1.toFixed(2)} Q ${x2.toFixed(2)} ${y2.toFixed(2)} ${x3.toFixed(2)} ${y3.toFixed(2)} Z`}
+              points={`${baseX.toFixed(2)},${baseY.toFixed(2)} ${outX.toFixed(2)},${outY.toFixed(2)} ${tipX.toFixed(2)},${tipY.toFixed(2)} ${cutX.toFixed(2)},${cutY.toFixed(2)}`}
+              opacity="0.85"
             />
           )
         })}
       </g>
 
-      {/* Main outer ring body */}
-      <circle cx="50" cy="50" r="38" stroke="#D97757" strokeWidth="3.5" />
-      
-      {/* Decorative inner ring with notch marks */}
-      <circle cx="50" cy="50" r="33" stroke="#D97757" strokeWidth="1" opacity="0.5" />
-      <g stroke="#D97757" strokeWidth="1.5" opacity="0.55">
-        {Array.from({ length: 24 }).map((_, i) => {
-          const angle = (i / 24) * Math.PI * 2
-          const r1 = 31.5
-          const r2 = 34.5
-          const x1 = 50 + Math.cos(angle) * r1
-          const y1 = 50 + Math.sin(angle) * r1
-          const x2 = 50 + Math.cos(angle) * r2
-          const y2 = 50 + Math.sin(angle) * r2
+      {/* Cardinal tiny dots representing cosmic nodes */}
+      <g fill="#D97757" opacity="0.75">
+        <circle cx="50" cy="8" r="1.5" />
+        <circle cx="92" cy="50" r="1.5" />
+        <circle cx="50" cy="92" r="1.5" />
+        <circle cx="8" cy="50" r="1.5" />
+      </g>
+
+      {/* Multi-layered transparent central hub with glow */}
+      {/* Radial Hub Glow */}
+      <circle cx="50" cy="50" r="12" fill="url(#hubGlow)" opacity="0.4" />
+
+      {/* Center geometric octagon representing stability */}
+      <g stroke="#D97757" strokeWidth="1.2" opacity="0.8">
+        {Array.from({ length: 8 }).map((_, i) => {
+          const a1 = (i / 8) * Math.PI * 2
+          const a2 = ((i + 1) / 8) * Math.PI * 2
+          const r = 9
+          const x1 = 50 + Math.cos(a1) * r
+          const y1 = 50 + Math.sin(a1) * r
+          const x2 = 50 + Math.cos(a2) * r
+          const y2 = 50 + Math.sin(a2) * r
           return (
             <line key={i} x1={x1.toFixed(2)} y1={y1.toFixed(2)} x2={x2.toFixed(2)} y2={y2.toFixed(2)} />
           )
         })}
       </g>
 
-      {/* Inner dashed ring decoration for depth */}
-      <circle cx="50" cy="50" r="28" stroke="#D97757" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
-
-      {/* 4 Cardinal decorative dots between inner ring and outer ring */}
-      <g fill="#D97757" opacity="0.7">
-        <circle cx="50" cy="14.5" r="1.8" />
-        <circle cx="85.5" cy="50" r="1.8" />
-        <circle cx="50" cy="85.5" r="1.8" />
-        <circle cx="14.5" cy="50" r="1.8" />
-      </g>
-
-      {/* 8 Inner spokes (diamond rays connecting center to outer ring) */}
-      <g fill="#D97757">
-        {Array.from({ length: 8 }).map((_, i) => {
-          const angle = (i / 8) * Math.PI * 2
-          const perpAngle = angle + Math.PI / 2
-          
-          const tipX = 50 + Math.cos(angle) * 36
-          const tipY = 50 + Math.sin(angle) * 36
-          const baseX = 50 + Math.cos(angle) * 12
-          const baseY = 50 + Math.sin(angle) * 12
-          const leftX = 50 + Math.cos(perpAngle) * 3 + Math.cos(angle) * 24
-          const leftY = 50 + Math.sin(perpAngle) * 3 + Math.sin(angle) * 24
-          const rightX = 50 - Math.cos(perpAngle) * 3 + Math.cos(angle) * 24
-          const rightY = 50 - Math.sin(perpAngle) * 3 + Math.sin(angle) * 24
-          
-          return (
-            <path
-              key={i}
-              d={`M ${baseX.toFixed(2)} ${baseY.toFixed(2)} L ${leftX.toFixed(2)} ${leftY.toFixed(2)} L ${tipX.toFixed(2)} ${tipY.toFixed(2)} L ${rightX.toFixed(2)} ${rightY.toFixed(2)} Z`}
-            />
-          )
-        })}
-      </g>
-
-      {/* Multi-layered transparent central hub with glow */}
-      {/* Outer glow halo */}
-      <circle cx="50" cy="50" r="14" fill="url(#hubGlow)" opacity="0.3" />
-      {/* Ring with outer radius 12, inner radius 8 */}
-      <path
-        d="M 50 38 A 12 12 0 1 0 50 62 A 12 12 0 1 0 50 38 M 50 42 A 8 8 0 1 1 50 58 A 8 8 0 1 1 50 42"
-        fill="#D97757"
-        fillRule="evenodd"
-      />
-      {/* Central hub dot */}
-      <circle cx="50" cy="50" r="4.5" fill="#D97757" />
-      {/* Inner dot glow */}
-      <circle cx="50" cy="50" r="6" fill="#D97757" opacity="0.2" />
+      {/* Central hub core dot */}
+      <circle cx="50" cy="50" r="3.5" fill="#D97757" />
     </svg>
   )
 }
@@ -165,12 +154,12 @@ export function CyberCliMark({ size = 40, className = '' }) {
 /**
  * CyberCliWordmark
  * Horizontal lock-up: [icon] [CyberCli text]
- * The text is set in Inter 600 at ~64 % of the icon size.
+ * The text is set in Inter with a custom high-end styling.
  */
 export function CyberCliWordmark({ size = 40, className = '', textClassName = '' }) {
   return (
     <span
-      className={`inline-flex items-center gap-2 select-none ${className}`}
+      className={`inline-flex items-center gap-3 select-none ${className}`}
       aria-label="CyberCli"
     >
       <CyberCliMark size={size} />
@@ -178,9 +167,9 @@ export function CyberCliWordmark({ size = 40, className = '', textClassName = ''
         className={`font-semibold tracking-tight text-foreground-primary ${textClassName}`}
         style={{
           fontFamily: "'Inter', system-ui, sans-serif",
-          fontWeight: 600,
-          fontSize: size * 0.64,
-          letterSpacing: '-0.015em',
+          fontWeight: 650,
+          fontSize: size * 0.66,
+          letterSpacing: '-0.025em',
           lineHeight: 1,
         }}
       >

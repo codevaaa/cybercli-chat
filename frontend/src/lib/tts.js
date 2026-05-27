@@ -43,6 +43,11 @@ class TTSService {
         this.browserVoices = window.speechSynthesis.getVoices()
       }
     }
+
+    // Pre-load Puter.js script to eliminate initial latency
+    if (typeof window !== 'undefined') {
+      this.loadPuter().catch(err => console.warn('Puter.js background pre-load failed:', err))
+    }
   }
 
   setProvider(provider) {

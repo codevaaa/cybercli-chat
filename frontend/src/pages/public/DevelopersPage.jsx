@@ -11,7 +11,7 @@ export default function DevelopersPage() {
     <div className="pt-32 pb-24 bg-[#07070a] text-gray-300 relative overflow-hidden">
       {/* Background gradients */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[350px] bg-purple-900/10 rounded-full blur-[140px]" />
+        <div className="absolute top-0 left-1/4 w-[600px] h-[350px] bg-accent/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[300px] bg-orange-900/5 rounded-full blur-[120px]" />
       </div>
 
@@ -117,7 +117,7 @@ export default function DevelopersPage() {
                 </div>
                 {/* Code Body */}
                 <pre className="text-left text-[11px] leading-relaxed text-gray-300 overflow-x-auto whitespace-pre pr-2">
-                  <span className="text-purple-400">import</span> cybercli{"\n"}
+                  <span className="text-accent">import</span> cybercli{"\n"}
                   {"\n"}
                   <span className="text-gray-550"># Initialize the unified compute engine</span>{"\n"}
                   client = cybercli.Client(api_key=<span className="text-emerald-400">"cc_sec_key_..."</span>){"\n"}

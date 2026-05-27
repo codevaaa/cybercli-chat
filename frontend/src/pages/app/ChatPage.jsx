@@ -558,7 +558,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onSpeak, onFork, onSto
         <div className="flex-shrink-0 mt-1">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center"
             style={{ background: 'rgba(217,119,87,0.12)' }}>
-            <CyberCliMark size={16} className="logo-chakra-spin" />
+            <CyberCliMark size={20} className="logo-chakra-spin" />
           </div>
         </div>
       )}
@@ -1718,7 +1718,7 @@ function HeroState({ userName }) {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="mb-6"
       >
-        <CyberCliMark size={72} className="logo-chakra-spin" />
+        <CyberCliMark size={90} className="logo-chakra-spin" />
       </motion.div>
 
       <motion.h1
@@ -3172,6 +3172,7 @@ export default function ChatPage() {
       const assistantIdx = messages.length + 1
       setStreamingIndex(assistantIdx)
       let fullReply = ''
+      let spokenIndex = 0
       try {
         const token = await getFreshToken()
         const res = await fetch(`${API_BASE}/completions`, {
@@ -3213,6 +3214,24 @@ export default function ChatPage() {
                   if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
                   return next
                 })
+
+                if (voiceChatOpenRef.current) {
+                  const textSegment = fullReply.slice(spokenIndex)
+                  const sentenceBoundaries = /[.!?]+(?=\s+|$)/g
+                  let sentenceMatch
+                  let lastPos = 0
+                  while ((sentenceMatch = sentenceBoundaries.exec(textSegment)) !== null) {
+                    const endPos = sentenceMatch.index + sentenceMatch[0].length
+                    const sentence = textSegment.slice(lastPos, endPos).trim()
+                    if (sentence.length > 0) {
+                      speak(sentence)
+                    }
+                    lastPos = endPos
+                  }
+                  if (lastPos > 0) {
+                    spokenIndex += lastPos
+                  }
+                }
               } else if (parsed.type === 'info') {
                 setMessages(prev => {
                   const next = [...prev]
@@ -3223,7 +3242,12 @@ export default function ChatPage() {
             } catch {}
           }
         }
-        if (voiceChatOpenRef.current) speak(fullReply)
+        if (voiceChatOpenRef.current) {
+          const remaining = fullReply.slice(spokenIndex).trim()
+          if (remaining.length > 0) {
+            speak(remaining)
+          }
+        }
       } catch (err) {
         console.error('Incognito stream error:', err)
         setMessages(prev => {
@@ -3257,6 +3281,7 @@ export default function ChatPage() {
       const assistantIdx = messages.length + 1
       setStreamingIndex(assistantIdx)
       let fullReply = ''
+      let spokenIndex = 0
       try {
         const res = await fetch(`${API_BASE}/completions`, {
           method: 'POST',
@@ -3294,6 +3319,24 @@ export default function ChatPage() {
                   if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
                   return next
                 })
+
+                if (voiceChatOpenRef.current) {
+                  const textSegment = fullReply.slice(spokenIndex)
+                  const sentenceBoundaries = /[.!?]+(?=\s+|$)/g
+                  let sentenceMatch
+                  let lastPos = 0
+                  while ((sentenceMatch = sentenceBoundaries.exec(textSegment)) !== null) {
+                    const endPos = sentenceMatch.index + sentenceMatch[0].length
+                    const sentence = textSegment.slice(lastPos, endPos).trim()
+                    if (sentence.length > 0) {
+                      speak(sentence)
+                    }
+                    lastPos = endPos
+                  }
+                  if (lastPos > 0) {
+                    spokenIndex += lastPos
+                  }
+                }
               } else if (parsed.type === 'info') {
                 setMessages(prev => {
                   const next = [...prev]
@@ -3304,7 +3347,12 @@ export default function ChatPage() {
             } catch {}
           }
         }
-        if (voiceChatOpenRef.current) speak(fullReply)
+        if (voiceChatOpenRef.current) {
+          const remaining = fullReply.slice(spokenIndex).trim()
+          if (remaining.length > 0) {
+            speak(remaining)
+          }
+        }
       } catch (err) {
         setMessages(prev => {
           const next = [...prev]
@@ -3351,6 +3399,7 @@ export default function ChatPage() {
     const assistantIdx = messages.length + 1
     setStreamingIndex(assistantIdx)
     let fullReply = ''
+    let spokenIndex = 0
 
     try {
       const res = await fetch(`${API_BASE}/chat/${currentId}/messages`, {
@@ -3407,6 +3456,24 @@ export default function ChatPage() {
                 }
                 return next
               })
+
+              if (voiceChatOpenRef.current) {
+                const textSegment = fullReply.slice(spokenIndex)
+                const sentenceBoundaries = /[.!?]+(?=\s+|$)/g
+                let sentenceMatch
+                let lastPos = 0
+                while ((sentenceMatch = sentenceBoundaries.exec(textSegment)) !== null) {
+                  const endPos = sentenceMatch.index + sentenceMatch[0].length
+                  const sentence = textSegment.slice(lastPos, endPos).trim()
+                  if (sentence.length > 0) {
+                    speak(sentence)
+                  }
+                  lastPos = endPos
+                }
+                if (lastPos > 0) {
+                  spokenIndex += lastPos
+                }
+              }
             } else if (parsed.type === 'info') {
               setMessages(prev => {
                 const next = [...prev]
@@ -3425,7 +3492,10 @@ export default function ChatPage() {
 
       // Speak result if voice overlay is currently open
       if (voiceChatOpenRef.current) {
-        speak(fullReply)
+        const remaining = fullReply.slice(spokenIndex).trim()
+        if (remaining.length > 0) {
+          speak(remaining)
+        }
       }
     } catch (err) {
       console.error('Chat stream error:', err)
@@ -3516,7 +3586,7 @@ export default function ChatPage() {
                   className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: 'rgba(217,119,87,0.15)' }}
                 >
-                  <CyberCliMark size={18} />
+                  <CyberCliMark size={24} />
                 </motion.div>
                 <div className="flex flex-col">
                   <span className="font-semibold text-sm leading-tight" style={{ color: '#FAF9F7' }}>CyberCli</span>

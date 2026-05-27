@@ -215,7 +215,7 @@ export default function ApiReferencePage() {
       {/* Background design */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.015]"
         style={{
-          backgroundImage: `radial-gradient(ellipse at 50% -20%, #7C3AED 0%, transparent 60%),
+          backgroundImage: `radial-gradient(ellipse at 50% -20%, #D97757 0%, transparent 60%),
                             linear-gradient(#fff 1px, transparent 1px),
                             linear-gradient(90deg, #fff 1px, transparent 1px)`,
           backgroundSize: '100% 100%, 40px 40px, 40px 40px'
@@ -346,7 +346,7 @@ export default function ApiReferencePage() {
             const ep = ENDPOINTS_DATA[epKey]
             const isPost = ep.method === 'POST'
             const methodColor = isPost 
-              ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' 
+              ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' 
               : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
 
             return (

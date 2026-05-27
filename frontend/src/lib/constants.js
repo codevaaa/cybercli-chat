@@ -41,6 +41,7 @@ export const FOOTER_SECTIONS = [
       { label: 'About Us', href: '/about' },
       { label: 'Careers', href: '/careers' },
       { label: 'Contact', href: '/contact' },
+      { label: 'System Status', href: '/status' },
     ],
   },
   {

@@ -375,7 +375,7 @@ export default function HeroSection() {
                 zIndex: 1,
               }}
             >
-              <CyberCliMark size={280} />
+              <CyberCliMark size={360} />
             </div>
 
             {/* ── LEFT: copy ── */}
@@ -402,7 +402,7 @@ export default function HeroSection() {
                 transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.15 }}
                 className="mb-4"
               >
-                <CyberCliMark size={56} />
+                <CyberCliMark size={64} />
               </motion.div>
 
               {/* Headline */}

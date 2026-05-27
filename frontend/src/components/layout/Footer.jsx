@@ -21,7 +21,7 @@ export default function Footer() {
             {/* Brand Logo & Contact */}
             <div>
               <div className="mb-6">
-                <CyberCliWordmark size={28} />
+                <CyberCliWordmark size={36} />
               </div>
               <h3 className="text-xl font-light text-foreground-primary mb-2 tracking-tight">
                 Get in touch

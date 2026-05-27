@@ -120,7 +120,7 @@ export default function AuthCallbackPage() {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="flex flex-col items-center mb-8">
-          <CyberCliMark size={48} className="animate-pulse" />
+          <CyberCliMark size={60} className="animate-pulse" />
           <h1 className="text-3xl font-semibold text-foreground-primary tracking-tight font-serif mt-6">
             CyberCli Secure Auth
           </h1>

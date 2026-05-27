@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import tts from '../lib/tts.js'
 
 export function useTTS() {
@@ -11,6 +11,10 @@ export function useTTS() {
     pitch: tts.currentPitch
   })
   const [geminiApiKey, setGeminiApiKey] = useState(localStorage.getItem('gemini_api_key') || '')
+
+  const queueRef = useRef([])
+  const isPlayingRef = useRef(false)
+  const isProcessingRef = useRef(false)
 
   useEffect(() => {
     // Sync settings from local storage to tts service
@@ -40,25 +44,45 @@ export function useTTS() {
     })
   }, [])
 
+  const processQueue = async () => {
+    if (isProcessingRef.current) return
+    isProcessingRef.current = true
+
+    while (queueRef.current.length > 0) {
+      const sentence = queueRef.current.shift()
+      if (!sentence || sentence.trim() === '') continue
+
+      setIsLoading(true)
+      try {
+        setIsPlaying(true)
+        isPlayingRef.current = true
+        await tts.speak(sentence)
+      } catch (error) {
+        console.error('TTS Hook playback error:', error)
+      } finally {
+        isPlayingRef.current = false
+        setIsLoading(false)
+      }
+    }
+
+    setIsPlaying(false)
+    isPlayingRef.current = false
+    isProcessingRef.current = false
+  }
+
   const speak = async (text) => {
     if (!text || text.trim() === '') return
-    setIsLoading(true)
-    setIsPlaying(false)
-    try {
-      setIsPlaying(true)
-      await tts.speak(text)
-    } catch (error) {
-      console.error('TTS Hook error:', error)
-    } finally {
-      setIsPlaying(false)
-      setIsLoading(false)
-    }
+    queueRef.current.push(text)
+    processQueue()
   }
 
   const stop = () => {
+    queueRef.current = []
     tts.stop()
     setIsPlaying(false)
+    isPlayingRef.current = false
     setIsLoading(false)
+    isProcessingRef.current = false
   }
 
   const updateProvider = (provider) => {
