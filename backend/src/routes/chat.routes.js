@@ -207,12 +207,15 @@ router.post('/:id/messages/sync', requireAuth, async (req, res) => {
     const thread = await Thread.findOne({ _id: req.params.id, user_id: req.user.id })
     if (!thread) return res.status(404).json({ error: 'Thread not found' })
 
+    const isImage = (model === 'puter/gpt-image-2') || (/^(draw|generate image|create an image|make an image|paint)/i.test(content) && role === 'user') || (content.includes('![Generated Image]') && role === 'assistant')
+    
     const newMsg = new Message({
       thread_id: thread._id,
       user_id: req.user.id,
       role,
       content,
-      model: model || thread.model_id
+      model: model || thread.model_id,
+      ...(isImage ? { expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000) } : {})
     })
     await newMsg.save()
 

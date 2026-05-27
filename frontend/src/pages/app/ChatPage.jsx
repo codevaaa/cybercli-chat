@@ -37,6 +37,9 @@ const EXTRA_MODELS = [
   { id: 'puter/meta-llama/llama-3.1-70b',              name: 'Yudhishthira (Llama)',  tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. Open-weights flagship model built for balanced output.', kali: false },
   { id: 'puter/qwen/qwen2.5-72b-instruct',             name: 'Vikrama (Qwen)',        tag: 'Vikrama',  color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.', kali: false },
   { id: 'puter/openai/gpt-5.3-codex',                  name: 'Vishwakarma (Codex)',   tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories.', kali: false },
+  { id: 'puter/perplexity/sonar-deep-research',        name: 'Vyas (Deep Research)',  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
+  { id: 'puter/perplexity/sonar-reasoning-pro',        name: 'Sanjaya (Sonar Pro)',   tag: 'Sanjaya',  color: '#059669', desc: 'The visionary observer. Real-time web knowledge with deep reasoning.', kali: false },
+  { id: 'puter/perplexity/sonar-pro',                  name: 'Narada (Sonar)',        tag: 'Narada',   color: '#047857', desc: 'The swift messenger. Rapid web-search capabilities for instant, cited facts.', kali: false },
   { id: 'puter/gpt-image-2',                           name: 'Chitrakar (GPT-Image)', tag: 'Chitrakar',color: '#E11D48', desc: 'The divine painter. Generates stunning, high-quality images.', kali: false },
 ]
 
@@ -3245,11 +3248,16 @@ export default function ChatPage() {
 
     const token = await getFreshToken()
 
+    // ── OVERRIDES ──
+    if (deepResearchEnabled && !activeModel.startsWith('puter/perplexity')) {
+      activeModel = 'puter/perplexity/sonar-deep-research'
+    }
+
     // ── IMAGE GENERATION AUTO-INTERCEPT ──
     const isImageRequest = activeModel === 'puter/gpt-image-2' || (imageGenerationEnabled && /^(draw|generate image|create an image|make an image|paint)/i.test(userText.trim()))
     
-    // ── PUTER INTERCEPTION (GUEST & AUTHENTICATED) ──
-    if (isImageRequest || activeModel.startsWith('puter/')) {
+    // ── PUTER & COUNCIL INTERCEPTION (GUEST & AUTHENTICATED) ──
+    if (isImageRequest || activeModel.startsWith('puter/') || activeModel === 'council') {
       const isGuest = !token
       let currentId = activeThreadId || activeThreadIdRef.current || creatingThreadRef.current
       
@@ -3293,6 +3301,35 @@ export default function ChatPage() {
           // Puter txt2img
           const imageElem = await window.puter.ai.txt2img(userText)
           fullReply = `![Generated Image](${imageElem.src})`
+          setMessages(prev => {
+            const next = [...prev]
+            next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
+            return next
+          })
+        } else if (activeModel === 'council') {
+          // Council Mode Puter
+          const modelsToQuery = ['deepseek/deepseek-r1-0528', 'claude-opus-4-7', 'gpt-5.5']
+          
+          const formattedHistory = history.map(m => ({
+            role: m.role === 'system' ? 'system' : m.role,
+            content: m.content
+          }))
+
+          setMessages(prev => {
+            const next = [...prev]
+            next[next.length - 1] = { ...next[next.length - 1], content: `*The Council is deliberating...*\n\nQuerying DeepSeek R1, Claude Opus 4.7, and GPT-5.5 simultaneously...` }
+            return next
+          })
+
+          const promises = modelsToQuery.map(m => window.puter.ai.chat(formattedHistory, { model: m }))
+          const results = await Promise.allSettled(promises)
+          
+          const deepseekResp = results[0].status === 'fulfilled' ? results[0].value.message?.content || String(results[0].value) : `[Error: ${results[0].reason}]`
+          const claudeResp = results[1].status === 'fulfilled' ? results[1].value.message?.content || String(results[1].value) : `[Error: ${results[1].reason}]`
+          const gptResp = results[2].status === 'fulfilled' ? results[2].value.message?.content || String(results[2].value) : `[Error: ${results[2].reason}]`
+
+          fullReply = `### 🐉 DeepSeek R1\n${deepseekResp}\n\n---\n\n### 🎭 Claude Opus 4.7\n${claudeResp}\n\n---\n\n### ⚡ GPT-5.5\n${gptResp}`
+          
           setMessages(prev => {
             const next = [...prev]
             next[next.length - 1] = { ...next[next.length - 1], content: fullReply }

@@ -3,7 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom'
 import {
   X, User, Shield, CreditCard, Zap, Plug, Settings2,
   Moon, Sun, Monitor, ChevronLeft, Check, Bell, Volume2,
-  Type, Palette, Save, Camera, AlertCircle, Code2, Copy
+  Type, Palette, Save, Camera, AlertCircle, Code2, Copy, Activity
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/api.js'
@@ -18,7 +18,8 @@ const TABS = [
   { id: 'billing',      label: 'Billing',       icon: CreditCard },
   { id: 'capabilities', label: 'Capabilities',  icon: Zap        },
   { id: 'connectors',   label: 'Connectors',    icon: Plug       },
-  { id: 'api-keys',     label: 'API Keys',      icon: Code2       },
+  { id: 'usage',        label: 'Usage Stats',   icon: Activity   },
+  { id: 'api-keys',     label: 'API Keys',      icon: Code2      },
 ]
 
 const VOICES = ['Sol', 'Cove', 'Breeze', 'Orion', 'Echo']
@@ -427,6 +428,67 @@ function ConnectorsTab() {
   )
 }
 
+function UsageTab() {
+  const [history, setHistory] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchUsage = async () => {
+      try {
+        const { data } = await api.get('/usage/history')
+        setHistory(data.history || [])
+      } catch (err) {
+        console.error('Failed to fetch usage history', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchUsage()
+  }, [])
+
+  return (
+    <div className="space-y-6">
+      <SectionHeading>Model Analytics</SectionHeading>
+      <p className="text-sm text-foreground-muted mb-4 leading-relaxed">
+        Track your inference usage across the Puter AI ecosystem.
+      </p>
+
+      {loading ? (
+        <p className="text-sm text-foreground-muted">Loading analytics...</p>
+      ) : history.length === 0 ? (
+        <div className="p-6 text-center border border-border-subtle rounded-2xl" style={{ background: 'var(--bg-secondary)' }}>
+          <Activity className="w-8 h-8 mx-auto text-foreground-muted mb-3 opacity-50" />
+          <p className="text-sm text-foreground-muted">No usage data found.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {history.map((row, i) => (
+            <div
+              key={i}
+              className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-border-subtle gap-4"
+              style={{ background: 'var(--bg-secondary)' }}
+            >
+              <div>
+                <p className="text-sm font-bold text-foreground-primary truncate max-w-[200px] sm:max-w-[300px]">
+                  {row.model.replace('puter/', '')}
+                </p>
+                <p className="text-xs text-foreground-muted mt-1">
+                  {row.date}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
+                  {row.requests} requests
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function DeveloperTab() {
   const [keys, setKeys] = useState([])
   const [loading, setLoading] = useState(false)
@@ -641,6 +703,8 @@ export default function SettingsPage() {
       setActiveTab('privacy')
     } else if (path.endsWith('/personas')) {
       setActiveTab('capabilities')
+    } else if (path.endsWith('/usage')) {
+      setActiveTab('usage')
     } else {
       setActiveTab('general')
     }
@@ -652,6 +716,7 @@ export default function SettingsPage() {
     else if (tabId === 'billing') navigate('/settings/billing')
     else if (tabId === 'privacy') navigate('/settings/security')
     else if (tabId === 'capabilities') navigate('/settings/personas')
+    else if (tabId === 'usage') navigate('/settings/usage')
     else navigate(`/settings/${tabId}`)
   }
 

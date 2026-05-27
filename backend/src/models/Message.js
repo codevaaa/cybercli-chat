@@ -17,6 +17,7 @@ const messageSchema = new mongoose.Schema({
     url: { type: String },
     name: { type: String },
   }],
+  expiresAt: { type: Date, index: { expires: 0 } } // TTL index for auto-deletion
 }, { timestamps: true })
 
 messageSchema.index({ thread_id: 1, createdAt: -1 })
