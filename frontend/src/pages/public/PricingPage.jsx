@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Sparkles, ArrowRight, Shield, Zap, Globe, Briefcase } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import { useAuthStore } from '@stores/authStore.js'
 
