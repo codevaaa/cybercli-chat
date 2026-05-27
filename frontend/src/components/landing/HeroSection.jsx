@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 import { ArrowRight, Sparkles, Cpu, Mic, Zap, ExternalLink } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
+import { CyberCliMark } from '../../components/ui/CyberCliLogo'
 
 /* ─── Animated counter hook ─────────────────────────────────── */
 function useCounter(target, duration = 1800, delay = 0) {
@@ -361,7 +362,21 @@ export default function HeroSection() {
       <div className="relative z-10 section-padding pt-20 pb-16 w-full">
         <div className="container-custom">
           {/* Desktop: two-column split | Mobile: stacked */}
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="relative grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+            {/* ── Large decorative Sudarshan Chakra watermark (desktop only) ── */}
+            <div
+              className="hidden lg:block absolute pointer-events-none"
+              style={{
+                right: '-40px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                opacity: 0.06,
+                zIndex: 1,
+              }}
+            >
+              <CyberCliMark size={280} />
+            </div>
 
             {/* ── LEFT: copy ── */}
             <div>
@@ -378,6 +393,16 @@ export default function HeroSection() {
                     Introducing Council Mode — 3 models debate, 1 synthesis
                   </span>
                 </div>
+              </motion.div>
+
+              {/* Small animated Sudarshan Chakra above headline */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.15 }}
+                className="mb-4"
+              >
+                <CyberCliMark size={56} />
               </motion.div>
 
               {/* Headline */}
