@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
-import { ArrowRight, Sparkles, Cpu, Mic, Zap, ExternalLink } from 'lucide-react'
+import { ArrowRight, Sparkles, Cpu, Mic, Zap, ExternalLink, User } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { CyberCliMark } from '../../components/ui/CyberCliLogo'
 
