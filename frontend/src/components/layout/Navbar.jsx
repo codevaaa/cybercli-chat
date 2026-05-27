@@ -328,9 +328,9 @@ export default function Navbar() {
               transition={{ duration: 0.25 }}
               className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               onClick={() => setMobileOpen(false)}
-            />
+            />,
 
-            {/* Panel */}
+            /* Panel */
             <motion.div
               key="mobile-panel"
               initial={{ x: '100%' }}
@@ -491,7 +491,7 @@ export default function Navbar() {
               </div>
             </motion.div>
           ]
-        )}
+        }
       </AnimatePresence>
     </>
   )
