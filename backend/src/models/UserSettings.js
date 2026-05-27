@@ -32,6 +32,11 @@ const userSettingsSchema = new mongoose.Schema({
   notifications_responses: { type: Boolean, default: true },
   notifications_dispatch: { type: Boolean, default: false },
   memory_enabled: { type: Boolean, default: false },
+  two_factor: { type: Boolean, default: false },
+  share_usage: { type: Boolean, default: false },
+  personalized_ads: { type: Boolean, default: false },
+  save_history: { type: Boolean, default: true },
+  voice_input: { type: Boolean, default: true },
 }, { timestamps: true })
 
 export default mongoose.model('UserSettings', userSettingsSchema)

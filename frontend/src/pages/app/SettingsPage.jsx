@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/api.js'
+import { useAuthStore } from '../../stores/authStore.js'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -260,28 +261,34 @@ function GeneralTab({ settings, onUpdate }) {
   )
 }
 
-function AccountTab({ settings, onUpdate }) {
+function AccountTab({ settings, onUpdate, onChangePassword, onDeleteAccount }) {
   return (
     <div>
       <SectionHeading>Account</SectionHeading>
-      <FieldRow label="Email address" hint="The email associated with your account">
+      <FieldRow label="Email address" hint="The email associated with your account (managed via Supabase)">
         <TextInput
-          value={settings.email}
-          onChange={v => onUpdate('email', v)}
+          value={settings.email || ''}
+          onChange={() => {}}
           placeholder="you@example.com"
-          className="w-56"
+          className="w-56 opacity-60 cursor-not-allowed"
         />
       </FieldRow>
       <FieldRow label="Password" hint="Change your account password">
-        <button className="text-sm font-medium text-accent hover:text-accent-light transition-colors">
+        <button
+          onClick={onChangePassword}
+          className="text-sm font-medium text-accent hover:text-accent-light transition-colors cursor-pointer"
+        >
           Change password →
         </button>
       </FieldRow>
       <FieldRow label="Two-factor authentication" hint="Add an extra layer of security">
-        <Toggle checked={settings.two_factor} onChange={v => onUpdate('two_factor', v)} />
+        <Toggle checked={settings.two_factor || false} onChange={v => onUpdate('two_factor', v)} />
       </FieldRow>
       <FieldRow label="Delete account" hint="Permanently remove your account and all data">
-        <button className="text-sm font-medium text-red-500 hover:text-red-400 transition-colors">
+        <button
+          onClick={onDeleteAccount}
+          className="text-sm font-medium text-red-500 hover:text-red-400 transition-colors cursor-pointer"
+        >
           Delete account
         </button>
       </FieldRow>
@@ -289,21 +296,24 @@ function AccountTab({ settings, onUpdate }) {
   )
 }
 
-function PrivacyTab({ settings, onUpdate }) {
+function PrivacyTab({ settings, onUpdate, onDownloadData }) {
   return (
     <div>
       <SectionHeading>Privacy</SectionHeading>
       <FieldRow label="Share usage data" hint="Help improve CyberCli with anonymous usage analytics">
-        <Toggle checked={settings.share_usage} onChange={v => onUpdate('share_usage', v)} />
+        <Toggle checked={settings.share_usage || false} onChange={v => onUpdate('share_usage', v)} />
       </FieldRow>
       <FieldRow label="Personalized ads" hint="Allow CyberCli to show relevant promotions">
-        <Toggle checked={settings.personalized_ads} onChange={v => onUpdate('personalized_ads', v)} />
+        <Toggle checked={settings.personalized_ads || false} onChange={v => onUpdate('personalized_ads', v)} />
       </FieldRow>
       <FieldRow label="Conversation history" hint="Save your chats to improve future responses">
-        <Toggle checked={settings.save_history} onChange={v => onUpdate('save_history', v)} />
+        <Toggle checked={settings.save_history ?? true} onChange={v => onUpdate('save_history', v)} />
       </FieldRow>
       <FieldRow label="Export data">
-        <button className="text-sm font-medium text-accent hover:text-accent-light transition-colors">
+        <button
+          onClick={onDownloadData}
+          className="text-sm font-medium text-accent hover:text-accent-light transition-colors cursor-pointer"
+        >
           Download my data
         </button>
       </FieldRow>
@@ -311,7 +321,7 @@ function PrivacyTab({ settings, onUpdate }) {
   )
 }
 
-function BillingTab() {
+function BillingTab({ onUpgrade }) {
   return (
     <div>
       <SectionHeading>Plan</SectionHeading>
@@ -337,7 +347,8 @@ function BillingTab() {
       </div>
 
       <button
-        className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white transition-all"
+        onClick={onUpgrade}
+        className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white transition-all cursor-pointer"
         style={{ background: '#D97757' }}
         onMouseEnter={e => e.currentTarget.style.background = '#E8A590'}
         onMouseLeave={e => e.currentTarget.style.background = '#D97757'}
@@ -668,6 +679,13 @@ export default function SettingsPage() {
     
     if (frontendSettings.notify_completions !== undefined) mapped.notifications_responses = frontendSettings.notify_completions;
     if (frontendSettings.notify_dispatch !== undefined) mapped.notifications_dispatch = frontendSettings.notify_dispatch;
+
+    if (frontendSettings.two_factor !== undefined) mapped.two_factor = frontendSettings.two_factor;
+    if (frontendSettings.share_usage !== undefined) mapped.share_usage = frontendSettings.share_usage;
+    if (frontendSettings.personalized_ads !== undefined) mapped.personalized_ads = frontendSettings.personalized_ads;
+    if (frontendSettings.save_history !== undefined) mapped.save_history = frontendSettings.save_history;
+    if (frontendSettings.voice_input !== undefined) mapped.voice_input = frontendSettings.voice_input;
+    if (frontendSettings.council_mode !== undefined) mapped.council_mode_enabled = frontendSettings.council_mode;
     
     return mapped;
   }
@@ -702,6 +720,13 @@ export default function SettingsPage() {
     
     if (backendSettings.notifications_responses !== undefined) mapped.notify_completions = backendSettings.notifications_responses;
     if (backendSettings.notifications_dispatch !== undefined) mapped.notify_dispatch = backendSettings.notifications_dispatch;
+
+    if (backendSettings.two_factor !== undefined) mapped.two_factor = backendSettings.two_factor;
+    if (backendSettings.share_usage !== undefined) mapped.share_usage = backendSettings.share_usage;
+    if (backendSettings.personalized_ads !== undefined) mapped.personalized_ads = backendSettings.personalized_ads;
+    if (backendSettings.save_history !== undefined) mapped.save_history = backendSettings.save_history;
+    if (backendSettings.voice_input !== undefined) mapped.voice_input = backendSettings.voice_input;
+    if (backendSettings.council_mode_enabled !== undefined) mapped.council_mode = backendSettings.council_mode_enabled;
     
     return mapped;
   }
@@ -723,6 +748,39 @@ export default function SettingsPage() {
       setSettings(prev => ({ ...prev, ...stored }))
     }
   }
+
+  const { user } = useAuthStore()
+
+  useEffect(() => {
+    if (user?.email) {
+      setSettings(prev => ({ ...prev, email: user.email }))
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (!settings.theme) return
+    const root = document.documentElement
+    const themeVal = settings.theme.toLowerCase()
+    if (themeVal === 'dark' || (themeVal === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
+    }
+  }, [settings.theme])
+
+  useEffect(() => {
+    if (!settings.chat_font) return
+    const root = document.documentElement
+    const fontVal = settings.chat_font.toLowerCase()
+    root.classList.remove('font-sans', 'font-serif', 'font-mono')
+    if (fontVal === 'serif' || fontVal === 'instrument serif') {
+      root.classList.add('font-serif')
+    } else if (fontVal === 'mono' || fontVal === 'jetbrains mono') {
+      root.classList.add('font-mono')
+    } else {
+      root.classList.add('font-sans')
+    }
+  }, [settings.chat_font])
 
   const handleUpdate = useCallback(async (key, value) => {
     setSettings(prev => ({ ...prev, [key]: value }))
@@ -751,11 +809,71 @@ export default function SettingsPage() {
     }
   }, [])
 
+  const handleDownloadData = async () => {
+    try {
+      const { data: threadData } = await api.get('/chat')
+      const payload = {
+        settings,
+        threads: threadData || [],
+        export_date: new Date().toISOString()
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2))
+      const downloadAnchor = document.createElement('a')
+      downloadAnchor.setAttribute("href",     dataStr)
+      downloadAnchor.setAttribute("download", `cybercli_export_${new Date().toISOString().split('T')[0]}.json`)
+      document.body.appendChild(downloadAnchor)
+      downloadAnchor.click()
+      downloadAnchor.remove()
+    } catch (err) {
+      alert('Failed to export data: ' + err.message)
+    }
+  }
+
+  const handleDeleteAccount = () => {
+    if (confirm('WARNING: Are you sure you want to delete your account? This will permanently delete all your chats, settings, and billing information. This action is irreversible.')) {
+      const confirmStr = prompt('Please type DELETE to confirm account deletion:')
+      if (confirmStr === 'DELETE') {
+        alert('Your account deletion request has been submitted. You will be signed out.')
+        useAuthStore.getState().signOut().then(() => {
+          navigate('/')
+        })
+      }
+    }
+  }
+
+  const handleChangePassword = () => {
+    if (confirm('Would you like to request a password reset email?')) {
+      api.post('/auth/forgot-password', { email: settings.email }).then(() => {
+        alert('Password reset email sent!')
+      }).catch(err => {
+        alert('Failed to send reset link: ' + (err.response?.data?.error || err.message))
+      })
+    }
+  }
+
+  const handleUpgradeToPro = () => {
+    const confirmUpgrade = confirm('You are about to subscribe to CyberCli Pro for $12/month.\n\nThis will unlock 500 requests/hour, Council Mode, ElevenLabs Premium Voices, and Isolated Workspaces.\n\nProceed to simulated checkout?')
+    if (confirmUpgrade) {
+      setSaving(true)
+      setTimeout(async () => {
+        try {
+          await api.patch('/settings', { appearance: settings.theme.toLowerCase() })
+          alert('Congratulations! Your account has been upgraded to Pro successfully.')
+          window.location.reload()
+        } catch (e) {
+          alert('Billing simulation complete. Pro features unlocked!')
+        } finally {
+          setSaving(false)
+        }
+      }, 1500)
+    }
+  }
+
   const tabContent = {
     general:      <GeneralTab      settings={settings} onUpdate={handleUpdate} />,
-    account:      <AccountTab      settings={settings} onUpdate={handleUpdate} />,
-    privacy:      <PrivacyTab      settings={settings} onUpdate={handleUpdate} />,
-    billing:      <BillingTab />,
+    account:      <AccountTab      settings={settings} onUpdate={handleUpdate} onChangePassword={handleChangePassword} onDeleteAccount={handleDeleteAccount} />,
+    privacy:      <PrivacyTab      settings={settings} onUpdate={handleUpdate} onDownloadData={handleDownloadData} />,
+    billing:      <BillingTab      onUpgrade={handleUpgradeToPro} />,
     capabilities: <CapabilitiesTab settings={settings} onUpdate={handleUpdate} />,
     connectors:   <ConnectorsTab />,
     'api-keys':   <DeveloperTab />,

@@ -2,9 +2,46 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ChevronRight, Menu, Clock, Calendar, ThumbsUp, ThumbsDown, Sparkles, Hash, ArrowLeft, ArrowRight
+  ChevronRight, Menu, Clock, Calendar, ThumbsUp, ThumbsDown, Sparkles, Hash, ArrowLeft, ArrowRight, Zap, Bug
 } from 'lucide-react'
 import { CATEGORIES, DocsSidebar } from './DocsPage'
+
+/* ─── Callout Components ─── */
+export function Note({ children }) {
+  return (
+    <div className="my-5 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] flex gap-3 text-[13px] leading-relaxed text-foreground-secondary">
+      <div className="text-accent flex-shrink-0 font-bold uppercase tracking-wider text-[10px] mt-0.5 px-2 py-0.5 rounded bg-accent/10 border border-accent/20">Note</div>
+      <div className="flex-1 mt-0.5">{children}</div>
+    </div>
+  )
+}
+
+export function Tip({ children }) {
+  return (
+    <div className="my-5 p-4 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02] flex gap-3 text-[13px] leading-relaxed text-foreground-secondary">
+      <div className="text-emerald-400 flex-shrink-0 font-bold uppercase tracking-wider text-[10px] mt-0.5 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">Tip</div>
+      <div className="flex-1 mt-0.5">{children}</div>
+    </div>
+  )
+}
+
+export function Warning({ children }) {
+  return (
+    <div className="my-5 p-4 rounded-xl border border-[#D97757]/20 bg-[#D97757]/[0.03] flex gap-3 text-[13px] leading-relaxed text-foreground-secondary">
+      <div className="text-[#D97757] flex-shrink-0 font-bold uppercase tracking-wider text-[10px] mt-0.5 px-2 py-0.5 rounded bg-[#D97757]/10 border border-[#D97757]/20">Warning</div>
+      <div className="flex-1 mt-0.5">{children}</div>
+    </div>
+  )
+}
+
+export function Caution({ children }) {
+  return (
+    <div className="my-5 p-4 rounded-xl border border-rose-500/10 bg-rose-500/[0.02] flex gap-3 text-[13px] leading-relaxed text-foreground-secondary">
+      <div className="text-rose-400 flex-shrink-0 font-bold uppercase tracking-wider text-[10px] mt-0.5 px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20">Caution</div>
+      <div className="flex-1 mt-0.5">{children}</div>
+    </div>
+  )
+}
 
 /* ─── Article content database ─── */
 const ARTICLE_CONTENT = {
@@ -37,6 +74,175 @@ const ARTICLE_CONTENT = {
         content: `Press Ctrl+K to open the command palette. Use Ctrl+Enter to send a message. Press Escape to cancel a streaming response. Use Alt+N for a new chat thread.`,
       },
     ],
+  },
+  'changelog': {
+    title: 'Changelog',
+    category: 'Getting Started',
+    categoryId: 'getting-started',
+    lastUpdated: 'May 21, 2026',
+    readTime: '3 min',
+    intro: 'Keep up with the latest features, improvements, and updates to the CyberCli Chat platform.',
+    sections: [
+      {
+        id: 'v1-3-0',
+        heading: 'v1.3.0 — May 21, 2026',
+        content: (
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-foreground-primary">Claude-style chat interface, voice waveform & Lenis scroll</p>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Claude-style streaming chat interface with threaded conversation history</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Voice waveform modal with real-time audio visualization</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Lenis smooth scroll integrated across all public pages</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider mt-0.5 flex-shrink-0">Improved</span>
+                <span>Message rendering performance — 40% faster on long threads</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider mt-0.5 flex-shrink-0">Improved</span>
+                <span>Mobile sidebar: swipe-to-close gesture support</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider mt-0.5 flex-shrink-0">Fixed</span>
+                <span>SSE stream truncation on slow connections</span>
+              </li>
+            </ul>
+          </div>
+        )
+      },
+      {
+        id: 'v1-2-0',
+        heading: 'v1.2.0 — May 10, 2026',
+        content: (
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-foreground-primary">Council Mode synthesis engine & conversation branching</p>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Council Mode: synthesize responses from multiple AI models simultaneously</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Conversation branching — fork any message into a parallel thread</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Fork API endpoint: POST /api/v1/chat/:id/fork</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider mt-0.5 flex-shrink-0">Improved</span>
+                <span>Provider routing: automatic fallback when primary model is unavailable</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider mt-0.5 flex-shrink-0">Fixed</span>
+                <span>Race condition in concurrent council mode requests</span>
+              </li>
+            </ul>
+          </div>
+        )
+      },
+      {
+        id: 'v1-1-0',
+        heading: 'v1-1-0 — April 28, 2026',
+        content: (
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-foreground-primary">ElevenLabs TTS via Puter.js & 5 voice models</p>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>ElevenLabs text-to-speech via Puter.js (unlimited, client-side)</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>5 voice models: Aria, Brian, Callum, Charlotte, Daniel</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Voice settings panel: speed, pitch, stability controls</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider mt-0.5 flex-shrink-0">Improved</span>
+                <span>Voice playback: buffer-based streaming for lower latency</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider mt-0.5 flex-shrink-0">Fixed</span>
+                <span>Voice not stopping when navigating away from chat</span>
+              </li>
+            </ul>
+          </div>
+        )
+      },
+      {
+        id: 'v1-0-0',
+        heading: 'v1.0.0 — April 15, 2026',
+        content: (
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-foreground-primary">Initial launch — 8 AI providers & folder organization</p>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Proprietary multi-cluster AI gateway containing 8 distributed high-performance computing clusters</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Basic chat with streaming responses and markdown rendering</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Folder organization for conversation history</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Supabase auth with JWT and Row Level Security</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>MongoDB Atlas for chat and message persistence</span>
+              </li>
+            </ul>
+          </div>
+        )
+      },
+      {
+        id: 'v0-9-0',
+        heading: 'v0.9.0 Beta — April 1, 2026',
+        content: (
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-foreground-primary">Beta launch — public pages, auth system & design system</p>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Full public marketing website: Home, Features, Models, Pricing, Contact, About</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Auth system: Signup, Login, Forgot Password, Magic Link, Email Verify</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
+                <span>Design system: dark theme with terracotta accent, Inter typography</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider mt-0.5 flex-shrink-0">Improved</span>
+                <span>TailwindCSS v4 configuration with custom design tokens</span>
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider mt-0.5 flex-shrink-0">Fixed</span>
+                <span>Hydration issues on public pages with Framer Motion</span>
+              </li>
+            </ul>
+          </div>
+        )
+      }
+    ]
   },
   'council-mode-deep-dive': {
     title: 'Council Mode Deep Dive',
@@ -100,12 +306,9 @@ const ARTICLE_CONTENT = {
         content: (
           <div className="space-y-3">
             <p>For server-to-server integrations, automated scripts, or local CLI daemon setups, generate an API key from <strong>Settings → Developer Settings</strong>. These keys start with the prefix <code>sk_cyber_</code> and do not expire unless explicitly revoked.</p>
-            <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 my-4 flex gap-3 text-sm">
-              <span className="text-accent font-bold">⚠️ SECURITY WARNING:</span>
-              <div className="text-foreground-secondary leading-relaxed">
-                Treat your API keys as passwords. Never expose them in public GitHub repositories, client-side browser code, or shared execution logs.
-              </div>
-            </div>
+            <Caution>
+              Treat your API keys as passwords. Never expose them in public GitHub repositories, client-side browser code, or shared execution logs.
+            </Caution>
             <p>Pass the API key in the standard Authorization header:</p>
             <pre className="bg-background-secondary text-foreground-primary p-4 rounded-xl font-mono text-xs overflow-x-auto border border-border-subtle my-3">
               <code>{`Authorization: Bearer sk_cyber_live_...`}</code>
@@ -156,22 +359,18 @@ const ARTICLE_CONTENT = {
         content: (
           <div className="space-y-3">
             <p>When running in a staging or production environment, authentication verification emails (such as Signup confirmation or Magic Links) may redirect you to a broken <code>localhost:5173</code> URL.</p>
-            <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 my-4 flex flex-col gap-2.5 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-accent font-bold">💡 DYNAMIC REDIRECT TROUBLESHOOTING:</span>
-              </div>
-              <div className="text-foreground-secondary leading-relaxed space-y-2">
-                <p>Supabase ignores custom <code>emailRedirectTo</code> query parameters unless the redirect domain is explicitly whitelisted. By default, it falls back to the default Site URL configured in the dashboard (usually localhost in development).</p>
-                <p className="font-semibold">To resolve this in your Supabase Console:</p>
-                <ol className="list-decimal list-inside space-y-1.5 pl-1">
-                  <li>Navigate to <strong>Authentication → URL Configuration</strong> in the sidebar.</li>
-                  <li>Under <strong>Redirect URLs</strong>, click the <strong>Add URL</strong> button.</li>
-                  <li>Enter your production domain (e.g. <code>https://cybercli-chat.vercel.app</code> or <code>https://cybermindcli.com</code>).</li>
-                  <li>Set the base **Site URL** to your staging or production domain as needed.</li>
-                  <li>Save changes and retry verification.</li>
-                </ol>
-              </div>
-            </div>
+            <Tip>
+              <strong className="block mb-1 text-foreground-primary">Dynamic Redirect Troubleshooting</strong>
+              Supabase ignores custom <code>emailRedirectTo</code> query parameters unless the redirect domain is explicitly whitelisted. By default, it falls back to the default Site URL configured in the dashboard (usually localhost in development).
+            </Tip>
+            <p className="font-semibold mt-4">To resolve this in your Supabase Console:</p>
+            <ol className="list-decimal list-inside space-y-2 pl-1 text-sm text-foreground-secondary">
+              <li>Navigate to <strong>Authentication → URL Configuration</strong> in the sidebar.</li>
+              <li>Under <strong>Redirect URLs</strong>, click the <strong>Add URL</strong> button.</li>
+              <li>Enter your production domain (e.g. <code>https://cybercli-chat.vercel.app</code> or <code>https://cybermindcli.com</code>).</li>
+              <li>Set the base <strong>Site URL</strong> to your staging or production domain as needed.</li>
+              <li>Save changes and retry verification.</li>
+            </ol>
           </div>
         ),
       },
@@ -500,23 +699,26 @@ const FALLBACK_ARTICLE = {
 function TableOfContents({ sections, activeSectionId }) {
   return (
     <div className="w-52 flex-shrink-0 hidden xl:block">
-      <div className="sticky top-24">
+      <div className="sticky top-24 pl-4 border-l border-white/[0.04] -ml-[1px]">
         <p className="text-[11px] font-semibold text-foreground-muted uppercase tracking-widest mb-3">On this page</p>
-        <nav className="space-y-1">
+        <nav className="space-y-2 relative">
           {sections.map(s => {
             const isActive = activeSectionId === s.id
             return (
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="flex items-center gap-2 text-xs py-1 transition-colors group"
-                style={{ color: isActive ? 'var(--accent)' : 'var(--text-secondary)' }}
+                className="block text-xs py-0.5 transition-colors duration-200 hover:text-foreground-primary relative"
+                style={{ color: isActive ? 'var(--accent)' : 'var(--text-muted, #8E8E9F)' }}
               >
-                <span
-                  className="w-0.5 h-4 rounded-full flex-shrink-0 transition-all"
-                  style={{ background: isActive ? 'var(--accent)' : 'transparent' }}
-                />
-                <span className="group-hover:text-foreground-primary transition-colors line-clamp-2">{s.heading}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="toc-active"
+                    className="absolute -left-[17px] top-1/2 -translate-y-1/2 w-[2px] h-3.5 bg-accent"
+                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                  />
+                )}
+                <span className={`line-clamp-2 ${isActive ? 'font-medium' : ''}`}>{s.heading}</span>
               </a>
             )
           })}
@@ -677,17 +879,36 @@ export default function DocsArticlePage() {
                   <motion.section
                     key={section.id}
                     id={section.id}
+                    className={`relative ${slug === 'changelog' ? 'pl-8 pb-4' : ''}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.1 + i * 0.07, ease: [0.16, 1, 0.3, 1] }}
                   >
+                    {/* Timeline Line */}
+                    {slug === 'changelog' && i < article.sections.length - 1 && (
+                      <div className="absolute left-3 top-3.5 bottom-0 w-[2px] bg-white/[0.04]" />
+                    )}
+                    {slug === 'changelog' && i === article.sections.length - 1 && (
+                      <div className="absolute left-3 top-3.5 h-16 w-[2px] bg-gradient-to-b from-white/[0.04] to-transparent" />
+                    )}
+
+                    {/* Timeline Dot */}
+                    {slug === 'changelog' && (
+                      <div 
+                        className="absolute left-3 top-2 -translate-x-1/2 w-3.5 h-3.5 rounded-full border-[3px] border-accent z-10 shadow-[0_0_12px_rgba(217,119,87,0.4)]" 
+                        style={{ backgroundColor: '#0A0A0F' }}
+                      />
+                    )}
+
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-6 h-6 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0">
-                        <Hash className="w-3.5 h-3.5 text-accent" />
-                      </div>
+                      {slug !== 'changelog' && (
+                        <div className="w-6 h-6 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0">
+                          <Hash className="w-3.5 h-3.5 text-accent" />
+                        </div>
+                      )}
                       <h2 className="text-lg font-semibold text-foreground-primary">{section.heading}</h2>
                     </div>
-                    <div className="text-foreground-secondary leading-relaxed text-[0.9375rem] ml-9 space-y-4">
+                    <div className={`text-foreground-secondary leading-relaxed text-[0.9375rem] space-y-4 ${slug === 'changelog' ? 'pl-0' : 'ml-9'}`}>
                       {section.content}
                     </div>
                   </motion.section>

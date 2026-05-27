@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import Navbar from '@components/layout/Navbar'
 import Footer from '@components/layout/Footer'
@@ -103,7 +103,7 @@ function App() {
           <Route path="/cookie-policy" element={<PublicLayout><CookiePolicyPage /></PublicLayout>} />
           <Route path="/acceptable-use" element={<PublicLayout><AcceptableUsePage /></PublicLayout>} />
           <Route path="/gdpr" element={<PublicLayout><GDPRPage /></PublicLayout>} />
-          <Route path="/changelog" element={<PublicLayout><ChangelogPage /></PublicLayout>} />
+          <Route path="/changelog" element={<Navigate to="/docs/changelog" replace />} />
           <Route path="/api-reference" element={<PublicLayout><ApiReferencePage /></PublicLayout>} />
           <Route path="/developers" element={<PublicLayout><DevelopersPage /></PublicLayout>} />
           <Route path="/ai-agents" element={<PublicLayout><AiAgentsPage /></PublicLayout>} />

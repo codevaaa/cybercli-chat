@@ -19,6 +19,7 @@ export const CATEGORIES = [
     border: 'rgba(217,119,87,0.25)',
     articles: [
       { title: 'Quick Start Guide', slug: 'quick-start-guide', readTime: '3 min' },
+      { title: 'Changelog', slug: 'changelog', readTime: '3 min' },
       { title: 'Creating Your Account', slug: 'creating-your-account', readTime: '2 min' },
       { title: 'Choosing Your First Model', slug: 'choosing-your-first-model', readTime: '4 min' },
       { title: 'Understanding the Chat Interface', slug: 'understanding-the-chat-interface', readTime: '5 min' },
@@ -148,7 +149,7 @@ export function DocsSidebar({ activeSlug, onClose, isMobile = false }) {
   return (
     <aside
       style={{ width: isMobile ? '100%' : 260 }}
-      className="flex flex-col h-full bg-background-secondary border-r border-border-subtle overflow-hidden flex-shrink-0"
+      className="flex flex-col h-full bg-background-primary border-r border-white/[0.05] overflow-hidden flex-shrink-0"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-5 pb-3">
@@ -157,7 +158,7 @@ export function DocsSidebar({ activeSlug, onClose, isMobile = false }) {
           <span className="text-sm font-semibold text-foreground-primary tracking-tight">Documentation</span>
         </Link>
         {isMobile && (
-          <button onClick={onClose} className="p-1 rounded hover:bg-background-tertiary text-foreground-muted">
+          <button onClick={onClose} className="p-1 rounded hover:bg-white/5 text-foreground-muted">
             <X className="w-4 h-4" />
           </button>
         )}
@@ -168,8 +169,8 @@ export function DocsSidebar({ activeSlug, onClose, isMobile = false }) {
         <div
           className="relative flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200"
           style={{
-            borderColor: searchFocused ? 'var(--accent)' : 'var(--border-subtle)',
-            background: searchFocused ? 'rgba(217,119,87,0.06)' : 'var(--bg-primary)',
+            borderColor: searchFocused ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
+            background: searchFocused ? 'rgba(217,119,87,0.06)' : 'rgba(255,255,255,0.02)',
           }}
         >
           <Search className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${searchFocused ? 'text-accent' : 'text-foreground-muted'}`} />
@@ -183,7 +184,7 @@ export function DocsSidebar({ activeSlug, onClose, isMobile = false }) {
             className="flex-1 bg-transparent text-xs text-foreground-primary placeholder-foreground-muted focus:outline-none"
           />
           {!search && (
-            <span className="text-[10px] text-foreground-muted border border-border-subtle rounded px-1 py-0.5 font-mono">⌘K</span>
+            <span className="text-[10px] text-foreground-muted border border-white/[0.06] rounded px-1 py-0.5 font-mono">⌘K</span>
           )}
           {search && (
             <button onClick={() => setSearch('')} className="text-foreground-muted hover:text-foreground-primary">
@@ -203,7 +204,7 @@ export function DocsSidebar({ activeSlug, onClose, isMobile = false }) {
               {/* Category header */}
               <button
                 onClick={() => toggleCat(cat.id)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-background-tertiary transition-colors group text-left"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-white/5 transition-colors group text-left"
               >
                 <div
                   className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
@@ -399,12 +400,12 @@ export default function DocsPage() {
                 return (
                   <ScrollReveal key={cat.id} delay={i * 0.06}>
                     <motion.div
-                      className="group rounded-xl border border-border-subtle bg-background-secondary p-5 cursor-pointer"
+                      className="group rounded-xl border border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.02] p-5 cursor-pointer transition-colors duration-350"
                       whileHover={{
-                        borderColor: cat.border,
-                        boxShadow: `0 0 30px ${cat.bg}`,
+                        borderColor: 'rgba(217,119,87,0.25)',
+                        boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 24px rgba(217,119,87,0.05)',
                         y: -3,
-                        transition: { duration: 0.25 },
+                        transition: { duration: 0.2 },
                       }}
                     >
                       <div className="flex items-center gap-3 mb-3">
@@ -432,7 +433,7 @@ export default function DocsPage() {
                           </Link>
                         ))}
                       </div>
-                      <div className="mt-3 pt-3 border-t border-border-subtle">
+                      <div className="mt-3 pt-3 border-t border-white/[0.04]">
                         <Link
                           to={`/docs/${cat.articles[0].slug}`}
                           className="flex items-center gap-1 text-xs font-medium transition-colors hover:opacity-80"
@@ -462,7 +463,7 @@ export default function DocsPage() {
                 <ScrollReveal key={item.slug} delay={i * 0.07}>
                   <Link
                     to={`/docs/${item.slug}`}
-                    className="group flex items-center gap-3 p-4 rounded-xl border border-border-subtle bg-background-secondary hover:border-accent/25 hover:bg-accent/5 transition-all duration-200"
+                    className="group flex items-center gap-3 p-4 rounded-xl border border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.02] hover:border-accent/25 transition-all duration-200"
                   >
                     <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
                       <Star className="w-3.5 h-3.5 text-accent" />
@@ -479,7 +480,7 @@ export default function DocsPage() {
 
             {/* Can't find section */}
             <ScrollReveal delay={0.2}>
-              <div className="mt-8 rounded-2xl border border-border-subtle bg-background-secondary p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="mt-8 rounded-2xl border border-white/[0.04] bg-white/[0.01] p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground-primary mb-1">Can't find what you need?</h3>
                   <p className="text-xs text-foreground-secondary">Ask our AI-powered docs assistant or reach out to the team.</p>

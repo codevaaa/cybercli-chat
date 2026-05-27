@@ -1053,29 +1053,28 @@ function InputArea({
         </div>
 
         {/* Bottom Row: Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-border-subtle pt-3 mt-1 gap-3 flex-shrink-0">
-          {/* Left: Plus attachment */}
-          <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto">
-            <button className="p-2 rounded-xl text-foreground-muted hover:text-foreground-primary hover:bg-white/5 transition-all">
+        <div className="flex items-center justify-between border-t border-border-subtle pt-2.5 mt-1 gap-2 flex-shrink-0 flex-wrap">
+          {/* Left: Plus attachment & Model dropdown */}
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <button className="p-1.5 rounded-xl text-foreground-muted hover:text-foreground-primary hover:bg-white/5 transition-all">
               <Plus className="w-4 h-4" />
             </button>
+            <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} />
           </div>
 
-          {/* Right: Model dropdown, Research, Ghost, Mic, Waveform, Send */}
-          <div className="flex flex-wrap items-center gap-2 justify-end w-full sm:w-auto">
-            <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} />
-
+          {/* Right: Actions */}
+          <div className="flex items-center gap-1.5 justify-end">
             {/* Deep Research toggle */}
             <button
               onClick={onToggleDeepResearch}
               title="Deep Research — multi-angle web synthesis"
-              className={`flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+              className={`flex items-center gap-1 p-1.5 rounded-xl text-xs font-semibold transition-all border ${
                 deepResearchEnabled
                   ? 'bg-blue-500/15 text-blue-400 border-blue-500/25'
                   : 'text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent'
               }`}
             >
-              <BookOpen className="w-3.5 h-3.5" />
+              <BookOpen className="w-4 h-4" />
               {deepResearchEnabled && <span className="hidden sm:inline text-[11px]">Deep</span>}
             </button>
 
@@ -1092,6 +1091,7 @@ function InputArea({
               <Ghost className="w-4 h-4" />
             </button>
 
+            {/* Mic */}
             <button
               onClick={onMicClick}
               className={`p-1.5 rounded-xl transition-all relative border border-transparent ${
@@ -1112,6 +1112,7 @@ function InputArea({
               <Mic className={`w-4 h-4 ${inlineSpeechListening ? 'animate-pulse' : ''}`} />
             </button>
 
+            {/* Waveform */}
             <button
               onClick={onWaveformClick}
               className="p-1.5 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-[2px] h-7 w-8"
@@ -1134,6 +1135,7 @@ function InputArea({
               ))}
             </button>
 
+            {/* Send */}
             <button
               onClick={onSend}
               disabled={!input.trim() || loading}
@@ -3483,8 +3485,11 @@ export default function ChatPage() {
   const pinnedThreads = threads.filter(t => t.is_pinned)
   const recentThreads = threads.filter(t => !t.is_pinned).slice(0, 30)
 
+  const selectedModelObj = [...MODELS, ...EXTRA_MODELS].find(m => m.id === selectedModel)
+  const isKaliMode = selectedModelObj?.kali === true
+
   return (
-    <div className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''}`} style={{ background: 'var(--bg-primary)' }}>
+    <div className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${isKaliMode ? 'kali-theme' : ''}`} style={{ background: 'var(--bg-primary)' }}>
 
       {/* ── Sidebar ── */}
       {isMobile && sidebarOpen && (
@@ -3859,7 +3864,7 @@ export default function ChatPage() {
               onClick={() => setSidebarOpen(true)}
               className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors"
             >
-              <ChevronRight className="w-4 h-4" />
+              <Menu className="w-4 h-4" />
             </button>
           )}
 

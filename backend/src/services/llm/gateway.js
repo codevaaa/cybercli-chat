@@ -58,6 +58,22 @@ const MODEL_MAP = {
   'bytez/meta-llama/Llama-3.1-8B-Instruct': { provider: 'bytez', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
 }
 
+const OPENROUTER_FALLBACK_MAP = {
+  'huggingface/meta-llama/Llama-3.1-8B-Instruct': 'meta-llama/llama-3.1-8b-instruct',
+  'huggingface/meta-llama/Llama-3.3-70B-Instruct': 'meta-llama/llama-3.3-70b-instruct',
+  'huggingface/Qwen/Qwen2.5-72B-Instruct': 'qwen/qwen-2.5-72b-instruct',
+  'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B': 'deepseek/deepseek-r1-distill-llama-70b',
+  'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1': 'mistralai/mixtral-8x7b-instruct',
+  'huggingface/NousResearch/Hermes-3-Llama-3.1-70B': 'nousresearch/hermes-3-llama-3.1-70b',
+  'huggingface/NousResearch/Hermes-3-Llama-3.1-8B': 'nousresearch/hermes-3-llama-3.1-8b',
+  'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b': 'cognitivecomputations/dolphin-2.9.4-llama3-70b',
+  'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b': 'cognitivecomputations/dolphin-2.9.2-qwen2.5-72b',
+  'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct': 'qwen/qwen-2.5-coder-32b-instruct',
+  'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b': 'cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b',
+  'huggingface/defog/sqlcoder-70b-v1.5': 'defog/sqlcoder-70b-v1.5',
+  'nvidia/llama-3.1-nemotron-70b': 'nvidia/llama-3.1-nemotron-70b-instruct'
+}
+
 const FALLBACK_CHAIN = [
   'openrouter/gpt-4o-mini',
   'groq/llama-3.1-8b',
@@ -153,7 +169,18 @@ export const llmGateway = {
       }
     }
 
-    const client = getClient(targetModel.provider)
+    let client = getClient(targetModel.provider)
+    let activeModelName = targetModel.model
+    let activeProvider = targetModel.provider
+
+    if (!client && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
+      client = getClient('openrouter')
+      if (client) {
+        activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
+        activeProvider = 'openrouter'
+      }
+    }
+
     if (!client) {
       yield { type: 'error', content: 'No API key configured for any provider' }
       return
@@ -161,7 +188,7 @@ export const llmGateway = {
 
     try {
       const stream = await client.chat.completions.create({
-        model: targetModel.model,
+        model: activeModelName,
         messages: enriched,
         temperature,
         stream: true,
@@ -177,7 +204,32 @@ export const llmGateway = {
 
       yield { type: 'done' }
     } catch (error) {
-      console.error(`Provider ${targetModel.provider} failed:`, error.message)
+      console.error(`Provider ${activeProvider} failed:`, error.message)
+
+      if (activeProvider !== 'openrouter' && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
+        try {
+          const fallbackClient = getClient('openrouter')
+          if (fallbackClient) {
+            const fallbackModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
+            yield { type: 'info', content: `Direct route failed. Switching to OpenRouter...` }
+            const stream = await fallbackClient.chat.completions.create({
+              model: fallbackModelName,
+              messages: enriched,
+              temperature,
+              stream: true,
+              max_tokens: 4096,
+            })
+            for await (const chunk of stream) {
+              const content = chunk.choices[0]?.delta?.content
+              if (content) yield { type: 'token', content }
+            }
+            yield { type: 'done' }
+            return
+          }
+        } catch (fallbackError) {
+          console.error(`Fallback to OpenRouter for ${activeModelId} failed:`, fallbackError.message)
+        }
+      }
 
       const activeFallbackChain = totalChars > 25000
         ? ['gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini']
@@ -277,14 +329,25 @@ export const llmGateway = {
       }
     }
 
-    const client = getClient(targetModel.provider)
+    let client = getClient(targetModel.provider)
+    let activeModelName = targetModel.model
+    let activeProvider = targetModel.provider
+
+    if (!client && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
+      client = getClient('openrouter')
+      if (client) {
+        activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
+        activeProvider = 'openrouter'
+      }
+    }
+
     if (!client) {
       return { error: 'No API key configured for any provider' }
     }
 
     try {
       const response = await client.chat.completions.create({
-        model: targetModel.model,
+        model: activeModelName,
         messages: enriched,
         temperature,
         max_tokens: 4096,
@@ -292,13 +355,37 @@ export const llmGateway = {
 
       return {
         content: response.choices[0].message.content,
-        model: targetModel.model,
-        provider: targetModel.provider,
+        model: activeModelName,
+        provider: activeProvider,
         tokens_in: response.usage?.prompt_tokens || 0,
         tokens_out: response.usage?.completion_tokens || 0,
       }
     } catch (error) {
-      console.error(`Provider ${targetModel.provider} failed:`, error.message)
+      console.error(`Provider ${activeProvider} failed:`, error.message)
+
+      if (activeProvider !== 'openrouter' && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
+        try {
+          const fallbackClient = getClient('openrouter')
+          if (fallbackClient) {
+            const fallbackModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
+            const response = await fallbackClient.chat.completions.create({
+              model: fallbackModelName,
+              messages: enriched,
+              temperature,
+              max_tokens: 4096,
+            })
+            return {
+              content: response.choices[0].message.content,
+              model: fallbackModelName,
+              provider: 'openrouter',
+              tokens_in: response.usage?.prompt_tokens || 0,
+              tokens_out: response.usage?.completion_tokens || 0,
+            }
+          }
+        } catch (fallbackErr) {
+          console.error(`Non-stream fallback to OpenRouter failed:`, fallbackErr.message)
+        }
+      }
       return { error: error.message }
     }
   },
