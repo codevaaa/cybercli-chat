@@ -5,6 +5,10 @@ import { llmGateway } from '../services/llm/gateway.js'
 import Thread from '../models/Thread.js'
 import Message from '../models/Message.js'
 import { getDaemon } from '../utils/daemonBridge.js'
+import { useFallbackMode } from '../utils/fallbackDb.js'
+
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id) || useFallbackMode()
+
 
 const router = Router()
 
@@ -39,7 +43,7 @@ router.get('/', requireAuth, async (req, res) => {
 // Get a single thread
 router.get('/:id', requireAuth, async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!isValidId(req.params.id)) {
       return res.status(400).json({ error: 'Invalid thread ID format' })
     }
     const thread = await Thread.findOne({ _id: req.params.id, user_id: req.user.id })
@@ -55,7 +59,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 // Update thread metadata (title, pinned status, folder)
 router.patch('/:id', requireAuth, async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!isValidId(req.params.id)) {
       return res.status(400).json({ error: 'Invalid thread ID format' })
     }
     const thread = await Thread.findOneAndUpdate(
@@ -75,7 +79,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
 // Delete thread and its messages
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!isValidId(req.params.id)) {
       return res.status(400).json({ error: 'Invalid thread ID format' })
     }
     const thread = await Thread.findOneAndDelete({ _id: req.params.id, user_id: req.user.id })
@@ -97,7 +101,7 @@ router.post('/:id/fork', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'message_id is required to fork a thread' })
     }
 
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!isValidId(req.params.id)) {
       return res.status(400).json({ error: 'Invalid thread ID format' })
     }
 
@@ -163,7 +167,7 @@ router.post('/:id/fork', requireAuth, async (req, res) => {
 // Truncate messages in a thread after a specific message
 router.delete('/:id/messages/after/:messageId', requireAuth, async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id) || !mongoose.Types.ObjectId.isValid(req.params.messageId)) {
+    if (!isValidId(req.params.id) || !isValidId(req.params.messageId)) {
       return res.status(400).json({ error: 'Invalid ID format' })
     }
 
@@ -248,7 +252,7 @@ router.post('/:id/messages/sync', requireAuth, async (req, res) => {
 // Retrieve messages of a thread
 router.get('/:id/messages', requireAuth, async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!isValidId(req.params.id)) {
       return res.status(400).json({ error: 'Invalid thread ID format' })
     }
     const thread = await Thread.findOne({ _id: req.params.id, user_id: req.user.id })
@@ -280,7 +284,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'messages array is required' })
   }
 
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+  if (!isValidId(req.params.id)) {
     return res.status(400).json({ error: 'Invalid thread ID format' })
   }
 

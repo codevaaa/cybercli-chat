@@ -90,7 +90,7 @@ const MODEL_MAP = {
   'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b': { provider: 'huggingface', model: 'cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', purpose: 'general' },
   'huggingface/defog/sqlcoder-70b-v1.5':                              { provider: 'huggingface', model: 'defog/sqlcoder-70b-v1.5', purpose: 'reasoning' },
 
-  'nvidia/llama-3.1-nemotron-70b': { provider: 'nvidia', model: 'llama-3.1-nemotron-70b-instruct', purpose: 'reasoning' },
+  'nvidia/llama-3.1-nemotron-70b': { provider: 'nvidia', model: 'meta/llama-3.3-70b-instruct', purpose: 'reasoning' },
   'bytez/meta-llama/Llama-3.1-8B-Instruct': { provider: 'bytez', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
 }
 
@@ -138,7 +138,7 @@ function getClient(provider) {
   if (provider === 'huggingface') {
     return new OpenAI({
       apiKey: key,
-      baseURL: 'https://api-inference.huggingface.co/v1',
+      baseURL: 'https://router.huggingface.co/v1',
     })
   }
 
@@ -249,7 +249,8 @@ ${r2.content ? r2.content.trim() : (r2.error || 'Response error')}
 ### ⚖️ Yudhishthira (Groq / Llama 70B)
 ${r3.content ? r3.content.trim() : (r3.error || 'Response error')}`;
 
-        yield { type: 'content', content: comparativeView }
+        yield { type: 'token', content: comparativeView }
+        yield { type: 'done' }
         return // End stream directly
       } catch (err) {
         console.error("Council Mode Failed:", err);

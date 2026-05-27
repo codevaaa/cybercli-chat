@@ -1,3 +1,10 @@
+import dns from 'dns'
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1'])
+} catch (err) {
+  console.warn('Failed to set custom DNS servers:', err.message)
+}
+
 import './config/env.js'
 import connectMongoDB from './config/database.js'
 import express from 'express'
