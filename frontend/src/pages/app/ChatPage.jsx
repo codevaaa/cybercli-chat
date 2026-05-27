@@ -44,7 +44,7 @@ const EXTRA_MODELS = [
   { id: 'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', name: 'Rudra',    tag: 'Rudra',       color: '#EF4444', desc: 'The fierce one. Uncensored edge model built for raw unconstrained intelligence at high speed.', kali: true },
   { id: 'huggingface/defog/sqlcoder-70b-v1.5',                   name: 'Agastya',       tag: 'Agastya',     color: '#D69E2E', desc: 'The sage of data. Specialized in translating natural language into precise, optimized SQL queries.', kali: false },
   { id: 'mistral/mistral-large-latest',                          name: 'Vayu',          tag: 'Vayu',        color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities powered by Mistral Large.', kali: false },
-  { id: 'openrouter/moonshotai/moonshot-v1-8k',                  name: 'Kimi',          tag: 'Kimi',        color: '#6366F1', desc: 'The focused archer. High-precision model from Moonshot AI, perfect for long-context understanding.', kali: false },
+  { id: 'openrouter/moonshotai/moonshot-v1-8k',                  name: 'Karna',         tag: 'Karna',       color: '#6366F1', desc: 'The focused archer. High-precision model from Moonshot AI, perfect for long-context understanding.', kali: false },
 ]
 
 

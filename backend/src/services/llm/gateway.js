@@ -41,6 +41,8 @@ const MODEL_MAP = {
   'gemini/gemini-2.5-pro': { provider: 'gemini', model: 'gemini-2.5-pro-preview-05-06', purpose: 'reasoning' },
   'cerebras/llama-3.1-8b': { provider: 'cerebras', model: 'llama3.1-8b', purpose: 'speed' },
   'cloudflare/@cf/meta/llama-3.1-8b-instruct': { provider: 'cloudflare', model: '@cf/meta/llama-3.1-8b-instruct', purpose: 'general' },
+  'openrouter/moonshotai/moonshot-v1-8k': { provider: 'openrouter', model: 'moonshotai/moonshot-v1-8k', purpose: 'general' },
+  'mistral/mistral-large-latest': { provider: 'mistral', model: 'mistral-large-latest', purpose: 'reasoning' },
   
   // HuggingFace models (10+ Powerful/Uncensored models)
   'huggingface/meta-llama/Llama-3.1-8B-Instruct':                     { provider: 'huggingface', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
@@ -202,17 +204,17 @@ export const llmGateway = {
         const [r1, r2, r3] = await Promise.all([p1, p2, p3]);
         
         // Assemble the comparative view instead of synthesizing a single paragraph
-        const comparativeView = `### 🌙 MoonshotAI (Kimi K2.6)
+        const comparativeView = `### 🏹 Karna (MoonshotAI / Kimi)
 ${r1.content.trim()}
 
 ---
 
-### 🌪️ Mistral (Large)
+### 🌪️ Vayu (Mistral Large)
 ${r2.content.trim()}
 
 ---
 
-### 🦙 Groq (Llama 3.1 70B)
+### 🦙 Nakul (Groq / Llama 70B)
 ${r3.content.trim()}`;
 
         yield { type: 'content', content: comparativeView }
