@@ -17,7 +17,7 @@ import { useTTS } from '../../hooks/useTTS.js'
 import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
 import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
 import { useAuthStore } from '@stores/authStore.js'
-import CyberCliMark from '../../components/ui/CyberCliLogo.jsx'
+import CyberCliMark, { CyberCliWordmark } from '../../components/ui/CyberCliLogo.jsx'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -3579,7 +3579,13 @@ export default function ChatPage() {
               {NAV_ITEMS.map(item => (
                 <button
                   key={item.id}
-                  onClick={() => setActiveNav(item.id)}
+                  onClick={() => {
+                    if (item.id === 'voice') {
+                      setVoiceChatOpen(true)
+                    } else {
+                      setActiveNav(item.id)
+                    }
+                  }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors mb-0.5 ${
                     activeNav === item.id ? 'text-white' : 'text-gray-400 hover:text-gray-200'
                   }`}
@@ -3889,12 +3895,15 @@ export default function ChatPage() {
         {/* Header strip */}
         <header className="flex items-center gap-3 px-4 py-3 flex-shrink-0 border-b border-white/[0.03] bg-[#0A0A0F]">
           {!sidebarOpen && (
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors"
-            >
-              <Menu className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+              <CyberCliWordmark size={24} />
+            </div>
           )}
 
           {activeThreadId && activeNav === 'chats' && (

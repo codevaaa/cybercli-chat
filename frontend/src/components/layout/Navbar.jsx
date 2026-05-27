@@ -189,10 +189,7 @@ export default function Navbar() {
               className="flex items-center group transition-opacity hover:opacity-90"
               aria-label="CyberCli – go to homepage"
             >
-              <div className="flex items-center gap-2">
-                <CyberCliMark size={28} />
-                <CyberCliWordmark size={32} />
-              </div>
+              <CyberCliWordmark size={32} />
             </Link>
 
           {/* ── Desktop nav links ── */}
@@ -430,10 +427,7 @@ export default function Navbar() {
               {/* Panel Header */}
               <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.06] flex-shrink-0">
                 <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center">
-                  <div className="flex items-center gap-2">
-                    <CyberCliMark size={26} />
-                    <CyberCliWordmark size={30} />
-                  </div>
+                  <CyberCliWordmark size={30} />
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}
