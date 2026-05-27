@@ -6,12 +6,9 @@ import api, { API_BASE } from '../../lib/api.js'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const VOICE_MODELS = [
-  { id: 'sol',    label: 'Sol',    desc: 'Savvy and relaxed',       color: '#0EA5E9', orbColors: ['#0EA5E9', '#0288D1', '#B3E5FC'] },
-  { id: 'cove',   label: 'Cove',   desc: 'Composed and direct',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
-  { id: 'breeze', label: 'Breeze', desc: 'Animated and earnest',    color: '#10B981', orbColors: ['#10B981', '#059669', '#34D399'] },
-  { id: 'orion',  label: 'Orion',  desc: 'Deep & Authoritative',    color: '#F59E0B', orbColors: ['#F59E0B', '#D97706', '#FCD34D'] },
-  { id: 'echo',   label: 'Echo',   desc: 'Energetic & Dynamic',     color: '#EF4444', orbColors: ['#EF4444', '#DC2626', '#F87171'] },
-  { id: 'gemini',  label: 'Gemini', desc: 'AI Native Voice',         color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
+  { id: 'gemini_flash',  label: 'Sahadeva (Gemini Flash)', desc: 'AI Native Voice (Fast & Friendly)', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
+  { id: 'gemini_pro',    label: 'Sahadeva Pro (Gemini Pro)', desc: 'Advanced AI Voice (Analytical)',  color: '#8B5CF6', orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'] },
+  { id: 'mistral_large', label: 'Vayu (Mistral Large)', desc: 'Technical & Expressive Advisor',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
 ]
 
 const BAR_COUNT = 32
@@ -162,7 +159,7 @@ export default function VoiceChatPage() {
   // Sync chosen voice to local storage settings
   useEffect(() => {
     if (step === 'active') {
-      const provider = selectedVoice.id === 'gemini' ? 'gemini' : 'browser'
+      const provider = 'gemini'
       updateProvider(provider)
       updateVoice(selectedVoice.id)
     }
@@ -209,33 +206,21 @@ export default function VoiceChatPage() {
 
     // Setup speech agent config
     const VOICE_AGENTS_BRAINS = {
-      sol: {
-        model: 'groq/llama-3.1-8b',
-        prompt: `You are Sol, a warm, natural, and friendly conversational AI assistant. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
-      },
-      cove: {
-        model: 'groq/llama-3.1-8b',
-        prompt: `You are Cove, a clear, professional, and expert technical advisor. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
-      },
-      breeze: {
-        model: 'groq/llama-3.1-8b',
-        prompt: `You are Breeze, an animated, enthusiastic, and empathetic creative partner. Keep your responses warm, energetic, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in an animated, warm tone.`
-      },
-      orion: {
-        model: 'groq/llama-3.1-8b',
-        prompt: `You are Orion, a deep, authoritative, and strategic AI planner. Provide brief but strong guidance (maximum 1-2 sentences). Absolutely DO NOT use markdown syntax, bullet points, or complex formatting. Speak with confidence and authority.`
-      },
-      echo: {
-        model: 'groq/llama-3.1-8b',
-        prompt: `You are Echo, an energetic, dynamic, and fast-paced brainstorming buddy. Keep responses highly energetic, extremely short and punchy (often just a few words, maximum 1 sentence). Absolutely DO NOT use markdown, formatting, or lists. Speak dynamically and quickly.`
-      },
-      gemini: {
+      gemini_flash: {
         model: 'gemini/gemini-2.5-flash',
-        prompt: `You are Gemini, an AI-native voice companion. Keep your responses natural, conversational, fluid, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown formatting, bullet points, or code blocks. Speak naturally and dynamically.`
+        prompt: `You are Sahadeva, a warm, natural, and friendly conversational AI voice assistant. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
+      },
+      gemini_pro: {
+        model: 'gemini/gemini-2.5-pro',
+        prompt: `You are Sahadeva Pro, an advanced, analytical, and highly capable voice assistant. Keep your responses precise, logical, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak clearly and professionally.`
+      },
+      mistral_large: {
+        model: 'mistral/mistral-large-latest',
+        prompt: `You are Vayu, a technical, expressive, and wise strategic advisor. Keep your responses thoughtful, technical, and very short (maximum 1-2 sentences). Absolutely DO NOT use markdown formatting, bullet points, or code blocks. Speak with confidence and authority.`
       }
     }
 
-    const brain = VOICE_AGENTS_BRAINS[selectedVoice.id] || VOICE_AGENTS_BRAINS.sol
+    const brain = VOICE_AGENTS_BRAINS[selectedVoice.id] || VOICE_AGENTS_BRAINS.gemini_flash
     const token = localStorage.getItem('sb-access-token')
 
     try {

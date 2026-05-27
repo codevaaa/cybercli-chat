@@ -26,9 +26,7 @@ export const PROVIDERS = [
 ]
 
 export const TTS_VOICES = [
-  { id: 'ava', name: 'Ava', gender: 'female', provider: 'gemini', languages: ['en', 'hi', 'es'] },
-  { id: 'nova', name: 'Nova', gender: 'female', provider: 'elevenlabs', languages: ['en', 'fr', 'de'] },
-  { id: 'luna', name: 'Luna', gender: 'female', provider: 'elevenlabs', languages: ['en', 'ja', 'ko'] },
-  { id: 'orion', name: 'Orion', gender: 'male', provider: 'gemini', languages: ['en', 'hi', 'es'] },
-  { id: 'echo', name: 'Echo', gender: 'male', provider: 'elevenlabs', languages: ['en', 'de', 'fr'] },
+  { id: 'gemini_flash', name: 'Sahadeva (Gemini Flash)', gender: 'female', provider: 'gemini', languages: ['en', 'hi', 'es'] },
+  { id: 'gemini_pro', name: 'Sahadeva Pro (Gemini Pro)', gender: 'male', provider: 'gemini', languages: ['en', 'hi', 'es'] },
+  { id: 'mistral_large', name: 'Vayu (Mistral Large)', gender: 'male', provider: 'gemini', languages: ['en', 'de', 'fr'] },
 ]

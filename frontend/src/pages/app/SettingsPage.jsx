@@ -22,7 +22,7 @@ const TABS = [
   { id: 'api-keys',     label: 'API Keys',      icon: Code2      },
 ]
 
-const VOICES = ['Sol', 'Cove', 'Breeze', 'Orion', 'Echo']
+const VOICES = ['Sahadeva (Gemini Flash)', 'Sahadeva Pro (Gemini Pro)', 'Vayu (Mistral Large)']
 const FONTS  = ['Inter', 'Instrument Serif', 'JetBrains Mono']
 
 // ─── Utility components ───────────────────────────────────────────────────────
@@ -668,7 +668,7 @@ const DEFAULT_SETTINGS = {
   instructions: '',
   theme: 'dark',
   chat_font: 'Inter',
-  voice: 'Sol',
+  voice: 'Sahadeva (Gemini Flash)',
   voice_speed: 'Normal',
   notify_completions: true,
   notify_dispatch: false,
@@ -734,7 +734,20 @@ export default function SettingsPage() {
       const f = frontendSettings.chat_font.toLowerCase();
       mapped.chat_font = f === 'instrument serif' ? 'serif' : f === 'jetbrains mono' ? 'mono' : 'inter';
     }
-    if (frontendSettings.voice !== undefined) mapped.voice = frontendSettings.voice.toLowerCase();
+    if (frontendSettings.voice !== undefined) {
+      const voiceMap = {
+        'Sahadeva (Gemini Flash)': 'gemini_flash',
+        'Sahadeva Pro (Gemini Pro)': 'gemini_pro',
+        'Vayu (Mistral Large)': 'mistral_large',
+        'sol': 'gemini_flash',
+        'cove': 'gemini_pro',
+        'breeze': 'gemini_flash',
+        'orion': 'gemini_pro',
+        'echo': 'mistral_large',
+        'gemini': 'gemini_flash'
+      };
+      mapped.voice = voiceMap[frontendSettings.voice] || frontendSettings.voice.toLowerCase();
+    }
     if (frontendSettings.voice_speed !== undefined) mapped.voice_speed = frontendSettings.voice_speed.toLowerCase();
     
     if (frontendSettings.web_search !== undefined) mapped.web_search_enabled = frontendSettings.web_search;
@@ -771,7 +784,18 @@ export default function SettingsPage() {
     }
     if (backendSettings.voice !== undefined) {
       const v = backendSettings.voice;
-      mapped.voice = v.charAt(0).toUpperCase() + v.slice(1);
+      const voiceRevMap = {
+        'gemini_flash': 'Sahadeva (Gemini Flash)',
+        'gemini_pro': 'Sahadeva Pro (Gemini Pro)',
+        'mistral_large': 'Vayu (Mistral Large)',
+        'sol': 'Sahadeva (Gemini Flash)',
+        'cove': 'Sahadeva Pro (Gemini Pro)',
+        'breeze': 'Sahadeva (Gemini Flash)',
+        'orion': 'Sahadeva Pro (Gemini Pro)',
+        'echo': 'Vayu (Mistral Large)',
+        'gemini': 'Sahadeva (Gemini Flash)'
+      };
+      mapped.voice = voiceRevMap[v] || 'Sahadeva (Gemini Flash)';
     }
     if (backendSettings.voice_speed !== undefined) {
       const v = backendSettings.voice_speed;

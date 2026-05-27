@@ -6,12 +6,9 @@ import CyberCliMark from '../ui/CyberCliLogo.jsx'
 
 
 const VOICE_MODELS = [
-  { id: 'eleven_sol',    label: 'Sol',    desc: 'Savvy and relaxed',       color: '#0EA5E9', orbColors: ['#0EA5E9', '#0288D1', '#B3E5FC'] },
-  { id: 'eleven_cove',   label: 'Cove',   desc: 'Composed and direct',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
-  { id: 'eleven_breeze', label: 'Breeze', desc: 'Animated and earnest',    color: '#10B981', orbColors: ['#10B981', '#059669', '#34D399'] },
-  { id: 'eleven_orion',  label: 'Orion',  desc: 'Deep & Authoritative',    color: '#F59E0B', orbColors: ['#F59E0B', '#D97706', '#FCD34D'], premium: true },
-  { id: 'eleven_echo',   label: 'Echo',   desc: 'Energetic & Dynamic',     color: '#EF4444', orbColors: ['#EF4444', '#DC2626', '#F87171'], premium: true },
-  { id: 'gemini_flash',  label: 'Gemini', desc: 'AI Native Voice',         color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'], premium: true },
+  { id: 'gemini_flash',  label: 'Sahadeva (Gemini Flash)', desc: 'AI Native Voice (Fast & Friendly)', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
+  { id: 'gemini_pro',    label: 'Sahadeva Pro (Gemini Pro)', desc: 'Advanced AI Voice (Analytical)',  color: '#8B5CF6', orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'] },
+  { id: 'mistral_large', label: 'Vayu (Mistral Large)', desc: 'Technical & Expressive Advisor',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
 ]
 
 const BAR_COUNT = 36
@@ -207,8 +204,8 @@ export default function VoiceChatModal({
   useEffect(() => {
     const model = VOICE_MODELS[voiceIndex]
     if (!model) return
-    const provider = model.id.startsWith('gemini') ? 'gemini' : 'browser'
-    const voice = model.label.toLowerCase()
+    const provider = 'gemini'
+    const voice = model.id
     if (updateProvider) updateProvider(provider)
     if (updateVoice) updateVoice(voice)
   }, [voiceIndex, updateProvider, updateVoice])

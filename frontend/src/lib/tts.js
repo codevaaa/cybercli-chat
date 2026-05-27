@@ -5,9 +5,9 @@ const TTS_PROVIDERS = {
     name: 'Google Gemini Flash TTS',
     description: 'Google Gemini Flash Text-to-Speech (Server-side)',
     voices: [
-      { id: 'gemini', name: 'Gemini Voice', gender: 'female', accent: 'american' },
-      { id: 'sol', name: 'Sol', gender: 'female', accent: 'american' },
-      { id: 'orion', name: 'Orion', gender: 'male', accent: 'american' },
+      { id: 'gemini_flash', name: 'Sahadeva (Gemini Flash)', gender: 'female', accent: 'multilingual' },
+      { id: 'gemini_pro', name: 'Sahadeva Pro (Gemini Pro)', gender: 'male', accent: 'multilingual' },
+      { id: 'mistral_large', name: 'Vayu (Mistral Large)', gender: 'male', accent: 'multilingual' },
     ],
   },
   browser: {
@@ -20,7 +20,7 @@ const TTS_PROVIDERS = {
 class TTSService {
   constructor() {
     this.currentProvider = 'gemini'
-    this.currentVoice = 'gemini'
+    this.currentVoice = 'gemini_flash'
     this.currentSpeed = 1.0
     this.currentPitch = 1.0
     this.browserVoices = []
@@ -39,7 +39,7 @@ class TTSService {
       this.currentProvider = provider
       // Set a default voice for the provider if none selected
       if (provider === 'gemini') {
-        this.currentVoice = 'gemini'
+        this.currentVoice = 'gemini_flash'
       } else if (provider === 'browser' && this.browserVoices.length > 0) {
         this.currentVoice = this.browserVoices[0].name
       }
@@ -95,7 +95,7 @@ class TTSService {
         },
         body: JSON.stringify({
           text,
-          voice_id: this.currentVoice || 'gemini',
+          voice_id: this.currentVoice || 'gemini_flash',
           speed: this.currentSpeed,
         }),
       })

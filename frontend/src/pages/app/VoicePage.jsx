@@ -4,16 +4,14 @@ import { ArrowLeft, Mic, MicOff, Volume2, Settings, Play, Pause, User, Zap, Arro
 import tts from '../../lib/tts.js'
 
 const VOICES = [
-  { id: 'ava', name: 'Ava', gender: 'Female', provider: 'Gemini Flash TTS', description: 'Warm, empathetic, conversational', lang: 'EN, HI, ES' },
-  { id: 'nova', name: 'Nova', gender: 'Female', provider: 'Browser Native', description: 'Professional, articulate, news-anchor', lang: 'EN, FR, DE' },
-  { id: 'luna', name: 'Luna', gender: 'Female', provider: 'Browser Native', description: 'Playful, creative, youthful', lang: 'EN, JP, KO' },
-  { id: 'orion', name: 'Orion', gender: 'Male', provider: 'Gemini Flash TTS', description: 'Deep, authoritative, mentor-like', lang: 'EN, HI, ES' },
-  { id: 'echo', name: 'Echo', gender: 'Male', provider: 'Browser Native', description: 'Calm, analytical, precise', lang: 'EN, DE, FR' },
+  { id: 'gemini_flash', name: 'Sahadeva', gender: 'Female', provider: 'Gemini Flash TTS', description: 'Warm, empathetic, conversational voice', lang: 'EN, HI, ES' },
+  { id: 'gemini_pro', name: 'Sahadeva Pro', gender: 'Male', provider: 'Gemini Flash TTS', description: 'Deep, authoritative, analytical voice', lang: 'EN, HI, ES' },
+  { id: 'mistral_large', name: 'Vayu', gender: 'Male', provider: 'Gemini Flash TTS', description: 'Technical, expressive, and wise strategic advisor', lang: 'EN, DE, FR' },
 ]
 
 export default function VoicePage() {
   const navigate = useNavigate()
-  const [selectedVoice, setSelectedVoice] = useState('ava')
+  const [selectedVoice, setSelectedVoice] = useState('gemini_flash')
   const [speed, setSpeed] = useState(1.0)
   const [previewPlaying, setPreviewPlaying] = useState(false)
 
@@ -32,8 +30,8 @@ export default function VoicePage() {
       return
     }
     setPreviewPlaying(true)
-    tts.setProvider(activeVoice.provider.includes('Gemini') ? 'gemini' : 'browser')
-    tts.setVoice(activeVoice.id === 'ava' ? 'gemini' : activeVoice.id)
+    tts.setProvider('gemini')
+    tts.setVoice(activeVoice.id)
     
     try {
       await tts.speak(`Hello, my name is ${activeVoice.name}. ${activeVoice.description}.`)
