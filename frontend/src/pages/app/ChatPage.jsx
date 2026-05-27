@@ -1029,12 +1029,9 @@ function InputArea({
   }, [input])
 
   const handleKeyDown = (e) => {
-    // Ignore Enter if user is using an IME (like typing in Hindi/Chinese and selecting a character)
-    if (e.nativeEvent && e.nativeEvent.isComposing) return
-
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      onSend(input)
+      onSend()
     }
   }
 
