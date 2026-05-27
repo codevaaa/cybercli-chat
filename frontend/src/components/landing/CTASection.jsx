@@ -2,8 +2,11 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen } from 'lucide-react'
 import { motion } from 'framer-motion'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import { useAuthStore } from '@stores/authStore.js'
 
 export default function CTASection() {
+  const { user } = useAuthStore()
+
   return (
     <section className="section-padding py-24 lg:py-32 relative overflow-hidden">
       {/* Ambient background glow */}
@@ -75,14 +78,14 @@ export default function CTASection() {
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                   <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}>
                     <Link
-                      to="/auth/signup"
+                      to={user ? "/chat" : "/auth/signup"}
                       className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-white text-base"
                       style={{
                         background: 'linear-gradient(135deg, #D97757 0%, #C4613A 100%)',
                         boxShadow: '0 8px 32px rgba(217,119,87,0.35)',
                       }}
                     >
-                      Get started free
+                      {user ? "Go to Chat" : "Get started free"}
                       <ArrowRight className="w-4.5 h-4.5" />
                     </Link>
                   </motion.div>

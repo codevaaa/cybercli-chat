@@ -99,13 +99,7 @@ function App() {
           <Route path="/affiliate" element={<PublicLayout><AffiliatePage /></PublicLayout>} />
           <Route path="/blog" element={<PublicLayout><BlogPage /></PublicLayout>} />
           
-          {/* Placeholder marketing routes to prevent blank screens */}
-          <Route path="/developers" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
-          <Route path="/api-reference" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
-          <Route path="/code" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
-          <Route path="/downloads" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
-          <Route path="/status" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
-          <Route path="/docs" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
+          {/* Placeholder marketing routes removed to prevent intercepting real pages */}
           <Route path="/blog/:slug" element={<PublicLayout><BlogPostPage /></PublicLayout>} />
           <Route path="/docs" element={<PublicLayout><DocsPage /></PublicLayout>} />
           <Route path="/docs/:slug" element={<PublicLayout><DocsArticlePage /></PublicLayout>} />

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, Terminal, Search, Zap, Check } from 'lucide-react'
 import { CyberCliMark } from '../../components/ui/CyberCliLogo'
-
+import { useAuthStore } from '@stores/authStore.js'
 const TYPING_SPEED = 40
 
 const HERO_COMMANDS = [
@@ -87,7 +87,7 @@ export default function HeroSection() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link
-              to="/auth/signup"
+              to={useAuthStore().user ? "/chat" : "/auth/signup"}
               className="px-8 py-4 bg-[#D97757] hover:bg-[#c26549] text-white rounded-xl font-bold transition-all shadow-[0_0_30px_rgba(217,119,87,0.3)] w-full sm:w-auto"
             >
               Get Started for Free

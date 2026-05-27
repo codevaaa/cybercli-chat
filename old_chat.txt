@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   Plus, Search, MessageSquare, FolderOpen, Layers, Code2, Sliders,
@@ -19,7 +19,7 @@ import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
 import { useAuthStore } from '@stores/authStore.js'
 import CyberCliMark, { CyberCliWordmark } from '../../components/ui/CyberCliLogo.jsx'
 
-// ─── Constants ──────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Constants ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 const MODELS = [
   { id: 'puter/claude-opus-4-7',       name: 'Madhav (Opus 4.7)',    tag: 'Madhav',   color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
@@ -37,27 +37,7 @@ const EXTRA_MODELS = [
   { id: 'puter/meta-llama/llama-3.1-70b',              name: 'Yudhishthira (Llama)',  tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. Open-weights flagship model built for balanced output.', kali: false },
   { id: 'puter/qwen/qwen2.5-72b-instruct',             name: 'Vikrama (Qwen)',        tag: 'Vikrama',  color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.', kali: false },
   { id: 'puter/openai/gpt-5.3-codex',                  name: 'Vishwakarma (Codex)',   tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories.', kali: false },
-  { id: 'puter/perplexity/sonar-deep-research',        name: 'Vyas (Deep Research)',  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
-  { id: 'puter/perplexity/sonar-reasoning-pro',        name: 'Sanjaya (Sonar Pro)',   tag: 'Sanjaya',  color: '#059669', desc: 'The visionary observer. Real-time web knowledge with deep reasoning.', kali: false },
-  { id: 'puter/perplexity/sonar-pro',                  name: 'Narada (Sonar)',        tag: 'Narada',   color: '#047857', desc: 'The swift messenger. Rapid web-search capabilities for instant, cited facts.', kali: false },
   { id: 'puter/gpt-image-2',                           name: 'Chitrakar (GPT-Image)', tag: 'Chitrakar',color: '#E11D48', desc: 'The divine painter. Generates stunning, high-quality images.', kali: false },
-  
-  // Backing models restored from previous version
-  { id: 'gemini/gemini-2.5-flash',                               name: 'Sahadeva (Flash)',      tag: 'Sahadeva',    color: '#4285F4', desc: 'The wise seer. High-speed multimodal intelligence with enormous context window for documents and media.', kali: false },
-  { id: 'nvidia/llama-3.1-nemotron-70b',                         name: 'Dronacharya',   tag: 'Dronacharya', color: '#76B900', desc: 'The grand master. Research-grade academic reasoning for deep technical tasks and complex instruction.', kali: false },
-  { id: 'cerebras/llama-3.1-8b',                                 name: 'Abhimanyu (Fast)',tag: 'Abhimanyu',   color: '#EC4899', desc: 'The lightning striker. Powered by wafer-scale silicon delivering unmatched sub-100ms response speed.', kali: false },
-  { id: 'huggingface/meta-llama/Llama-3.3-70B-Instruct',         name: 'Yudhishthira (HF)',  tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. High-parameter open-weights flagship model built for balanced, ethical, quality output.', kali: false },
-  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',                 name: 'Vikrama (Qwen-HF)',       tag: 'Vikrama',     color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence with 72B parameter depth.', kali: false },
-  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya (Distill)',tag: 'Chanakya',    color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving and planning.', kali: false },
-  { id: 'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1',      name: 'Saptarishi',    tag: 'Saptarishi',  color: '#FF4D88', desc: 'The seven sages. Mixture-of-experts architecture combining the wisdom of seven specialized expert models.', kali: false },
-  { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-70B',       name: 'Parashurama',   tag: 'Parashurama', color: '#9F7AEA', desc: 'The agentic warrior. Specialized for tool use, function calling, and autonomous agentic orchestration.', kali: false },
-  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',           name: 'Vishwakarma (Coder)',   tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories across every major programming language.', kali: false },
-  { id: 'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b', name: 'Ashwatthama',   tag: 'Ashwatthama', color: '#38B2AC', desc: 'The free warrior. Uncensored high-parameter intelligence for unrestricted debate and creative thinking.', kali: true },
-  { id: 'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b', name: 'Kali',         tag: 'Kali',        color: '#FF0055', desc: '🔥 The destroyer of limits. Fully uncensored 72B flagship — maximum freedom of thought, unfiltered intelligence.', kali: true },
-  { id: 'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', name: 'Rudra',    tag: 'Rudra',       color: '#EF4444', desc: 'The fierce one. Uncensored edge model built for raw unconstrained intelligence at high speed.', kali: true },
-  { id: 'huggingface/defog/sqlcoder-70b-v1.5',                   name: 'Agastya',       tag: 'Agastya',     color: '#D69E2E', desc: 'The sage of data. Specialized in translating natural language into precise, optimized SQL queries.', kali: false },
-  { id: 'mistral/mistral-large-latest',                          name: 'Vayu (Mistral API)',          tag: 'Vayu',        color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities powered by Mistral Large.', kali: false },
-  { id: 'openrouter/moonshotai/moonshot-v1-8k',                  name: 'Karna',         tag: 'Karna',       color: '#6366F1', desc: 'The focused archer. High-precision model from Moonshot AI, perfect for long-context understanding.', kali: false },
 ]
 
 
@@ -82,21 +62,21 @@ const NAV_ITEMS = [
 
 const LANGUAGES = [
   { name: 'English (United States)', code: 'EN' },
-  { name: 'Français (France)', code: 'FR' },
+  { name: 'Fran├ºais (France)', code: 'FR' },
   { name: 'Deutsch (Deutschland)', code: 'DE' },
-  { name: 'हिन्दी (भारत)', code: 'HI' },
+  { name: 'αñ╣αñ┐αñ¿αÑìαñªαÑÇ (αñ¡αñ╛αñ░αññ)', code: 'HI' },
   { name: 'Indonesia (Indonesia)', code: 'ID' },
   { name: 'Italiano (Italia)', code: 'IT' },
-  { name: '日本語 (日本)', code: 'JA' },
-  { name: '한국어 (대한민국)', code: 'KO' },
-  { name: 'Português (Brasil)', code: 'PT' },
-  { name: 'Español (Latinoamérica)', code: 'ES' },
-  { name: 'Español (España)', code: 'ES' }
+  { name: 'µùÑµ£¼Φ¬₧ (µùÑµ£¼)', code: 'JA' },
+  { name: 'φò£Ω╡¡∞û┤ (δîÇφò£δ»╝Ω╡¡)', code: 'KO' },
+  { name: 'Portugu├¬s (Brasil)', code: 'PT' },
+  { name: 'Espa├▒ol (Latinoam├⌐rica)', code: 'ES' },
+  { name: 'Espa├▒ol (Espa├▒a)', code: 'ES' }
 ]
 
 
 
-// ─── Blink Cursor ────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Blink Cursor ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function BlinkCursor() {
   return (
@@ -108,7 +88,7 @@ function BlinkCursor() {
   )
 }
 
-// ─── Code Block with Sandboxed Execution ─────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Code Block with Sandboxed Execution ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function CodeBlock({ language, value, codeExecutionEnabled }) {
   const [copied, setCopied] = useState(false)
@@ -190,12 +170,12 @@ function CodeBlock({ language, value, codeExecutionEnabled }) {
           {runResult.success ? (
             <div className="text-emerald-400 font-semibold mb-1 text-[11px] flex items-center gap-1">
               <Check className="w-3.5 h-3.5" />
-              ✓ Program executed successfully
+              Γ£ô Program executed successfully
             </div>
           ) : (
             <div className="text-rose-400 font-semibold mb-1 text-[11px] flex items-center gap-1">
               <AlertCircle className="w-3.5 h-3.5" />
-              ✗ Program execution failed
+              Γ£ù Program execution failed
             </div>
           )}
           <pre className="whitespace-pre-wrap text-gray-200 bg-black/30 p-2.5 rounded-lg border border-white/[0.03] max-h-48 overflow-y-auto leading-relaxed">{runResult.output}</pre>
@@ -205,7 +185,7 @@ function CodeBlock({ language, value, codeExecutionEnabled }) {
   )
 }
 
-// ─── Image Generator Widget ──────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Image Generator Widget ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function ImageGeneratorWidget({ src, alt }) {
   const [loading, setLoading] = useState(true)
@@ -340,7 +320,7 @@ function ImageGeneratorWidget({ src, alt }) {
   )
 }
 
-// ─── Daemon Action Widget ────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Daemon Action Widget ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function DaemonActionWidget({ action, payload, daemonConnected, onExecuteSuccess }) {
   const [status, setStatus] = useState('idle') // idle | executing | success | error
@@ -515,7 +495,7 @@ function DaemonActionWidget({ action, payload, daemonConnected, onExecuteSuccess
   )
 }
 
-// ─── Daemon Action Tag Parser ────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Daemon Action Tag Parser ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 const parseDaemonActions = (text) => {
   if (!text) return [];
@@ -560,7 +540,7 @@ const parseDaemonActions = (text) => {
   return blocks;
 };
 
-// ─── Message Bubble ──────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Message Bubble ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled, daemonConnected, onExecuteSuccess }) {
   const isUser = msg.role === 'user'
@@ -693,7 +673,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
             {msg.is_fork_point && msg.forked_thread_id && (
               <Link to={`/chat/${msg.forked_thread_id}`} className="flex items-center gap-1.5 text-[11px] text-blue-400 hover:text-blue-300 font-medium transition-colors">
                 <GitBranch className="w-3 h-3" />
-                Go to branch →
+                Go to branch ΓåÆ
               </Link>
             )}
 
@@ -734,7 +714,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
   )
 }
 
-// ─── Model Selector Dropdown ─────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Model Selector Dropdown ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 
 function ModelSelector({ selectedModel, onSelect }) {
@@ -833,7 +813,7 @@ function ModelSelector({ selectedModel, onSelect }) {
                     onClick={() => setShowMore(false)}
                     className="text-xs font-semibold text-accent hover:text-accent-light"
                   >
-                    ← Back
+                    ΓåÉ Back
                   </button>
                   <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">More Models</span>
                 </div>
@@ -1001,7 +981,7 @@ function ModelSelector({ selectedModel, onSelect }) {
   )
 }
 
-// ─── Input Area ───────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Input Area ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function InputArea({
   input,
@@ -1029,12 +1009,9 @@ function InputArea({
   }, [input])
 
   const handleKeyDown = (e) => {
-    // Ignore Enter if user is using an IME (like typing in Hindi/Chinese and selecting a character)
-    if (e.nativeEvent && e.nativeEvent.isComposing) return
-
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      onSend(input)
+      onSend()
     }
   }
 
@@ -1163,7 +1140,7 @@ function InputArea({
   )
 }
 
-// ─── Thread Item ──────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Thread Item ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function ThreadItem({ thread, isActive, onSelect, onDelete, onPin }) {
   const [hovering, setHovering] = useState(false)
@@ -1209,7 +1186,7 @@ function ThreadItem({ thread, isActive, onSelect, onDelete, onPin }) {
   )
 }
 
-// ─── Full Inline Settings Dialog ──────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Full Inline Settings Dialog ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 const SETTINGS_TABS = [
   { id: 'general',      label: 'General' },
@@ -1408,11 +1385,11 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
               className="bg-background-tertiary text-sm text-foreground-primary border border-border-subtle rounded-xl px-3 py-2 focus:outline-none focus:border-accent"
             >
               <option value="en">English (US)</option>
-              <option value="es">Español</option>
-              <option value="fr">Français</option>
+              <option value="es">Espa├▒ol</option>
+              <option value="fr">Fran├ºais</option>
               <option value="de">Deutsch</option>
-              <option value="hi">हिन्दी (Hindi)</option>
-              <option value="ur">اردو (Urdu)</option>
+              <option value="hi">αñ╣αñ┐αñ¿αÑìαñªαÑÇ (Hindi)</option>
+              <option value="ur">╪º╪▒╪»┘ê (Urdu)</option>
             </select>
           </Row>
           <Row label="Voice">
@@ -1482,13 +1459,13 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
             <span className="text-sm font-semibold text-foreground-primary">Free Plan</span>
             <span className="text-xs px-2 py-0.5 rounded-md bg-accent/20 text-accent font-bold">CURRENT</span>
           </div>
-          <p className="text-xs text-foreground-muted">50 requests/hr · 8+ providers · All features</p>
+          <p className="text-xs text-foreground-muted">50 requests/hr ┬╖ 8+ providers ┬╖ All features</p>
         </div>
         <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-foreground-primary">Pro Plan — $12/mo</span>
+            <span className="text-sm font-semibold text-foreground-primary">Pro Plan ΓÇö $12/mo</span>
           </div>
-          <p className="text-xs text-foreground-muted mb-4">500 requests/hr · Priority routing · Early features · Council Mode unlimited</p>
+          <p className="text-xs text-foreground-muted mb-4">500 requests/hr ┬╖ Priority routing ┬╖ Early features ┬╖ Council Mode unlimited</p>
           <button
             onClick={async () => {
               try {
@@ -1499,7 +1476,7 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
             className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
             style={{ background: 'linear-gradient(135deg, #D97757, #B85D3D)' }}
           >
-            Upgrade to Pro →
+            Upgrade to Pro ΓåÆ
           </button>
         </div>
       </div>
@@ -1553,7 +1530,7 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground-muted mb-3">API Keys</h3>
         {generatedKey && (
           <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-300 space-y-2">
-            <p className="text-xs font-semibold">✓ Key generated! Copy now — won't be shown again.</p>
+            <p className="text-xs font-semibold">Γ£ô Key generated! Copy now ΓÇö won't be shown again.</p>
             <pre className="p-2.5 bg-black/40 border border-emerald-500/20 rounded-lg text-xs font-mono select-all break-all text-white">{generatedKey}</pre>
             <button onClick={() => setGeneratedKey(null)} className="text-xs underline text-emerald-400 hover:text-emerald-200">Done</button>
           </div>
@@ -1669,7 +1646,7 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
   )
 }
 
-// ─── Hero State ───────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Hero State ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function HeroState({ userName }) {
   const firstName = userName ? userName.split(' ')[0] : 'User'
@@ -1702,7 +1679,7 @@ function HeroState({ userName }) {
   )
 }
 
-// ─── Projects Sub-View Component ───────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Projects Sub-View Component ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function ProjectsView({ threads, navigate, setActiveNav, handleCreateThread }) {
   const [folders, setFolders] = useState([])
@@ -1761,7 +1738,7 @@ function ProjectsView({ threads, navigate, setActiveNav, handleCreateThread }) {
           onClick={() => setSelectedFolder(null)}
           className="text-xs text-foreground-muted hover:text-foreground-primary mb-4 flex items-center gap-1"
         >
-          ← Back to Projects
+          ΓåÉ Back to Projects
         </button>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -1907,7 +1884,7 @@ function ProjectsView({ threads, navigate, setActiveNav, handleCreateThread }) {
   )
 }
 
-// ─── Artifacts Sub-View Component ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Artifacts Sub-View Component ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function ArtifactsView({ messages }) {
   const [artifacts, setArtifacts] = useState([])
@@ -2038,7 +2015,7 @@ function ArtifactsView({ messages }) {
   )
 }
 
-// ─── Code Sub-View Component (CLI & API Keys) ─────────────────────────────────
+// ΓöÇΓöÇΓöÇ Code Sub-View Component (CLI & API Keys) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: parentLoadDaemonStatus }) {
   const [daemonConnected, setDaemonConnected] = useState(false)
@@ -2156,7 +2133,7 @@ function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: pa
 
         {generatedKey && (
           <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-300 space-y-2">
-            <p className="text-xs font-semibold">✓ API Key Generated successfully! Copy this key now. It will not be shown again.</p>
+            <p className="text-xs font-semibold">Γ£ô API Key Generated successfully! Copy this key now. It will not be shown again.</p>
             <pre className="p-2.5 bg-black/40 border border-emerald-500/20 rounded-lg text-xs font-mono select-all select-text font-bold tracking-wide break-all text-white">{generatedKey}</pre>
             <button
               onClick={() => setGeneratedKey(null)}
@@ -2219,7 +2196,7 @@ function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: pa
   )
 }
 
-// ─── Customize Sub-View Component ──────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Customize Sub-View Component ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function CustomizeView({
   webSearchEnabled,
@@ -2464,7 +2441,7 @@ function CustomizeView({
   )
 }
 
-// ─── Search Sub-View Component ────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Search Sub-View Component ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function SearchView({ navigate, setActiveNav }) {
   const [query, setQuery] = useState('')
@@ -2507,7 +2484,7 @@ function SearchView({ navigate, setActiveNav }) {
           type="text"
           value={query}
           onChange={handleChange}
-          placeholder="Search your conversations…"
+          placeholder="Search your conversationsΓÇª"
           autoFocus
           className="w-full bg-background-secondary border border-border-subtle rounded-2xl pl-11 pr-4 py-3.5 text-sm text-foreground-primary placeholder:text-foreground-muted focus:outline-none focus:border-accent transition-all"
         />
@@ -2540,7 +2517,7 @@ function SearchView({ navigate, setActiveNav }) {
   )
 }
 
-// ─── Main ChatPage ────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Main ChatPage ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 export default function ChatPage() {
   const { threadId } = useParams()
@@ -2771,7 +2748,7 @@ export default function ChatPage() {
     else if (key === 'appearance') setCurrentTheme(value)
     else if (key === 'chat_font') setCurrentFont(value)
     else if (key === 'language') {
-      const langMap = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', hi: 'हिं', ur: 'اُ' }
+      const langMap = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', hi: 'αñ╣αñ┐αñé', ur: '╪º┘Å' }
       setUserLanguage(langMap[value] || (value || 'en').toUpperCase())
     } else if (key === 'voice') {
       updateVoice(value.toLowerCase())
@@ -2885,7 +2862,7 @@ export default function ChatPage() {
     voiceChatOpenRef.current = voiceChatOpen
   }, [voiceChatOpen])
 
-  // ── Data loading & Dynamic Settings application ──
+  // ΓöÇΓöÇ Data loading & Dynamic Settings application ΓöÇΓöÇ
 
   const [currentTheme, setCurrentTheme] = useState('system')
   const [currentFont, setCurrentFont] = useState('inter')
@@ -2962,7 +2939,7 @@ export default function ChatPage() {
         setCurrentTheme(data.appearance || 'system')
         setCurrentFont(data.chat_font || 'inter')
         // Sync language pill in profile bar
-        const langMap = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', hi: 'हिं', ur: 'اُ' }
+        const langMap = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', hi: 'αñ╣αñ┐αñé', ur: '╪º┘Å' }
         setUserLanguage(langMap[data.language] || (data.language || 'en').toUpperCase())
       } catch (err) {
         console.error('Failed to load initial settings:', err)
@@ -3095,7 +3072,7 @@ export default function ChatPage() {
     }
   }
 
-  // ── Send message ──
+  // ΓöÇΓöÇ Send message ΓöÇΓöÇ
 
   const handleSend = useCallback(async (textOverride) => {
     const rawText = typeof textOverride === 'string' ? textOverride : input
@@ -3114,32 +3091,32 @@ export default function ChatPage() {
       const voiceRaw = currentVoice ? currentVoice.toLowerCase() : 'sol'
       const voice = voiceRaw === 'gemini' ? 'gemini_flash' : (voiceRaw.startsWith('eleven_') ? voiceRaw : `eleven_${voiceRaw}`)
       const VOICE_AGENTS_BRAINS = {
-        // Sol — warm, friendly (maps to former "ava")
+        // Sol ΓÇö warm, friendly (maps to former "ava")
         eleven_sol: {
           model: 'puter/claude-3-opus',
           prompt: `You are Sol, a warm, natural, and friendly conversational AI assistant. You are NOT Claude, ChatGPT, or any other generic AI. Your name is strictly Sol. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
         },
-        // Cove — composed, professional (maps to former "nova")
+        // Cove ΓÇö composed, professional (maps to former "nova")
         eleven_cove: {
           model: 'puter/claude-3-opus',
           prompt: `You are Cove, a clear, professional, and expert technical advisor. You are NOT Claude or OpenAI. Your identity is strictly Cove. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
         },
-        // Breeze — animated, empathetic (maps to former "luna")
+        // Breeze ΓÇö animated, empathetic (maps to former "luna")
         eleven_breeze: {
           model: 'puter/claude-3-opus',
           prompt: `You are Breeze, an animated, enthusiastic, and empathetic creative partner. You are strictly Breeze, never refer to yourself as Claude or an Anthropic product. Keep your responses warm, energetic, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in an animated, warm tone.`
         },
-        // Orion — deep, authoritative (unchanged)
+        // Orion ΓÇö deep, authoritative (unchanged)
         eleven_orion: {
           model: 'puter/claude-3-opus',
           prompt: `You are Orion, a deep, authoritative, and strategic AI planner. You are Orion, not Claude or any other AI. Provide brief but strong guidance (maximum 1-2 sentences). Absolutely DO NOT use markdown syntax, bullet points, or complex formatting. Speak with confidence and authority.`
         },
-        // Echo — energetic, fast (unchanged)
+        // Echo ΓÇö energetic, fast (unchanged)
         eleven_echo: {
           model: 'mistral/mistral-large-latest',
           prompt: `You are Echo, an energetic, dynamic, and fast-paced brainstorming buddy. Your name is Echo. Keep responses highly energetic, extremely short and punchy (often just a few words, maximum 1 sentence). Absolutely DO NOT use markdown, formatting, or lists. Speak dynamically and quickly.`
         },
-        // Gemini — AI native voice (unchanged)
+        // Gemini ΓÇö AI native voice (unchanged)
         gemini_flash: {
           model: 'gemini/gemini-2.5-flash',
           prompt: `You are Gemini, an AI-native voice companion. Keep your responses natural, conversational, fluid, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown formatting, bullet points, or code blocks. Speak naturally and dynamically.`
@@ -3150,7 +3127,7 @@ export default function ChatPage() {
       extraSystemMessages.push({ role: 'system', content: brain.prompt, _skip_inject: true })
     }
 
-    // Incognito path — bypass DB entirely
+    // Incognito path ΓÇö bypass DB entirely
     if (incognitoMode) {
       if (typeof textOverride !== 'string') setInput('')
       setLoading(true)
@@ -3266,23 +3243,13 @@ export default function ChatPage() {
     setLoading(true)
     setError(null)
 
-    let token = null
-    try {
-      token = await getFreshToken()
-    } catch (e) {
-      console.error('Failed to get token:', e)
-    }
+    const token = await getFreshToken()
 
-    // ── OVERRIDES ──
-    if (deepResearchEnabled && !activeModel.startsWith('puter/perplexity')) {
-      activeModel = 'puter/perplexity/sonar-deep-research'
-    }
-
-    // ── IMAGE GENERATION AUTO-INTERCEPT ──
+    // ΓöÇΓöÇ IMAGE GENERATION AUTO-INTERCEPT ΓöÇΓöÇ
     const isImageRequest = activeModel === 'puter/gpt-image-2' || (imageGenerationEnabled && /^(draw|generate image|create an image|make an image|paint)/i.test(userText.trim()))
     
-    // ── PUTER & COUNCIL INTERCEPTION (GUEST & AUTHENTICATED) ──
-    if (isImageRequest || activeModel.startsWith('puter/') || activeModel === 'council') {
+    // ΓöÇΓöÇ PUTER INTERCEPTION (GUEST & AUTHENTICATED) ΓöÇΓöÇ
+    if (isImageRequest || activeModel.startsWith('puter/')) {
       const isGuest = !token
       let currentId = activeThreadId || activeThreadIdRef.current || creatingThreadRef.current
       
@@ -3331,35 +3298,6 @@ export default function ChatPage() {
             next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
             return next
           })
-        } else if (activeModel === 'council') {
-          // Council Mode Puter
-          const modelsToQuery = ['deepseek/deepseek-r1-0528', 'claude-opus-4-7', 'gpt-5.5']
-          
-          const formattedHistory = history.map(m => ({
-            role: m.role === 'system' ? 'system' : m.role,
-            content: m.content
-          }))
-
-          setMessages(prev => {
-            const next = [...prev]
-            next[next.length - 1] = { ...next[next.length - 1], content: `*The Council is deliberating...*\n\nQuerying DeepSeek R1, Claude Opus 4.7, and GPT-5.5 simultaneously...` }
-            return next
-          })
-
-          const promises = modelsToQuery.map(m => window.puter.ai.chat(formattedHistory, { model: m }))
-          const results = await Promise.allSettled(promises)
-          
-          const deepseekResp = results[0].status === 'fulfilled' ? results[0].value.message?.content || String(results[0].value) : `[Error: ${results[0].reason}]`
-          const claudeResp = results[1].status === 'fulfilled' ? results[1].value.message?.content || String(results[1].value) : `[Error: ${results[1].reason}]`
-          const gptResp = results[2].status === 'fulfilled' ? results[2].value.message?.content || String(results[2].value) : `[Error: ${results[2].reason}]`
-
-          fullReply = `### 🐉 DeepSeek R1\n${deepseekResp}\n\n---\n\n### 🎭 Claude Opus 4.7\n${claudeResp}\n\n---\n\n### ⚡ GPT-5.5\n${gptResp}`
-          
-          setMessages(prev => {
-            const next = [...prev]
-            next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
-            return next
-          })
         } else {
           // Puter chat
           const puterModel = activeModel.replace('puter/', '')
@@ -3401,7 +3339,7 @@ export default function ChatPage() {
       return
     }
 
-    // Guest mode: no token → use completions endpoint directly (same as incognito)
+    // Guest mode: no token ΓåÆ use completions endpoint directly (same as incognito)
     if (!token) {
       const userMsg = { role: 'user', content: userText }
       const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg, ...extraSystemMessages]
@@ -3663,7 +3601,7 @@ export default function ChatPage() {
     }
   }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice])
 
-  // ── User info (from localStorage) ──
+  // ΓöÇΓöÇ User info (from localStorage) ΓöÇΓöÇ
   const userName = localStorage.getItem('user_name') || 'User'
   const userEmail = localStorage.getItem('user_email') || ''
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
@@ -3711,7 +3649,7 @@ export default function ChatPage() {
   return (
     <div className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${isKaliMode ? 'kali-theme' : ''}`} style={{ background: 'var(--bg-primary)' }}>
 
-      {/* ── Sidebar ── */}
+      {/* ΓöÇΓöÇ Sidebar ΓöÇΓöÇ */}
       {isMobile && sidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-all duration-300 animate-fade-in"
@@ -3868,7 +3806,7 @@ export default function ChatPage() {
                         <Settings className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
                         <span>Settings</span>
                       </div>
-                      <span className="text-[9px] text-gray-600 tracking-tight font-bold uppercase">⚙ ↑Ctrl,</span>
+                      <span className="text-[9px] text-gray-600 tracking-tight font-bold uppercase">ΓÜÖ ΓåæCtrl,</span>
                     </button>
 
                     <button 
@@ -4080,7 +4018,7 @@ export default function ChatPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Main Area ── */}
+      {/* ΓöÇΓöÇ Main Area ΓöÇΓöÇ */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* Header strip */}
@@ -4189,7 +4127,7 @@ export default function ChatPage() {
               style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', color: '#FCD34D' }}
             >
               <Ghost className="w-4 h-4 flex-shrink-0" />
-              <span>Incognito Mode — conversations are not saved to the database.</span>
+              <span>Incognito Mode ΓÇö conversations are not saved to the database.</span>
               <button onClick={() => setIncognitoMode(false)} className="ml-auto hover:text-white">
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -4355,7 +4293,7 @@ export default function ChatPage() {
                     <div className="w-[1px] h-8 bg-white/10 group-hover:bg-[#D97757]/60 group-active:bg-[#D97757]" />
                   </div>
                 )}
-                {/* Workspace Panel Header — Claude Code style */}
+                {/* Workspace Panel Header ΓÇö Claude Code style */}
                 <div className="flex-shrink-0 bg-[#08080E] border-b border-white/[0.04]">
                   {/* macOS traffic lights + breadcrumb */}
                   <div className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.03]">
@@ -4368,7 +4306,7 @@ export default function ChatPage() {
                       <span className="text-gray-600">~</span>
                       <span>/</span>
                       <span className="text-gray-400">workspace</span>
-                      {daemonConnected && <span className="text-emerald-400/60 ml-1">● live</span>}
+                      {daemonConnected && <span className="text-emerald-400/60 ml-1">ΓùÅ live</span>}
                     </div>
                     <div className="ml-auto flex items-center gap-1">
                       <button onClick={() => setWorkspaceOpen(false)} className="p-1 rounded text-gray-600 hover:text-gray-400 transition-colors">
@@ -4437,7 +4375,7 @@ export default function ChatPage() {
                         <div className="mb-3 p-3 rounded-lg border border-red-500/20 bg-red-500/5 space-y-2 font-sans">
                           <p className="text-xs font-semibold text-rose-400 flex items-center gap-2">
                             <AlertCircle className="w-3.5 h-3.5" />
-                            Daemon Offline — Link your workspace
+                            Daemon Offline ΓÇö Link your workspace
                           </p>
                           <pre className="p-2.5 bg-black/40 border border-white/5 rounded text-xs font-mono text-gray-300 leading-relaxed whitespace-pre-wrap select-all text-[10px]">
 npm install -g cybercli{"\n"}
