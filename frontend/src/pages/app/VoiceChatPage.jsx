@@ -162,7 +162,7 @@ export default function VoiceChatPage() {
   // Sync chosen voice to local storage settings
   useEffect(() => {
     if (step === 'active') {
-      const provider = selectedVoice.id === 'gemini' ? 'gemini' : 'puter'
+      const provider = selectedVoice.id === 'gemini' ? 'gemini' : 'browser'
       updateProvider(provider)
       updateVoice(selectedVoice.id)
     }

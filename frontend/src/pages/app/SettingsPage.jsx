@@ -450,7 +450,7 @@ function UsageTab() {
     <div className="space-y-6">
       <SectionHeading>Model Analytics</SectionHeading>
       <p className="text-sm text-foreground-muted mb-4 leading-relaxed">
-        Track your inference usage across the Puter AI ecosystem.
+        Track your inference usage across the CyberCli multi-provider AI network.
       </p>
 
       {loading ? (
@@ -470,7 +470,7 @@ function UsageTab() {
             >
               <div>
                 <p className="text-sm font-bold text-foreground-primary truncate max-w-[200px] sm:max-w-[300px]">
-                  {row.model.replace('puter/', '')}
+                  {row.model}
                 </p>
                 <p className="text-xs text-foreground-muted mt-1">
                   {row.date}

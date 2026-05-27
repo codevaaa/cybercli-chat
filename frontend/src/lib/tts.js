@@ -1,17 +1,6 @@
 import { API_BASE } from './api.js'
 
 const TTS_PROVIDERS = {
-  puter: {
-    name: 'Puter.js (Free)',
-    description: 'Free ElevenLabs TTS via Puter.js - no API key needed',
-    voices: [
-      { id: 'sol', name: 'Sol', gender: 'female', accent: 'american' },
-      { id: 'cove', name: 'Cove', gender: 'female', accent: 'american' },
-      { id: 'breeze', name: 'Breeze', gender: 'female', accent: 'british' },
-      { id: 'orion', name: 'Orion', gender: 'male', accent: 'american' },
-      { id: 'echo', name: 'Echo', gender: 'male', accent: 'american' },
-    ],
-  },
   gemini: {
     name: 'Google Gemini Flash TTS',
     description: 'Google Gemini Flash Text-to-Speech (Server-side)',
@@ -30,8 +19,8 @@ const TTS_PROVIDERS = {
 
 class TTSService {
   constructor() {
-    this.currentProvider = 'puter'
-    this.currentVoice = 'sol'
+    this.currentProvider = 'gemini'
+    this.currentVoice = 'gemini'
     this.currentSpeed = 1.0
     this.currentPitch = 1.0
     this.browserVoices = []
@@ -43,16 +32,17 @@ class TTSService {
         this.browserVoices = window.speechSynthesis.getVoices()
       }
     }
-
-    // Pre-load Puter.js script to eliminate initial latency
-    if (typeof window !== 'undefined') {
-      this.loadPuter().catch(err => console.warn('Puter.js background pre-load failed:', err))
-    }
   }
 
   setProvider(provider) {
     if (TTS_PROVIDERS[provider]) {
       this.currentProvider = provider
+      // Set a default voice for the provider if none selected
+      if (provider === 'gemini') {
+        this.currentVoice = 'gemini'
+      } else if (provider === 'browser' && this.browserVoices.length > 0) {
+        this.currentVoice = this.browserVoices[0].name
+      }
     }
   }
 
@@ -73,9 +63,7 @@ class TTSService {
   }
 
   getVoices() {
-    if (this.currentProvider === 'puter') {
-      return TTS_PROVIDERS.puter.voices
-    } else if (this.currentProvider === 'gemini') {
+    if (this.currentProvider === 'gemini') {
       return TTS_PROVIDERS.gemini.voices
     } else if (this.currentProvider === 'browser') {
       return this.browserVoices.map(v => ({
@@ -93,81 +81,6 @@ class TTSService {
       id: key,
       ...TTS_PROVIDERS[key],
     }))
-  }
-
-  // Puter.js TTS (Free ElevenLabs)
-  async speakWithPuter(text) {
-    let fallbackTimeout = null;
-    return new Promise(async (resolve, reject) => {
-      // Set a hard timeout of 7 seconds to get the audio and start playing it, otherwise fallback
-      fallbackTimeout = setTimeout(() => {
-        console.warn('Puter TTS timed out, falling back to Browser SpeechSynthesis');
-        if (this.activePuterAudio) {
-          try { this.activePuterAudio.pause() } catch (e) {}
-          this.activePuterAudio = null;
-        }
-        this.speakWithBrowser(text).then(resolve).catch(reject);
-      }, 7000);
-
-      try {
-        // Load Puter.js dynamically
-        if (!window.puter) {
-          await this.loadPuter()
-        }
-
-        let voice = this.currentVoice || 'sol'
-        
-        // Map shortnames to real ElevenLabs voice IDs
-        const PUTER_VOICES_MAP = {
-          sol: 'H6QPv2pQZDcGqLwDTIJQ',
-          cove: 'FZkK3TvQ0pjyDmT8fzIW',
-          breeze: 'CwhRBWXzGAHq8TQ4Fs17',
-          orion: 'wbOlq3nIga8HKqcDhASI',
-          echo: 'TxGEqn7nUaNZTR5JgIec',
-        }
-        
-        const realVoiceId = PUTER_VOICES_MAP[voice.toLowerCase()] || voice
-
-        // Call the real puter.ai.txt2speech endpoint
-        const audio = await window.puter.ai.txt2speech(text, { provider: 'elevenlabs', voice: realVoiceId })
-        
-        // Clear fallback timeout since we got the audio successfully
-        clearTimeout(fallbackTimeout);
-
-        this.activePuterAudio = audio
-        
-        audio.onended = () => {
-          this.activePuterAudio = null
-          resolve()
-        }
-        audio.onerror = (err) => {
-          this.activePuterAudio = null
-          console.warn('Puter Audio error, falling back to Browser SpeechSynthesis', err)
-          this.speakWithBrowser(text).then(resolve).catch(reject)
-        }
-        audio.play().catch((err) => {
-          this.activePuterAudio = null
-          console.warn('Puter play error, falling back to Browser SpeechSynthesis', err)
-          this.speakWithBrowser(text).then(resolve).catch(reject)
-        })
-      } catch (error) {
-        clearTimeout(fallbackTimeout);
-        console.error('Puter TTS error:', error)
-        // Fallback to browser TTS
-        this.speakWithBrowser(text).then(resolve).catch(reject)
-      }
-    })
-  }
-
-  async loadPuter() {
-    return new Promise((resolve, reject) => {
-      if (window.puter) return resolve(window.puter)
-      const script = document.createElement('script')
-      script.src = 'https://js.puter.com/v2/'
-      script.onload = () => resolve(window.puter)
-      script.onerror = reject
-      document.head.appendChild(script)
-    })
   }
 
   // Google Gemini TTS
@@ -264,8 +177,6 @@ class TTSService {
     if (!text || !text.trim()) return
 
     switch (this.currentProvider) {
-      case 'puter':
-        return this.speakWithPuter(text)
       case 'gemini':
         return this.speakWithGemini(text)
       case 'browser':
@@ -276,12 +187,6 @@ class TTSService {
   }
 
   stop() {
-    if (this.activePuterAudio) {
-      try {
-        this.activePuterAudio.pause()
-        this.activePuterAudio = null
-      } catch (e) {}
-    }
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel()
     }

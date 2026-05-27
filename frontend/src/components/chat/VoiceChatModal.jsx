@@ -207,7 +207,7 @@ export default function VoiceChatModal({
   useEffect(() => {
     const model = VOICE_MODELS[voiceIndex]
     if (!model) return
-    const provider = model.id.startsWith('gemini') ? 'gemini' : 'puter'
+    const provider = model.id.startsWith('gemini') ? 'gemini' : 'browser'
     const voice = model.label.toLowerCase()
     if (updateProvider) updateProvider(provider)
     if (updateVoice) updateVoice(voice)

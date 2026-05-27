@@ -22,10 +22,10 @@ const ALL_FEATURES = [
     items: [
       { slug: 'voice-chat', icon: Mic, title: 'Walkie-Talkie Voice Chat', desc: 'Hold Spacebar to talk. CyberCli hears, thinks, and responds automatically via natural TTS.' },
       { slug: 'voice-chat', icon: Zap, title: 'Voice Interruption', desc: 'Cut CyberCli mid-sentence. It stops and listens immediately. True conversational flow.' },
-      { slug: 'voice-chat', icon: Palette, title: '5 Unique AI Voices', desc: 'Ava, Nova, Luna, Orion, Echo. 3 female, 2 male voices via ElevenLabs and Gemini Flash.' },
+      { slug: 'voice-chat', icon: Palette, title: 'Unique AI Voices', desc: 'High-quality female and male voices powered by Gemini Flash and Web Speech APIs.' },
       { slug: 'voice-chat', icon: Image, title: 'Image Understanding', desc: 'Upload any image. Vision-capable models analyze, describe, and reason about visual content.' },
       { slug: 'voice-chat', icon: voiceChatGen(), iconName: 'Image Generation', title: 'Image Generation', desc: 'Use /generate to create images from text prompts via free image generation APIs.' },
-      { slug: 'voice-chat', icon: Terminal, title: 'Voice Model Selection', desc: 'Choose your preferred voice model — ElevenLabs voices via Puter or Gemini Flash TTS.' },
+      { slug: 'voice-chat', icon: Terminal, title: 'Voice Model Selection', desc: 'Choose your preferred voice model — high-speed Gemini Flash TTS or browser native Web Speech.' },
     ],
   },
   {

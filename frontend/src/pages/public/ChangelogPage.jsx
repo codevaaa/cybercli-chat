@@ -54,12 +54,12 @@ const ENTRIES = [
   {
     version: '1.1.0',
     date: 'April 28, 2026',
-    headline: 'ElevenLabs TTS via Puter.js & 5 voice models',
+    headline: 'Realistic AI Voice Chat with Gemini TTS & Browser Native Fallback',
     changes: [
-      { type: 'New', text: 'ElevenLabs text-to-speech via Puter.js (unlimited, client-side)' },
-      { type: 'New', text: '5 voice models: Aria, Brian, Callum, Charlotte, Daniel' },
-      { type: 'New', text: 'Voice settings panel: speed, pitch, stability controls' },
-      { type: 'Improved', text: 'Voice playback: buffer-based streaming for lower latency' },
+      { type: 'New', text: 'High-speed Gemini Flash text-to-speech integration' },
+      { type: 'New', text: 'Browser native TTS fallback for zero-network environments' },
+      { type: 'New', text: 'Voice settings panel: speed, pitch, and volume controls' },
+      { type: 'Improved', text: 'Voice playback: lower latency streaming for real-time talk' },
       { type: 'Fixed', text: 'Voice not stopping when navigating away from chat' },
     ],
   },

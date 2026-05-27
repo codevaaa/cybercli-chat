@@ -5,10 +5,10 @@ import tts from '../../lib/tts.js'
 
 const VOICES = [
   { id: 'ava', name: 'Ava', gender: 'Female', provider: 'Gemini Flash TTS', description: 'Warm, empathetic, conversational', lang: 'EN, HI, ES' },
-  { id: 'nova', name: 'Nova', gender: 'Female', provider: 'ElevenLabs (Puter)', description: 'Professional, articulate, news-anchor', lang: 'EN, FR, DE' },
-  { id: 'luna', name: 'Luna', gender: 'Female', provider: 'ElevenLabs (Puter)', description: 'Playful, creative, youthful', lang: 'EN, JP, KO' },
+  { id: 'nova', name: 'Nova', gender: 'Female', provider: 'Browser Native', description: 'Professional, articulate, news-anchor', lang: 'EN, FR, DE' },
+  { id: 'luna', name: 'Luna', gender: 'Female', provider: 'Browser Native', description: 'Playful, creative, youthful', lang: 'EN, JP, KO' },
   { id: 'orion', name: 'Orion', gender: 'Male', provider: 'Gemini Flash TTS', description: 'Deep, authoritative, mentor-like', lang: 'EN, HI, ES' },
-  { id: 'echo', name: 'Echo', gender: 'Male', provider: 'ElevenLabs (Puter)', description: 'Calm, analytical, precise', lang: 'EN, DE, FR' },
+  { id: 'echo', name: 'Echo', gender: 'Male', provider: 'Browser Native', description: 'Calm, analytical, precise', lang: 'EN, DE, FR' },
 ]
 
 export default function VoicePage() {
@@ -32,9 +32,8 @@ export default function VoicePage() {
       return
     }
     setPreviewPlaying(true)
-    tts.setProvider(activeVoice.provider.includes('Gemini') ? 'gemini' : 'puter')
-    // Fallback to sol if ID not exact match
-    tts.setVoice(activeVoice.id === 'ava' ? 'sol' : activeVoice.id)
+    tts.setProvider(activeVoice.provider.includes('Gemini') ? 'gemini' : 'browser')
+    tts.setVoice(activeVoice.id === 'ava' ? 'gemini' : activeVoice.id)
     
     try {
       await tts.speak(`Hello, my name is ${activeVoice.name}. ${activeVoice.description}.`)

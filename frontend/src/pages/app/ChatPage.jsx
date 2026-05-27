@@ -22,25 +22,25 @@ import CyberCliMark, { CyberCliWordmark } from '../../components/ui/CyberCliLogo
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const MODELS = [
-  { id: 'puter/claude-opus-4-7',       name: 'Madhav (Opus 4.7)',    tag: 'Madhav',   color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
-  { id: 'puter/gpt-5.5',               name: 'Bheem (GPT-5.5)',      tag: 'Bheem',    color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
-  { id: 'puter/deepseek/deepseek-r1-0528', name: 'Chanakya (R1)',    tag: 'Chanakya', color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving.', kali: false },
-  { id: 'puter/claude-sonnet-4-6',     name: 'Arjun (Sonnet 4.6)',   tag: 'Arjun',    color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise.', kali: false },
+  { id: 'opencode/deepseek-v4-pro',    name: 'Madhav (OpenCode v4)', tag: 'Madhav',   color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
+  { id: 'apifreellm/gpt-4o',           name: 'Bheem (ApiFree GPT-4o)',tag: 'Bheem',    color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
+  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya (R1)',    tag: 'Chanakya', color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving.', kali: false },
+  { id: 'groq/llama-3.1-8b',           name: 'Arjun (Llama 8B)',     tag: 'Arjun',    color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise.', kali: false },
   { id: 'council',                     name: 'Panchayat',            tag: 'Panchayat', color: '#D97757', desc: 'The council of minds. Streams your query to multiple minds simultaneously.', kali: false },
 ]
 
 const EXTRA_MODELS = [
-  { id: 'puter/gpt-4o',                                name: 'Nakul (GPT-4o)',        tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Fast, capable, and multimodal.', kali: false },
-  { id: 'puter/google/gemini-2.5-pro',                 name: 'Sahadeva (Gemini)',     tag: 'Sahadeva', color: '#4285F4', desc: 'The wise seer. High-speed intelligence with enormous context window.', kali: false },
-  { id: 'puter/xai/grok-2',                            name: 'Abhimanyu (Grok 2)',    tag: 'Abhimanyu',color: '#EC4899', desc: 'The lightning striker. Unfiltered, real-time knowledge.', kali: false },
-  { id: 'puter/mistral/mistral-large-latest',          name: 'Vayu (Mistral)',        tag: 'Vayu',     color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities.', kali: false },
-  { id: 'puter/meta-llama/llama-3.1-70b',              name: 'Yudhishthira (Llama)',  tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. Open-weights flagship model built for balanced output.', kali: false },
-  { id: 'puter/qwen/qwen2.5-72b-instruct',             name: 'Vikrama (Qwen)',        tag: 'Vikrama',  color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.', kali: false },
-  { id: 'puter/openai/gpt-5.3-codex',                  name: 'Vishwakarma (Codex)',   tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories.', kali: false },
-  { id: 'puter/perplexity/sonar-deep-research',        name: 'Vyas (Deep Research)',  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
-  { id: 'puter/perplexity/sonar-reasoning-pro',        name: 'Sanjaya (Sonar Pro)',   tag: 'Sanjaya',  color: '#059669', desc: 'The visionary observer. Real-time web knowledge with deep reasoning.', kali: false },
-  { id: 'puter/perplexity/sonar-pro',                  name: 'Narada (Sonar)',        tag: 'Narada',   color: '#047857', desc: 'The swift messenger. Rapid web-search capabilities for instant, cited facts.', kali: false },
-  { id: 'puter/gpt-image-2',                           name: 'Chitrakar (GPT-Image)', tag: 'Chitrakar',color: '#E11D48', desc: 'The divine painter. Generates stunning, high-quality images.', kali: false },
+  { id: 'openrouter/gpt-4o-mini',                      name: 'Nakul (GPT-4o Mini)',   tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Fast, capable, and multimodal.', kali: false },
+  { id: 'gemini/gemini-2.5-pro',                       name: 'Sahadeva (Gemini Pro)', tag: 'Sahadeva', color: '#4285F4', desc: 'The wise seer. High-speed intelligence with enormous context window.', kali: false },
+  { id: 'opencode/kimi-k2.5',                          name: 'Abhimanyu (Kimi v2.5)', tag: 'Abhimanyu',color: '#EC4899', desc: 'The lightning striker. Unfiltered, real-time knowledge.', kali: false },
+  { id: 'mistral/mistral-large-latest',                name: 'Vayu (Mistral Large)',  tag: 'Vayu',     color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities.', kali: false },
+  { id: 'groq/llama-3.1-70b',                          name: 'Yudhishthira (Llama 70B)', tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. Open-weights flagship model built for balanced output.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',       name: 'Vikrama (Qwen 72B)',    tag: 'Vikrama',  color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Vishwakarma (Coder 32B)',tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories.', kali: false },
+  { id: 'opencode/deepseek-v4-flash',                  name: 'Vyas (Deep Research)',  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
+  { id: 'opencode/qwen3.7-max',                        name: 'Sanjaya (Qwen 3.7 Max)',tag: 'Sanjaya',  color: '#059669', desc: 'The visionary observer. Real-time web knowledge with deep reasoning.', kali: false },
+  { id: 'opencode/minimax-m2.5',                       name: 'Narada (Minimax m2.5)', tag: 'Narada',   color: '#047857', desc: 'The swift messenger. Rapid web-search capabilities for instant, cited facts.', kali: false },
+  { id: 'image-gen',                                   name: 'Chitrakar (Image Gen)', tag: 'Chitrakar',color: '#E11D48', desc: 'The divine painter. Generates stunning, high-quality images using backend API.', kali: false },
   
   // Backing models restored from previous version
   { id: 'gemini/gemini-2.5-flash',                               name: 'Sahadeva (Flash)',      tag: 'Sahadeva',    color: '#4285F4', desc: 'The wise seer. High-speed multimodal intelligence with enormous context window for documents and media.', kali: false },
@@ -245,32 +245,8 @@ function ImageGeneratorWidget({ src, alt }) {
 
         const data = await response.json()
 
-        let puterUrl = null
-        try {
-          if (!window.puter) {
-            await new Promise((resolve, reject) => {
-              const script = document.createElement('script')
-              script.src = 'https://js.puter.com/v2/'
-              script.onload = () => resolve(window.puter)
-              script.onerror = (e) => reject(e)
-              document.head.appendChild(script)
-            })
-          }
-
-          if (window.puter && window.puter.ai && window.puter.ai.txt2img) {
-            const imgElement = await window.puter.ai.txt2img(prompt, { 
-              model: 'black-forest-labs/flux-schnell' 
-            })
-            if (imgElement && imgElement.src) {
-              puterUrl = imgElement.src
-            }
-          }
-        } catch (puterErr) {
-          console.warn('Puter.js image generation failed, falling back to Pollinations AI:', puterErr)
-        }
-
         if (active) {
-          setImageUrl(puterUrl || data.url)
+          setImageUrl(data.url)
           setLoading(false)
         }
       } catch (err) {
@@ -3116,22 +3092,22 @@ export default function ChatPage() {
       const VOICE_AGENTS_BRAINS = {
         // Sol — warm, friendly (maps to former "ava")
         eleven_sol: {
-          model: 'puter/claude-3-opus',
+          model: 'gemini/gemini-2.5-flash',
           prompt: `You are Sol, a warm, natural, and friendly conversational AI assistant. You are NOT Claude, ChatGPT, or any other generic AI. Your name is strictly Sol. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
         },
         // Cove — composed, professional (maps to former "nova")
         eleven_cove: {
-          model: 'puter/claude-3-opus',
+          model: 'gemini/gemini-2.5-flash',
           prompt: `You are Cove, a clear, professional, and expert technical advisor. You are NOT Claude or OpenAI. Your identity is strictly Cove. Keep your responses precise, helpful, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, lists, or code blocks in your response. Speak clearly and professionally.`
         },
         // Breeze — animated, empathetic (maps to former "luna")
         eleven_breeze: {
-          model: 'puter/claude-3-opus',
+          model: 'gemini/gemini-2.5-flash',
           prompt: `You are Breeze, an animated, enthusiastic, and empathetic creative partner. You are strictly Breeze, never refer to yourself as Claude or an Anthropic product. Keep your responses warm, energetic, and very short (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak in an animated, warm tone.`
         },
         // Orion — deep, authoritative (unchanged)
         eleven_orion: {
-          model: 'puter/claude-3-opus',
+          model: 'gemini/gemini-2.5-flash',
           prompt: `You are Orion, a deep, authoritative, and strategic AI planner. You are Orion, not Claude or any other AI. Provide brief but strong guidance (maximum 1-2 sentences). Absolutely DO NOT use markdown syntax, bullet points, or complex formatting. Speak with confidence and authority.`
         },
         // Echo — energetic, fast (unchanged)
@@ -3274,36 +3250,17 @@ export default function ChatPage() {
     }
 
     // ── OVERRIDES ──
-    if (deepResearchEnabled && !activeModel.startsWith('puter/perplexity')) {
-      activeModel = 'puter/perplexity/sonar-deep-research'
+    if (deepResearchEnabled && activeModel !== 'opencode/deepseek-v4-flash') {
+      activeModel = 'opencode/deepseek-v4-flash'
     }
 
     // ── IMAGE GENERATION AUTO-INTERCEPT ──
-    const isImageRequest = activeModel === 'puter/gpt-image-2' || (imageGenerationEnabled && /^(draw|generate image|create an image|make an image|paint)/i.test(userText.trim()))
+    const isImageRequest = activeModel === 'image-gen' || (imageGenerationEnabled && /^(draw|generate image|create an image|make an image|paint)/i.test(userText.trim()))
     
-    // ── PUTER & COUNCIL INTERCEPTION (GUEST & AUTHENTICATED) ──
-    if (isImageRequest || activeModel.startsWith('puter/') || activeModel === 'council') {
-      if (!window.puter) {
-        try {
-          await new Promise((resolve, reject) => {
-            const script = document.createElement('script')
-            script.src = 'https://js.puter.com/v2/'
-            script.onload = () => resolve(window.puter)
-            script.onerror = (e) => reject(e)
-            document.head.appendChild(script)
-          })
-        } catch (e) {
-          console.error('Failed to load Puter.js SDK:', e)
-          setError('Failed to load Puter.js SDK. Please check your internet connection or ad-blocker.')
-          setLoading(false)
-          return
-        }
-      }
-
+    if (isImageRequest) {
       const isGuest = !token
       let currentId = activeThreadId || activeThreadIdRef.current || creatingThreadRef.current
       
-      // If authenticated and no thread yet, create one silently
       if (!isGuest && !currentId && !incognitoMode) {
         if (!isCreatingThreadRef.current) {
           isCreatingThreadRef.current = true
@@ -3315,7 +3272,7 @@ export default function ChatPage() {
             creatingThreadRef.current = currentId
             navigate(`/chat/${currentId}`, { replace: true })
           } catch (e) {
-            console.error('Failed to create thread for Puter:', e)
+            console.error('Failed to create thread for Image:', e)
           } finally {
             isCreatingThreadRef.current = false
           }
@@ -3324,7 +3281,6 @@ export default function ChatPage() {
 
       // Add user message to UI
       const userMsg = { role: 'user', content: userText }
-      const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg, ...extraSystemMessages]
       setMessages(prev => [...prev, userMsg])
       
       // Save user msg to DB if auth
@@ -3333,82 +3289,41 @@ export default function ChatPage() {
       }
 
       // Add assistant placeholder
-      const assistantMsg = { role: 'assistant', content: isImageRequest ? '*Generating image...*' : '', model: activeModel }
+      const assistantMsg = { role: 'assistant', content: '*Generating image...*', model: activeModel }
       setMessages(prev => [...prev, assistantMsg])
       setStreamingIndex(messages.length + 1)
-      let fullReply = ''
       
       try {
-        if (isImageRequest) {
-          // Puter txt2img
-          const imageElem = await window.puter.ai.txt2img(userText)
-          fullReply = `![Generated Image](${imageElem.src})`
-          setMessages(prev => {
-            const next = [...prev]
-            next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
-            return next
-          })
-        } else if (activeModel === 'council') {
-          // Council Mode Puter
-          const modelsToQuery = ['deepseek/deepseek-r1-0528', 'claude-opus-4-7', 'gpt-5.5']
-          
-          const formattedHistory = history.map(m => ({
-            role: m.role === 'system' ? 'system' : m.role,
-            content: m.content
-          }))
-
-          setMessages(prev => {
-            const next = [...prev]
-            next[next.length - 1] = { ...next[next.length - 1], content: `*The Council is deliberating...*\n\nQuerying DeepSeek R1, Claude Opus 4.7, and GPT-5.5 simultaneously...` }
-            return next
-          })
-
-          const promises = modelsToQuery.map(m => window.puter.ai.chat(formattedHistory, { model: m }))
-          const results = await Promise.allSettled(promises)
-          
-          const deepseekResp = results[0].status === 'fulfilled' ? results[0].value.message?.content || String(results[0].value) : `[Error: ${results[0].reason}]`
-          const claudeResp = results[1].status === 'fulfilled' ? results[1].value.message?.content || String(results[1].value) : `[Error: ${results[1].reason}]`
-          const gptResp = results[2].status === 'fulfilled' ? results[2].value.message?.content || String(results[2].value) : `[Error: ${results[2].reason}]`
-
-          fullReply = `### 🐉 DeepSeek R1\n${deepseekResp}\n\n---\n\n### 🎭 Claude Opus 4.7\n${claudeResp}\n\n---\n\n### ⚡ GPT-5.5\n${gptResp}`
-          
-          setMessages(prev => {
-            const next = [...prev]
-            next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
-            return next
-          })
-        } else {
-          // Puter chat
-          const puterModel = activeModel.replace('puter/', '')
-          // Remove system tag for puter because it expects strict format sometimes, or map it properly
-          const formattedHistory = history.map(m => ({
-            role: m.role === 'system' ? 'system' : m.role,
-            content: m.content
-          }))
-          
-          const stream = await window.puter.ai.chat(formattedHistory, { model: puterModel, stream: true })
-          
-          for await (const chunk of stream) {
-            const tokenText = chunk?.text || ''
-            fullReply += tokenText
-            setMessages(prev => {
-              const next = [...prev]
-              next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
-              return next
-            })
-            // Voice speaking logic omitted for brevity in puter interception but can be added if needed
-          }
+        const response = await fetch(`${API_BASE}/images/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ prompt: userText })
+        })
+        if (!response.ok) {
+          const errData = await response.json()
+          throw new Error(errData.error || `Error: ${response.status}`)
         }
+        const data = await response.json()
+        const fullReply = `![Generated Image](${data.url})`
         
+        setMessages(prev => {
+          const next = [...prev]
+          next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
+          return next
+        })
+
         // Save assistant msg to DB if auth
         if (!isGuest && !incognitoMode && currentId) {
           api.post(`/chat/${currentId}/messages/sync`, { role: 'assistant', content: fullReply, model: activeModel }).catch(console.error)
         }
       } catch (e) {
-        console.error('Puter Interception Error:', e)
+        console.error('Image Generation Error:', e)
         setMessages(prev => {
           const next = [...prev]
-          next[next.length - 1] = { ...next[next.length - 1], content: `Error generating via Puter: ${e.message}` }
+          next[next.length - 1] = { ...next[next.length - 1], content: `Error generating image: ${e.message}` }
           return next
         })
       } finally {

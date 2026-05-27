@@ -151,14 +151,14 @@ const ARTICLE_CONTENT = {
       },
       {
         id: 'v1-1-0',
-        heading: 'v1-1-0 — April 28, 2026',
+        heading: 'v1.1.0 — April 28, 2026',
         content: (
           <div className="space-y-4">
-            <p className="text-sm font-semibold text-foreground-primary">ElevenLabs TTS via Puter.js & 5 voice models</p>
+            <p className="text-sm font-semibold text-foreground-primary">Realistic AI Voice Chat with Gemini TTS & Browser Native Fallback</p>
             <ul className="space-y-3">
               <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
-                <span>ElevenLabs text-to-speech via Puter.js (unlimited, client-side)</span>
+                <span>High-speed Gemini Flash text-to-speech integration</span>
               </li>
               <li className="flex items-start gap-2.5 text-sm text-foreground-secondary">
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20 uppercase tracking-wider mt-0.5 flex-shrink-0">New</span>
@@ -671,7 +671,7 @@ node daemon.js --key=sk_cyber_live_YOUR_API_KEY`}</code>
       {
         id: 'choosing-voice',
         heading: 'Choosing a TTS Voice',
-        content: `Go to Settings → Voice to pick from 5 unique AI voices. Free tier voices use Gemini Flash TTS. Pro tier unlocks 25+ ElevenLabs voices via Puter.js for ultra-realistic speech with no usage cost.`,
+        content: `Go to Settings → Voice to pick from unique AI voices. Enjoy high-speed Gemini Flash TTS and Browser Native text-to-speech fallback.`,
       },
       {
         id: 'troubleshooting',

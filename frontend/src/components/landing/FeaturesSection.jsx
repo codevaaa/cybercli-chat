@@ -26,7 +26,7 @@ const FEATURES = [
     icon: Mic,
     title: 'Voice Chat',
     description:
-      'Speak naturally with five distinct ElevenLabs voices powered by Puter.js — unlimited, client-side, no quota to burn through.',
+      'Speak naturally with realistic AI voices powered by Gemini and native Web Speech API.',
     color: '#D97757',
     colorMuted: 'rgba(217,119,87,0.12)',
   },

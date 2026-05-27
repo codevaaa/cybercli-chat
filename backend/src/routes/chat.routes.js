@@ -198,7 +198,7 @@ router.delete('/:id/messages/after/:messageId', requireAuth, async (req, res) =>
   }
 })
 
-// Sync message from frontend (used for Puter.js client-side generation)
+// Sync message from frontend (used for client-side generated assets like images)
 router.post('/:id/messages/sync', requireAuth, async (req, res) => {
   const { role, content, model } = req.body
   if (!role || !content) return res.status(400).json({ error: 'role and content required' })
@@ -207,7 +207,7 @@ router.post('/:id/messages/sync', requireAuth, async (req, res) => {
     const thread = await Thread.findOne({ _id: req.params.id, user_id: req.user.id })
     if (!thread) return res.status(404).json({ error: 'Thread not found' })
 
-    const isImage = (model === 'puter/gpt-image-2') || (/^(draw|generate image|create an image|make an image|paint)/i.test(content) && role === 'user') || (content.includes('![Generated Image]') && role === 'assistant')
+    const isImage = (model && model.includes('image')) || (/^(draw|generate image|create an image|make an image|paint)/i.test(content) && role === 'user') || (content.includes('![Generated Image]') && role === 'assistant')
     
     const newMsg = new Message({
       thread_id: thread._id,

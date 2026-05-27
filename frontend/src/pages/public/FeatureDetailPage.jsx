@@ -49,19 +49,18 @@ const FEATURE_DATA = {
     iconColor: '#D97757',
     gradient: 'from-[#1a0f06] via-[#130c04] to-[#0D0D12]',
     title: 'Voice Chat',
-    tagline: 'Talk naturally. Think faster.',
-    description: 'Walkie-talkie voice mode with ElevenLabs voices via Puter.js — completely free, unlimited. Hold Space to speak, release to let CyberCli respond in a natural human voice. Five voices. Zero latency.',
+    description: 'Walkie-talkie voice mode with realistic AI voices powered by Gemini and native Web Speech API. Hold Space to speak, release to let CyberCli respond in a natural human voice with zero latency.',
     badge: 'Voice & Multimodal',
     badgeColor: '#D97757',
     stats: [
-      { label: 'Unique AI Voices', value: '5' },
+      { label: 'AI Voices', value: '5' },
       { label: 'Avg Response Latency', value: '<800ms' },
       { label: 'Monthly Cost', value: '$0' },
     ],
     sections: [
       {
-        title: 'The Puter.js Advantage',
-        content: 'ElevenLabs charges $0.30 per 1,000 characters for their premium voices. CyberCli uses Puter.js — a client-side runtime that provides free, unlimited access to ElevenLabs voices directly from your browser. No server costs. No usage limits. Ava, Nova, Luna, Orion, and Echo are yours indefinitely.',
+        title: 'Gemini Flash Integration',
+        content: 'Enjoy high-speed, server-side text-to-speech powered directly by Google Gemini. Experience natural cadence, proper emphasis, and realistic vocal expression.',
       },
       {
         title: 'Walkie-Talkie Mode',
@@ -72,15 +71,15 @@ const FEATURE_DATA = {
         content: "Unlike most voice AI implementations that queue responses, CyberCli supports real interruption. If you start speaking while CyberCli is talking, it immediately stops and listens. This creates the natural conversational flow you expect from human conversation.",
       },
       {
-        title: 'Server-Side TTS Fallback',
-        content: "When Puter.js is unavailable, CyberCli falls back to server-side TTS — also free, with excellent prosody and natural speech patterns. You're never left without voice.",
+        title: 'Browser Native Fallback',
+        content: "When server-side TTS is offline, CyberCli falls back to browser native SpeechSynthesis — also free, running client-side with no network usage. You're never left without voice.",
       },
     ],
     faq: [
-      { q: 'Do I need to install anything for voice?', a: 'No. Voice Chat runs entirely in your browser via Puter.js. No extensions, no downloads, no setup.' },
+      { q: 'Do I need to install anything for voice?', a: 'No. Voice Chat runs entirely in your browser using native Web Speech and Audio APIs. No extensions, no downloads, no setup.' },
       { q: 'Which voices are available?', a: 'Ava (warm female), Nova (professional female), Luna (soft female), Orion (deep male), Echo (neutral male). Switch in Settings → Voice.' },
       { q: 'Does voice work on mobile?', a: 'Yes. Tap the microphone icon to speak. Voice interruption requires a browser that supports the Web Audio API (Chrome, Safari, Edge).' },
-      { q: 'Is my voice data stored?', a: 'No. Speech is processed locally or via the browser API. CyberCli does not store audio recordings.' },
+      { q: 'Is my voice data stored?', a: 'No. Speech is processed locally or via secure API. CyberCli does not store audio recordings.' },
     ],
     relatedSlugs: ['privacy-first', 'custom-agents', 'multi-provider'],
   },

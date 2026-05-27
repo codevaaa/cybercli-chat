@@ -25,12 +25,16 @@ const PROVIDER_KEYS = {
   bytez: process.env.BYTEZ_API_KEY,
   nvidia: process.env.NVIDIA_API_KEY,
   mistral: process.env.MISTRAL_API_KEY,
+  opencode: process.env.OPENCODE_API_KEY,
+  apifreellm: process.env.APIFREELLM_API_KEY,
 }
 
 const BASE_URLS = {
   openrouter: 'https://openrouter.ai/api/v1',
   groq: 'https://api.groq.com/openai/v1',
   mistral: 'https://api.mistral.ai/v1',
+  opencode: 'https://opencode.ai/zen/v1',
+  apifreellm: 'https://apifreellm.com/api/v1',
 }
 
 const MODEL_MAP = {
@@ -43,6 +47,34 @@ const MODEL_MAP = {
   'cloudflare/@cf/meta/llama-3.1-8b-instruct': { provider: 'cloudflare', model: '@cf/meta/llama-3.1-8b-instruct', purpose: 'general' },
   'openrouter/moonshotai/moonshot-v1-8k': { provider: 'openrouter', model: 'moonshotai/moonshot-v1-8k', purpose: 'general' },
   'mistral/mistral-large-latest': { provider: 'mistral', model: 'mistral-large-latest', purpose: 'reasoning' },
+
+  // OpenCode AI models
+  'opencode/deepseek-v4-pro': { provider: 'opencode', model: 'deepseek-v4-pro', purpose: 'reasoning' },
+  'opencode/deepseek-v4-flash': { provider: 'opencode', model: 'deepseek-v4-flash', purpose: 'speed' },
+  'opencode/kimi-k2.5': { provider: 'opencode', model: 'kimi-k2.5', purpose: 'reasoning' },
+  'opencode/qwen3.7-max': { provider: 'opencode', model: 'qwen3.7-max', purpose: 'reasoning' },
+  'opencode/minimax-m2.5': { provider: 'opencode', model: 'minimax-m2.5', purpose: 'reasoning' },
+
+  // ApiFree LLM models
+  'apifreellm/gpt-4o': { provider: 'apifreellm', model: 'gpt-4o', purpose: 'general' },
+  'apifreellm/claude-3.5-sonnet': { provider: 'apifreellm', model: 'claude-3.5-sonnet', purpose: 'reasoning' },
+  'apifreellm/llama-3-70b': { provider: 'apifreellm', model: 'llama-3-70b', purpose: 'reasoning' },
+
+  // Legacy/Backwards-compatible mappings for Puter.js models
+  'puter/claude-opus-4-7': { provider: 'opencode', model: 'deepseek-v4-pro', purpose: 'reasoning' },
+  'puter/gpt-5.5': { provider: 'apifreellm', model: 'gpt-4o', purpose: 'general' },
+  'puter/deepseek/deepseek-r1-0528': { provider: 'huggingface', model: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B', purpose: 'reasoning' },
+  'puter/claude-sonnet-4-6': { provider: 'groq', model: 'llama-3.1-8b-instant', purpose: 'speed' },
+  'puter/gpt-4o': { provider: 'openrouter', model: 'openai/gpt-4o-mini', purpose: 'general' },
+  'puter/google/gemini-2.5-pro': { provider: 'gemini', model: 'gemini-2.5-pro-preview-05-06', purpose: 'reasoning' },
+  'puter/xai/grok-2': { provider: 'opencode', model: 'kimi-k2.5', purpose: 'reasoning' },
+  'puter/mistral/mistral-large-latest': { provider: 'mistral', model: 'mistral-large-latest', purpose: 'reasoning' },
+  'puter/meta-llama/llama-3.1-70b': { provider: 'groq', model: 'llama-3.1-70b-versatile', purpose: 'reasoning' },
+  'puter/qwen/qwen2.5-72b-instruct': { provider: 'huggingface', model: 'Qwen/Qwen2.5-72B-Instruct', purpose: 'reasoning' },
+  'puter/openai/gpt-5.3-codex': { provider: 'huggingface', model: 'Qwen/Qwen2.5-Coder-32B-Instruct', purpose: 'general' },
+  'puter/perplexity/sonar-deep-research': { provider: 'opencode', model: 'deepseek-v4-flash', purpose: 'speed' },
+  'puter/perplexity/sonar-reasoning-pro': { provider: 'opencode', model: 'deepseek-v4-flash', purpose: 'speed' },
+  'puter/perplexity/sonar-pro': { provider: 'opencode', model: 'deepseek-v4-flash', purpose: 'speed' },
   
   // HuggingFace models (10+ Powerful/Uncensored models)
   'huggingface/meta-llama/Llama-3.1-8B-Instruct':                     { provider: 'huggingface', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
@@ -110,7 +142,7 @@ function getClient(provider) {
     })
   }
 
-  if (provider === 'openrouter' || provider === 'groq' || provider === 'mistral') {
+  if (provider === 'openrouter' || provider === 'groq' || provider === 'mistral' || provider === 'opencode' || provider === 'apifreellm') {
     return new OpenAI({
       apiKey: key,
       baseURL: BASE_URLS[provider],
@@ -195,27 +227,27 @@ export const llmGateway = {
     
     // Council Mode Real Implementation
     if (activeModelId === 'council') {
-      yield { type: 'info', content: 'Summoning the Council of Minds (Kimi, Mistral, Llama)...' }
+      yield { type: 'info', content: 'Summoning the Council of Minds (Gemini, Mistral, Llama)...' }
       try {
-        const p1 = this.completeNonStream({ messages: workingMessages, model: 'openrouter/moonshotai/moonshot-v1-8k', temperature });
+        const p1 = this.completeNonStream({ messages: workingMessages, model: 'gemini/gemini-2.5-flash', temperature });
         const p2 = this.completeNonStream({ messages: workingMessages, model: 'mistral/mistral-large-latest', temperature });
-        const p3 = this.completeNonStream({ messages: workingMessages, model: 'groq/llama-3.1-70b-versatile', temperature });
+        const p3 = this.completeNonStream({ messages: workingMessages, model: 'groq/llama-3.1-70b', temperature });
         
         const [r1, r2, r3] = await Promise.all([p1, p2, p3]);
         
         // Assemble the comparative view instead of synthesizing a single paragraph
-        const comparativeView = `### 🏹 Karna (MoonshotAI / Kimi)
-${r1.content.trim()}
+        const comparativeView = `### 👁️ Sahadeva (Gemini 2.5 Flash)
+${r1.content ? r1.content.trim() : (r1.error || 'Response error')}
 
 ---
 
 ### 🌪️ Vayu (Mistral Large)
-${r2.content.trim()}
+${r2.content ? r2.content.trim() : (r2.error || 'Response error')}
 
 ---
 
-### 🦙 Nakul (Groq / Llama 70B)
-${r3.content.trim()}`;
+### ⚖️ Yudhishthira (Groq / Llama 70B)
+${r3.content ? r3.content.trim() : (r3.error || 'Response error')}`;
 
         yield { type: 'content', content: comparativeView }
         return // End stream directly

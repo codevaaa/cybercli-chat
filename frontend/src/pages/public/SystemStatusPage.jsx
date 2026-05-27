@@ -71,7 +71,7 @@ const CLUSTERS = [
   },
   {
     name: 'Voice Streaming Sync',
-    type: 'Puter ElevenLabs API Bridge',
+    type: 'Google Gemini Flash API Bridge',
     status: 'Operational',
     uptime: '99.94%',
     latency: '150ms',

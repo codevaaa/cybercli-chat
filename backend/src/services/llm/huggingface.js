@@ -7,14 +7,17 @@ const client = process.env.HUGGINGFACE_API_KEY
 export async function* streamCompletion({ messages, model = 'meta-llama/Llama-3.1-8B-Instruct', temperature = 0.7 }) {
   if (!client) throw new Error('HuggingFace API key not configured')
 
-  const response = await client.chatCompletion({
+  const stream = client.chatCompletionStream({
     model,
     messages,
     temperature,
     max_tokens: 4096,
   })
 
-  yield { type: 'token', content: response.choices[0].message.content }
+  for await (const chunk of stream) {
+    const content = chunk.choices[0]?.delta?.content
+    if (content) yield { type: 'token', content }
+  }
   yield { type: 'done' }
 }
 
