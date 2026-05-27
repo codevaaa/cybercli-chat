@@ -41,6 +41,23 @@ const EXTRA_MODELS = [
   { id: 'puter/perplexity/sonar-reasoning-pro',        name: 'Sanjaya (Sonar Pro)',   tag: 'Sanjaya',  color: '#059669', desc: 'The visionary observer. Real-time web knowledge with deep reasoning.', kali: false },
   { id: 'puter/perplexity/sonar-pro',                  name: 'Narada (Sonar)',        tag: 'Narada',   color: '#047857', desc: 'The swift messenger. Rapid web-search capabilities for instant, cited facts.', kali: false },
   { id: 'puter/gpt-image-2',                           name: 'Chitrakar (GPT-Image)', tag: 'Chitrakar',color: '#E11D48', desc: 'The divine painter. Generates stunning, high-quality images.', kali: false },
+  
+  // Backing models restored from previous version
+  { id: 'gemini/gemini-2.5-flash',                               name: 'Sahadeva (Flash)',      tag: 'Sahadeva',    color: '#4285F4', desc: 'The wise seer. High-speed multimodal intelligence with enormous context window for documents and media.', kali: false },
+  { id: 'nvidia/llama-3.1-nemotron-70b',                         name: 'Dronacharya',   tag: 'Dronacharya', color: '#76B900', desc: 'The grand master. Research-grade academic reasoning for deep technical tasks and complex instruction.', kali: false },
+  { id: 'cerebras/llama-3.1-8b',                                 name: 'Abhimanyu (Fast)',tag: 'Abhimanyu',   color: '#EC4899', desc: 'The lightning striker. Powered by wafer-scale silicon delivering unmatched sub-100ms response speed.', kali: false },
+  { id: 'huggingface/meta-llama/Llama-3.3-70B-Instruct',         name: 'Yudhishthira (HF)',  tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. High-parameter open-weights flagship model built for balanced, ethical, quality output.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',                 name: 'Vikrama (Qwen-HF)',       tag: 'Vikrama',     color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence with 72B parameter depth.', kali: false },
+  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya (Distill)',tag: 'Chanakya',    color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving and planning.', kali: false },
+  { id: 'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1',      name: 'Saptarishi',    tag: 'Saptarishi',  color: '#FF4D88', desc: 'The seven sages. Mixture-of-experts architecture combining the wisdom of seven specialized expert models.', kali: false },
+  { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-70B',       name: 'Parashurama',   tag: 'Parashurama', color: '#9F7AEA', desc: 'The agentic warrior. Specialized for tool use, function calling, and autonomous agentic orchestration.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',           name: 'Vishwakarma (Coder)',   tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories across every major programming language.', kali: false },
+  { id: 'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b', name: 'Ashwatthama',   tag: 'Ashwatthama', color: '#38B2AC', desc: 'The free warrior. Uncensored high-parameter intelligence for unrestricted debate and creative thinking.', kali: true },
+  { id: 'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b', name: 'Kali',         tag: 'Kali',        color: '#FF0055', desc: '🔥 The destroyer of limits. Fully uncensored 72B flagship — maximum freedom of thought, unfiltered intelligence.', kali: true },
+  { id: 'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', name: 'Rudra',    tag: 'Rudra',       color: '#EF4444', desc: 'The fierce one. Uncensored edge model built for raw unconstrained intelligence at high speed.', kali: true },
+  { id: 'huggingface/defog/sqlcoder-70b-v1.5',                   name: 'Agastya',       tag: 'Agastya',     color: '#D69E2E', desc: 'The sage of data. Specialized in translating natural language into precise, optimized SQL queries.', kali: false },
+  { id: 'mistral/mistral-large-latest',                          name: 'Vayu (Mistral API)',          tag: 'Vayu',        color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities powered by Mistral Large.', kali: false },
+  { id: 'openrouter/moonshotai/moonshot-v1-8k',                  name: 'Karna',         tag: 'Karna',       color: '#6366F1', desc: 'The focused archer. High-precision model from Moonshot AI, perfect for long-context understanding.', kali: false },
 ]
 
 
@@ -1012,9 +1029,15 @@ function InputArea({
   }, [input])
 
   const handleKeyDown = (e) => {
+    // Ignore Enter if user is using an IME (like typing in Hindi/Chinese and selecting a character)
+    if (e.nativeEvent.isComposing) return
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      onSend()
+      // Wrap in setTimeout to ensure state is flushed before sending
+      setTimeout(() => {
+        onSend()
+      }, 0)
     }
   }
 

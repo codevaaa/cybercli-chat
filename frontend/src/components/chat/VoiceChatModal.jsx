@@ -239,8 +239,8 @@ export default function VoiceChatModal({
   const startSilenceTimer = useCallback(() => {
     clearTimeout(silenceTimerRef.current)
     clearInterval(countdownRef.current)
-    setCountdown(1.8)
-    let remaining = 1.8
+    setCountdown(0.3)
+    let remaining = 0.3
     countdownRef.current = setInterval(() => {
       remaining -= 0.1
       setCountdown(Math.max(0, remaining))
@@ -256,7 +256,7 @@ export default function VoiceChatModal({
         setIsListening(false)
         try { recognitionRef.current?.stop() } catch {}
       }
-    }, 1800)
+    }, 300)
   }, [onSendMessage])
 
   const initRecognition = useCallback(() => {
@@ -598,7 +598,7 @@ export default function VoiceChatModal({
                         className="h-full rounded-full"
                         style={{ background: '#22d3ee' }}
                         initial={{ width: '100%' }}
-                        animate={{ width: `${(countdown / 1.8) * 100}%` }}
+                        animate={{ width: `${(countdown / 0.3) * 100}%` }}
                         transition={{ duration: 0.1, ease: 'linear' }}
                       />
                     </div>
