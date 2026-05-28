@@ -4,7 +4,8 @@ import {
   Terminal, ArrowRight, Check, Copy, Code2, Zap, Shield, 
   Cpu, Globe, Sparkles, ChevronRight, Play, Star, 
   MessageSquare, GitBranch, FileCode, Search, Settings,
-  ExternalLink, CheckCircle2, X
+  ExternalLink, CheckCircle2, X,
+  Download
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
