@@ -79,7 +79,7 @@ export default function ClaudeCodePage() {
   const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
 
   const copyInstallCommand = () => {
-    navigator.clipboard.writeText('npm install -g @cybermind/cli && cybermind login');
+    navigator.clipboard.writeText('npm install -g @cybermind/cli@latest && cybermind login');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
