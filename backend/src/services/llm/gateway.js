@@ -107,7 +107,9 @@ const OPENROUTER_FALLBACK_MAP = {
   'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct': 'qwen/qwen-2.5-coder-32b-instruct',
   'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b': 'cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b',
   'huggingface/defog/sqlcoder-70b-v1.5': 'defog/sqlcoder-70b-v1.5',
-  'nvidia/llama-3.1-nemotron-70b': 'nvidia/llama-3.1-nemotron-70b-instruct'
+  'nvidia/llama-3.1-nemotron-70b': 'nvidia/llama-3.1-nemotron-70b-instruct',
+  'gemini/gemini-2.5-flash': 'google/gemini-2.5-flash',
+  'gemini/gemini-2.5-pro': 'google/gemini-2.5-pro'
 }
 
 const FALLBACK_CHAIN = [
@@ -279,6 +281,7 @@ ${r3.content ? r3.content.trim() : (r3.error || 'Response error')}`;
     const targetModel = MODEL_MAP[activeModelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
+    let directGeminiFailed = false
     if (targetModel.provider === 'gemini' && PROVIDER_KEYS.gemini) {
       try {
         const { streamCompletion } = await import('./gemini.js')
@@ -293,6 +296,7 @@ ${r3.content ? r3.content.trim() : (r3.error || 'Response error')}`;
         return
       } catch (err) {
         console.error('Direct Gemini SDK stream completion failed, falling back to proxy:', err.message)
+        directGeminiFailed = true
       }
     }
 
@@ -300,7 +304,11 @@ ${r3.content ? r3.content.trim() : (r3.error || 'Response error')}`;
     let activeModelName = targetModel.model
     let activeProvider = targetModel.provider
 
-    if (!client && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
+    if (activeProvider === 'gemini' && (directGeminiFailed || !PROVIDER_KEYS.gemini)) {
+      client = getClient('openrouter')
+      activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || 'google/gemini-2.5-flash'
+      activeProvider = 'openrouter'
+    } else if (!client && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
       client = getClient('openrouter')
       if (client) {
         activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
@@ -433,6 +441,7 @@ ${r3.content ? r3.content.trim() : (r3.error || 'Response error')}`;
     const targetModel = MODEL_MAP[activeModelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
+    let directGeminiFailed = false
     if (targetModel.provider === 'gemini' && PROVIDER_KEYS.gemini) {
       try {
         const { GoogleGenAI } = await import('@google/genai')
@@ -472,6 +481,7 @@ ${r3.content ? r3.content.trim() : (r3.error || 'Response error')}`;
         }
       } catch (err) {
         console.error('Direct Gemini SDK non-stream completion failed, falling back to proxy:', err.message)
+        directGeminiFailed = true
       }
     }
 
@@ -479,7 +489,11 @@ ${r3.content ? r3.content.trim() : (r3.error || 'Response error')}`;
     let activeModelName = targetModel.model
     let activeProvider = targetModel.provider
 
-    if (!client && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
+    if (activeProvider === 'gemini' && (directGeminiFailed || !PROVIDER_KEYS.gemini)) {
+      client = getClient('openrouter')
+      activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || 'google/gemini-2.5-flash'
+      activeProvider = 'openrouter'
+    } else if (!client && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
       client = getClient('openrouter')
       if (client) {
         activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model

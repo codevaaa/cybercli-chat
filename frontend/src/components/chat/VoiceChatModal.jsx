@@ -278,9 +278,11 @@ export default function VoiceChatModal({
     }
     let resolvedLang = langMap[savedLang.toUpperCase()] || 'en-US'
     if (savedLang.toUpperCase() === 'EN') {
-      const navLang = navigator.language || 'en-US'
-      if (navLang.toLowerCase().includes('in') || navLang.toLowerCase().startsWith('hi') || navLang.toLowerCase().startsWith('ur')) {
+      const navLang = (navigator.language || 'en-US').toLowerCase()
+      if (navLang.startsWith('hi') || navLang.startsWith('ur')) {
         resolvedLang = 'hi-IN'
+      } else if (navLang.includes('-in') || navLang.includes('in')) {
+        resolvedLang = 'en-IN'
       }
     }
     rec.lang = resolvedLang
