@@ -27,11 +27,11 @@ export default function Footer() {
                 Get in touch
               </h3>
               <a
-                href="mailto:hello@cybercli.chat"
+                href="mailto:cybermindcli@cybermindcli.com"
                 className="group inline-flex items-center gap-2 text-foreground-muted hover:text-accent transition-colors text-base"
               >
                 <span className="relative">
-                  hello@cybercli.chat
+                  cybermindcli@cybermindcli.com
                   <span className="absolute bottom-0 left-0 w-0 h-px bg-accent group-hover:w-full transition-all duration-300" />
                 </span>
                 <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />

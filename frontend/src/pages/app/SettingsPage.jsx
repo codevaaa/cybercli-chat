@@ -3,11 +3,13 @@ import { useNavigate, Link, useLocation } from 'react-router-dom'
 import {
   X, User, Shield, CreditCard, Zap, Plug, Settings2,
   Moon, Sun, Monitor, ChevronLeft, Check, Bell, Volume2,
-  Type, Palette, Save, Camera, AlertCircle, Code2, Copy, Activity
+  Type, Palette, Save, Camera, AlertCircle, Code2, Copy, Activity,
+  Gift, Users
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/api.js'
 import { useAuthStore } from '../../stores/authStore.js'
+import InviteFriendsModal from '../../components/invite/InviteFriendsModal.jsx'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -20,6 +22,7 @@ const TABS = [
   { id: 'connectors',   label: 'Connectors',    icon: Plug       },
   { id: 'usage',        label: 'Usage Stats',   icon: Activity   },
   { id: 'api-keys',     label: 'API Keys',      icon: Code2      },
+  { id: 'invite',       label: 'Invite Friends', icon: Gift      },
 ]
 
 const VOICES = ['Sahadeva (Gemini Flash)', 'Sahadeva Pro (Gemini Pro)', 'Vayu (Mistral Large)']
@@ -696,6 +699,86 @@ function DeveloperTab() {
   )
 }
 
+function InviteTab({ onOpenModal }) {
+  const [referralLink, setReferralLink] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [stats, setStats] = useState({ totalSent: 0, totalAccepted: 0 })
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [listRes, statsRes] = await Promise.all([
+          api.get('/invite/list'),
+          api.get('/invite/stats')
+        ])
+        const invites = listRes.data || []
+        const inviteCode = invites.length > 0 ? invites[0].invite_code : ''
+        const link = inviteCode 
+          ? `${window.location.origin}/auth/signup?invite=${inviteCode}`
+          : `${window.location.origin}/auth/signup`
+        setReferralLink(link)
+        setStats(statsRes.data || { totalSent: 0, totalAccepted: 0 })
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchStats()
+  }, [])
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(referralLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-foreground-muted leading-relaxed">
+        Invite your friends to CyberMindCLI. When they sign up using your referral link, they'll get immediate access to all 50+ free models, and you'll receive priority token processing speeds!
+      </p>
+
+      <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary space-y-4">
+        <div className="flex items-center gap-3">
+          <Gift className="w-5 h-5 text-accent" />
+          <span className="text-sm font-bold text-foreground-primary">Referral Link</span>
+        </div>
+        
+        <div className="flex items-center gap-2 p-2 rounded-xl bg-background-tertiary border border-border-subtle">
+          <span className="flex-1 text-xs text-foreground-muted px-2 truncate select-all">
+            {referralLink || `${window.location.origin}/auth/signup`}
+          </span>
+          <button
+            onClick={handleCopyLink}
+            className="p-2 rounded-lg bg-background-elevated hover:bg-white/5 text-foreground-muted hover:text-foreground-primary transition-all flex items-center justify-center cursor-pointer"
+            title="Copy referral link"
+          >
+            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 rounded-xl bg-background-secondary border border-border-subtle text-center">
+          <div className="text-2xl font-bold text-foreground-primary">{stats.totalSent}</div>
+          <div className="text-[10px] text-foreground-muted font-semibold uppercase tracking-wider mt-1">Invites Sent</div>
+        </div>
+        <div className="p-4 rounded-xl bg-background-secondary border border-border-subtle text-center">
+          <div className="text-2xl font-bold text-accent">{stats.totalAccepted}</div>
+          <div className="text-[10px] text-foreground-muted font-semibold uppercase tracking-wider mt-1">Accepted Invites</div>
+        </div>
+      </div>
+
+      <button
+        onClick={onOpenModal}
+        className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white transition-all cursor-pointer bg-accent hover:bg-accent-hover"
+      >
+        <Users className="w-4 h-4" />
+        Open Invite Manager
+      </button>
+    </div>
+  )
+}
+
 // ─── Main SettingsPage ────────────────────────────────────────────────────────
 
 const DEFAULT_SETTINGS = {
@@ -730,6 +813,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
+  const [showInviteModal, setShowInviteModal] = useState(false)
 
   useEffect(() => {
     const path = location.pathname
@@ -743,6 +827,8 @@ export default function SettingsPage() {
       setActiveTab('capabilities')
     } else if (path.endsWith('/usage')) {
       setActiveTab('usage')
+    } else if (path.endsWith('/invite')) {
+      setActiveTab('invite')
     } else {
       setActiveTab('general')
     }
@@ -755,6 +841,7 @@ export default function SettingsPage() {
     else if (tabId === 'privacy') navigate('/settings/security')
     else if (tabId === 'capabilities') navigate('/settings/personas')
     else if (tabId === 'usage') navigate('/settings/usage')
+    else if (tabId === 'invite') navigate('/settings/invite')
     else navigate(`/settings/${tabId}`)
   }
 
@@ -1012,6 +1099,7 @@ export default function SettingsPage() {
     capabilities: <CapabilitiesTab settings={settings} onUpdate={handleUpdate} />,
     connectors:   <ConnectorsTab />,
     'api-keys':   <DeveloperTab />,
+    invite:       <InviteTab       onOpenModal={() => setShowInviteModal(true)} />,
   }
 
   return (
@@ -1132,6 +1220,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </motion.div>
+      <InviteFriendsModal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} />
     </div>
   )
 }

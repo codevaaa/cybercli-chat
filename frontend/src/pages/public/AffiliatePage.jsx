@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DollarSign, Users, TrendingUp, ArrowRight, Award, Shield, Check, ChevronDown, ChevronUp, Clock, HelpCircle, User, Mail, Globe, MessageSquare, Star } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 const STEPS = [
   { 
@@ -60,7 +61,6 @@ export default function AffiliatePage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    document.title = 'Affiliate Partner Program — CyberCli Chat'
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [])
 
@@ -76,6 +76,15 @@ export default function AffiliatePage() {
 
   return (
     <div className="pt-28 pb-20">
+      <SEOHead
+        title="Affiliate Partner Program"
+        description="Earn commissions by referring users to CyberMindCLI. Join our affiliate program and earn up to 30% recurring revenue."
+        keywords="AI affiliate program, referral program, earn commissions, CyberMindCLI affiliate"
+        path="/affiliate"
+        structuredData={StructuredData.faqPage(
+          FAQS.map(faq => ({ question: faq.q, answer: faq.a }))
+        )}
+      />
       {/* Hero Section */}
       <div className="section-padding mb-12">
         <div className="container-custom text-center">

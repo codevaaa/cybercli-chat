@@ -131,6 +131,7 @@ function App() {
           <Route path="/settings/api-keys" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/settings/personas" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/settings/security" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/settings/invite" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/library" element={<ProtectedRoute><LibraryPage /></ProtectedRoute>} />
           <Route path="/agents" element={<ProtectedRoute><AgentsPage /></ProtectedRoute>} />

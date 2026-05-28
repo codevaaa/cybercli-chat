@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Clock, User, Tag, Share2, Copy, Check } from 'lucide-react'
 import { BLOG_POSTS } from './BlogPage'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 // Full articles content (1500+ words each)
 const ARTICLES = {
@@ -595,10 +596,7 @@ export default function BlogPostPage() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
-    document.title = `${post.title} — CyberCli Blog`
-    const metaDesc = document.querySelector('meta[name="description"]')
-    if (metaDesc) metaDesc.setAttribute('content', post.excerpt)
-  }, [slug, post])
+  }, [slug])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -748,6 +746,21 @@ export default function BlogPostPage() {
 
   return (
     <div className="pt-24 pb-20">
+      <SEOHead
+        title={post.title}
+        description={post.excerpt}
+        path={`/blog/${slug}`}
+        ogType="article"
+        article={{ publishedTime: post.date, author: post.author }}
+        structuredData={StructuredData.blogPosting({
+          title: post.title,
+          description: post.excerpt,
+          image: post.image,
+          datePublished: post.date,
+          author: post.author,
+          slug: slug
+        })}
+      />
       {/* Read progress bar */}
       <motion.div
         className="fixed top-0 left-0 h-0.5 z-50"

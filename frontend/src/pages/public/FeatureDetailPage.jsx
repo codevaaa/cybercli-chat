@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Users, Mic, GitBranch, Cpu, Globe, Shield, Brain, FileText, ChevronDown, ChevronUp, Check, Star, Zap } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 const FEATURE_DATA = {
   'council-mode': {
@@ -345,13 +346,21 @@ export default function FeatureDetailPage() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
-    document.title = `${feature.title} — CyberCli Chat`
-    const metaDesc = document.querySelector('meta[name="description"]')
-    if (metaDesc) metaDesc.setAttribute('content', feature.description)
-  }, [slug, feature])
+  }, [slug])
 
   return (
     <div className="pt-24 pb-20">
+      <SEOHead
+        title={feature.title}
+        description={feature.description.slice(0, 155)}
+        keywords={`AI features, ${feature.title}, CyberMindCLI features, council mode, voice chat`}
+        path={`/features/${slug}`}
+        structuredData={StructuredData.breadcrumb([
+          { name: 'Home', path: '/' },
+          { name: 'Features', path: '/features' },
+          { name: feature.title, path: `/features/${slug}` }
+        ])}
+      />
       {/* Hero */}
       <div className="section-padding mb-16">
         <div className="container-custom max-w-5xl">

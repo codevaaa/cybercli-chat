@@ -3,6 +3,7 @@ import { Terminal, Code2, Zap, ArrowRight, Check, ChevronDown, Monitor, FileCode
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { CyberCliMark } from '../../components/ui/CyberCliLogo'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 const FEATURES = [
   {

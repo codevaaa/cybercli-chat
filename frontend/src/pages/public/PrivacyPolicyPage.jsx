@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronRight } from 'lucide-react'
+import SEOHead from '@components/seo/SEOHead'
 
 const LAST_UPDATED = 'May 20, 2026'
 
@@ -12,7 +13,7 @@ const SECTIONS = [
 
 We are committed to processing your personal data in accordance with applicable data protection laws, including the EU General Data Protection Regulation (GDPR), the UK GDPR, the California Consumer Privacy Act (CCPA), and other applicable privacy laws.
 
-If you are an EU/EEA resident, the data controller responsible for your personal data is CyberMindCLI, contactable at privacy@cybermindcli.com.`,
+If you are an EU/EEA resident, the data controller responsible for your personal data is CyberMindCLI, contactable at cybermindcli@cybermindcli.com.`,
   },
   {
     id: 'data-collected',
@@ -110,7 +111,7 @@ After the applicable retention period, data is permanently deleted or anonymized
 
 **Right to Withdraw Consent**: Where processing is based on consent, you may withdraw it at any time without affecting the lawfulness of prior processing.
 
-To exercise any of these rights, contact privacy@cybermindcli.com. We will respond within 30 days. You also have the right to lodge a complaint with your local data protection authority.`,
+To exercise any of these rights, contact cybermindcli@cybermindcli.com. We will respond within 30 days. You also have the right to lodge a complaint with your local data protection authority.`,
   },
   {
     id: 'security',
@@ -156,10 +157,10 @@ We do not use third-party advertising cookies or participate in cross-site behav
     title: '11. Contact Us',
     content: `For privacy-related inquiries, requests, or complaints:
 
-**Privacy Officer**: privacy@cybermindcli.com
-**General Contact**: hello@cybermindcli.com
-**Security Concerns**: security@cybermindcli.com
-**Legal Matters**: legal@cybermindcli.com
+**Privacy Officer**: cybermindcli@cybermindcli.com
+**General Contact**: cybermindcli@cybermindcli.com
+**Security Concerns**: cybermindcli@cybermindcli.com
+**Legal Matters**: cybermindcli@cybermindcli.com
 
 We aim to respond to all privacy requests within 30 days. For complex requests, we may extend this period by an additional 60 days, in which case we will notify you within the initial 30 days.
 
@@ -226,6 +227,12 @@ export default function PrivacyPolicyPage() {
 
   return (
     <div className="pt-28 pb-20 bg-[#0A0A0F]">
+      <SEOHead
+        title="Privacy Policy"
+        description="CyberMindCLI privacy policy. Learn how we collect, use, and protect your data. GDPR and CCPA compliant."
+        path="/privacy-policy"
+        keywords={['privacy policy', 'data protection', 'GDPR', 'CCPA', 'CyberMindCLI', 'AI privacy']}
+      />
       <div className="section-padding">
         <div className="container-custom">
           <div className="mb-12">
@@ -282,7 +289,7 @@ export default function PrivacyPolicyPage() {
 
               <div className="mt-12 p-6 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                 <p className="text-xs text-[#6B7280]">
-                  Last updated: {LAST_UPDATED}. Contact <a href="mailto:privacy@cybermindcli.com" className="text-orange-400">privacy@cybermindcli.com</a> with questions.
+                  Last updated: {LAST_UPDATED}. Contact <a href="mailto:cybermindcli@cybermindcli.com" className="text-orange-400">cybermindcli@cybermindcli.com</a> with questions.
                 </p>
               </div>
             </main>

@@ -34,6 +34,7 @@ import imagesRoutes from './routes/images.routes.js'
 import contactRoutes from './routes/contact.routes.js'
 import projectsRoutes from './routes/projects.routes.js'
 import workflowsRoutes from './routes/workflows.routes.js'
+import inviteRoutes from './routes/invite.routes.js'
 import http from 'http'
 import { WebSocketServer } from 'ws'
 import ApiKey from './models/ApiKey.js'
@@ -152,6 +153,8 @@ app.use('/api/v1/images', imagesRoutes)
 app.use('/api/v1/contact', contactRoutes)
 app.use('/api/v1/projects', projectsRoutes)
 app.use('/api/v1/workflows', workflowsRoutes)
+app.use('/api/v1/invite', inviteRoutes)
+
 
 // 404 handler
 app.use((req, res) => {

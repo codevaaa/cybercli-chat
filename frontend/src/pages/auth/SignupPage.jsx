@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../stores/authStore.js'
 import { CyberCliMark } from '../../components/ui/CyberCliLogo'
+import api from '../../lib/api.js'
 
 function getStrength(pw) {
   if (!pw) return { level: 0, label: '', color: '' }
@@ -27,6 +28,14 @@ export default function SignupPage() {
   const [focusedField, setFocusedField] = useState(null)
   const [agree, setAgree] = useState(false)
   const [localError, setLocalError] = useState(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const invite = params.get('invite')
+    if (invite) {
+      localStorage.setItem('pending_invite_code', invite)
+    }
+  }, [])
 
   const passwordStrength = getStrength(form.password)
 
@@ -61,6 +70,18 @@ export default function SignupPage() {
 
     const result = await signUpWithEmail(form.email, form.password, form.fullName)
     if (result.success) {
+      const inviteCode = localStorage.getItem('pending_invite_code')
+      if (inviteCode) {
+        try {
+          await api.post('/invite/accept', {
+            invite_code: inviteCode,
+            email: form.email.trim()
+          })
+          localStorage.removeItem('pending_invite_code')
+        } catch (err) {
+          console.error('Failed to accept invite:', err)
+        }
+      }
       navigate('/auth/verify-email')
     }
   }

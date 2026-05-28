@@ -6,6 +6,7 @@ import {
   Menu, X, Sparkles, ArrowRight, Star, TrendingUp, Code2, Terminal
 } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 /* ─── Data ─── */
 export const CATEGORIES = [
@@ -229,6 +230,16 @@ export default function DocsPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] pt-28">
+      <SEOHead
+        title="Documentation — Getting Started"
+        description="Complete documentation for CyberMindCLI. Setup guides, API quickstart, voice chat, Council Mode, and advanced configuration."
+        keywords="AI documentation, CyberMindCLI docs, getting started, API guide, user guide"
+        path="/docs"
+        structuredData={StructuredData.breadcrumb([
+          { name: 'Home', path: '/' },
+          { name: 'Documentation', path: '/docs' }
+        ])}
+      />
       <div className="flex relative" style={{ minHeight: 'calc(100vh - 112px)' }}>
         
         {/* Background glow */}

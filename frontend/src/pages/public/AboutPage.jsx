@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Shield, Target, Heart, Zap, Globe, Award, Code2, Lock, Github } from 'lucide-react'
 import ScrollReveal, { ScrollRevealGroup } from '@components/ui/ScrollReveal'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 const VALUES = [
   {

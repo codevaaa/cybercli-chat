@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Cpu, Users, Shield, Mic, GitBranch, Globe, MessageSquare, Brain, Clock, Lock, Zap, Sparkles, BarChart3, Code, FileText, Image, Layers, Palette, Keyboard, Share2, BookOpen, Bell, Terminal, ArrowRight } from 'lucide-react'
 import ScrollReveal, { ScrollRevealGroup } from '@components/ui/ScrollReveal'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 const ALL_FEATURES = [
   {

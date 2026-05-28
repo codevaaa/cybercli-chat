@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 import {
   ChevronRight, Menu, Clock, Calendar, ThumbsUp, ThumbsDown, Sparkles, Hash, ArrowLeft, ArrowRight, Zap, Bug
 } from 'lucide-react'
@@ -773,6 +774,17 @@ export default function DocsArticlePage() {
 
   return (
     <div className="min-h-screen bg-background-primary pt-16">
+      <SEOHead
+        title={`${article.title} — Documentation`}
+        description={typeof article.intro === 'string' ? article.intro.slice(0, 155) : 'Documentation article for CyberMindCLI.'}
+        keywords={`AI documentation, CyberMindCLI docs, ${article.title}, ${article.category}`}
+        path={`/docs/${slug}`}
+        structuredData={StructuredData.breadcrumb([
+          { name: 'Home', path: '/' },
+          { name: 'Documentation', path: '/docs' },
+          { name: article.title, path: `/docs/${slug}` }
+        ])}
+      />
       <div className="flex relative" style={{ minHeight: 'calc(100vh - 64px)' }}>
 
         {/* Desktop Sidebar */}

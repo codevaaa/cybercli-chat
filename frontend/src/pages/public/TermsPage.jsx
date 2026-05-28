@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronRight } from 'lucide-react'
+import SEOHead from '@components/seo/SEOHead'
 
 const LAST_UPDATED = 'May 20, 2026'
 
@@ -31,7 +32,7 @@ CyberMindCLI reserves the right to modify, suspend, or discontinue any aspect of
     title: '3. User Accounts',
     content: `To access certain features of the Service, you must create an account. You are responsible for:
 
-**Account Security**: Maintaining the confidentiality of your login credentials. You must immediately notify us at security@cybermindcli.com of any unauthorized use of your account. We are not liable for losses arising from unauthorized account access resulting from your failure to protect your credentials.
+**Account Security**: Maintaining the confidentiality of your login credentials. You must immediately notify us at cybermindcli@cybermindcli.com of any unauthorized use of your account. We are not liable for losses arising from unauthorized account access resulting from your failure to protect your credentials.
 
 **Account Accuracy**: Providing accurate, current, and complete information during registration. You agree to promptly update your account information to keep it accurate, current, and complete.
 
@@ -74,7 +75,7 @@ We reserve the right to suspend or terminate accounts that violate this policy, 
 • We do not train our models on your conversation data without explicit consent
 • Authentication data is managed by Supabase with industry-standard security practices
 • We implement data minimization principles — we collect only what is necessary to provide the Service
-• You may request deletion of your account and associated data at any time by contacting privacy@cybermindcli.com
+• You may request deletion of your account and associated data at any time by contacting cybermindcli@cybermindcli.com
 
 For complete information about how we handle your data, please review our Privacy Policy and GDPR Notice.`,
   },
@@ -114,7 +115,7 @@ If you are an EU/EEA consumer, mandatory local consumer protection laws may appl
 
 Your continued use of the Service after changes take effect constitutes acceptance of the revised Terms. If you do not agree to the revised Terms, you must stop using the Service.
 
-For questions about these Terms, contact us at legal@cybermindcli.com.`,
+For questions about these Terms, contact us at cybermindcli@cybermindcli.com.`,
   },
 ]
 
@@ -179,6 +180,12 @@ export default function TermsPage() {
 
   return (
     <div className="pt-28 pb-20 bg-[#0A0A0F]">
+      <SEOHead
+        title="Terms of Service"
+        description="CyberMindCLI terms of service. Usage terms, liability, intellectual property, and user responsibilities."
+        path="/terms-of-service"
+        keywords={['terms of service', 'user agreement', 'CyberMindCLI', 'AI terms', 'acceptable use']}
+      />
       <div className="section-padding">
         <div className="container-custom">
           {/* Header */}
@@ -195,7 +202,7 @@ export default function TermsPage() {
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-white/[0.06] bg-[#0D0D14] p-8 mb-6">
                 <p className="text-[#9CA3AF] text-sm leading-relaxed">
-                  Please read these Terms of Service carefully before using CyberCli Chat. These Terms govern your access to and use of the Service. By using the Service, you agree to these Terms. If you have questions, contact us at <a href="mailto:legal@cybermindcli.com" className="text-orange-400 hover:text-orange-300">legal@cybermindcli.com</a>.
+                  Please read these Terms of Service carefully before using CyberCli Chat. These Terms govern your access to and use of the Service. By using the Service, you agree to these Terms. If you have questions, contact us at <a href="mailto:cybermindcli@cybermindcli.com" className="text-orange-400 hover:text-orange-300">cybermindcli@cybermindcli.com</a>.
                 </p>
               </div>
 
@@ -238,7 +245,7 @@ export default function TermsPage() {
               <div className="mt-12 p-6 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                 <p className="text-xs text-[#6B7280] leading-relaxed">
                   These Terms of Service were last updated on {LAST_UPDATED} and supersede all previous versions.
-                  For legal inquiries, contact <a href="mailto:legal@cybermindcli.com" className="text-orange-400">legal@cybermindcli.com</a>.
+                  For legal inquiries, contact <a href="mailto:cybermindcli@cybermindcli.com" className="text-orange-400">cybermindcli@cybermindcli.com</a>.
                 </p>
               </div>
             </main>

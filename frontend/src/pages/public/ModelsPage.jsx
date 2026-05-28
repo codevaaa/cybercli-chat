@@ -7,6 +7,7 @@ import {
   ExternalLink, Timer, BookOpen, Layers, ShieldCheck
 } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 /* ─── Model data ─── */
 export const MODEL_CARDS = [

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronRight } from 'lucide-react'
+import SEOHead from '@components/seo/SEOHead'
 
 const LAST_UPDATED = 'May 20, 2026'
 
@@ -49,7 +50,7 @@ const SECTIONS = [
     title: '5. Reporting Abuse',
     content: `We rely on our community to maintain a secure and productive environment. If you encounter any generated content or user activity that violates these terms:
 
-• Send a detailed report to **abuse@cybercli.chat** including prompt references or thread identifiers.
+• Send a detailed report to **cybermindcli@cybermindcli.com** including prompt references or thread identifiers.
 • Our safety team reviews all incident tickets within 24 hours and takes appropriate administrative action.`,
   },
 ]
@@ -113,6 +114,12 @@ export default function AcceptableUsePage() {
 
   return (
     <div className="pt-28 pb-20 bg-[#0A0A0F]">
+      <SEOHead
+        title="Acceptable Use Policy"
+        description="CyberMindCLI acceptable use policy. Guidelines for responsible AI usage, prohibited activities, and reporting violations."
+        path="/acceptable-use"
+        keywords={['acceptable use', 'AI policy', 'usage guidelines', 'CyberMindCLI', 'responsible AI']}
+      />
       <div className="section-padding">
         <div className="container-custom">
           <div className="mb-12">
@@ -169,7 +176,7 @@ export default function AcceptableUsePage() {
 
               <div className="mt-12 p-6 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                 <p className="text-xs text-[#6B7280]">
-                  Last updated: {LAST_UPDATED}. Contact <a href="mailto:abuse@cybercli.chat" className="text-[#D97757]">abuse@cybercli.chat</a> for policy inquiries or to report violations.
+                  Last updated: {LAST_UPDATED}. Contact <a href="mailto:cybermindcli@cybermindcli.com" className="text-[#D97757]">cybermindcli@cybermindcli.com</a> for policy inquiries or to report violations.
                 </p>
               </div>
             </main>

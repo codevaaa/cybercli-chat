@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { MapPin, Clock, DollarSign, Briefcase, ArrowRight, Users, Zap, Heart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import SEOHead from '@components/seo/SEOHead'
 
 const OPEN_ROLES = [
   {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronRight } from 'lucide-react'
+import SEOHead from '@components/seo/SEOHead'
 
 const LAST_UPDATED = 'May 20, 2026'
 
@@ -19,7 +20,7 @@ When AI model providers process your prompts to generate responses, they may act
     title: '2. Data Controller Details',
     content: `**Data Controller**: CyberMindCLI
 **Platform**: CyberCli Chat (cyberclichat.com)
-**DPO Contact**: privacy@cybermindcli.com
+**DPO Contact**: cybermindcli@cybermindcli.com
 **Founded**: 2025
 **Jurisdiction**: International (primary operations)
 
@@ -53,7 +54,7 @@ We process IP addresses, device identifiers, and usage patterns to detect and pr
 We analyze aggregate usage patterns to improve Service performance, identify bugs, and guide feature development. We do not profile individual users for commercial purposes.
 
 **Marketing Communications** (Art. 6(1)(a) — Consent):
-We send product updates and newsletters only where you have explicitly opted in. You may withdraw consent at any time by clicking "unsubscribe" or contacting privacy@cybermindcli.com.
+We send product updates and newsletters only where you have explicitly opted in. You may withdraw consent at any time by clicking "unsubscribe" or contacting cybermindcli@cybermindcli.com.
 
 **Legal Compliance** (Art. 6(1)(c) — Legal Obligation):
 We may process data when required to comply with a legal obligation, such as responding to a court order, law enforcement request, or regulatory requirement.`,
@@ -65,7 +66,7 @@ We may process data when required to comply with a legal obligation, such as res
 
 However, because we process conversation content, users may voluntarily include sensitive information in their prompts. We recommend that users do not share sensitive personal data in AI conversations. Where such data is inadvertently shared, it is processed only for the purpose of generating an AI response and is not retained for any other purpose beyond the standard data retention periods.
 
-If you believe you have inadvertently shared special category data, you may request deletion of specific conversations by contacting privacy@cybermindcli.com.`,
+If you believe you have inadvertently shared special category data, you may request deletion of specific conversations by contacting cybermindcli@cybermindcli.com.`,
   },
   {
     id: 'automated-decisions',
@@ -100,7 +101,7 @@ Specific transfers:
   {
     id: 'rights',
     title: '8. Your GDPR Rights',
-    content: `Under the GDPR, you have the following rights. To exercise any of these rights, contact privacy@cybermindcli.com with subject line "GDPR Rights Request." We will respond within 30 days (extendable to 90 days for complex requests with notification).
+    content: `Under the GDPR, you have the following rights. To exercise any of these rights, contact cybermindcli@cybermindcli.com with subject line "GDPR Rights Request." We will respond within 30 days (extendable to 90 days for complex requests with notification).
 
 **Right of Access (Art. 15)**: Request a copy of your personal data and information about how it is processed. We will provide this in a structured JSON format.
 
@@ -147,7 +148,7 @@ When the retention period expires, data is permanently and irreversibly deleted.
 **United Kingdom**: Information Commissioner's Office (ICO) — ico.org.uk
 **All other EU/EEA countries**: Your national data protection authority listed at edpb.europa.eu/about-edpb/about-edpb/members_en
 
-We would appreciate the opportunity to address your concern before you contact a supervisory authority. Please reach out to privacy@cybermindcli.com first.`,
+We would appreciate the opportunity to address your concern before you contact a supervisory authority. Please reach out to cybermindcli@cybermindcli.com first.`,
   },
 ]
 
@@ -210,6 +211,12 @@ export default function GDPRPage() {
 
   return (
     <div className="pt-28 pb-20 bg-[#0A0A0F]">
+      <SEOHead
+        title="GDPR Compliance"
+        description="CyberMindCLI GDPR compliance. Data protection rights, processing lawful basis, data transfers, and DPO contact."
+        path="/gdpr"
+        keywords={['GDPR', 'data protection', 'EU privacy', 'data rights', 'CyberMindCLI', 'DPO']}
+      />
       <div className="section-padding">
         <div className="container-custom">
           <div className="mb-12">
@@ -267,7 +274,7 @@ export default function GDPRPage() {
               <div className="mt-12 p-6 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                 <p className="text-xs text-[#6B7280]">
                   Last updated: {LAST_UPDATED}. This notice is subject to change. Material changes will be communicated 30 days in advance.
-                  Contact <a href="mailto:privacy@cybermindcli.com" className="text-orange-400">privacy@cybermindcli.com</a> for inquiries.
+                  Contact <a href="mailto:cybermindcli@cybermindcli.com" className="text-orange-400">cybermindcli@cybermindcli.com</a> for inquiries.
                 </p>
               </div>
             </main>

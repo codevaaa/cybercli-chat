@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronRight } from 'lucide-react'
+import SEOHead from '@components/seo/SEOHead'
 
 const LAST_UPDATED = 'May 20, 2026'
 
@@ -98,6 +99,12 @@ export default function CookiePolicyPage() {
 
   return (
     <div className="pt-28 pb-20 bg-[#0A0A0F]">
+      <SEOHead
+        title="Cookie Policy"
+        description="CyberMindCLI cookie policy. Learn about the cookies we use, their purposes, and how to manage your preferences."
+        path="/cookie-policy"
+        keywords={['cookie policy', 'cookies', 'tracking', 'CyberMindCLI', 'privacy']}
+      />
       <div className="section-padding">
         <div className="container-custom">
           <div className="mb-12">
@@ -154,7 +161,7 @@ export default function CookiePolicyPage() {
 
               <div className="mt-12 p-6 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                 <p className="text-xs text-[#6B7280]">
-                  Last updated: {LAST_UPDATED}. Contact <a href="mailto:privacy@cybermindcli.com" className="text-orange-400">privacy@cybermindcli.com</a> with questions about this Cookie Policy.
+                  Last updated: {LAST_UPDATED}. Contact <a href="mailto:cybermindcli@cybermindcli.com" className="text-orange-400">cybermindcli@cybermindcli.com</a> with questions about this Cookie Policy.
                 </p>
               </div>
             </main>

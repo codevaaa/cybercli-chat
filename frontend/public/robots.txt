@@ -1,0 +1,40 @@
+# CyberMindCLI — Robots.txt
+# https://cybermindcli.info
+
+User-agent: *
+Allow: /
+Allow: /features
+Allow: /models
+Allow: /pricing
+Allow: /contact
+Allow: /about
+Allow: /careers
+Allow: /affiliate
+Allow: /blog
+Allow: /docs
+Allow: /api-reference
+Allow: /developers
+Allow: /code
+Allow: /status
+Allow: /downloads
+
+# Disallow private/authenticated routes
+Disallow: /chat
+Disallow: /settings
+Disallow: /profile
+Disallow: /library
+Disallow: /agents
+Disallow: /voice
+Disallow: /voice-chat
+Disallow: /voice-settings
+Disallow: /projects
+Disallow: /usage
+Disallow: /workflows
+Disallow: /discover
+Disallow: /auth/
+
+# Crawl-delay for politeness
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://cybermindcli.info/sitemap.xml

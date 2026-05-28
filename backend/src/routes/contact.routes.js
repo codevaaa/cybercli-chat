@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import mongoose from 'mongoose'
+import { sendContactNotification } from '../services/email/mailer.js'
 
 const router = Router()
 
@@ -24,6 +25,11 @@ router.post('/', async (req, res) => {
 
     const contact = new Contact({ name, email, subject, message })
     await contact.save()
+
+    // Dispatch email notifications asynchronously (non-blocking)
+    sendContactNotification(name, email, subject, message).catch(err => {
+      console.error('Failed to send contact notification email:', err)
+    })
 
     res.status(201).json({ success: true, message: 'Your message has been stored successfully. Our support team will get in touch shortly.' })
   } catch (error) {

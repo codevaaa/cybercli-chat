@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 import {
   Timer, Cpu, ArrowLeft, ArrowRight, Layers, ShieldCheck, Gauge,
   Landmark, BarChart3, HelpCircle, Activity, Sparkles, Zap, Shield, Code2, Globe
@@ -141,6 +142,17 @@ export default function ModelDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#07070a] pt-32 pb-24 relative overflow-x-hidden">
+      <SEOHead
+        title={`${model.name} — AI Model`}
+        description={model.description.slice(0, 155)}
+        keywords={`AI models, ${model.name}, free AI models, CyberMindCLI models`}
+        path={`/models/${encodeURIComponent(model.id)}`}
+        structuredData={StructuredData.softwareApplication({
+          name: model.name,
+          description: model.description,
+          category: 'Artificial Intelligence'
+        })}
+      />
       {/* Background radial glows */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
         <div className="absolute top-0 left-1/4 w-[600px] h-[350px] rounded-full blur-[130px]"

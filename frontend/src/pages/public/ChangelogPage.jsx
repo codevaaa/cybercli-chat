@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Sparkles, Wrench, Bug, Zap, ArrowRight, Rss, BookOpen, Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 import ScrollReveal from '@components/ui/ScrollReveal'
 
 const BADGE_COLORS = {
@@ -171,6 +172,16 @@ export default function ChangelogPage() {
 
   return (
     <div className="min-h-screen bg-[#07070a] pt-32 pb-24 relative overflow-x-hidden">
+      <SEOHead
+        title="Changelog — Platform Updates"
+        description="Stay up to date with new features, model integrations, improvements, and bug fixes delivered continuously to the CyberMindCLI platform."
+        keywords="changelog, platform updates, AI updates, CyberMindCLI updates"
+        path="/changelog"
+        structuredData={StructuredData.breadcrumb([
+          { name: 'Home', path: '/' },
+          { name: 'Changelog', path: '/changelog' }
+        ])}
+      />
       {/* Background grid */}
       <div className="fixed inset-0 opacity-[0.02] pointer-events-none"
         style={{

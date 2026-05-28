@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle2, Server, Activity, Timer, AlertTriangle, Clock, ArrowLeft } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import SEOHead from '@components/seo/SEOHead'
 
 const CLUSTERS = [
   {

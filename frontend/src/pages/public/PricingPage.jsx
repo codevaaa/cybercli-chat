@@ -4,6 +4,7 @@ import { Check, Sparkles, ArrowRight, Shield, Zap, Globe, Briefcase } from 'luci
 import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import { isLoggedIn } from '../../lib/api.js'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 const INDIVIDUAL_PLANS = [
   {

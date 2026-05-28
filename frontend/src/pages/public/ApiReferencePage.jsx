@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Copy, Check, Lock, Globe, MessageSquare, Settings, List, Users, BookOpen, Terminal, Sparkles, Code, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import SEOHead from '@components/seo/SEOHead'
 
 const BASE_URL = 'https://api.cybercli.chat'
 

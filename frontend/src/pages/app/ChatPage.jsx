@@ -6,7 +6,8 @@ import {
   Copy, Check, GitBranch, Volume2, VolumeX, Trash2, Pin, X, RotateCcw,
   Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder, Camera,
   Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen, Menu,
-  Pencil, GraduationCap, Coffee, Lightbulb, Skull, FileCode, GitBranch as GitIcon, FolderTree, ArrowRight
+  Pencil, GraduationCap, Coffee, Lightbulb, Skull, FileCode, GitBranch as GitIcon, FolderTree, ArrowRight,
+  Gift
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
@@ -18,6 +19,7 @@ import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
 import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
 import { useAuthStore } from '@stores/authStore.js'
 import CyberCliMark, { CyberCliWordmark } from '../../components/ui/CyberCliLogo.jsx'
+import InviteFriendsModal from '../../components/invite/InviteFriendsModal.jsx'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -2420,6 +2422,21 @@ function CustomizeView({
       setCodeExecutionEnabled(data.code_execution_enabled || false)
       setImageGenerationEnabled(data.image_generation_enabled || false)
       setMemoryEnabled(data.memories && data.memories.length > 0)
+
+      // Auto-accept pending invite if it exists
+      const pendingInvite = localStorage.getItem('pending_invite_code')
+      if (pendingInvite && data.email) {
+        try {
+          await api.post('/invite/accept', {
+            invite_code: pendingInvite,
+            email: data.email
+          })
+        } catch (inviteErr) {
+          console.error('Failed to auto-accept pending invite:', inviteErr)
+        } finally {
+          localStorage.removeItem('pending_invite_code')
+        }
+      }
     } catch (err) {
       console.error(err)
     } finally {
@@ -2729,6 +2746,7 @@ export default function ChatPage() {
   const [streamingIndex, setStreamingIndex] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState('general')
+  const [showInviteModal, setShowInviteModal] = useState(false)
   const [daemonConnected, setDaemonConnected] = useState(false)
 
   // Claude & Cyber Mode Upgrades
@@ -4015,7 +4033,7 @@ export default function ChatPage() {
                     </button>
 
                     <button 
-                      onClick={() => window.open('mailto:support@cybermindcli.com')}
+                      onClick={() => window.open('mailto:cybermindcli@cybermindcli.com')}
                       onMouseEnter={() => setHoveredSubmenu(null)}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left group"
                     >
@@ -4030,6 +4048,15 @@ export default function ChatPage() {
                     >
                       <ArrowUpCircle className="w-4 h-4 text-foreground-muted group-hover:text-[#D97757] transition-colors" />
                       <span>Upgrade plan</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setShowInviteModal(true)}
+                      onMouseEnter={() => setHoveredSubmenu(null)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left group"
+                    >
+                      <Gift className="w-4 h-4 text-foreground-muted group-hover:text-[#D97757] transition-colors" />
+                      <span>Invite Friends</span>
                     </button>
 
                     <button 
@@ -4826,6 +4853,9 @@ cybercli link --key YOUR_API_KEY</pre>
 
       {/* Settings dialog */}
       <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} onSettingChange={handleParentSettingChange} initialTab={settingsTab} />
+
+      {/* Invite Friends Modal */}
+      <InviteFriendsModal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} />
     </div>
   )
 }

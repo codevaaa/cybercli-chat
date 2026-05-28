@@ -5,6 +5,7 @@ import {
   ArrowRight, CheckCircle2, Play, Sparkles, Key, FileCode
 } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import SEOHead from '@components/seo/SEOHead'
 
 export default function DevelopersPage() {
   return (

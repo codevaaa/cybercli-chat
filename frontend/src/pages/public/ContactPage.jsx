@@ -3,14 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, MessageSquare, MapPin, Send, Check, ArrowUpRight, Globe, Twitter, Github } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import api from '../../lib/api.js'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 const CONTACT_CHANNELS = [
   {
     icon: Mail,
     title: 'Email',
     desc: 'For general inquiries, support, and partnerships',
-    value: 'hello@cybercli.chat',
-    link: 'mailto:hello@cybercli.chat',
+    value: 'cybermindcli@cybermindcli.com',
+    link: 'mailto:cybermindcli@cybermindcli.com',
     color: '#D97757',
   },
   {

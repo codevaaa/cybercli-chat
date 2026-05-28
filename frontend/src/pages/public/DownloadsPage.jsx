@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Download, Monitor, Apple, Smartphone, ArrowRight, ShieldCheck, Sparkles, Server } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import SEOHead from '@components/seo/SEOHead'
 
 export default function DownloadsPage() {
   return (

@@ -17,7 +17,7 @@ export const FOOTER_SECTIONS = [
     links: [
       { label: 'Features', href: '/features' },
       { label: 'Models', href: '/models' },
-      { label: 'AI Agents', href: '/ai-agents' },
+      { label: 'AI Agents', href: '/agents' },
       { label: 'Developers', href: '/developers' },
       { label: 'Pricing', href: '/pricing' },
       { label: 'Changelog', href: '/changelog' },

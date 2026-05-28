@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen, Clock, Tag, User } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 export const BLOG_POSTS = [
   {
@@ -99,16 +100,19 @@ export const BLOG_POSTS = [
 ]
 
 export default function BlogPage() {
-  useEffect(() => {
-    document.title = 'CyberCli Blog — Security & AI Deep Dives'
-    const metaDesc = document.querySelector('meta[name="description"]')
-    if (metaDesc) {
-      metaDesc.setAttribute('content', 'Research-grade articles on cybersecurity, quantum computing, offensive tactics, and the future of AI — authored by Chandan Pandey and the CyberMindCLI team.')
-    }
-  }, [])
-
   return (
     <div className="pt-28 pb-20">
+      <SEOHead
+        title="Blog — AI & Security Deep Dives"
+        description="Read the latest on AI technology, security best practices, and CyberMindCLI updates. Expert articles on Council Mode, encryption, and AI trends."
+        keywords="AI blog, AI security, tech blog, AI trends, CyberMindCLI blog, AI news"
+        path="/blog"
+        ogType="blog"
+        structuredData={StructuredData.breadcrumb([
+          { name: 'Home', path: '/' },
+          { name: 'Blog', path: '/blog' }
+        ])}
+      />
       {/* Header */}
       <div className="section-padding mb-16">
         <div className="container-custom">
