@@ -1,103 +1,209 @@
-# 🤖 CyberCoder CLI
+# 🚀 CyberCoder CLI
 
-**Advanced AI-powered command-line interface - Better than Claude Code, more affordable, and more powerful!**
+**AI-powered coding assistant for your terminal. Better than Claude Code, more affordable, and built for developers who ship.**
 
-## 🎯 Why CyberCoder is Superior to Claude Code
+[![Version](https://img.shields.io/npm/v/@cybermind/cli)](https://www.npmjs.com/package/@cybermind/cli)
+[![Downloads](https://img.shields.io/npm/dm/@cybermind/cli)](https://www.npmjs.com/package/@cybermind/cli)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-### Real Facts (No Marketing Hype):
-- **Claude Code**: ~18 commands, ~$350/month, Electron bloat (250MB)
-- **CyberCoder**: 63 commands, ~$100/month, Lightweight (215KB)
-- **Feature Advantage**: 239% more commands, 71% cost savings
-- **Performance**: 3x faster, 1268x smaller, 500% less memory
+## 🎯 The Fastest Way to Code
 
-### Why People Think Claude Code is Powerful (The Truth):
-1. **First Mover Advantage** - Claude was first to market
-2. **Anthropic Brand Trust** - People trust big tech names
-3. **Marketing Budget** - Heavy promotion creates perception
-4. **Developer Familiarity** - Developers already know Claude
-5. **Enterprise Adoption** - Companies buy what's "safe"
+CyberCoder brings the power of 8+ AI providers directly to your terminal. Write, refactor, debug, and understand code without ever leaving your workflow.
 
-**Reality**: CyberCoder has objectively better features, performance, and pricing.
+### Why Developers Choose CyberCoder
 
-## ✨ Key Features
+| Feature | CyberCoder | Claude Code | Copilot |
+|---------|-----------|-------------|---------|
+| **Price** | $25/month (Pro) | $350/month | $19/month |
+| **Models** | 8+ providers | 1 provider | 1 provider |
+| **Local Models** | ✅ Free with Ollama | ❌ | ❌ |
+| **Multi-Model Consensus** | ✅ | ❌ | ❌ |
+| **Knowledge Graph** | ✅ Learns your style | ❌ | ❌ |
+| **Terminal Native** | ✅ | ❌ (Electron) | ❌ (IDE only) |
 
-### 🤖 Multi-Model AI Support
-- **Anthropic Claude** integration with Bring Your Own Key (BYOK)
-- **Ollama** fallback for local model support
-- **Multi-model consensus** for improved accuracy
-- **Configurable providers** and model switching
+## 🚀 Quick Start
 
-### 🛠️ Extensible Skills System
-- **75+ built-in skills** across 8 categories
-- **Sub-agent spawning** for specialized tasks
-- **Custom skill development** support
-- **Skill marketplace** with installation management
+### One-Command Install
 
-### 👥 Collaboration & Parallel Work
-- **Multi-cursor agents** via git worktrees
-- **Real-time web UI mirror** for live collaboration
-- **Session management** with participant tracking
-- **Shared context** synchronization
+```bash
+# macOS / Linux
+npm install -g @cybermind/cli
 
-### 📊 Rich I/O Experience
-- **Inline images** with processing capabilities
-- **Mermaid diagram** generation and rendering
-- **Cost tracking** and usage analytics
-- **Screenshot analysis** and mobile HTML export
-- **Hotkey palette** for power users
+# Windows
+npm install -g @cybermind/cli
+```
 
-### 🔧 Development Tools
-- **File operations** with approval workflows
-- **Command execution** with Docker sandbox
-- **Git integration** with advanced workflows
-- **Secrets management** and trust system
+### Get Your API Key
 
-### 🌐 Ecosystem Integration
-- **MCP (Model Context Protocol)** marketplace
-- **75 seed skills** ready to install
-- **Telemetry** with privacy-first defaults
-- **Profile management** and customization
+1. **Sign up** at [cybercoder.ai](https://cybercoder.ai)
+2. **Go to Settings → API Keys**
+3. **Create a new API key**
+4. **Copy your key** (starts with `sk_cyber_...`)
 
-## Quick start (dev)
+### Start Coding
 
-```powershell
-# install deps
+```bash
+# Authenticate with your API key
+cybercoder login
+
+# Or set API key directly
+export CYBERCODER_API_KEY=sk_cyber_your_key_here
+
+# Ask CyberCoder anything
+cybercoder ask "Create a React component for a data table with sorting"
+
+# Refactor existing code
+cybercoder refactor ./src/components
+
+# Debug an error
+cybercoder debug "Why is my useEffect running twice?"
+```
+
+## ✨ Core Features
+
+### 🤖 Multi-Model AI Power
+Access the best AI models through a single interface:
+- **GPT-4o, Claude 3.5, Gemini 1.5, Groq, Cerebras**
+- **Local models** via Ollama (free!)
+- **Smart routing** picks the best model for each task
+- **Multi-model consensus** for critical decisions
+
+### 🧠 Knowledge Graph
+CyberCoder learns your coding patterns over time:
+- **Preferred languages** and frameworks
+- **Coding style** (functional, OOP, etc.)
+- **Project patterns** and architecture preferences
+- **Context-aware** suggestions
+
+### � Terminal-Native Experience
+- **No IDE required** - works in any terminal
+- **Shell integration** - bash, zsh, fish, PowerShell
+- **Command history** and completion
+- **Inline code preview** with syntax highlighting
+
+### � Secure by Design
+- **API keys** stored in system keychain
+- **Local processing** for sensitive code analysis
+- **Encrypted** API communication
+- **Audit logs** for enterprise compliance
+
+## 📚 Documentation
+
+### Commands
+
+```bash
+# AI Assistance
+cybercoder ask "Your question here"     # General coding help
+cybercoder code "Write a function..."   # Generate code
+cybercoder refactor <path>             # Refactor code
+cybercoder debug "Error message"        # Debug issues
+cybercoder explain <path>              # Explain code
+
+# Knowledge
+cybercoder learn <technology>          # Learn something new
+cybercoder review <path>               # Code review
+
+# Session
+cybercoder status                      # Check session status
+cybercoder usage                      # View usage stats
+cybercoder logout                     # End session
+```
+
+### Configuration
+
+Create `~/.cybercoder/config.json`:
+
+```json
+{
+  "default_model": "claude-3-5-sonnet",
+  "auto_approve": false,
+  "streaming": true,
+  "theme": "dark",
+  "editor": "vscode"
+}
+```
+
+### Environment Variables
+
+```bash
+export CYBERCODER_API_KEY=sk_cyber_...     # Your API key
+export CYBERCODER_MODEL=gpt-4o             # Default model
+export CYBERCODER_BASE_URL=https://api.cybercoder.ai  # Custom endpoint
+```
+
+## 💰 Pricing
+
+### Free
+- **100 requests/month**
+- **Local models** (Ollama)
+- **Basic code generation**
+- **Community support**
+
+### Pro - $25/month
+- **5,000 requests/month**
+- **All AI providers**
+- **Multi-model consensus**
+- **Knowledge graph learning**
+- **Priority support**
+
+### Enterprise
+- **Unlimited requests**
+- **Custom model hosting**
+- **SSO & advanced security**
+- **Dedicated infrastructure**
+- **SLA guarantees**
+
+[View full pricing →](https://cybercoder.ai/pricing)
+
+## 🛠️ Development
+
+```bash
+# Clone the repo
+git clone https://github.com/stilcybermindcli/cybercoder.git
+cd cybercoder
+
+# Install dependencies
 pnpm install
 
-# run the CLI in dev mode
+# Run in dev mode
 pnpm dev
 
-# build all packages
+# Build
 pnpm build
 
-# typecheck
-pnpm typecheck
+# Run tests
+pnpm test
 ```
 
-## Install (once published)
+## 🔌 API Reference
 
-```powershell
-npm install -g cybermind
-cybermind          # full binary
-cm                 # short alias
+CyberCoder provides a REST API for programmatic access:
+
+```bash
+# Authenticate
+curl -X POST https://api.cybercoder.ai/api/v1/cli/auth \
+  -H "Content-Type: application/json" \
+  -d '{"api_key": "sk_cyber_...", "machine_id": "..."}'
+
+# Send a completion request
+curl -X POST https://api.cybercoder.ai/api/v1/cli/complete \
+  -H "Authorization: Bearer sk_cyber_..." \
+  -H "X-CLI-Session: sess_..." \
+  -d '{"prompt": "Write a Python function to..."}'
 ```
 
-## Repository layout
+[View API docs →](https://cybercoder.ai/docs/api)
 
-```
-packages/
-├─ cli/            # the `cybermind` binary (Ink + React for the terminal)
-├─ core/           # agent loop, context manager, sub-agent runner
-├─ providers/      # Anthropic, OpenAI, Gemini, cybermind-cloud, Ollama
-├─ tools/          # built-in tools (fs, bash, grep, edit, browser…)
-├─ skills/         # skill loader + registry + sandbox
-├─ auth/           # login, keychain integration
-├─ config/         # ~/.cybermind/ settings
-├─ telemetry/      # opt-in usage/error reporting (off by default)
-└─ shared/         # types, schemas, logger
-skills-bundled/    # 23 skills that ship with the CLI
-```
+## 🤝 Contributing
 
-## License
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-MIT
+## 📝 License
+
+MIT © CyberCoder
+
+---
+
+**Made with ❤️ for developers who ship.**
+
+[Website](https://cybercoder.ai) · [Docs](https://cybercoder.ai/docs) · [Discord](https://discord.gg/cybercoder) · [Twitter](https://twitter.com/cybercoder)
