@@ -1,24 +1,46 @@
-import { useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { Terminal, ArrowRight, Check, Copy, Download, Code2, Zap, Shield, Cpu, Globe, Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { 
+  Terminal, ArrowRight, Check, Copy, Code2, Zap, Shield, 
+  Cpu, Globe, Sparkles, ChevronRight, Play, Star, 
+  MessageSquare, GitBranch, FileCode, Search, Settings,
+  ExternalLink, CheckCircle2, X
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const fadeInUp = {
-  initial: { opacity: 0, y: 30 },
+  initial: { opacity: 0, y: 40 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-100px" },
-  transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
+  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+};
+
+const fadeIn = {
+  initial: { opacity: 0 },
+  whileInView: { opacity: 1 },
+  viewport: { once: true },
+  transition: { duration: 0.6 }
 };
 
 const staggerContainer = {
   initial: {},
   whileInView: {},
   viewport: { once: true },
-  transition: { staggerChildren: 0.1 }
+  transition: { staggerChildren: 0.15 }
+};
+
+const scaleIn = {
+  initial: { opacity: 0, scale: 0.95 },
+  whileInView: { opacity: 1, scale: 1 },
+  viewport: { once: true },
+  transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
 };
 
 export default function ClaudeCodePage() {
   const containerRef = useRef(null);
+  const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState('edit');
+  
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
@@ -27,7 +49,9 @@ export default function ClaudeCodePage() {
   const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
 
   const copyInstallCommand = () => {
-    navigator.clipboard.writeText('npm install -g @cybermind/cybercoder');
+    navigator.clipboard.writeText('npm install -g @cybermind/cli && cybercoder login');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
