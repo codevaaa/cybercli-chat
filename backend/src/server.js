@@ -38,6 +38,7 @@ import inviteRoutes from './routes/invite.routes.js'
 import feedbackRoutes from './routes/feedback.routes.js'
 import supportRoutes from './routes/support.routes.js'
 import cliRoutes from './routes/cli.routes.js'
+import v1Routes from './routes/v1.routes.js'
 import http from 'http'
 import { WebSocketServer } from 'ws'
 import ApiKey from './models/ApiKey.js'
@@ -161,6 +162,7 @@ app.use('/api/v1/invite', inviteRoutes)
 app.use('/api/v1/feedback', feedbackRoutes)
 app.use('/api/v1/support', supportRoutes)
 app.use('/api/v1/cli', cliRoutes)
+app.use('/v1', v1Routes)
 
 
 // 404 handler

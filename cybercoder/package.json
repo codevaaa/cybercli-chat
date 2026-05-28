@@ -18,14 +18,15 @@
     "build": "pnpm -r --filter './packages/*' run build",
     "dev": "pnpm --filter @cybermind/cli run dev",
     "cli": "pnpm --filter @cybermind/cli run dev",
-    "typecheck": "pnpm -r --parallel run typecheck",
-    "lint": "pnpm -r --parallel run lint",
-    "test": "pnpm -r --parallel run test",
+    "typecheck": "pnpm -r --parallel --if-present run typecheck",
+    "lint": "pnpm -r --parallel --if-present run lint",
+    "test": "pnpm -r --parallel --if-present run test",
     "clean": "pnpm -r exec rm -rf dist node_modules .turbo",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
-    "prepare": "husky install"
+    "prepare": "husky install || true",
+    "ci": "pnpm install --frozen-lockfile && pnpm build"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
