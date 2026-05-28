@@ -9,7 +9,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [createModalOpen, setCreateModalOpen] = useState(false)
-  const [newProject, setNewProject] = useState({ name: '', description: '', model: 'Madhav (Flagship)' })
+  const [newProject, setNewProject] = useState({ name: '', description: '', model: 'Madhav' })
   const [submitting, setSubmitting] = useState(false)
 
   const fetchProjects = async () => {
@@ -42,7 +42,7 @@ export default function ProjectsPage() {
       })
       if (data?.success) {
         setProjects(prev => [data.project, ...prev])
-        setNewProject({ name: '', description: '', model: 'Madhav (Flagship)' })
+        setNewProject({ name: '', description: '', model: 'Madhav' })
         setCreateModalOpen(false)
       }
     } catch (err) {
@@ -254,7 +254,7 @@ export default function ProjectsPage() {
                         disabled={submitting}
                         className="w-full bg-background-tertiary text-sm text-foreground-primary border border-border-subtle rounded-xl px-3 py-2.5 focus:outline-none focus:border-accent disabled:opacity-60"
                       >
-                        {['Madhav (Flagship)', 'Nakul (Reasoning)', 'Bheem (Core)', 'Arjun (Swift)', 'Vishwakarma (Coder)', 'Ashwatthama (Uncensored)'].map(m => (
+                        {['Madhav', 'Nakul', 'Bheem', 'Arjun', 'Vishwakarma', 'Ashwatthama'].map(m => (
                           <option key={m} value={m}>{m}</option>
                         ))}
                       </select>

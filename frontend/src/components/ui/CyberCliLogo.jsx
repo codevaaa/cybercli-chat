@@ -15,7 +15,7 @@ import { motion } from 'framer-motion'
 
 /**
  * CyberCliMark
- * Stylized, animated Sudarshan Chakra in terracotta (#D97757) with a stealth tech aesthetic.
+ * Stylized, animated Sudarshan Chakra in theme-adaptive currentColor with a stealth tech aesthetic.
  */
 export function CyberCliMark({ size = 40, className = '' }) {
   const s = size
@@ -38,9 +38,9 @@ export function CyberCliMark({ size = 40, className = '' }) {
       <defs>
         {/* Radial glow for central hub */}
         <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#D97757" stopOpacity="1" />
-          <stop offset="50%" stopColor="#D97757" stopOpacity="0.75" />
-          <stop offset="100%" stopColor="#D97757" stopOpacity="0" />
+          <stop offset="0%" stopColor="currentColor" stopOpacity="1" />
+          <stop offset="50%" stopColor="currentColor" stopOpacity="0.75" />
+          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
         </radialGradient>
       </defs>
 
@@ -68,7 +68,7 @@ export function CyberCliMark({ size = 40, className = '' }) {
       `}</style>
       
       {/* Cardinal crosshair markers (radar/alignment style) */}
-      <g stroke="#D97757" strokeWidth="1.2" opacity="0.35">
+      <g stroke="currentColor" strokeWidth="1.2" opacity="0.35">
         <line x1="50" y1="12" x2="50" y2="28" />
         <line x1="50" y1="72" x2="50" y2="88" />
         <line x1="12" y1="50" x2="28" y2="50" />
@@ -76,15 +76,15 @@ export function CyberCliMark({ size = 40, className = '' }) {
       </g>
 
       {/* Decorative dashed outer ring */}
-      <circle cx="50" cy="50" r="44" stroke="#D97757" strokeWidth="1" strokeDasharray="3 6" opacity="0.2" />
+      <circle cx="50" cy="50" r="44" stroke="currentColor" strokeWidth="1" strokeDasharray="3 6" opacity="0.2" />
 
       {/* Symmetrical concentric rings */}
-      <circle cx="50" cy="50" r="36" stroke="#D97757" strokeWidth="1.5" opacity="0.15" />
-      <circle cx="50" cy="50" r="26" stroke="#D97757" strokeWidth="1" strokeDasharray="4 2" opacity="0.3" />
-      <circle cx="50" cy="50" r="18" stroke="#D97757" strokeWidth="1.2" opacity="0.45" />
+      <circle cx="50" cy="50" r="36" stroke="currentColor" strokeWidth="1.5" opacity="0.15" />
+      <circle cx="50" cy="50" r="26" stroke="currentColor" strokeWidth="1" strokeDasharray="4 2" opacity="0.3" />
+      <circle cx="50" cy="50" r="18" stroke="currentColor" strokeWidth="1.2" opacity="0.45" />
 
       {/* 8 Geometric Stealth Blades of the Sudarshan Chakra */}
-      <g fill="#D97757">
+      <g fill="currentColor">
         {Array.from({ length: 8 }).map((_, i) => {
           const angle = (i / 8) * Math.PI * 2
           
@@ -118,7 +118,7 @@ export function CyberCliMark({ size = 40, className = '' }) {
       </g>
 
       {/* Cardinal tiny dots representing cosmic nodes */}
-      <g fill="#D97757" opacity="0.75">
+      <g fill="currentColor" opacity="0.75">
         <circle cx="50" cy="8" r="1.5" />
         <circle cx="92" cy="50" r="1.5" />
         <circle cx="50" cy="92" r="1.5" />
@@ -130,7 +130,7 @@ export function CyberCliMark({ size = 40, className = '' }) {
       <circle cx="50" cy="50" r="12" fill="url(#hubGlow)" opacity="0.4" />
 
       {/* Center geometric octagon representing stability */}
-      <g stroke="#D97757" strokeWidth="1.2" opacity="0.8">
+      <g stroke="currentColor" strokeWidth="1.2" opacity="0.8">
         {Array.from({ length: 8 }).map((_, i) => {
           const a1 = (i / 8) * Math.PI * 2
           const a2 = ((i + 1) / 8) * Math.PI * 2
@@ -146,7 +146,7 @@ export function CyberCliMark({ size = 40, className = '' }) {
       </g>
 
       {/* Central hub core dot */}
-      <circle cx="50" cy="50" r="3.5" fill="#D97757" />
+      <circle cx="50" cy="50" r="3.5" fill="currentColor" />
     </svg>
   )
 }

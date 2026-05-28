@@ -41,7 +41,7 @@ router.post('/', requireAuth, async (req, res, next) => {
       user_id: req.user.id,
       name,
       description: description || '',
-      model: model || 'Madhav (Flagship)'
+      model: model || 'Madhav'
     })
     await project.save()
     

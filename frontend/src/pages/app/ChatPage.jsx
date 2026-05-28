@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   Plus, Search, MessageSquare, FolderOpen, Layers, Code2, Sliders,
   ChevronLeft, ChevronRight, ChevronDown, Mic, Paperclip, Radio,
   Copy, Check, GitBranch, Volume2, VolumeX, Trash2, Pin, X, RotateCcw,
-  Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder,
+  Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder, Camera,
   Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen, Menu,
   Pencil, GraduationCap, Coffee, Lightbulb, Skull, FileCode, GitBranch as GitIcon, FolderTree, ArrowRight
 } from 'lucide-react'
@@ -22,42 +22,43 @@ import CyberCliMark, { CyberCliWordmark } from '../../components/ui/CyberCliLogo
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const MODELS = [
-  { id: 'opencode/deepseek-v4-pro',    name: 'Madhav (OpenCode v4)', tag: 'Madhav',   color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
-  { id: 'apifreellm/gpt-4o',           name: 'Bheem (ApiFree GPT-4o)',tag: 'Bheem',    color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
-  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya (R1)',    tag: 'Chanakya', color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving.', kali: false },
-  { id: 'groq/llama-3.1-8b',           name: 'Arjun (Llama 8B)',     tag: 'Arjun',    color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise.', kali: false },
+  { id: 'huggingface/thecnical/cybermindcli', name: 'CyberMind',            tag: 'CyberMind', color: '#7C3AED', desc: 'The proprietary flagship model of CyberCli. Unmatched reasoning, security analysis, and specialized technical operations.', kali: false },
+  { id: 'opencode/deepseek-v4-pro',    name: 'Madhav',               tag: 'Madhav',    color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
+  { id: 'apifreellm/gpt-4o',           name: 'Bheem',                tag: 'Bheem',     color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
+  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya', tag: 'Chanakya', color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving.', kali: false },
+  { id: 'groq/llama-3.1-8b',           name: 'Arjun',                tag: 'Arjun',     color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise.', kali: false },
   { id: 'council',                     name: 'Panchayat',            tag: 'Panchayat', color: '#D97757', desc: 'The council of minds. Streams your query to multiple minds simultaneously.', kali: false },
 ]
 
 const EXTRA_MODELS = [
-  { id: 'openrouter/gpt-4o-mini',                      name: 'Nakul (GPT-4o Mini)',   tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Fast, capable, and multimodal.', kali: false },
-  { id: 'gemini/gemini-2.5-pro',                       name: 'Sahadeva (Gemini Pro)', tag: 'Sahadeva', color: '#4285F4', desc: 'The wise seer. High-speed intelligence with enormous context window.', kali: false },
-  { id: 'opencode/kimi-k2.5',                          name: 'Abhimanyu (Kimi v2.5)', tag: 'Abhimanyu',color: '#EC4899', desc: 'The lightning striker. Unfiltered, real-time knowledge.', kali: false },
-  { id: 'mistral/mistral-large-latest',                name: 'Vayu (Mistral Large)',  tag: 'Vayu',     color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities.', kali: false },
-  { id: 'groq/llama-3.1-70b',                          name: 'Yudhishthira (Llama 70B)', tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. Open-weights flagship model built for balanced output.', kali: false },
-  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',       name: 'Vikrama (Qwen 72B)',    tag: 'Vikrama',  color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.', kali: false },
-  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Vishwakarma (Coder 32B)',tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories.', kali: false },
-  { id: 'opencode/deepseek-v4-flash',                  name: 'Vyas (Deep Research)',  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
-  { id: 'opencode/qwen3.7-max',                        name: 'Sanjaya (Qwen 3.7 Max)',tag: 'Sanjaya',  color: '#059669', desc: 'The visionary observer. Real-time web knowledge with deep reasoning.', kali: false },
-  { id: 'opencode/minimax-m2.5',                       name: 'Narada (Minimax m2.5)', tag: 'Narada',   color: '#047857', desc: 'The swift messenger. Rapid web-search capabilities for instant, cited facts.', kali: false },
-  { id: 'image-gen',                                   name: 'Chitrakar (Image Gen)', tag: 'Chitrakar',color: '#E11D48', desc: 'The divine painter. Generates stunning, high-quality images using backend API.', kali: false },
+  { id: 'openrouter/gpt-4o-mini',                      name: 'Nakul',                 tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Fast, capable, and multimodal.', kali: false },
+  { id: 'gemini/gemini-2.5-pro',                       name: 'Sahadeva',              tag: 'Sahadeva', color: '#4285F4', desc: 'The wise seer. High-speed intelligence with enormous context window.', kali: false },
+  { id: 'opencode/kimi-k2.5',                          name: 'Abhimanyu',             tag: 'Abhimanyu',color: '#EC4899', desc: 'The lightning striker. Unfiltered, real-time knowledge.', kali: false },
+  { id: 'mistral/mistral-large-latest',                name: 'Vayu',                  tag: 'Vayu',     color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities.', kali: false },
+  { id: 'groq/llama-3.1-70b',                          name: 'Yudhishthira',          tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. Open-weights flagship model built for balanced output.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',       name: 'Vikrama',               tag: 'Vikrama',  color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Vishwakarma',           tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories.', kali: false },
+  { id: 'opencode/deepseek-v4-flash',                  name: 'Vyas',                  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
+  { id: 'opencode/qwen3.7-max',                        name: 'Sanjaya',               tag: 'Sanjaya',  color: '#059669', desc: 'The visionary observer. Real-time web knowledge with deep reasoning.', kali: false },
+  { id: 'opencode/minimax-m2.5',                       name: 'Narada',                tag: 'Narada',   color: '#047857', desc: 'The swift messenger. Rapid web-search capabilities for instant, cited facts.', kali: false },
+  { id: 'image-gen',                                   name: 'Chitrakar',             tag: 'Chitrakar',color: '#E11D48', desc: 'The divine painter. Generates stunning, high-quality images using backend API.', kali: false },
   
   // Backing models restored from previous version
-  { id: 'gemini/gemini-2.5-flash',                               name: 'Sahadeva (Flash)',      tag: 'Sahadeva',    color: '#4285F4', desc: 'The wise seer. High-speed multimodal intelligence with enormous context window for documents and media.', kali: false },
-  { id: 'nvidia/llama-3.1-nemotron-70b',                         name: 'Dronacharya',   tag: 'Dronacharya', color: '#76B900', desc: 'The grand master. Research-grade academic reasoning for deep technical tasks and complex instruction.', kali: false },
-  { id: 'cerebras/llama-3.1-8b',                                 name: 'Abhimanyu (Fast)',tag: 'Abhimanyu',   color: '#EC4899', desc: 'The lightning striker. Powered by wafer-scale silicon delivering unmatched sub-100ms response speed.', kali: false },
-  { id: 'huggingface/meta-llama/Llama-3.3-70B-Instruct',         name: 'Yudhishthira (HF)',  tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. High-parameter open-weights flagship model built for balanced, ethical, quality output.', kali: false },
-  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',                 name: 'Vikrama (Qwen-HF)',       tag: 'Vikrama',     color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence with 72B parameter depth.', kali: false },
-  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya (Distill)',tag: 'Chanakya',    color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving and planning.', kali: false },
-  { id: 'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1',      name: 'Saptarishi',    tag: 'Saptarishi',  color: '#FF4D88', desc: 'The seven sages. Mixture-of-experts architecture combining the wisdom of seven specialized expert models.', kali: false },
-  { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-70B',       name: 'Parashurama',   tag: 'Parashurama', color: '#9F7AEA', desc: 'The agentic warrior. Specialized for tool use, function calling, and autonomous agentic orchestration.', kali: false },
-  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',           name: 'Vishwakarma (Coder)',   tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories across every major programming language.', kali: false },
+  { id: 'gemini/gemini-2.5-flash',                               name: 'Sahadeva',              tag: 'Sahadeva',    color: '#4285F4', desc: 'The wise seer. High-speed multimodal intelligence with enormous context window for documents and media.', kali: false },
+  { id: 'nvidia/llama-3.1-nemotron-70b',                         name: 'Dronacharya',           tag: 'Dronacharya', color: '#76B900', desc: 'The grand master. Research-grade academic reasoning for deep technical tasks and complex instruction.', kali: false },
+  { id: 'cerebras/llama-3.1-8b',                                 name: 'Abhimanyu',             tag: 'Abhimanyu',   color: '#EC4899', desc: 'The lightning striker. Powered by wafer-scale silicon delivering unmatched sub-100ms response speed.', kali: false },
+  { id: 'huggingface/meta-llama/Llama-3.3-70B-Instruct',         name: 'Yudhishthira',          tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. High-parameter open-weights flagship model built for balanced, ethical, quality output.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',                 name: 'Vikrama',               tag: 'Vikrama',     color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence with 72B parameter depth.', kali: false },
+  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya',             tag: 'Chanakya',    color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving and planning.', kali: false },
+  { id: 'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1',      name: 'Saptarishi',            tag: 'Saptarishi',  color: '#FF4D88', desc: 'The seven sages. Mixture-of-experts architecture combining the wisdom of seven specialized expert models.', kali: false },
+  { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-70B',       name: 'Parashurama',           tag: 'Parashurama', color: '#9F7AEA', desc: 'The agentic warrior. Specialized for tool use, function calling, and autonomous agentic orchestration.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',           name: 'Vishwakarma',           tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories across every major programming language.', kali: false },
   { id: 'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b', name: 'Ashwatthama',   tag: 'Ashwatthama', color: '#38B2AC', desc: 'The free warrior. Uncensored high-parameter intelligence for unrestricted debate and creative thinking.', kali: true },
   { id: 'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b', name: 'Kali',         tag: 'Kali',        color: '#FF0055', desc: '🔥 The destroyer of limits. Fully uncensored 72B flagship — maximum freedom of thought, unfiltered intelligence.', kali: true },
   { id: 'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', name: 'Rudra',    tag: 'Rudra',       color: '#EF4444', desc: 'The fierce one. Uncensored edge model built for raw unconstrained intelligence at high speed.', kali: true },
-  { id: 'huggingface/defog/sqlcoder-70b-v1.5',                   name: 'Agastya',       tag: 'Agastya',     color: '#D69E2E', desc: 'The sage of data. Specialized in translating natural language into precise, optimized SQL queries.', kali: false },
-  { id: 'mistral/mistral-large-latest',                          name: 'Vayu (Mistral API)',          tag: 'Vayu',        color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities powered by Mistral Large.', kali: false },
-  { id: 'openrouter/moonshotai/moonshot-v1-8k',                  name: 'Karna',         tag: 'Karna',       color: '#6366F1', desc: 'The focused archer. High-precision model from Moonshot AI, perfect for long-context understanding.', kali: false },
+  { id: 'huggingface/defog/sqlcoder-70b-v1.5',                   name: 'Agastya',               tag: 'Agastya',     color: '#D69E2E', desc: 'The sage of data. Specialized in translating natural language into precise, optimized SQL queries.', kali: false },
+  { id: 'mistral/mistral-large-latest',                          name: 'Vayu',                  tag: 'Vayu',        color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities powered by Mistral Large.', kali: false },
+  { id: 'openrouter/moonshotai/moonshot-v1-8k',                  name: 'Karna',                 tag: 'Karna',       color: '#6366F1', desc: 'The focused archer. High-precision model from Moonshot AI, perfect for long-context understanding.', kali: false },
 ]
 
 
@@ -549,8 +550,8 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
         {/* Assistant Avatar */}
         {isAssistant && (
           <div className="flex-shrink-0 mt-1">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#ECECEC]">
-              <CyberCliMark size={20} className="text-[#2D2D2D]" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-background-tertiary border border-border-subtle text-accent shadow-sm">
+              <CyberCliMark size={18} className="text-accent" />
             </div>
           </div>
         )}
@@ -1203,6 +1204,7 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
   const [settings, setSettings] = useState({
     display_name: '',
     nickname: '',
+    avatar_url: '',
     custom_instructions: '',
     appearance: 'system',
     chat_font: 'inter',
@@ -1404,9 +1406,46 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-foreground-muted mb-3">Profile</h3>
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold flex-shrink-0"
-              style={{ background: 'rgba(217,119,87,0.15)', color: '#D97757' }}>
-              {(settings.display_name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)}
+            <div className="relative group flex-shrink-0">
+              {settings.avatar_url ? (
+                <img
+                  src={settings.avatar_url}
+                  alt="Avatar"
+                  className="w-16 h-16 rounded-2xl object-cover border border-border-subtle"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold font-sans"
+                  style={{ background: 'rgba(217,119,87,0.15)', color: '#D97757' }}>
+                  {(settings.display_name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)}
+                </div>
+              )}
+              <label className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                <Camera className="w-5 h-5 text-white" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const reader = new FileReader()
+                    reader.onload = (event) => {
+                      const img = new Image()
+                      img.onload = async () => {
+                        const canvas = document.createElement('canvas')
+                        canvas.width = 128
+                        canvas.height = 128
+                        const ctx = canvas.getContext('2d')
+                        ctx.drawImage(img, 0, 0, 128, 128)
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7)
+                        patchSetting('avatar_url', compressedBase64)
+                      }
+                      img.src = event.target.result
+                    }
+                    reader.readAsDataURL(file)
+                  }}
+                />
+              </label>
             </div>
             <div className="flex-1 space-y-2">
               <input
@@ -2886,6 +2925,9 @@ export default function ChatPage() {
   const [customInstructions, setCustomInstructions] = useState('')
   const incognitoMessagesRef = useRef([])
 
+  // Profile settings
+  const [userAvatar, setUserAvatar] = useState('')
+
   // Capability states
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [codeExecutionEnabled, setCodeExecutionEnabled] = useState(false)
@@ -2903,6 +2945,11 @@ export default function ChatPage() {
     else if (key === 'memory_enabled') setMemoryEnabled(value)
     else if (key === 'appearance') setCurrentTheme(value)
     else if (key === 'chat_font') setCurrentFont(value)
+    else if (key === 'avatar_url') setUserAvatar(value)
+    else if (key === 'display_name' || key === 'full_name') {
+      setUserName(value)
+      localStorage.setItem('user_name', value)
+    }
     else if (key === 'language') {
       const langMap = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', hi: 'हिं', ur: 'اُ' }
       setUserLanguage(langMap[value] || (value || 'en').toUpperCase())
@@ -3095,6 +3142,11 @@ export default function ChatPage() {
         setCustomInstructions(data.custom_instructions || '')
         setCurrentTheme(data.appearance || 'system')
         setCurrentFont(data.chat_font || 'inter')
+        setUserAvatar(data.avatar_url || '')
+        if (data.display_name) {
+          setUserName(data.display_name)
+          localStorage.setItem('user_name', data.display_name)
+        }
         // Sync language pill in profile bar
         const langMap = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', hi: 'हिं', ur: 'اُ' }
         setUserLanguage(langMap[data.language] || (data.language || 'en').toUpperCase())
@@ -3745,10 +3797,12 @@ export default function ChatPage() {
     }
   }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions])
 
-  // ── User info (from localStorage) ──
-  const userName = localStorage.getItem('user_name') || 'User'
+  // ── User info (from state & localStorage) ──
+  const [userName, setUserName] = useState(() => localStorage.getItem('user_name') || 'User')
   const userEmail = localStorage.getItem('user_email') || ''
-  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
+  const userInitials = useMemo(() => {
+    return userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
+  }, [userName])
   const [userLanguage, setUserLanguage] = useState(() => localStorage.getItem('user_language') || 'EN')
 
   const [showProfilePopover, setShowProfilePopover] = useState(false)
@@ -4124,12 +4178,20 @@ export default function ChatPage() {
 
               <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-foreground-primary/[0.04] transition-all cursor-pointer">
                 {/* Avatar */}
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                  style={{ background: 'rgba(217,119,87,0.2)', color: '#D97757' }}
-                >
-                  {userInitials}
-                </div>
+                {userAvatar ? (
+                  <img
+                    src={userAvatar}
+                    alt={userName}
+                    className="w-7 h-7 rounded-full object-cover border border-border-subtle flex-shrink-0"
+                  />
+                ) : (
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 font-sans"
+                    style={{ background: 'rgba(217,119,87,0.2)', color: '#D97757' }}
+                  >
+                    {userInitials}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium text-foreground-primary truncate">{userName}</div>
                   <div className="text-[10px] text-foreground-muted truncate">{userEmail || 'Free Plan'}</div>

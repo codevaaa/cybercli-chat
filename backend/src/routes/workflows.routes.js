@@ -36,7 +36,7 @@ router.post('/', requireAuth, async (req, res, next) => {
       name,
       description: description || '',
       prompt,
-      model: model || 'Madhav (Flagship)'
+      model: model || 'Madhav'
     })
     await workflow.save()
     

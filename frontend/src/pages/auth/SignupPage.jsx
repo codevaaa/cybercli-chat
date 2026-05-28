@@ -81,7 +81,7 @@ export default function SignupPage() {
         {/* Brand Mark Logo & Serif Heading */}
         <div className="flex flex-col items-center mb-8 text-center">
           <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
-            <CyberCliMark size={44} />
+            <CyberCliMark size={44} className="text-accent" />
           </Link>
           <h1 className="text-3xl font-serif font-medium text-foreground-primary tracking-tight mt-5">
             Create your account

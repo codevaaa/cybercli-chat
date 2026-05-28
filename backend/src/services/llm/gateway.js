@@ -89,6 +89,7 @@ const MODEL_MAP = {
   'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct':                      { provider: 'huggingface', model: 'Qwen/Qwen2.5-Coder-32B-Instruct', purpose: 'general' },
   'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b': { provider: 'huggingface', model: 'cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', purpose: 'general' },
   'huggingface/defog/sqlcoder-70b-v1.5':                              { provider: 'huggingface', model: 'defog/sqlcoder-70b-v1.5', purpose: 'reasoning' },
+  'huggingface/thecnical/cybermindcli':                               { provider: 'huggingface', model: 'thecnical/cybermindcli', purpose: 'reasoning' },
 
   'nvidia/llama-3.1-nemotron-70b': { provider: 'nvidia', model: 'meta/llama-3.3-70b-instruct', purpose: 'reasoning' },
   'bytez/meta-llama/Llama-3.1-8B-Instruct': { provider: 'bytez', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
@@ -107,6 +108,7 @@ const OPENROUTER_FALLBACK_MAP = {
   'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct': 'qwen/qwen-2.5-coder-32b-instruct',
   'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b': 'cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b',
   'huggingface/defog/sqlcoder-70b-v1.5': 'defog/sqlcoder-70b-v1.5',
+  'huggingface/thecnical/cybermindcli': 'deepseek/deepseek-r1-distill-llama-70b',
   'nvidia/llama-3.1-nemotron-70b': 'nvidia/llama-3.1-nemotron-70b-instruct',
   'gemini/gemini-2.5-flash': 'google/gemini-2.5-flash',
   'gemini/gemini-2.5-pro': 'google/gemini-2.5-pro'

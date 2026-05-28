@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Shield, Target, Heart, Zap, Globe, Award, Code2, Lock } from 'lucide-react'
+import { ArrowRight, Shield, Target, Heart, Zap, Globe, Award, Code2, Lock, Github } from 'lucide-react'
 import ScrollReveal, { ScrollRevealGroup } from '@components/ui/ScrollReveal'
 
 const VALUES = [
@@ -31,10 +31,25 @@ const VALUES = [
 ]
 
 const TEAM = [
-  { name: 'Chandan Pandey', role: 'Founder & CEO', initials: 'CP', color: '#D97757' },
-  { name: 'Lead Engineer', role: 'Backend & AI Gateway', initials: 'LE', color: '#D97757' },
-  { name: 'Design Lead', role: 'UX & Frontend', initials: 'DL', color: '#06B6D4' },
-  { name: 'DevOps Lead', role: 'Infrastructure & Security', initials: 'DO', color: '#10B981' },
+  {
+    name: 'Chandan Pandey',
+    role: 'Founder & CEO',
+    image: '/chandan.jpeg',
+    bio: 'Cybersecurity researcher and AI pioneer. Founder of CyberMindCLI, driving the vision of secure, private, and open artificial intelligence.',
+    socials: {
+      globe: 'https://cybermindcli.com',
+      github: 'https://github.com/thecnical',
+    }
+  },
+  {
+    name: 'Rishab Thakur',
+    role: 'Co-Founder & CTO',
+    image: '/Rishab_thakur.jpeg',
+    bio: 'Full-stack systems architect and distributed computing expert. Directing the high-performance AI gateway orchestration cluster.',
+    socials: {
+      github: 'https://github.com',
+    }
+  }
 ]
 
 const STATS = [
@@ -218,20 +233,54 @@ export default function AboutPage() {
             <span className="text-xs font-semibold tracking-widest uppercase text-accent mb-3 block">The Team</span>
             <h2 className="text-4xl font-serif font-light text-foreground-primary mb-12">Built by believers</h2>
           </ScrollReveal>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {TEAM.map((member, i) => (
               <ScrollReveal key={member.name} delay={i * 0.08}>
                 <motion.div
-                  className="card-glass p-6 text-center"
-                  whileHover={{ y: -5, scale: 1.02 }}
-                  transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+                  className="card-glass p-6 md:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left h-full relative group border border-white/[0.05] hover:border-white/[0.12] transition-all bg-white/[0.01]"
+                  whileHover={{ y: -4, boxShadow: '0 10px 30px -15px rgba(124,58,237,0.15)' }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-lg font-bold text-white"
-                    style={{ background: `linear-gradient(135deg, ${member.color}, ${member.color}88)` }}>
-                    {member.initials}
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden flex-shrink-0 border border-white/10 relative bg-background-tertiary">
+                    <img
+                      src={member.image}
+                      alt={member.name}
+                      className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-500 scale-100 group-hover:scale-105"
+                    />
                   </div>
-                  <h3 className="text-sm font-semibold text-foreground-primary mb-1">{member.name}</h3>
-                  <p className="text-xs text-foreground-muted">{member.role}</p>
+                  <div className="flex-1 flex flex-col">
+                    <h3 className="text-lg font-bold text-white mb-0.5 group-hover:text-accent transition-colors leading-tight">
+                      {member.name}
+                    </h3>
+                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-accent mb-3">
+                      {member.role}
+                    </p>
+                    <p className="text-xs text-foreground-secondary leading-relaxed mb-4 flex-1">
+                      {member.bio}
+                    </p>
+                    <div className="flex items-center gap-3 justify-center sm:justify-start">
+                      {member.socials.globe && (
+                        <a
+                          href={member.socials.globe}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-foreground-muted hover:text-white transition-colors"
+                        >
+                          <Globe className="w-4 h-4" />
+                        </a>
+                      )}
+                      {member.socials.github && (
+                        <a
+                          href={member.socials.github}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-foreground-muted hover:text-white transition-colors"
+                        >
+                          <Github className="w-4 h-4" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </motion.div>
               </ScrollReveal>
             ))}

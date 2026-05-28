@@ -9,7 +9,7 @@ export default function WorkflowsPage() {
   const [workflows, setWorkflows] = useState([])
   const [loading, setLoading] = useState(true)
   const [createModalOpen, setCreateModalOpen] = useState(false)
-  const [newWorkflow, setNewWorkflow] = useState({ name: '', description: '', prompt: '', model: 'Madhav (Flagship)' })
+  const [newWorkflow, setNewWorkflow] = useState({ name: '', description: '', prompt: '', model: 'Madhav' })
   const [submitting, setSubmitting] = useState(false)
 
   const fetchWorkflows = async () => {
@@ -43,7 +43,7 @@ export default function WorkflowsPage() {
       })
       if (data?.success) {
         setWorkflows(prev => [data.workflow, ...prev])
-        setNewWorkflow({ name: '', description: '', prompt: '', model: 'Madhav (Flagship)' })
+        setNewWorkflow({ name: '', description: '', prompt: '', model: 'Madhav' })
         setCreateModalOpen(false)
       }
     } catch (err) {
@@ -254,7 +254,7 @@ export default function WorkflowsPage() {
                         disabled={submitting}
                         className="w-full bg-background-tertiary text-sm text-foreground-primary border border-border-subtle rounded-xl px-3 py-2.5 focus:outline-none focus:border-accent disabled:opacity-60"
                       >
-                        {['Madhav (Flagship)', 'Nakul (Reasoning)', 'Bheem (Core)', 'Arjun (Swift)', 'Vishwakarma (Coder)', 'Ashwatthama (Uncensored)'].map(m => (
+                        {['Madhav', 'Nakul', 'Bheem', 'Arjun', 'Vishwakarma', 'Ashwatthama'].map(m => (
                           <option key={m} value={m}>{m}</option>
                         ))}
                       </select>

@@ -25,6 +25,7 @@ const userSettingsSchema = new mongoose.Schema({
   // Frontend settings fields
   display_name: { type: String, default: '' },
   nickname: { type: String, default: '' },
+  avatar_url: { type: String, default: '' },
   appearance: { type: String, enum: ['dark', 'light', 'system'], default: 'system' },
   chat_font: { type: String, default: 'inter' },
   voice: { type: String, default: 'ava' },

@@ -6,7 +6,7 @@ import ScrollReveal from '@components/ui/ScrollReveal'
 
 const CLUSTERS = [
   {
-    name: 'Madhav (Pro Gateway)',
+    name: 'Madhav',
     type: 'Gemini 2.5 Pro Core',
     status: 'Operational',
     uptime: '99.98%',
@@ -14,7 +14,7 @@ const CLUSTERS = [
     load: 'Medium',
   },
   {
-    name: 'Nakul (Strategic Reasoning)',
+    name: 'Nakul',
     type: 'Groq Llama-3.1-70B',
     status: 'Operational',
     uptime: '99.95%',
@@ -22,7 +22,7 @@ const CLUSTERS = [
     load: 'Light',
   },
   {
-    name: 'Bheem (Reliable Core)',
+    name: 'Bheem',
     type: 'OpenRouter GPT-4o Mini',
     status: 'Operational',
     uptime: '99.90%',
@@ -30,7 +30,7 @@ const CLUSTERS = [
     load: 'Medium',
   },
   {
-    name: 'Arjun (Swift Inference)',
+    name: 'Arjun',
     type: 'Groq Llama-3.1-8B',
     status: 'Operational',
     uptime: '99.99%',
@@ -38,7 +38,7 @@ const CLUSTERS = [
     load: 'Light',
   },
   {
-    name: 'Sahadeva (Multimodal Gateway)',
+    name: 'Sahadeva',
     type: 'Gemini 2.5 Flash Core',
     status: 'Operational',
     uptime: '99.97%',
@@ -46,7 +46,7 @@ const CLUSTERS = [
     load: 'Light',
   },
   {
-    name: 'Vishwakarma (Divine Architect)',
+    name: 'Vishwakarma',
     type: 'Qwen 2.5 Coder 32B',
     status: 'Operational',
     uptime: '99.96%',
@@ -54,7 +54,7 @@ const CLUSTERS = [
     load: 'Medium',
   },
   {
-    name: 'Kali (Uncensored Flagship)',
+    name: 'Kali',
     type: 'Dolphin Qwen-72B',
     status: 'Operational',
     uptime: '99.88%',
@@ -62,7 +62,7 @@ const CLUSTERS = [
     load: 'Heavy',
   },
   {
-    name: 'Panchayat (Council debates)',
+    name: 'Panchayat',
     type: 'Consensus API Synthesis Layer',
     status: 'Operational',
     uptime: '99.92%',

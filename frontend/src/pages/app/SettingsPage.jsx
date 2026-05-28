@@ -160,22 +160,59 @@ function TextareaInput({ value, onChange, placeholder, rows = 4 }) {
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-function AvatarSection({ name }) {
+function AvatarSection({ name, avatarUrl, onUpdate }) {
   const initials = name
     ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U'
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        // Compress avatar using Canvas to 128x128
+        const canvas = document.createElement('canvas')
+        canvas.width = 128
+        canvas.height = 128
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, 128, 128)
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7)
+        onUpdate('avatar_url', compressedBase64)
+      }
+      img.src = event.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+
   return (
     <div className="flex items-center gap-4 py-4 border-b border-border-subtle">
       <div className="relative group">
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold"
-          style={{ background: 'rgba(217,119,87,0.15)', color: '#D97757' }}
-        >
-          {initials}
-        </div>
-        <button className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={name || 'Avatar'}
+            className="w-16 h-16 rounded-full object-cover border border-border-subtle"
+          />
+        ) : (
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold font-sans"
+            style={{ background: 'rgba(217,119,87,0.15)', color: '#D97757' }}
+          >
+            {initials}
+          </div>
+        )}
+        <label className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
           <Camera className="w-5 h-5 text-white" />
-        </button>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </label>
       </div>
       <div>
         <p className="text-sm font-medium text-foreground-primary">{name || 'Your Name'}</p>
@@ -192,7 +229,7 @@ function GeneralTab({ settings, onUpdate }) {
     <div className="space-y-0">
       <SectionHeading>Profile</SectionHeading>
 
-      <AvatarSection name={settings.full_name} />
+      <AvatarSection name={settings.full_name} avatarUrl={settings.avatar_url} onUpdate={onUpdate} />
 
       <FieldRow label="Full name" hint="Your display name across CyberCli">
         <TextInput
@@ -665,6 +702,7 @@ const DEFAULT_SETTINGS = {
   full_name: '',
   nickname: '',
   email: '',
+  avatar_url: '',
   instructions: '',
   theme: 'dark',
   chat_font: 'Inter',
@@ -728,6 +766,7 @@ export default function SettingsPage() {
     const mapped = {};
     if (frontendSettings.full_name !== undefined) mapped.display_name = frontendSettings.full_name;
     if (frontendSettings.nickname !== undefined) mapped.nickname = frontendSettings.nickname;
+    if (frontendSettings.avatar_url !== undefined) mapped.avatar_url = frontendSettings.avatar_url;
     if (frontendSettings.instructions !== undefined) mapped.custom_instructions = frontendSettings.instructions;
     if (frontendSettings.theme !== undefined) mapped.appearance = frontendSettings.theme.toLowerCase();
     if (frontendSettings.chat_font !== undefined) {
@@ -772,6 +811,7 @@ export default function SettingsPage() {
     const mapped = {};
     if (backendSettings.display_name !== undefined) mapped.full_name = backendSettings.display_name;
     if (backendSettings.nickname !== undefined) mapped.nickname = backendSettings.nickname;
+    if (backendSettings.avatar_url !== undefined) mapped.avatar_url = backendSettings.avatar_url;
     if (backendSettings.custom_instructions !== undefined) mapped.instructions = backendSettings.custom_instructions;
     if (backendSettings.appearance !== undefined) {
       const v = backendSettings.appearance;
@@ -825,6 +865,9 @@ export default function SettingsPage() {
       const { data } = await api.get('/settings')
       const frontendForm = toFrontendSettings(data)
       setSettings(prev => ({ ...prev, ...frontendForm }))
+      if (data.display_name) {
+        localStorage.setItem('user_name', data.display_name)
+      }
     } catch (err) {
       // Use defaults — backend may not be live yet
       const stored = {}
@@ -874,6 +917,9 @@ export default function SettingsPage() {
   const handleUpdate = useCallback(async (key, value) => {
     setSettings(prev => ({ ...prev, [key]: value }))
     localStorage.setItem(`setting_${key}`, value)
+    if (key === 'full_name') {
+      localStorage.setItem('user_name', value)
+    }
 
     // Synchronize Voice & Voice Speed changes with local storage for useTTS
     if (key === 'voice') {
