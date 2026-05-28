@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Download, Monitor, Apple, Smartphone, ArrowRight, ShieldCheck, Sparkles, Server } from 'lucide-react'
+import { Download, Monitor, Apple, Smartphone, ArrowRight, ShieldCheck, Sparkles, Server, Terminal } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
 
@@ -23,18 +23,18 @@ export default function DownloadsPage() {
           </ScrollReveal>
           <ScrollReveal delay={0.1}>
             <h1 className="text-4xl md:text-5xl lg:text-[56px] font-normal tracking-tight text-[#ECECEC] mb-6 leading-[1.1] font-serif">
-              CyberCli everywhere you go
+              CyberCoder CLI for every device
             </h1>
           </ScrollReveal>
           <ScrollReveal delay={0.2}>
             <p className="text-[17px] md:text-lg text-[#A0A0A0] max-w-2xl mx-auto leading-relaxed font-light">
-              Get the most out of CyberCli Chat with native desktop and mobile apps. Faster access, better performance, and deep integration with your OS.
+              Install CyberCoder CLI on macOS, Windows, or Linux. Code faster with 8+ AI providers directly in your terminal.
             </p>
           </ScrollReveal>
         </div>
 
         {/* Desktop Downloads */}
-        <div className="grid md:grid-cols-2 gap-6 mb-16">
+        <div className="grid md:grid-cols-3 gap-6 mb-16">
           <ScrollReveal delay={0.3}>
             <div className="p-8 md:p-10 rounded-3xl bg-[#14141A] border border-white/[0.06] hover:bg-[#1A1A22] transition-all duration-300 group flex flex-col h-full relative overflow-hidden">
               <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -65,13 +65,33 @@ export default function DownloadsPage() {
               </div>
               <h2 className="text-2xl font-serif text-[#ECECEC] mb-3">Download for Windows</h2>
               <p className="text-[#A0A0A0] mb-8 flex-1 leading-relaxed">
-                The full CyberCli experience on your Windows PC. Includes system-tray access, hardware acceleration, and seamless local file editing.
+                Full terminal AI experience on Windows. Includes PowerShell integration, system-tray access, and native file editing.
               </p>
               <button className="w-full py-3.5 rounded-xl bg-[#1c1c24] border border-white/[0.1] hover:bg-white/[0.08] text-[#ECECEC] font-medium transition-colors flex items-center justify-center gap-2 text-[15px]">
                 <Download className="w-4 h-4" />
                 Download EXE
               </button>
               <p className="text-center text-[11px] text-[#707070] mt-3">Requires Windows 10 or later</p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.5}>
+            <div className="p-8 md:p-10 rounded-3xl bg-[#14141A] border border-white/[0.06] hover:bg-[#1A1A22] transition-all duration-300 group flex flex-col h-full relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                <ArrowRight className="w-6 h-6 text-[#D97757]" />
+              </div>
+              <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mb-8">
+                <Terminal className="w-8 h-8 text-[#ECECEC]" />
+              </div>
+              <h2 className="text-2xl font-serif text-[#ECECEC] mb-3">Download for Linux</h2>
+              <p className="text-[#A0A0A0] mb-8 flex-1 leading-relaxed">
+                Native Linux support with bash/zsh/fish integration. Works on Ubuntu, Debian, Fedora, and Arch distributions.
+              </p>
+              <button className="w-full py-3.5 rounded-xl bg-[#1c1c24] border border-white/[0.1] hover:bg-white/[0.08] text-[#ECECEC] font-medium transition-colors flex items-center justify-center gap-2 text-[15px]">
+                <Download className="w-4 h-4" />
+                Download AppImage
+              </button>
+              <p className="text-center text-[11px] text-[#707070] mt-3">Requires Ubuntu 20.04+ or equivalent</p>
             </div>
           </ScrollReveal>
         </div>
@@ -99,10 +119,10 @@ export default function DownloadsPage() {
                 <Server className="w-6 h-6 text-blue-400" />
               </div>
               <div>
-                <h3 className="text-lg font-serif text-[#ECECEC] mb-1">Local CLI & Daemon</h3>
-                <p className="text-[13px] text-[#A0A0A0] mb-3">Run CyberCli natively in your terminal. Available now via npm.</p>
+                <h3 className="text-lg font-serif text-[#ECECEC] mb-1">CyberCoder CLI</h3>
+                <p className="text-[13px] text-[#A0A0A0] mb-3">The fastest way to install. Works on all platforms with Node.js 20+.</p>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0A0A0F] border border-white/[0.08]">
-                  <code className="text-[12px] text-blue-300 font-mono">npm i -g @cybercli/daemon</code>
+                  <code className="text-[12px] text-blue-300 font-mono">npm i -g @cybermind/cli</code>
                 </div>
               </div>
             </div>

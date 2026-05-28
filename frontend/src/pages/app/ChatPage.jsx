@@ -4313,14 +4313,14 @@ export default function ChatPage() {
                       <span>Invite Friends</span>
                     </button>
 
-                    <button 
-                      onClick={() => alert('CyberCli App & Extension links will be sent to your email.')}
+                    <Link
+                      to="/downloads"
                       onMouseEnter={() => setHoveredSubmenu(null)}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left group"
                     >
                       <Download className="w-4 h-4 text-foreground-muted group-hover:text-[#D97757] transition-colors" />
                       <span>Get apps and extensions</span>
-                    </button>
+                    </Link>
 
                     <button 
                       onMouseEnter={() => setHoveredSubmenu('learn_more')}

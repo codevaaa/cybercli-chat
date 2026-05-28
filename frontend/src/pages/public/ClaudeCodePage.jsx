@@ -1,47 +1,76 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { 
-  Terminal, ArrowRight, Check, Copy, Code2, Zap, Shield, 
-  Cpu, Globe, Sparkles, ChevronRight, Play, Star, 
-  MessageSquare, GitBranch, FileCode, Search, Settings,
-  ExternalLink, CheckCircle2, X,
-  Download
-} from 'lucide-react';
 import { Link } from 'react-router-dom';
+import {
+  Terminal, ArrowRight, Check, Copy, Code2, Zap, Shield,
+  Cpu, Globe, Sparkles, ChevronRight, Play, Star,
+  MessageSquare, GitBranch, FileCode, Search, Settings,
+  ExternalLink, CheckCircle2, X, Download, ChevronDown,
+  Monitor, Smartphone, Mail, Lock, DollarSign, Gauge,
+  Hexagon, Bot, Layers, Workflow, Wrench, Clock
+} from 'lucide-react';
 
 const fadeInUp = {
-  initial: { opacity: 0, y: 40 },
+  initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: "-100px" },
-  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+  viewport: { once: true, margin: "-60px" },
+  transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
 };
 
 const fadeIn = {
   initial: { opacity: 0 },
   whileInView: { opacity: 1 },
   viewport: { once: true },
-  transition: { duration: 0.6 }
+  transition: { duration: 0.5 }
 };
 
 const staggerContainer = {
   initial: {},
   whileInView: {},
-  viewport: { once: true },
-  transition: { staggerChildren: 0.15 }
+  viewport: { once: true, margin: "-60px" },
+  transition: { staggerChildren: 0.1 }
 };
 
-const scaleIn = {
-  initial: { opacity: 0, scale: 0.95 },
-  whileInView: { opacity: 1, scale: 1 },
-  viewport: { once: true },
-  transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
-};
+const ACCENT = '#D97736';
+const BG_DARK = '#0C0C0C';
+const CARD_BG = '#141414';
+const BORDER = 'rgba(255,255,255,0.08)';
+
+function AccordionItem({ question, answer, isOpen, onClick }) {
+  return (
+    <div className="border-b" style={{ borderColor: BORDER }}>
+      <button
+        onClick={onClick}
+        className="w-full flex items-center justify-between py-6 text-left group"
+      >
+        <span className="text-lg font-medium text-white pr-4">{question}</span>
+        <ChevronDown
+          className="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform duration-300"
+          style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <p className="pb-6 text-gray-400 leading-relaxed">{answer}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function ClaudeCodePage() {
   const containerRef = useRef(null);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState('edit');
-  
+  const [openFaq, setOpenFaq] = useState(0);
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
@@ -55,127 +84,252 @@ export default function ClaudeCodePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
-    <div ref={containerRef} className="min-h-screen bg-[#0A0A0F] overflow-x-hidden pt-16">
-      {/* Hero Section - No internal nav since PublicLayout provides it */}
-      <section className="relative min-h-screen flex items-center justify-center pt-20">
-        <motion.div 
-          className="absolute inset-0 opacity-30"
-          style={{ y: backgroundY }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-violet-900/20 via-transparent to-transparent" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet-600/20 rounded-full blur-[150px]" />
-        </motion.div>
+  const features = [
+    {
+      icon: <Search className="w-6 h-6" />,
+      title: 'Code Onboarding',
+      desc: 'CyberCoder maps and explains entire codebases in seconds. It uses agentic search to understand project structure and dependencies without manually selecting context files.'
+    },
+    {
+      icon: <GitBranch className="w-6 h-6" />,
+      title: 'Turn Issues into PRs',
+      desc: 'Stop bouncing between tools. CyberCoder integrates with GitHub and your CLI tools to handle the entire workflow — reading issues, writing code, running tests, and submitting PRs.'
+    },
+    {
+      icon: <FileCode className="w-6 h-6" />,
+      title: 'Make Powerful Edits',
+      desc: 'CyberCoder\'s understanding of your codebase enables powerful, multi-file edits that actually work across your entire project.'
+    },
+    {
+      icon: <Sparkles className="w-6 h-6" />,
+      title: 'Powerful Intelligence',
+      desc: 'Uses agentic search across 8+ AI providers. Makes coordinated changes across multiple files with consensus-based reasoning.'
+    },
+    {
+      icon: <Monitor className="w-6 h-6" />,
+      title: 'Works Where You Work',
+      desc: 'Lives inside your terminal — no context switching. Integrates with VS Code, JetBrains, and all your existing development tools.'
+    },
+    {
+      icon: <Shield className="w-6 h-6" />,
+      title: 'You\'re in Control',
+      desc: 'Never modifies files without explicit approval. Adapts to your coding standards. Configurable via SDK or CI/CD pipelines.'
+    }
+  ];
 
-        <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
+  const platforms = [
+    {
+      icon: <Terminal className="w-8 h-8" />,
+      title: 'Start in Your Terminal',
+      desc: 'Super powerful terminal integration. Works with all your CLI tools alongside any IDE.',
+      cta: 'Try CyberCoder',
+      ctaLink: '/chat'
+    },
+    {
+      icon: <Code2 className="w-8 h-8" />,
+      title: 'Integrate with Your Editor',
+      desc: 'Native support for VS Code, Cursor, Windsurf, and JetBrains IDEs via LSP and extensions.',
+      cta: 'VS Code Extension',
+      ctaLink: '/docs'
+    },
+    {
+      icon: <Globe className="w-8 h-8" />,
+      title: 'Access Anywhere',
+      desc: 'Quick access from browser, mobile app, or desktop. Great for parallel work or on-the-go coding.',
+      cta: 'Open in Browser',
+      ctaLink: '/chat'
+    }
+  ];
+
+  const testimonials = [
+    {
+      quote: 'CyberCoder has dramatically accelerated our team\'s coding efficiency. Multi-model consensus catches bugs that single models miss. This saves 1-2 days of routine work per feature.',
+      author: 'Senior Software Engineer',
+      company: 'Tech Startup'
+    },
+    {
+      quote: 'The 8+ provider fallback is a game-changer. When one AI is down, CyberCoder seamlessly switches to another. Our CI/CD pipelines never break anymore.',
+      author: 'DevOps Lead',
+      company: 'Enterprise Team'
+    },
+    {
+      quote: 'Council Mode is incredible for critical code reviews. Getting 3 different AI perspectives on a refactor before merging has reduced our bug rate by 60%.',
+      author: 'Staff Engineer',
+      company: 'FinTech Company'
+    }
+  ];
+
+  const faqs = [
+    {
+      q: 'How do I get started with CyberCoder?',
+      a: 'Install CyberCoder with npm: npm install -g @cybermind/cli. Then run cybermind login to authenticate with your API key. You can get an API key from your CyberCli dashboard after signing up.'
+    },
+    {
+      q: 'What kinds of tasks can CyberCoder handle?',
+      a: 'CyberCoder excels at routine development tasks like bug fixes, testing, and documentation, as well as transformative work like refactors and feature implementation that require deep codebase understanding across multiple files.'
+    },
+    {
+      q: 'How does CyberCoder work with my existing tools?',
+      a: 'CyberCoder runs in your terminal and works alongside your preferred IDE without changing your workflow. It integrates with Git, GitHub, and supports MCP servers to extend capabilities using your existing tools.'
+    },
+    {
+      q: 'Is CyberCoder secure?',
+      a: 'Yes. CyberCoder runs locally in your terminal and talks directly to AI APIs. It asks for permission before making changes to files or running commands. Your code never leaves your machine unless you explicitly share it.'
+    },
+    {
+      q: 'Which AI models does CyberCoder use?',
+      a: 'CyberCoder intelligently routes requests across 8+ providers: OpenAI, Anthropic, Groq, Gemini, OpenRouter, Cerebras, Cloudflare, and local Ollama models. You can also use Council Mode for multi-model consensus.'
+    },
+    {
+      q: 'What are the system requirements?',
+      a: 'CyberCoder works on macOS, Linux, and Windows with Node.js 20+. The terminal-based interface is lightweight and runs on any modern development machine.'
+    },
+    {
+      q: 'How much does CyberCoder cost?',
+      a: 'CyberCoder offers a generous free tier with 50 requests/hour. Pro plans start at $9/month with 500 requests/hour and priority access to all AI providers. Enterprise plans available for teams.'
+    },
+    {
+      q: 'Does CyberCoder work with the CyberCli Chat web app?',
+      a: 'Yes. Your CyberCoder CLI account syncs with the CyberCli Chat web interface. You can start a conversation in the browser and continue it in the terminal, or vice versa.'
+    },
+    {
+      q: 'What is Council Mode?',
+      a: 'Council Mode sends your request to 3 different AI models simultaneously and returns a consensus answer. This dramatically improves accuracy for critical tasks like security reviews and architecture decisions.'
+    }
+  ];
+
+  return (
+    <div ref={containerRef} className="min-h-screen overflow-x-hidden pt-16" style={{ backgroundColor: BG_DARK }}>
+      
+      {/* ===== HERO SECTION ===== */}
+      <section className="relative min-h-[90vh] flex items-center justify-center pt-12 pb-20">
+        {/* Background gradient */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            style={{ y: backgroundY }}
+            className="absolute inset-0 opacity-20"
+          >
+            <div
+              className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full blur-[120px]"
+              style={{ backgroundColor: ACCENT }}
+            />
+          </motion.div>
+        </div>
+
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-8"
+            style={{ backgroundColor: 'rgba(217,119,54,0.15)', color: ACCENT, border: '1px solid rgba(217,119,54,0.3)' }}
           >
-            <Sparkles className="w-4 h-4 text-violet-400" />
-            <span className="text-sm text-gray-300">Now with Multi-Model Consensus</span>
+            <Zap className="w-4 h-4" />
+            AI Coding Agent for Your Terminal
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 leading-tight"
+            className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight leading-[1.1]"
           >
-            Code at the speed of
-            <br />
-            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
-              thought
-            </span>
+            Built for{' '}
+            <span style={{ color: ACCENT }}>developers</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto mb-12"
+            className="text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            CyberCoder CLI brings the power of 8+ AI providers directly to your terminal.
-            Write, refactor, debug, and understand code without leaving your workflow.
+            Work with 8+ AI providers directly in your codebase. Build, debug, and ship from your terminal, IDE, or the web.
           </motion.p>
 
           {/* Install Command */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8"
           >
-            <div className="flex items-center gap-3 px-6 py-4 bg-[#1A1A2E] rounded-xl border border-white/10 font-mono text-sm">
-              <span className="text-violet-400">$</span>
+            <div className="flex items-center gap-3 px-5 py-3 rounded-lg font-mono text-sm border" style={{ backgroundColor: CARD_BG, borderColor: BORDER }}>
+              <span style={{ color: ACCENT }}>$</span>
               <span className="text-gray-300">npm install -g @cybermind/cli</span>
               <button
                 onClick={copyInstallCommand}
-                className="ml-2 p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="ml-2 p-1.5 rounded hover:bg-white/10 transition-colors"
                 title="Copy to clipboard"
               >
-                <Copy className="w-4 h-4 text-gray-500" />
+                {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-gray-500" />}
               </button>
             </div>
             <Link
               to="/signup"
-              className="flex items-center gap-2 px-6 py-4 bg-white text-black rounded-xl font-medium hover:bg-gray-200 transition-colors"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all hover:opacity-90"
+              style={{ backgroundColor: ACCENT, color: '#000' }}
             >
               <Download className="w-5 h-5" />
               Get API Key
             </Link>
           </motion.div>
 
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-sm text-gray-500 mb-12"
+          >
+            Or read the{' '}
+            <Link to="/docs" className="underline hover:text-gray-300" style={{ color: ACCENT }}>documentation</Link>
+          </motion.p>
+
           {/* Terminal Demo */}
           <motion.div
-            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            initial={{ opacity: 0, y: 40, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="max-w-4xl mx-auto"
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="max-w-3xl mx-auto"
           >
-            <div className="rounded-2xl overflow-hidden bg-[#0D0D14] border border-white/10 shadow-2xl shadow-violet-500/10">
+            <div className="rounded-xl overflow-hidden border" style={{ backgroundColor: '#0A0A0A', borderColor: BORDER }}>
               {/* Terminal Header */}
-              <div className="flex items-center gap-2 px-4 py-3 bg-[#151520] border-b border-white/5">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                </div>
-                <div className="flex-1 text-center text-xs text-gray-500 font-mono">
-                  cybercoder --help
-                </div>
+              <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: BORDER, backgroundColor: '#111' }}>
+                <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                <span className="ml-4 text-xs text-gray-500 font-mono">cybercoder — zsh</span>
               </div>
-              
-              {/* Terminal Content */}
+              {/* Terminal Body */}
               <div className="p-6 font-mono text-sm text-left">
-                <div className="text-gray-400 mb-2">$ cybercoder refactor ./src/components</div>
-                <div className="text-gray-500 mb-4">Analyzing codebase structure...</div>
-                
-                <div className="bg-violet-500/10 border-l-2 border-violet-500 p-4 rounded-r-lg mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-4 h-4 text-violet-400" />
-                    <span className="text-violet-300 font-medium">CyberCoder Suggestion</span>
-                  </div>
-                  <p className="text-gray-300 mb-3">
-                    Found 3 components that can be optimized. I recommend converting them to use React.memo 
-                    and implementing proper useCallback hooks for event handlers.
-                  </p>
-                  <div className="flex gap-2">
-                    <button className="px-3 py-1 bg-violet-500/20 text-violet-300 rounded text-xs hover:bg-violet-500/30 transition-colors">
-                      Apply Changes
-                    </button>
-                    <button className="px-3 py-1 bg-white/5 text-gray-400 rounded text-xs hover:bg-white/10 transition-colors">
-                      View Diff
-                    </button>
+                <div className="flex items-start gap-2 mb-3">
+                  <span style={{ color: ACCENT }}>$</span>
+                  <div>
+                    <span className="text-white">cybermind</span>
+                    <span className="text-gray-500"> ask </span>
+                    <span className="text-green-400">"Refactor this auth middleware to use JWT"</span>
                   </div>
                 </div>
-
-                <div className="text-gray-400">
-                  <span className="text-green-400">✓</span> Refactored 3 components in 1.2s
-                  <br />
-                  <span className="text-violet-400">$</span> <span className="animate-pulse">_</span>
+                <div className="text-gray-400 mb-2 pl-4">
+                  Analyzing codebase structure...
+                </div>
+                <div className="text-gray-400 mb-2 pl-4">
+                  Found <span className="text-white">auth.js</span>, <span className="text-white">middleware/</span>, <span className="text-white">utils/token.js</span>
+                </div>
+                <div className="text-gray-400 mb-2 pl-4">
+                  Planning multi-file edits...
+                </div>
+                <div className="border-l-2 pl-4 my-3" style={{ borderColor: ACCENT }}>
+                  <p className="text-gray-300 mb-2">I&apos;ll refactor the auth middleware to use JWT. This involves:</p>
+                  <ul className="text-gray-400 space-y-1">
+                    <li>1. Update <span className="text-yellow-400">auth.js</span> to use jwt.verify</li>
+                    <li>2. Create <span className="text-yellow-400">utils/jwt.js</span> helper</li>
+                    <li>3. Update all route middleware imports</li>
+                  </ul>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span style={{ color: ACCENT }}>$</span>
+                  <span className="animate-pulse text-gray-500">_</span>
                 </div>
               </div>
             </div>
@@ -183,221 +337,91 @@ export default function ClaudeCodePage() {
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section id="features" className="py-32 relative">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div {...fadeInUp} className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Everything you need to
-              <br />
-              <span className="text-violet-400">ship faster</span>
+      {/* ===== DESKTOP APP BANNER ===== */}
+      <section className="py-8 px-4">
+        <motion.div
+          {...fadeInUp}
+          className="max-w-5xl mx-auto rounded-2xl p-8 sm:p-12 border text-center"
+          style={{ backgroundColor: CARD_BG, borderColor: BORDER }}
+        >
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+            CyberCoder on Desktop
+          </h2>
+          <p className="text-gray-400 max-w-xl mx-auto mb-6">
+            Download the native desktop app for macOS, Windows, and Linux. Run multiple coding agents in parallel with a beautiful GUI.
+          </p>
+          <Link
+            to="/downloads"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all hover:opacity-90"
+            style={{ backgroundColor: ACCENT, color: '#000' }}
+          >
+            <Download className="w-5 h-5" />
+            Download Desktop App
+          </Link>
+        </motion.div>
+      </section>
+
+      {/* ===== WHAT COULD YOU DO ===== */}
+      <section className="py-24 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...fadeInUp} className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              What could you do with CyberCoder?
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              From intelligent code generation to multi-model consensus, CyberCoder CLI
-              gives you superpowers in your terminal.
-            </p>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             {...staggerContainer}
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {[
-              {
-                icon: Code2,
-                title: "Natural Language Coding",
-                description: "Describe what you want in plain English. CyberCoder writes the code, tests it, and fixes bugs automatically."
-              },
-              {
-                icon: Cpu,
-                title: "8+ AI Providers",
-                description: "Access GPT-4, Claude, Gemini, Groq, and more. Smart routing picks the best model for each task."
-              },
-              {
-                icon: Shield,
-                title: "Multi-Model Consensus",
-                description: "For critical code, CyberCoder consults multiple AI models and only applies changes they all agree on."
-              },
-              {
-                icon: Zap,
-                title: "Instant Refactoring",
-                description: "Rename variables, extract functions, convert classes to hooks, and more with a single command."
-              },
-              {
-                icon: Globe,
-                title: "Knowledge Graph",
-                description: "CyberCoder learns your coding style, preferred libraries, and project patterns over time."
-              },
-              {
-                icon: Terminal,
-                title: "Terminal Native",
-                description: "Works in any shell: bash, zsh, fish, PowerShell. No IDE required, though IDE extensions coming soon."
-              }
-            ].map((feature, index) => (
+            {features.map((feature, i) => (
               <motion.div
-                key={index}
-                {...fadeInUp}
-                className="group p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-violet-500/30 hover:bg-white/[0.04] transition-all duration-300"
+                key={i}
+                variants={fadeInUp}
+                className="p-6 rounded-xl border transition-all hover:border-white/20"
+                style={{ backgroundColor: CARD_BG, borderColor: BORDER }}
               >
-                <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <feature.icon className="w-6 h-6 text-violet-400" />
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(217,119,54,0.15)', color: ACCENT }}>
+                  {feature.icon}
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
+                <p className="text-gray-400 text-sm leading-relaxed">{feature.desc}</p>
               </motion.div>
             ))}
           </motion.div>
         </div>
       </section>
 
-      {/* Installation Steps */}
-      <section id="installation" className="py-32 bg-[#08080C]">
-        <div className="max-w-5xl mx-auto px-6">
+      {/* ===== MEETS YOU WHERE YOU CODE ===== */}
+      <section className="py-24 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto">
           <motion.div {...fadeInUp} className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Get started in <span className="text-violet-400">3 minutes</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Meets you where you code
             </h2>
           </motion.div>
 
-          <div className="space-y-6">
-            {[
-              {
-                step: 1,
-                title: "Install the CLI",
-                command: "npm install -g @cybermind/cybercoder",
-                description: "Installs the cybercoder command globally on your system"
-              },
-              {
-                step: 2,
-                title: "Get your API key",
-                command: "cybercoder login",
-                description: "Opens browser to authenticate and get your API key, or create one at cybercoder.ai"
-              },
-              {
-                step: 3,
-                title: "Start coding",
-                command: "cybercoder ask \"Create a React component for a data table with sorting\"",
-                description: "You're ready! Ask CyberCoder anything, or use it to refactor existing code."
-              }
-            ].map((item, index) => (
+          <div className="grid md:grid-cols-3 gap-6">
+            {platforms.map((platform, i) => (
               <motion.div
-                key={index}
+                key={i}
                 {...fadeInUp}
-                className="flex gap-6 items-start"
+                transition={{ delay: i * 0.1 }}
+                className="p-8 rounded-xl border text-center"
+                style={{ backgroundColor: CARD_BG, borderColor: BORDER }}
               >
-                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 font-bold">
-                  {item.step}
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: 'rgba(217,119,54,0.15)', color: ACCENT }}>
+                  {platform.icon}
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-white mb-2">{item.title}</h3>
-                  <div className="bg-[#0D0D14] rounded-lg p-4 font-mono text-sm mb-2 overflow-x-auto">
-                    <span className="text-violet-400">$</span> <span className="text-gray-300">{item.command}</span>
-                  </div>
-                  <p className="text-gray-400 text-sm">{item.description}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-32">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div {...fadeInUp} className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Simple, transparent pricing
-            </h2>
-            <p className="text-xl text-gray-400">
-              Start free. Upgrade when you need more power.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              {
-                name: "Free",
-                price: "$0",
-                description: "Perfect for trying out CyberCoder",
-                features: [
-                  "100 requests/month",
-                  "Access to free models (Ollama)",
-                  "Basic code generation",
-                  "Community support"
-                ],
-                cta: "Get Started",
-                popular: false
-              },
-              {
-                name: "Pro",
-                price: "$25",
-                description: "For professional developers",
-                features: [
-                  "5,000 requests/month",
-                  "All AI providers included",
-                  "Multi-model consensus",
-                  "Knowledge graph learning",
-                  "Priority support",
-                  "CLI + Web access"
-                ],
-                cta: "Start Pro Trial",
-                popular: true
-              },
-              {
-                name: "Enterprise",
-                price: "Custom",
-                description: "For teams and organizations",
-                features: [
-                  "Unlimited requests",
-                  "Custom model hosting",
-                  "SSO & advanced security",
-                  "Audit logging",
-                  "Dedicated infrastructure",
-                  "SLA guarantees"
-                ],
-                cta: "Contact Sales",
-                popular: false
-              }
-            ].map((plan, index) => (
-              <motion.div
-                key={index}
-                {...fadeInUp}
-                className={`rounded-2xl p-8 border ${
-                  plan.popular 
-                    ? 'border-violet-500/50 bg-violet-500/5' 
-                    : 'border-white/10 bg-white/[0.02]'
-                }`}
-              >
-                {plan.popular && (
-                  <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-violet-500/20 text-violet-300 text-xs font-medium mb-4">
-                    Most Popular
-                  </div>
-                )}
-                <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-4xl font-bold text-white">{plan.price}</span>
-                  {plan.price !== "Custom" && <span className="text-gray-400">/month</span>}
-                </div>
-                <p className="text-gray-400 text-sm mb-6">{plan.description}</p>
-                
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, fIndex) => (
-                    <li key={fIndex} className="flex items-center gap-3 text-sm text-gray-300">
-                      <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-
+                <h3 className="text-xl font-semibold text-white mb-3">{platform.title}</h3>
+                <p className="text-gray-400 text-sm mb-6 leading-relaxed">{platform.desc}</p>
                 <Link
-                  to={plan.name === "Enterprise" ? "/contact" : "/signup"}
-                  className={`block text-center py-3 rounded-xl font-medium transition-colors ${
-                    plan.popular
-                      ? 'bg-white text-black hover:bg-gray-200'
-                      : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
-                  }`}
+                  to={platform.ctaLink}
+                  className="inline-flex items-center gap-1 text-sm font-medium hover:underline"
+                  style={{ color: ACCENT }}
                 >
-                  {plan.cta}
+                  {platform.cta}
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
               </motion.div>
             ))}
@@ -405,75 +429,206 @@ export default function ClaudeCodePage() {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-32 bg-[#08080C]">
-        <div className="max-w-3xl mx-auto px-6">
-          <motion.h2 {...fadeInUp} className="text-4xl font-bold text-white text-center mb-16">
-            Frequently asked questions
-          </motion.h2>
+      {/* ===== FEATURE ANNOUNCEMENTS ===== */}
+      <section className="py-24 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...fadeInUp} className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Latest feature announcements
+            </h2>
+          </motion.div>
 
-          <div className="space-y-6">
+          <div className="grid md:grid-cols-3 gap-6">
             {[
               {
-                q: "How is this different from Claude Code or GitHub Copilot?",
-                a: "CyberCoder gives you access to 8+ AI providers, not just one. It learns your coding patterns over time, supports multi-model consensus for critical decisions, and works entirely in your terminal without requiring an IDE."
+                icon: <Monitor className="w-6 h-6" />,
+                title: 'Redesigned Desktop App',
+                desc: 'Built to help you run more CyberCoder tasks at once. New tabbed interface and workspace management.'
               },
               {
-                q: "Can I use my own API keys?",
-                a: "Yes! Pro and Enterprise users can add their own API keys for any provider. We'll use your keys first, then fall back to our infrastructure when needed."
+                icon: <Workflow className="w-6 h-6" />,
+                title: 'Routines',
+                desc: 'Configure a routine once, and it can run on a schedule, from an API call, or in response to a Git event.'
               },
               {
-                q: "Is my code sent to your servers?",
-                a: "Only when you explicitly ask for AI assistance. All code analysis for the knowledge graph happens locally. Enterprise plans can enable full on-premise deployment."
-              },
-              {
-                q: "What languages are supported?",
-                a: "CyberCoder works with all popular programming languages including TypeScript, Python, Rust, Go, Java, C++, and more. The knowledge graph tracks your expertise across languages."
+                icon: <Bot className="w-6 h-6" />,
+                title: 'Auto Mode',
+                desc: 'A safer long-running alternative that asks for permission before file changes but runs tests automatically.'
               }
-            ].map((faq, index) => (
+            ].map((item, i) => (
               <motion.div
-                key={index}
+                key={i}
                 {...fadeInUp}
-                className="p-6 rounded-xl bg-white/[0.02] border border-white/5"
+                transition={{ delay: i * 0.1 }}
+                className="p-6 rounded-xl border"
+                style={{ backgroundColor: CARD_BG, borderColor: BORDER }}
               >
-                <h3 className="text-lg font-medium text-white mb-3">{faq.q}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{faq.a}</p>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(217,119,54,0.15)', color: ACCENT }}>
+                  {item.icon}
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
+                <p className="text-gray-400 text-sm">{item.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-32">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <motion.div
-            {...fadeInUp}
-            className="p-12 rounded-3xl bg-gradient-to-b from-violet-500/10 to-transparent border border-violet-500/20"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Ready to code at the speed of thought?
+      {/* ===== TESTIMONIALS ===== */}
+      <section className="py-24 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...fadeInUp} className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              What developers are saying
             </h2>
-            <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-              Join thousands of developers who are shipping faster with CyberCoder CLI.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                to="/signup"
-                className="flex items-center gap-2 px-8 py-4 bg-white text-black rounded-xl font-medium hover:bg-gray-200 transition-colors"
-              >
-                <Download className="w-5 h-5" />
-                Install CyberCoder
-              </Link>
-              <a
-                href="https://docs.cybercoder.ai"
-                className="flex items-center gap-2 px-8 py-4 bg-white/5 text-white rounded-xl font-medium hover:bg-white/10 transition-colors border border-white/10"
-              >
-                Read Documentation
-                <ArrowRight className="w-5 h-5" />
-              </a>
-            </div>
           </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {testimonials.map((t, i) => (
+              <motion.div
+                key={i}
+                {...fadeInUp}
+                transition={{ delay: i * 0.1 }}
+                className="p-6 rounded-xl border"
+                style={{ backgroundColor: CARD_BG, borderColor: BORDER }}
+              >
+                <p className="text-gray-300 mb-6 leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
+                <div>
+                  <p className="text-white font-medium">{t.author}</p>
+                  <p className="text-gray-500 text-sm">{t.company}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== CLI TOOLS INTEGRATION ===== */}
+      <section className="py-24 px-4 sm:px-6">
+        <motion.div
+          {...fadeInUp}
+          className="max-w-4xl mx-auto text-center"
+        >
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+            Connects with your favorite command line tools
+          </h2>
+          <p className="text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            Your terminal is where real work happens. CyberCoder connects with the tools that power development — deployment, databases, monitoring, version control. Rather than adding another interface to juggle, it enhances your existing stack.
+          </p>
+        </motion.div>
+      </section>
+
+      {/* ===== FAQ ===== */}
+      <section className="py-24 px-4 sm:px-6">
+        <div className="max-w-3xl mx-auto">
+          <motion.div {...fadeInUp} className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">FAQ</h2>
+          </motion.div>
+
+          <motion.div {...fadeIn}>
+            {faqs.map((faq, i) => (
+              <AccordionItem
+                key={i}
+                question={faq.q}
+                answer={faq.a}
+                isOpen={openFaq === i}
+                onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
+              />
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ===== TECHNICAL RUNDOWN ===== */}
+      <section className="py-24 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...fadeInUp} className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Get the technical rundown
+            </h2>
+          </motion.div>
+
+          <motion.div
+            {...staggerContainer}
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {[
+              { title: 'CyberCoder Documentation', desc: 'Full guides and API reference', icon: <FileCode className="w-5 h-5" /> },
+              { title: 'Common Workflows', desc: 'Best practices for daily use', icon: <Workflow className="w-5 h-5" /> },
+              { title: 'Using CLAUDE.md Files', desc: 'Customize AI behavior per project', icon: <FileCode className="w-5 h-5" /> },
+              { title: 'Introduction to Agentic Coding', desc: 'How AI agents transform development', icon: <Sparkles className="w-5 h-5" /> }
+            ].map((doc, i) => (
+              <motion.a
+                key={i}
+                variants={fadeInUp}
+                href="/docs"
+                className="p-6 rounded-xl border block transition-all hover:border-white/20 group"
+                style={{ backgroundColor: CARD_BG, borderColor: BORDER }}
+              >
+                <div className="text-gray-500 mb-4 group-hover:text-white transition-colors">
+                  {doc.icon}
+                </div>
+                <h3 className="text-white font-medium mb-1">{doc.title}</h3>
+                <p className="text-gray-500 text-sm">{doc.desc}</p>
+                <ArrowRight className="w-4 h-4 mt-4 text-gray-600 group-hover:text-white transition-colors" />
+              </motion.a>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ===== NEWSLETTER / CTA ===== */}
+      <section className="py-24 px-4 sm:px-6">
+        <motion.div
+          {...fadeInUp}
+          className="max-w-3xl mx-auto text-center"
+        >
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Create what&apos;s exciting. Maintain what&apos;s essential.
+          </h2>
+          <p className="text-gray-400 mb-8">
+            Get the developer newsletter with tips, new features, and workflow ideas.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="w-full px-4 py-3 rounded-lg text-white placeholder-gray-500 border outline-none focus:border-white/30"
+              style={{ backgroundColor: CARD_BG, borderColor: BORDER }}
+            />
+            <button
+              className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all hover:opacity-90 whitespace-nowrap"
+              style={{ backgroundColor: ACCENT, color: '#000' }}
+            >
+              Subscribe
+            </button>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ===== FOOTER CTA ===== */}
+      <section className="py-16 px-4 sm:px-6 border-t" style={{ borderColor: BORDER }}>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <h3 className="text-2xl font-bold text-white mb-2">Ready to ship faster?</h3>
+            <p className="text-gray-400">Install CyberCoder and start coding with AI today.</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/docs"
+              className="px-6 py-3 rounded-lg font-medium border transition-all hover:bg-white/5"
+              style={{ borderColor: BORDER, color: '#fff' }}
+            >
+              Read Documentation
+            </Link>
+            <Link
+              to="/signup"
+              className="px-6 py-3 rounded-lg font-medium transition-all hover:opacity-90"
+              style={{ backgroundColor: ACCENT, color: '#000' }}
+            >
+              Get Started
+            </Link>
+          </div>
         </div>
       </section>
 

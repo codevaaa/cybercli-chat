@@ -93,10 +93,10 @@ export default function HeroSection() {
               Get Started for Free
             </Link>
             <Link
-              to="/code"
+              to="/product"
               className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-semibold transition-all w-full sm:w-auto text-[#e5e5e5]"
             >
-              Explore CyberCli Code
+              Explore CyberCoder CLI
             </Link>
           </motion.div>
         </div>
