@@ -6,15 +6,35 @@ const genAI = apiKey ? new GoogleGenAI({ apiKey }) : null
 export async function* streamCompletion({ messages, model = 'gemini-2.5-flash-preview-05-20', temperature = 0.7 }) {
   if (!genAI) throw new Error('Gemini API key not configured')
 
-  const contents = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : m.role,
-    parts: [{ text: m.content }],
-  }))
+  // Gemini SDK does not accept 'system' role in contents[].
+  // Extract all system messages and merge into systemInstruction config.
+  const systemParts = messages
+    .filter(m => m.role === 'system')
+    .map(m => m.content)
+    .filter(Boolean)
+
+  const systemInstruction = systemParts.length > 0
+    ? { parts: [{ text: systemParts.join('\n\n') }] }
+    : undefined
+
+  // Only pass user/assistant (model) messages to contents
+  const contents = messages
+    .filter(m => m.role !== 'system')
+    .map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content || '' }],
+    }))
+
+  const config = {
+    temperature,
+    maxOutputTokens: 4096,
+    ...(systemInstruction ? { systemInstruction } : {}),
+  }
 
   const response = await genAI.models.generateContentStream({
     model,
     contents,
-    config: { temperature, maxOutputTokens: 4096 },
+    config,
   })
 
   for await (const chunk of response) {

@@ -165,37 +165,46 @@ function getClient(provider) {
 
 /**
  * Prepend the CyberCli system prompt to every conversation.
- * If the user has already sent a system prompt, we prepend ours before it.
+ * Preserves any system messages marked with _skip_inject:true (voice brains,
+ * web-search context, custom instructions, etc.) by appending them AFTER
+ * the identity message. Removes all other conflicting system messages.
  */
 function injectIdentity(messages) {
   const identityMsg = { role: 'system', content: CYBERCLI_SYSTEM_PROMPT }
-  
-  // Sanitize messages: OpenRouter/OpenAI strictly expect only role/content/name
-  const sanitized = messages.map(m => {
-    const cleanMsg = { role: m.role, content: m.content || '' }
-    if (m.name) cleanMsg.name = m.name
-    return cleanMsg
-  })
 
-  // Remove any existing system messages that conflict, then prepend ours
-  const filtered = sanitized.filter(m => m.role !== 'system')
-  return [identityMsg, ...filtered]
+  // Collect skip-inject system messages (strip the flag so providers don't choke)
+  const skipInjectMessages = messages
+    .filter(m => m.role === 'system' && m._skip_inject)
+    .map(m => ({ role: 'system', content: m.content || '' }))
+
+  // Sanitize remaining messages: only role/content/name allowed
+  const sanitized = messages
+    .filter(m => !(m.role === 'system' && m._skip_inject)) // handled above
+    .map(m => {
+      const cleanMsg = { role: m.role, content: m.content || '' }
+      if (m.name) cleanMsg.name = m.name
+      return cleanMsg
+    })
+
+  // Remove any other system messages that would conflict with our identity
+  const chatMessages = sanitized.filter(m => m.role !== 'system')
+
+  // Build: [identity] + [skip-inject context] + [chat history]
+  return [identityMsg, ...skipInjectMessages, ...chatMessages]
 }
 
 /**
  * Prune context window to avoid token limit errors on long chats.
- * Keeps system prompt (if present) and most recent messages.
+ * Keeps all leading system messages (identity + context) and most recent chat messages.
  */
 function pruneContextWindow(messages, maxChars = 20000) {
-  let systemMessage = null
-  let chatMessages = messages
+  // Collect ALL consecutive leading system messages (identity + voice brain + web search etc.)
+  let sysEnd = 0
+  while (sysEnd < messages.length && messages[sysEnd].role === 'system') sysEnd++
+  const systemMessages = messages.slice(0, sysEnd)
+  const chatMessages = messages.slice(sysEnd)
 
-  if (messages.length > 0 && messages[0].role === 'system') {
-    systemMessage = messages[0]
-    chatMessages = messages.slice(1)
-  }
-
-  let currentChars = 0
+  let currentChars = systemMessages.reduce((sum, m) => sum + (m.content || '').length, 0)
   const pruned = []
 
   // Iterate backwards to keep the most recent messages
@@ -214,10 +223,7 @@ function pruneContextWindow(messages, maxChars = 20000) {
     pruned.push(chatMessages[chatMessages.length - 1])
   }
 
-  if (systemMessage) {
-    return [systemMessage, ...pruned]
-  }
-  return pruned
+  return [...systemMessages, ...pruned]
 }
 
 export const llmGateway = {
@@ -431,14 +437,31 @@ ${r3.content ? r3.content.trim() : (r3.error || 'Response error')}`;
       try {
         const { GoogleGenAI } = await import('@google/genai')
         const genAI = new GoogleGenAI({ apiKey: PROVIDER_KEYS.gemini })
-        const contents = enriched.map(m => ({
-          role: m.role === 'assistant' ? 'model' : m.role,
-          parts: [{ text: m.content }],
-        }))
+
+        // Extract system messages for systemInstruction
+        const systemParts = enriched
+          .filter(m => m.role === 'system')
+          .map(m => m.content)
+          .filter(Boolean)
+        const systemInstruction = systemParts.length > 0
+          ? { parts: [{ text: systemParts.join('\n\n') }] }
+          : undefined
+
+        const contents = enriched
+          .filter(m => m.role !== 'system')
+          .map(m => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content || '' }],
+          }))
+
         const response = await genAI.models.generateContent({
           model: targetModel.model,
           contents,
-          config: { temperature, maxOutputTokens: 4096 },
+          config: {
+            temperature,
+            maxOutputTokens: 4096,
+            ...(systemInstruction ? { systemInstruction } : {}),
+          },
         })
         return {
           content: response.text,

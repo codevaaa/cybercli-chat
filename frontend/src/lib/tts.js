@@ -157,7 +157,9 @@ class TTSService {
   }
 
   async playAudio(audioBlob) {
-    const audioUrl = URL.createObjectURL(audioBlob)
+    // Ensure browser treats the response as WAV audio regardless of server Content-Type header
+    const wavBlob = new Blob([audioBlob], { type: 'audio/wav' })
+    const audioUrl = URL.createObjectURL(wavBlob)
     const audio = new Audio(audioUrl)
     
     return new Promise((resolve, reject) => {

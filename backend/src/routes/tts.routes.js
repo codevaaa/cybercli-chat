@@ -4,23 +4,30 @@ import { generateGeminiTTS } from '../services/tts/gemini-tts.js'
 
 const router = Router()
 
+const VALID_VOICES = new Set([
+  'gemini_flash', 'gemini_pro', 'mistral_large',
+  'ava', 'nova', 'luna', 'orion', 'echo', 'sol', 'cove', 'breeze'
+])
+
 router.post('/', optionalAuth, async (req, res) => {
-  const { text, voice_id, speed = 1.0 } = req.body
+  const { text, voice_id = 'gemini_flash', speed = 1.0 } = req.body
+
+  if (!text || !text.trim()) {
+    return res.status(400).json({ error: 'text is required' })
+  }
 
   try {
-    const validVoices = ['ava', 'nova', 'luna', 'orion', 'echo', 'gemini', 'sol', 'cove', 'breeze', 'gemini_flash', 'gemini_pro', 'mistral_large']
-    const voiceLower = (voice_id || 'sol').toLowerCase()
-    
-    if (validVoices.includes(voiceLower)) {
-      // Map male/deep/technical voices to orion (Charon), others to ava (Aoede)
-      const mappedVoice = (voiceLower === 'orion' || voiceLower === 'echo' || voiceLower === 'cove' || voiceLower === 'gemini_pro' || voiceLower === 'mistral_large') ? 'orion' : 'ava'
-      const audio = await generateGeminiTTS(text, mappedVoice, speed)
-      res.setHeader('Content-Type', 'audio/mp3')
-      res.send(audio)
-    } else {
-      res.status(400).json({ error: 'Voice not yet implemented on backend.' })
-    }
+    const voiceLower = voice_id.toLowerCase()
+    const resolvedVoice = VALID_VOICES.has(voiceLower) ? voiceLower : 'gemini_flash'
+
+    const audioBuffer = await generateGeminiTTS(text.trim(), resolvedVoice, speed)
+
+    // Send WAV — browsers can decode WAV natively without any codec
+    res.setHeader('Content-Type', 'audio/wav')
+    res.setHeader('Content-Length', audioBuffer.length)
+    res.send(audioBuffer)
   } catch (error) {
+    console.error('TTS route error:', error.message)
     res.status(500).json({ error: error.message })
   }
 })
@@ -30,3 +37,4 @@ router.post('/stt', requireAuth, (req, res) => {
 })
 
 export default router
+

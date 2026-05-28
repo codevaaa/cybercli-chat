@@ -3000,8 +3000,16 @@ export default function ChatPage() {
     e?.stopPropagation()
     if (!confirm('Delete this conversation?')) return
     const previousThreads = [...threads]
+    // Optimistically remove from sidebar
     setThreads(prev => prev.filter(t => t._id !== id))
-    if (activeThreadId === id) navigate('/chat')
+    // If deleting the currently open thread, clear state and navigate away immediately
+    if (activeThreadId === id || activeThreadIdRef.current === id) {
+      setMessages([])
+      setLoading(false)
+      setStreamingIndex(null)
+      setError(null)
+      navigate('/chat', { replace: true })
+    }
     try {
       await api.delete(`/chat/${id}`)
       loadThreads()
@@ -3137,7 +3145,8 @@ export default function ChatPage() {
             navigate('/auth/login')
             return
           }
-          throw new Error('Stream failed')
+          const errText = await res.text().catch(() => `HTTP ${res.status}`)
+          throw new Error(`Stream error ${res.status}: ${errText}`)
         }
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
@@ -3337,7 +3346,8 @@ export default function ChatPage() {
             navigate('/auth/login')
             return
           }
-          throw new Error('Stream failed')
+          const errText = await res.text().catch(() => `HTTP ${res.status}`)
+          throw new Error(`Stream error ${res.status}: ${errText}`)
         }
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
@@ -3474,7 +3484,8 @@ export default function ChatPage() {
           navigate('/auth/login')
           return
         }
-        throw new Error('Stream failed')
+        const errText = await res.text().catch(() => `HTTP ${res.status}`)
+        throw new Error(`Stream error ${res.status}: ${errText}`)
       }
 
       const reader = res.body.getReader()
