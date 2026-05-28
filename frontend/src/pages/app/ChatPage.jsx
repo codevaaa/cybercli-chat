@@ -4114,7 +4114,7 @@ export default function ChatPage() {
   const isKaliMode = selectedModelObj?.kali === true
 
   return (
-    <div className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${isKaliMode ? 'kali-theme' : ''}`} style={{ background: 'var(--bg-primary)' }}>
+    <div className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${isKaliMode ? 'kali-theme' : ''}`} style={{ background: '#0C0C0C' }}>
 
       {/* ── Sidebar ── */}
       {isMobile && sidebarOpen && (
