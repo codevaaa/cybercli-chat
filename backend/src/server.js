@@ -75,7 +75,9 @@ app.use(cors({
       'http://localhost:5173',
       'http://localhost:3000',
       'https://cybercli-chat.vercel.app',
-      'https://cybercli.vercel.app'
+      'https://cybercli.vercel.app',
+      'https://cybermindcli.info',
+      'https://www.cybermindcli.info'
     ]
     if (!origin || whitelist.includes(origin) || defaults.includes(origin) || origin.endsWith('.vercel.app')) {
       callback(null, true)

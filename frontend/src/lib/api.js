@@ -8,7 +8,11 @@ const getApiBase = () => {
   }
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname
-    if (hostname.includes('vercel.app') || hostname.includes('cybercli.app')) {
+    if (
+      hostname.includes('vercel.app') || 
+      hostname.includes('cybercli.app') || 
+      hostname.includes('cybermindcli.info')
+    ) {
       return 'https://cybercli-api.onrender.com/api/v1'
     }
   }
