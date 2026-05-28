@@ -170,6 +170,10 @@ export default function VoiceChatModal({
   const isProcessingRef = useRef(isProcessing)
   const stepRef = useRef(step)
 
+  const onSendMessageRef = useRef(onSendMessage)
+  const externalStopRef = useRef(externalStop)
+  const externalSpeakRef = useRef(externalSpeak)
+
   const prevIndex = (voiceIndex - 1 + VOICE_MODELS.length) % VOICE_MODELS.length
   const nextIndex = (voiceIndex + 1) % VOICE_MODELS.length
   
@@ -177,18 +181,23 @@ export default function VoiceChatModal({
   const selectedVoice = VOICE_MODELS[voiceIndex] || VOICE_MODELS[0]
   const nextVoice = VOICE_MODELS[nextIndex]
 
-  const handleInterrupt = useCallback(() => {
-    browserStop()
-    if (externalStop) externalStop()
-    clearTimeout(silenceTimerRef.current)
-    clearInterval(countdownRef.current)
-    setCountdown(null)
-  }, [externalStop])
+  // Sync ref values for access inside recognition closures
+  useEffect(() => { onSendMessageRef.current = onSendMessage }, [onSendMessage])
+  useEffect(() => { externalStopRef.current = externalStop }, [externalStop])
+  useEffect(() => { externalSpeakRef.current = externalSpeak }, [externalSpeak])
 
   // Sync ref values for access inside recognition closures
   useEffect(() => { isPlayingRef.current = isPlaying }, [isPlaying])
   useEffect(() => { isProcessingRef.current = isProcessing }, [isProcessing])
   useEffect(() => { stepRef.current = step }, [step])
+
+  const handleInterrupt = useCallback(() => {
+    browserStop()
+    if (externalStopRef.current) externalStopRef.current()
+    clearTimeout(silenceTimerRef.current)
+    clearInterval(countdownRef.current)
+    setCountdown(null)
+  }, [])
 
   // Reset to selection step when modal is opened
   useEffect(() => {
@@ -247,14 +256,14 @@ export default function VoiceChatModal({
       setCountdown(null)
       if (finalTranscriptRef.current.trim()) {
         const text = finalTranscriptRef.current.trim()
-        onSendMessage(text)
+        if (onSendMessageRef.current) onSendMessageRef.current(text)
         finalTranscriptRef.current = ''
         setTranscript('')
         setIsListening(false)
         try { recognitionRef.current?.stop() } catch {}
       }
     }, 300)
-  }, [onSendMessage])
+  }, [])
 
   const initRecognition = useCallback(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition

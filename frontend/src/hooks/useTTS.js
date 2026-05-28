@@ -44,7 +44,7 @@ export function useTTS() {
     })
   }, [])
 
-  const processQueue = async () => {
+  const processQueue = useCallback(async () => {
     if (isProcessingRef.current) return
     isProcessingRef.current = true
 
@@ -68,67 +68,67 @@ export function useTTS() {
     setIsPlaying(false)
     isPlayingRef.current = false
     isProcessingRef.current = false
-  }
+  }, [])
 
-  const speak = async (text) => {
+  const speak = useCallback(async (text) => {
     if (!text || text.trim() === '') return
     queueRef.current.push(text)
     processQueue()
-  }
+  }, [processQueue])
 
-  const stop = () => {
+  const stop = useCallback(() => {
     queueRef.current = []
     tts.stop()
     setIsPlaying(false)
     isPlayingRef.current = false
     setIsLoading(false)
     isProcessingRef.current = false
-  }
+  }, [])
 
-  const updateProvider = (provider) => {
+  const updateProvider = useCallback((provider) => {
     tts.setProvider(provider)
     localStorage.setItem('tts_provider', provider)
     setVoiceSettings(prev => ({ ...prev, provider }))
-  }
+  }, [])
 
-  const updateVoice = (voice) => {
+  const updateVoice = useCallback((voice) => {
     tts.setVoice(voice)
     localStorage.setItem('tts_voice', voice)
     setVoiceSettings(prev => ({ ...prev, voice }))
-  }
+  }, [])
 
-  const updateSpeed = (speed) => {
+  const updateSpeed = useCallback((speed) => {
     tts.setSpeed(speed)
     localStorage.setItem('tts_speed', speed.toString())
     setVoiceSettings(prev => ({ ...prev, speed }))
-  }
+  }, [])
 
-  const updatePitch = (pitch) => {
+  const updatePitch = useCallback((pitch) => {
     tts.setPitch(pitch)
     localStorage.setItem('tts_pitch', pitch.toString())
     setVoiceSettings(prev => ({ ...prev, pitch }))
-  }
+  }, [])
 
-  const updateGeminiApiKey = (key) => {
+  const updateGeminiApiKey = useCallback((key) => {
     localStorage.setItem('gemini_api_key', key)
     setGeminiApiKey(key)
-  }
+  }, [])
 
-  const getAvailableProviders = () => tts.getProviders()
-  const getAvailableVoices = (provider) => {
+  const getAvailableProviders = useCallback(() => tts.getProviders(), [])
+  const getAvailableVoices = useCallback((provider) => {
     const originalProvider = tts.currentProvider
     tts.setProvider(provider)
     const voices = tts.getVoices()
     tts.setProvider(originalProvider)
     return voices
-  }
+  }, [])
 
-  const updateVoiceSettings = (settings) => {
+  const updateVoiceSettings = useCallback((settings) => {
     if (settings.provider) updateProvider(settings.provider)
     if (settings.voice) updateVoice(settings.voice)
     if (settings.speed) updateSpeed(settings.speed)
     if (settings.pitch) updatePitch(settings.pitch)
-  }
+  }, [updateProvider, updateVoice, updateSpeed, updatePitch])
 
   return {
     speak,
