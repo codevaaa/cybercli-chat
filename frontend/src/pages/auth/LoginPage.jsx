@@ -12,6 +12,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [focusedField, setFocusedField] = useState(null)
 
+  const handleGoogleSignIn = async () => {
+    clearError()
+    const result = await signInWithOAuth('google')
+    if (result.success && result.url) {
+      window.location.href = result.url
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     clearError()
@@ -23,47 +31,47 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background-primary py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       {/* Background soft gradients */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-accent/5 rounded-full blur-[100px] opacity-70" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-accent/5 rounded-full blur-[120px] opacity-60" />
       </div>
 
       <motion.div
-        className="w-full max-w-[440px] relative z-10"
+        className="w-full max-w-[420px] relative z-10"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
         {/* Brand Mark Logo */}
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-6">
           <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
-            <CyberCliMark size={56} />
+            <CyberCliMark size={48} />
           </Link>
-          <h1 className="text-3xl font-semibold text-foreground-primary tracking-tight font-serif mt-6">
+          <h1 className="text-2xl font-bold text-foreground-primary tracking-tight mt-5">
             Welcome back
           </h1>
-          <p className="text-sm text-foreground-muted mt-2">
-            Sign in to continue to your workspace
+          <p className="text-xs text-foreground-muted mt-1.5">
+            Sign in to continue to CyberCli Chat
           </p>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-background-elevated border border-border-subtle rounded-2xl p-8 shadow-sm">
+        <div className="bg-background-elevated border border-border-subtle rounded-2xl p-6.5 shadow-md">
           <AnimatePresence>
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-500 font-medium"
+                className="mb-5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-500 font-medium"
               >
                 {error}
               </motion.div>
             )}
           </AnimatePresence>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-xs font-semibold text-foreground-secondary uppercase tracking-wider mb-2">
+              <label htmlFor="email" className="block text-[11px] font-bold text-foreground-secondary uppercase tracking-wider mb-1.5">
                 Email Address
               </label>
               <div className="relative">
@@ -79,7 +87,7 @@ export default function LoginPage() {
                   onBlur={() => setFocusedField(null)}
                   placeholder="you@example.com"
                   required
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-background-tertiary border border-border-subtle text-foreground-primary text-sm focus:outline-none transition-all placeholder:text-foreground-muted"
+                  className="w-full pl-10.5 pr-4 py-2.5 rounded-xl bg-background-tertiary border border-border-subtle text-foreground-primary text-sm focus:outline-none transition-all placeholder:text-foreground-muted"
                   style={{
                     borderColor: focusedField === 'email' ? 'var(--accent)' : 'transparent',
                     boxShadow: focusedField === 'email' ? '0 0 0 2px rgba(217,119,87,0.1)' : 'none',
@@ -90,13 +98,13 @@ export default function LoginPage() {
 
             {/* Password Field */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="password" className="text-[11px] font-bold text-foreground-secondary uppercase tracking-wider">
                   Password
                 </label>
                 <Link
                   to="/auth/forgot-password"
-                  className="text-xs text-accent hover:text-accent-dark transition-colors font-medium"
+                  className="text-xs text-accent hover:text-accent-dark transition-colors font-semibold"
                 >
                   Forgot password?
                 </Link>
@@ -114,7 +122,7 @@ export default function LoginPage() {
                   onBlur={() => setFocusedField(null)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-11 pr-11 py-3 rounded-xl bg-background-tertiary border border-border-subtle text-foreground-primary text-sm focus:outline-none transition-all placeholder:text-foreground-muted"
+                  className="w-full pl-10.5 pr-11 py-2.5 rounded-xl bg-background-tertiary border border-border-subtle text-foreground-primary text-sm focus:outline-none transition-all placeholder:text-foreground-muted"
                   style={{
                     borderColor: focusedField === 'password' ? 'var(--accent)' : 'transparent',
                     boxShadow: focusedField === 'password' ? '0 0 0 2px rgba(217,119,87,0.1)' : 'none',
@@ -136,7 +144,7 @@ export default function LoginPage() {
               disabled={loading}
               whileHover={{ scale: loading ? 1 : 1.01 }}
               whileTap={{ scale: loading ? 1 : 0.99 }}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed bg-accent hover:bg-accent-dark shadow-sm"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed bg-accent hover:bg-accent-dark shadow-sm"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -150,11 +158,11 @@ export default function LoginPage() {
           </form>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border-subtle" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase tracking-wider font-semibold">
+            <div className="relative flex justify-center text-[10px] uppercase tracking-wider font-bold">
               <span className="px-3 bg-background-elevated text-foreground-muted">Or continue with</span>
             </div>
           </div>
@@ -162,8 +170,9 @@ export default function LoginPage() {
           {/* Google SSO Login */}
           <button
             type="button"
-            disabled
-            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-background-tertiary border border-border-subtle text-sm font-medium text-foreground-secondary cursor-not-allowed opacity-60 transition-colors"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 py-2.5 rounded-xl bg-background-tertiary hover:bg-background-secondary border border-border-subtle text-sm font-medium text-foreground-secondary hover:text-foreground-primary transition-all cursor-pointer shadow-sm hover:border-border-medium"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -172,22 +181,19 @@ export default function LoginPage() {
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
             Continue with Google
-            <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-accent/20 text-accent font-semibold tracking-wide uppercase">
-              Soon
-            </span>
           </button>
         </div>
 
         {/* Bottom Switch Links */}
-        <div className="text-center mt-6 space-y-2">
-          <p className="text-sm text-foreground-secondary">
+        <div className="text-center mt-6 space-y-1.5">
+          <p className="text-xs text-foreground-secondary">
             Don&apos;t have an account?{' '}
-            <Link to="/auth/signup" className="text-accent hover:text-accent-dark font-semibold transition-colors">
+            <Link to="/auth/signup" className="text-accent hover:text-accent-dark font-bold transition-colors">
               Sign up free
             </Link>
           </p>
           <p>
-            <Link to="/auth/magic-link" className="text-xs text-foreground-muted hover:text-foreground-secondary transition-colors font-medium">
+            <Link to="/auth/magic-link" className="text-[11px] text-foreground-muted hover:text-foreground-secondary transition-colors font-medium">
               Use magic link instead →
             </Link>
           </p>
@@ -196,3 +202,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

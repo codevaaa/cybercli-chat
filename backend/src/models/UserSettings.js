@@ -34,6 +34,8 @@ const userSettingsSchema = new mongoose.Schema({
   memory_enabled: { type: Boolean, default: false },
   two_factor: { type: Boolean, default: false },
   share_usage: { type: Boolean, default: false },
+  improve_ai: { type: Boolean, default: false },
+  personalized_suggestions: { type: Boolean, default: true },
   personalized_ads: { type: Boolean, default: false },
   save_history: { type: Boolean, default: true },
   voice_input: { type: Boolean, default: true },

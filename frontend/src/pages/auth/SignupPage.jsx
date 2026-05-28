@@ -30,6 +30,15 @@ export default function SignupPage() {
 
   const passwordStrength = getStrength(form.password)
 
+  const handleGoogleSignUp = async () => {
+    clearError()
+    setLocalError(null)
+    const result = await signInWithOAuth('google')
+    if (result.success && result.url) {
+      window.location.href = result.url
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     clearError()
@@ -52,7 +61,6 @@ export default function SignupPage() {
 
     const result = await signUpWithEmail(form.email, form.password, form.fullName)
     if (result.success) {
-      // Directs to verification or success screen depending on Supabase configuration
       navigate('/auth/verify-email')
     }
   }
@@ -281,11 +289,11 @@ export default function SignupPage() {
           </form>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border-subtle" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase tracking-wider font-semibold">
+            <div className="relative flex justify-center text-[10px] uppercase tracking-wider font-bold">
               <span className="px-3 bg-background-elevated text-foreground-muted">Or continue with</span>
             </div>
           </div>
@@ -293,8 +301,9 @@ export default function SignupPage() {
           {/* Google SSO Signup */}
           <button
             type="button"
-            disabled
-            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-background-tertiary border border-border-subtle text-sm font-medium text-foreground-secondary cursor-not-allowed opacity-60 transition-colors"
+            onClick={handleGoogleSignUp}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 py-2.5 rounded-xl bg-background-tertiary hover:bg-background-secondary border border-border-subtle text-sm font-medium text-foreground-secondary hover:text-foreground-primary transition-all cursor-pointer shadow-sm hover:border-border-medium"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -303,17 +312,14 @@ export default function SignupPage() {
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
             Continue with Google
-            <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-accent/20 text-accent font-semibold tracking-wide uppercase">
-              Soon
-            </span>
           </button>
         </div>
 
         {/* Bottom Switch Links */}
-        <div className="text-center mt-6">
-          <p className="text-sm text-foreground-secondary">
+        <div className="text-center mt-5">
+          <p className="text-xs text-foreground-secondary">
             Already have an account?{' '}
-            <Link to="/auth/login" className="text-accent hover:text-accent-dark font-semibold transition-colors">
+            <Link to="/auth/login" className="text-accent hover:text-accent-dark font-bold transition-colors">
               Sign in
             </Link>
           </p>

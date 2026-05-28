@@ -76,6 +76,18 @@ router.patch('/:id', requireAuth, async (req, res) => {
   }
 })
 
+// Clear all threads and messages for the user
+router.delete('/', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id
+    await Thread.deleteMany({ user_id: userId })
+    await Message.deleteMany({ user_id: userId })
+    res.json({ success: true, message: 'All conversations and messages cleared successfully' })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Delete thread and its messages
 router.delete('/:id', requireAuth, async (req, res) => {
   try {

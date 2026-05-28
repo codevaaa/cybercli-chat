@@ -17,11 +17,14 @@ export default function AuthCallbackPage() {
       try {
         // Parse code from query parameters (for PKCE flow)
         const params = new URLSearchParams(window.location.search)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        
+        // Detect if this is a password recovery/reset event
+        const isRecovery = hashParams.get('type') === 'recovery' || params.get('type') === 'recovery'
         const code = params.get('code')
-        const next = params.get('next') || '/chat'
+        const next = isRecovery ? '/auth/reset-password' : (params.get('next') || '/chat')
 
         // Check for error parameters in hash or search
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
         const errorDescription = params.get('error_description') || hashParams.get('error_description')
         const errorCode = params.get('error') || hashParams.get('error')
 

@@ -181,6 +181,19 @@ export const useAuthStore = create(
         }
       },
 
+      updateEmail: async (email) => {
+        set({ loading: true, error: null })
+        try {
+          const { error } = await supabase.auth.updateUser({ email })
+          if (error) throw error
+          set({ loading: false })
+          return { success: true }
+        } catch (error) {
+          set({ error: error.message, loading: false })
+          return { success: false, error: error.message }
+        }
+      },
+
       clearError: () => set({ error: null }),
     }),
     {

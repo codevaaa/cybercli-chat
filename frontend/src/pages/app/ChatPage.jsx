@@ -566,12 +566,12 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
-              <div className="px-5 py-3.5 rounded-3xl bg-[#2D2D2D] text-[15px] leading-relaxed text-[#ECECEC] whitespace-pre-wrap shadow-sm">
+              <div className="px-5 py-3.5 rounded-3xl bg-background-secondary border border-border-subtle/50 text-foreground-primary text-[15px] leading-relaxed whitespace-pre-wrap shadow-sm">
                 {msg.content}
               </div>
             </div>
           ) : (
-            <div className="text-[15px] leading-relaxed text-[#ECECEC] prose-custom w-full pt-1">
+            <div className="text-[15px] leading-relaxed text-foreground-primary prose-custom w-full pt-1">
               {parseDaemonActions(msg.content).map((block, bIdx) => {
                 if (block.type === 'markdown') {
                   return (
@@ -592,7 +592,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
                           }
                           return (
                             <code
-                              className="px-1.5 py-0.5 rounded text-[13px] font-mono bg-[#2D2D2D] text-[#ECECEC] border border-white/[0.05]"
+                              className="px-1.5 py-0.5 rounded text-[13px] font-mono bg-background-tertiary text-foreground-primary border border-border-subtle"
                               {...props}
                             >
                               {children}
@@ -603,15 +603,15 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
                         ul: ({ children }) => <ul className="mb-4 pl-5 space-y-1.5 list-disc">{children}</ul>,
                         ol: ({ children }) => <ol className="mb-4 pl-5 space-y-1.5 list-decimal">{children}</ol>,
                         li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                        h1: ({ children }) => <h1 className="text-xl font-bold mb-4 mt-6 first:mt-0 text-white">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-lg font-semibold mb-3 mt-6 first:mt-0 text-white">{children}</h2>,
-                        h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-4 first:mt-0 text-white">{children}</h3>,
+                        h1: ({ children }) => <h1 className="text-xl font-bold mb-4 mt-6 first:mt-0 text-foreground-primary">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-lg font-semibold mb-3 mt-6 first:mt-0 text-foreground-primary">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-4 first:mt-0 text-foreground-primary">{children}</h3>,
                         blockquote: ({ children }) => (
-                          <blockquote className="border-l-[3px] border-[#404040] pl-4 my-4 text-[#A0A0A0] italic">
+                          <blockquote className="border-l-[3px] border-border-medium pl-4 my-4 text-foreground-muted italic">
                             {children}
                           </blockquote>
                         ),
-                        strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                        strong: ({ children }) => <strong className="font-semibold text-foreground-primary">{children}</strong>,
                         a: ({ href, children }) => (
                           <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">
                             {children}
@@ -661,7 +661,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
           {/* Model badge and Action row */}
           <div className="flex items-center gap-3 mt-2 h-6">
             {isAssistant && msg.model && !isStreaming && (
-              <span className="text-[11px] text-[#707070] font-medium tracking-wide">
+              <span className="text-[11px] text-foreground-muted font-medium tracking-wide">
                 {MODELS.find(m => m.id === msg.model)?.name || EXTRA_MODELS.find(m => m.id === msg.model)?.name || msg.model}
               </span>
             )}
@@ -677,7 +677,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={() => onCopy(msg.content, index)}
-                  className="p-1 rounded-md text-[#707070] hover:text-[#ECECEC] hover:bg-white/5 transition-colors"
+                  className="p-1 rounded-md text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5 transition-colors"
                   title="Copy"
                 >
                   {copied === index ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -687,14 +687,14 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
                     <button
                       onClick={() => isPlaying ? onStop() : onSpeak(msg.content)}
                       disabled={ttsLoading && !isPlaying}
-                      className="p-1 rounded-md text-[#707070] hover:text-[#ECECEC] hover:bg-white/5 transition-colors"
+                      className="p-1 rounded-md text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5 transition-colors"
                       title={isPlaying ? 'Stop' : 'Speak'}
                     >
                       {isPlaying ? <VolumeX className="w-3.5 h-3.5 text-blue-400" /> : <Volume2 className="w-3.5 h-3.5" />}
                     </button>
                     <button
                       onClick={() => onFork(msg._id)}
-                      className="p-1 rounded-md text-[#707070] hover:text-[#ECECEC] hover:bg-white/5 transition-colors"
+                      className="p-1 rounded-md text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5 transition-colors"
                       title="Branch from here"
                     >
                       <GitBranch className="w-3.5 h-3.5" />
@@ -780,11 +780,11 @@ function ModelSelector({ selectedModel, onSelect }) {
     <div className="relative border-r border-white/[0.06] pr-2 mr-1" ref={ref}>
       <button
         onClick={() => { setOpen(!open); setShowMore(false) }}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/5 transition-all"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all"
       >
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: selected.color }} />
         <span>{isAdaptive ? 'Council' : selected.tag}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-foreground-muted transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence>
@@ -794,26 +794,26 @@ function ModelSelector({ selectedModel, onSelect }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute bottom-full mb-3 right-0 z-50 rounded-2xl border border-white/[0.08] w-[330px] overflow-hidden"
+            className="absolute bottom-full mb-3 right-0 z-50 rounded-2xl border border-border-subtle w-[330px] overflow-hidden"
             style={{
-              background: 'rgba(13, 13, 18, 0.98)',
+              background: 'var(--bg-elevated)',
               backdropFilter: 'blur(24px)',
-              boxShadow: '0 28px 64px rgba(0,0,0,0.65), inset 0 0 0 1px rgba(255,255,255,0.05)',
+              boxShadow: '0 28px 64px rgba(0,0,0,0.15), inset 0 0 0 1px var(--border-subtle)',
             }}
           >
             {showMore ? (
               /* Extra Models Sub-Menu */
               <div className="flex flex-col max-h-[350px] overflow-y-auto">
-                <div className="flex items-center gap-2.5 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+                <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border-subtle bg-background-secondary/30">
                   <button
                     onClick={() => setShowMore(false)}
                     className="text-xs font-semibold text-accent hover:text-accent-light"
                   >
                     ← Back
                   </button>
-                  <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">More Models</span>
+                  <span className="text-xs font-bold text-foreground-secondary uppercase tracking-wider">More Models</span>
                 </div>
-                <div className="divide-y divide-white/[0.04] p-1.5">
+                <div className="divide-y divide-border-subtle/50 p-1.5">
                   {EXTRA_MODELS.map((model) => {
                     const isSelected = selectedModel === model.id
                     return (
@@ -824,15 +824,15 @@ function ModelSelector({ selectedModel, onSelect }) {
                           setOpen(false)
                           setShowMore(false)
                         }}
-                        className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition-all flex items-start gap-2.5"
+                        className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-foreground-primary/[0.04] transition-all flex items-start gap-2.5"
                       >
                         <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: model.color }} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <span className="text-[13px] font-bold text-white truncate">{model.name}</span>
+                            <span className="text-[13px] font-bold text-foreground-primary truncate">{model.name}</span>
                             {isSelected && <Check className="w-3.5 h-3.5 text-accent shrink-0" />}
                           </div>
-                          <p className="text-[10px] text-gray-400 mt-0.5 leading-relaxed">{model.desc}</p>
+                          <p className="text-[10px] text-foreground-muted mt-0.5 leading-relaxed">{model.desc}</p>
                         </div>
                       </button>
                     )
@@ -858,7 +858,7 @@ function ModelSelector({ selectedModel, onSelect }) {
                   {/* Left nav */}
                   <button
                     onClick={() => rotate(-1)}
-                    className="absolute left-3 z-20 p-1.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] text-gray-400 hover:text-white transition-all"
+                    className="absolute left-3 z-20 p-1.5 rounded-full bg-background-secondary hover:bg-background-tertiary text-foreground-muted hover:text-foreground-primary transition-all border border-border-subtle"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
@@ -878,19 +878,18 @@ function ModelSelector({ selectedModel, onSelect }) {
                           onClick={() => { if (!isCurrent) handleSelectModel(idx) }}
                         >
                           <div
-                            className="w-[136px] rounded-2xl p-3.5 border"
+                            className="w-[136px] rounded-2xl p-3.5 border border-border-subtle bg-background-secondary/80 backdrop-blur-sm"
                             style={{
-                              background: isCurrent ? `${model.color}10` : 'rgba(255,255,255,0.025)',
-                              borderColor: isCurrent ? `${model.color}45` : 'rgba(255,255,255,0.07)',
+                              borderColor: isCurrent ? `${model.color}45` : 'var(--border-subtle)',
                               boxShadow: isCurrent
-                                ? `0 0 24px ${model.color}22, inset 0 1px 0 rgba(255,255,255,0.06)`
+                                ? `0 0 24px ${model.color}22, inset 0 1px 0 var(--border-subtle)`
                                 : 'none',
                             }}
                           >
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-1.5">
                                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: model.color }} />
-                                <span className="text-[13px] font-bold text-white">{model.tag}</span>
+                                <span className="text-[13px] font-bold text-foreground-primary">{model.tag}</span>
                               </div>
                               {idx === 0 ? (
                                 <span
@@ -903,10 +902,7 @@ function ModelSelector({ selectedModel, onSelect }) {
                                 <Check className="w-3.5 h-3.5" style={{ color: model.color }} />
                               ) : null}
                             </div>
-                            <p
-                              className="text-[10px] leading-relaxed"
-                              style={{ color: isCurrent ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.22)' }}
-                            >
+                            <p className="text-[10px] leading-relaxed text-foreground-muted">
                               {model.desc}
                             </p>
                           </div>
@@ -918,7 +914,7 @@ function ModelSelector({ selectedModel, onSelect }) {
                   {/* Right nav */}
                   <button
                     onClick={() => rotate(1)}
-                    className="absolute right-3 z-20 p-1.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] text-gray-400 hover:text-white transition-all"
+                    className="absolute right-3 z-20 p-1.5 rounded-full bg-background-secondary hover:bg-background-tertiary text-foreground-muted hover:text-foreground-primary transition-all border border-border-subtle"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -934,39 +930,39 @@ function ModelSelector({ selectedModel, onSelect }) {
                       style={{
                         width: i === currentIndex ? 18 : 6,
                         height: 6,
-                        background: i === currentIndex ? m.color : 'rgba(255,255,255,0.18)',
+                        background: i === currentIndex ? m.color : 'var(--border-medium)',
                       }}
                     />
                   ))}
                 </div>
 
-                <div className="h-px bg-white/[0.06]" />
+                <div className="h-px bg-border-subtle" />
 
                 {/* Adaptive thinking */}
                 <div className="flex items-center justify-between px-4 py-3">
                   <div>
-                    <p className="text-[13px] font-semibold text-white">Adaptive thinking</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">Thinks for more complex tasks</p>
+                    <p className="text-[13px] font-semibold text-foreground-primary">Adaptive thinking</p>
+                    <p className="text-[11px] text-foreground-muted mt-0.5">Thinks for more complex tasks</p>
                   </div>
                   <button
                     onClick={handleToggleAdaptiveThinking}
                     className={`w-9 h-5 rounded-full transition-all relative flex items-center p-0.5 ${
-                      isAdaptiveThinking ? 'bg-accent' : 'bg-white/10'
+                      isAdaptiveThinking ? 'bg-accent' : 'bg-border-medium'
                     }`}
                   >
-                    <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${isAdaptiveThinking ? 'translate-x-4' : 'translate-x-0'}`} />
+                    <div className="w-4 h-4 bg-white rounded-full transition-all shadow-sm" style={{ transform: isAdaptiveThinking ? 'translateX(16px)' : 'translateX(0)' }} />
                   </button>
                 </div>
 
-                <div className="h-px bg-white/[0.06]" />
+                <div className="h-px bg-border-subtle" />
 
                 {/* More models */}
                 <button
                   onClick={() => setShowMore(true)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.04] transition-all text-left"
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-foreground-primary/[0.04] transition-all text-left"
                 >
-                  <span className="text-[12px] font-medium text-gray-300">More models</span>
-                  <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
+                  <span className="text-[12px] font-medium text-foreground-secondary">More models</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-foreground-muted" />
                 </button>
               </>
             )}
@@ -1015,9 +1011,9 @@ function InputArea({
     <div className="w-full max-w-[800px] mx-auto flex flex-col gap-4 px-4 sm:px-0">
       {/* Input container card */}
       <div
-        className="rounded-2xl transition-all relative flex flex-col p-3.5 gap-2 bg-[#2D2D2D] hover:bg-[#333333] focus-within:bg-[#333333] border border-white/[0.05]"
+        className="rounded-2xl transition-all relative flex flex-col p-3.5 gap-2 bg-background-secondary border border-border-subtle shadow-md hover:border-border-medium focus-within:border-border-medium"
         style={{
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
         }}
       >
         {/* Top Row: Textarea */}
@@ -1030,7 +1026,7 @@ function InputArea({
             placeholder="How can I help you today?"
             rows={1}
             disabled={loading}
-            className="flex-1 bg-transparent text-[15px] text-[#ECECEC] placeholder:text-[#A0A0A0] resize-none focus:outline-none leading-relaxed py-1 min-h-[40px]"
+            className="flex-1 bg-transparent text-[15px] text-foreground-primary placeholder:text-foreground-muted resize-none focus:outline-none leading-relaxed py-1 min-h-[40px]"
             style={{ maxHeight: '200px' }}
           />
         </div>
@@ -1039,7 +1035,7 @@ function InputArea({
         <div className="flex items-center justify-between mt-1 gap-2 flex-shrink-0 flex-wrap">
           {/* Left: Attachment & Model dropdown */}
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <button className="p-1.5 rounded-lg text-[#A0A0A0] hover:text-[#ECECEC] hover:bg-white/5 transition-all" title="Add attachment">
+            <button className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all" title="Add attachment">
               <Plus className="w-5 h-5" />
             </button>
             <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} />
@@ -1054,7 +1050,7 @@ function InputArea({
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
                 deepResearchEnabled
                   ? 'bg-blue-500/15 text-blue-400'
-                  : 'text-[#A0A0A0] hover:text-[#ECECEC] hover:bg-white/5'
+                  : 'text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5'
               }`}
             >
               <BookOpen className="w-4 h-4" />
@@ -1068,7 +1064,7 @@ function InputArea({
               className={`p-1.5 rounded-lg transition-all ${
                 incognitoMode
                   ? 'text-yellow-400 bg-yellow-400/10'
-                  : 'text-[#A0A0A0] hover:text-[#ECECEC] hover:bg-white/5'
+                  : 'text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5'
               }`}
             >
               <Ghost className="w-4 h-4" />
@@ -1080,7 +1076,7 @@ function InputArea({
               className={`p-1.5 rounded-lg transition-all relative ${
                 inlineSpeechListening
                   ? 'text-[#D97757] bg-[#D97757]/10'
-                  : 'text-[#A0A0A0] hover:text-[#ECECEC] hover:bg-white/5'
+                  : 'text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5'
               }`}
               title="Voice input"
             >
@@ -1093,8 +1089,8 @@ function InputArea({
               disabled={!input.trim() || loading}
               className={`ml-1 p-2 rounded-xl transition-all ${
                 input.trim() && !loading
-                  ? 'bg-[#ECECEC] text-[#2D2D2D] hover:bg-white'
-                  : 'bg-[#404040] text-[#707070] cursor-not-allowed'
+                  ? 'bg-accent text-white hover:bg-accent-light hover:shadow-md'
+                  : 'bg-background-tertiary text-foreground-muted/40 cursor-not-allowed border border-border-subtle/30'
               }`}
             >
               {loading ? (
@@ -1123,7 +1119,7 @@ function InputArea({
                   setInput(action.value)
                   textareaRef.current?.focus()
                 }}
-                className="px-3.5 py-2 rounded-xl text-[13px] transition-all flex items-center gap-2 cursor-pointer bg-[#2D2D2D] border border-white/[0.04] text-[#A0A0A0] hover:bg-[#333333] hover:border-white/[0.08] hover:text-[#ECECEC]"
+                className="px-3.5 py-2 rounded-xl text-[13px] transition-all flex items-center gap-2 cursor-pointer bg-background-secondary border border-border-subtle text-foreground-secondary hover:bg-background-tertiary hover:text-foreground-primary"
               >
                 <Icon className="w-4 h-4 opacity-80" />
                 <span>{action.label}</span>
@@ -1190,7 +1186,6 @@ const SETTINGS_TABS = [
   { id: 'privacy',      label: 'Privacy' },
   { id: 'billing',      label: 'Billing' },
   { id: 'capabilities', label: 'Capabilities' },
-  { id: 'connectors',   label: 'Connectors' },
   { id: 'api_keys',     label: 'API Keys' },
 ]
 
@@ -1202,6 +1197,8 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
       setActiveTab(initialTab)
     }
   }, [isOpen, initialTab])
+  
+  const { updateEmail, updatePassword } = useAuthStore()
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState({
     display_name: '',
@@ -1217,11 +1214,22 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
     code_execution_enabled: false,
     image_generation_enabled: false,
     memory_enabled: false,
+    council_mode_enabled: false,
+    improve_ai: false,
+    share_usage: false,
+    personalized_suggestions: true,
   })
   const [apiKeys, setApiKeys] = useState([])
   const [newKeyName, setNewKeyName] = useState('')
   const [generatedKey, setGeneratedKey] = useState(null)
-  const [connectorStatus, setConnectorStatus] = useState({ openrouter: false, groq: false, gemini: false })
+  
+  // Account settings states
+  const [showEmailForm, setShowEmailForm] = useState(false)
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [accountMessage, setAccountMessage] = useState({ type: '', text: '' })
 
   useEffect(() => {
     if (!isOpen) return
@@ -1278,6 +1286,77 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
       await api.delete(`/api-keys/${id}`)
       setApiKeys(prev => prev.filter(k => k._id !== id))
     } catch (err) { console.error(err) }
+  }
+
+  const handleEmailChange = async (e) => {
+    e.preventDefault()
+    setAccountMessage({ type: '', text: '' })
+    if (!newEmail.trim()) return
+    setSaving(true)
+    const res = await updateEmail(newEmail.trim())
+    setSaving(false)
+    if (res.success) {
+      setAccountMessage({ type: 'success', text: 'Email change verification sent! Please check both your old and new email addresses to confirm.' })
+      setShowEmailForm(false)
+      setNewEmail('')
+    } else {
+      setAccountMessage({ type: 'error', text: res.error || 'Failed to update email' })
+    }
+  }
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault()
+    setAccountMessage({ type: '', text: '' })
+    if (newPassword.length < 8) {
+      setAccountMessage({ type: 'error', text: 'Password must be at least 8 characters long.' })
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setAccountMessage({ type: 'error', text: 'Passwords do not match.' })
+      return
+    }
+    setSaving(true)
+    const res = await updatePassword(newPassword)
+    setSaving(false)
+    if (res.success) {
+      setAccountMessage({ type: 'success', text: 'Password updated successfully!' })
+      setShowPasswordForm(false)
+      setNewPassword('')
+      setConfirmPassword('')
+    } else {
+      setAccountMessage({ type: 'error', text: res.error || 'Failed to update password' })
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    const confirmed = confirm('WARNING: Are you absolutely sure you want to delete your account? This action is permanent and will delete all your settings, API keys, chats, and files.')
+    if (!confirmed) return
+    setSaving(true)
+    try {
+      await api.delete('/auth/delete-account')
+      await useAuthStore.getState().signOut()
+      window.location.href = '/'
+    } catch (err) {
+      console.error('Delete account failed:', err)
+      setAccountMessage({ type: 'error', text: err.response?.data?.error || err.message || 'Failed to delete account' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleClearHistory = async () => {
+    const confirmed = confirm('Are you sure you want to clear all your conversation threads and messages? This action cannot be undone.')
+    if (!confirmed) return
+    setSaving(true)
+    try {
+      await api.delete('/chat')
+      window.location.href = '/chat'
+    } catch (err) {
+      console.error('Clear history failed:', err)
+      alert('Failed to clear conversation history.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const Toggle = ({ value, onChange }) => (
@@ -1418,15 +1497,113 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
     ),
     account: (
       <div className="space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground-muted mb-3">Account Info</h3>
-        <div className="p-4 rounded-xl bg-background-secondary border border-border-subtle space-y-2">
-          <p className="text-xs text-foreground-muted">Signed in as</p>
-          <p className="text-sm font-medium text-foreground-primary">{localStorage.getItem('user_email') || 'user@example.com'}</p>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground-muted mb-1">Account Info</h3>
+        
+        {accountMessage.text && (
+          <div className={`p-3 rounded-xl text-xs font-medium border ${
+            accountMessage.type === 'success' 
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+              : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+          }`}>
+            {accountMessage.text}
+          </div>
+        )}
+
+        <div className="p-4 rounded-xl bg-background-secondary border border-border-subtle space-y-1">
+          <p className="text-[10px] text-foreground-muted uppercase tracking-wider font-semibold">Signed in as</p>
+          <p className="text-sm font-medium text-foreground-primary truncate">{localStorage.getItem('user_email') || 'user@example.com'}</p>
         </div>
+
         <div className="space-y-2">
-          <button className="w-full px-4 py-2.5 rounded-xl border border-border-subtle text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-background-secondary transition-all text-left">Change Email</button>
-          <button className="w-full px-4 py-2.5 rounded-xl border border-border-subtle text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-background-secondary transition-all text-left">Change Password</button>
-          <button className="w-full px-4 py-2.5 rounded-xl border border-rose-500/20 text-sm text-rose-400 hover:bg-rose-500/5 transition-all text-left">Delete Account</button>
+          {/* Change Email */}
+          {!showEmailForm ? (
+            <button 
+              onClick={() => { setShowEmailForm(true); setShowPasswordForm(false); setAccountMessage({ type: '', text: '' }); }}
+              className="w-full px-4 py-2.5 rounded-xl border border-border-subtle text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-background-secondary transition-all text-left font-medium"
+            >
+              Change Email Address
+            </button>
+          ) : (
+            <form onSubmit={handleEmailChange} className="p-4 rounded-xl bg-background-secondary border border-border-subtle space-y-3">
+              <h4 className="text-xs font-bold text-foreground-primary">Change Email Address</h4>
+              <input
+                type="email"
+                required
+                value={newEmail}
+                onChange={e => setNewEmail(e.target.value)}
+                placeholder="Enter new email address"
+                className="w-full bg-background-tertiary text-sm text-foreground-primary border border-border-subtle rounded-xl px-3.5 py-2 focus:outline-none focus:border-accent"
+              />
+              <div className="flex gap-2 justify-end">
+                <button 
+                  type="button" 
+                  onClick={() => setShowEmailForm(false)}
+                  className="px-3 py-1.5 rounded-lg border border-border-subtle text-xs text-foreground-secondary hover:bg-background-tertiary transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-3 py-1.5 rounded-lg bg-accent text-white text-xs font-semibold hover:bg-accent-light transition-all"
+                >
+                  Verify Email
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Change Password */}
+          {!showPasswordForm ? (
+            <button 
+              onClick={() => { setShowPasswordForm(true); setShowEmailForm(false); setAccountMessage({ type: '', text: '' }); }}
+              className="w-full px-4 py-2.5 rounded-xl border border-border-subtle text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-background-secondary transition-all text-left font-medium"
+            >
+              Change Password
+            </button>
+          ) : (
+            <form onSubmit={handlePasswordChange} className="p-4 rounded-xl bg-background-secondary border border-border-subtle space-y-3">
+              <h4 className="text-xs font-bold text-foreground-primary">Change Password</h4>
+              <input
+                type="password"
+                required
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="New password (min. 8 characters)"
+                className="w-full bg-background-tertiary text-sm text-foreground-primary border border-border-subtle rounded-xl px-3.5 py-2 focus:outline-none focus:border-accent"
+              />
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="w-full bg-background-tertiary text-sm text-foreground-primary border border-border-subtle rounded-xl px-3.5 py-2 focus:outline-none focus:border-accent"
+              />
+              <div className="flex gap-2 justify-end">
+                <button 
+                  type="button" 
+                  onClick={() => setShowPasswordForm(false)}
+                  className="px-3 py-1.5 rounded-lg border border-border-subtle text-xs text-foreground-secondary hover:bg-background-tertiary transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-3 py-1.5 rounded-lg bg-accent text-white text-xs font-semibold hover:bg-accent-light transition-all"
+                >
+                  Update Password
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Delete Account */}
+          <button 
+            onClick={handleDeleteAccount}
+            className="w-full px-4 py-2.5 rounded-xl border border-rose-500/20 text-sm text-rose-400 hover:bg-rose-500/5 transition-all text-left font-medium"
+          >
+            Delete Account Permanently
+          </button>
         </div>
       </div>
     ),
@@ -1434,16 +1611,21 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
       <div className="space-y-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground-muted mb-3">Privacy Settings</h3>
         <Row label="Improve AI with your data" desc="Allow CyberCli to use your messages to train models">
-          <Toggle value={false} onChange={() => {}} />
+          <Toggle value={!!settings.improve_ai} onChange={v => patchSetting('improve_ai', v)} />
         </Row>
         <Row label="Share usage analytics" desc="Send anonymized usage metrics">
-          <Toggle value={true} onChange={() => {}} />
+          <Toggle value={!!settings.share_usage} onChange={v => patchSetting('share_usage', v)} />
         </Row>
         <Row label="Personalized suggestions" desc="Tailor suggestions based on history">
-          <Toggle value={true} onChange={() => {}} />
+          <Toggle value={!!settings.personalized_suggestions} onChange={v => patchSetting('personalized_suggestions', v)} />
         </Row>
         <div className="pt-4">
-          <button className="px-4 py-2.5 rounded-xl border border-rose-500/20 text-sm text-rose-400 hover:bg-rose-500/5 transition-all">Clear All Conversation History</button>
+          <button 
+            onClick={handleClearHistory}
+            className="px-4 py-2.5 rounded-xl border border-rose-500/20 text-sm text-rose-400 hover:bg-rose-500/5 transition-all font-medium"
+          >
+            Clear All Conversation History
+          </button>
         </div>
       </div>
     ),
@@ -1492,33 +1674,9 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
         <Row label="Memory" desc="Remember facts across conversations">
           <Toggle value={!!settings.memory_enabled} onChange={v => patchSetting('memory_enabled', v)} />
         </Row>
-        <Row label="Council Mode" desc="Debate answers across multiple AI models">
-          <span className="text-xs px-2 py-0.5 rounded-md bg-accent/20 text-accent font-bold">PRO</span>
+        <Row label="Council Mode" desc="Debate answers across multiple AI models simultaneously">
+          <Toggle value={!!settings.council_mode_enabled} onChange={v => patchSetting('council_mode_enabled', v)} />
         </Row>
-      </div>
-    ),
-    connectors: (
-      <div className="space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground-muted mb-3">AI Provider Connectors</h3>
-        {[
-          { name: 'OpenRouter', desc: 'GPT-4o, Claude, Mistral and 200+ models', color: '#10B981' },
-          { name: 'Groq', desc: 'Ultra-fast Llama inference', color: '#F59E0B' },
-          { name: 'Gemini', desc: 'Google Gemini Flash & Pro', color: '#4285F4' },
-          { name: 'Cerebras', desc: 'Wafer-scale AI inference', color: '#8B5CF6' },
-          { name: 'Cloudflare AI', desc: 'Edge-native model routing', color: '#F97316' },
-          { name: 'HuggingFace', desc: '100K+ open source models', color: '#FFD21E' },
-        ].map(c => (
-          <div key={c.name} className="flex items-center justify-between p-3.5 rounded-xl border border-border-subtle bg-background-secondary">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full" style={{ background: c.color }} />
-              <div>
-                <p className="text-sm font-medium text-foreground-primary">{c.name}</p>
-                <p className="text-xs text-foreground-muted">{c.desc}</p>
-              </div>
-            </div>
-            <span className="text-xs font-semibold text-emerald-400">Active</span>
-          </div>
-        ))}
       </div>
     ),
     api_keys: (
@@ -3651,7 +3809,7 @@ export default function ChatPage() {
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 shadow-2xl' : 'flex-shrink-0'} flex flex-col overflow-hidden border-r border-border-subtle`}
-            style={{ background: '#1a1a1a' }}
+            style={{ background: 'var(--bg-secondary)' }}
           >
             {/* Brand + collapse */}
             <div className="flex items-center justify-between px-4 py-4 flex-shrink-0">
@@ -3663,13 +3821,13 @@ export default function ChatPage() {
                   <CyberCliMark size={24} />
                 </motion.div>
                 <div className="flex flex-col">
-                  <span className="font-semibold text-sm leading-tight" style={{ color: '#FAF9F7' }}>CyberCli</span>
-                  <span className="text-[9px] text-gray-600 leading-none tracking-wide">by CyberMindCLI</span>
+                  <span className="font-semibold text-sm leading-tight text-foreground-primary">CyberCli</span>
+                  <span className="text-[9px] text-foreground-muted leading-none tracking-wide">by CyberMindCLI</span>
                 </div>
               </Link>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors"
+                className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -3679,10 +3837,7 @@ export default function ChatPage() {
             <div className="px-3 pb-2 flex-shrink-0">
               <button
                 onClick={() => { navigate('/chat'); setMessages([]); setActiveNav('chats') }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
-                style={{ color: '#D4D4D4' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5"
               >
                 <Plus className="w-4 h-4" />
                 New Chat
@@ -3702,11 +3857,10 @@ export default function ChatPage() {
                     }
                   }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors mb-0.5 ${
-                    activeNav === item.id ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+                    activeNav === item.id
+                      ? 'text-foreground-primary bg-accent/15 font-semibold animate-pulse-soft'
+                      : 'text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5'
                   }`}
-                  style={{ background: activeNav === item.id ? 'rgba(217,119,87,0.12)' : 'transparent' }}
-                  onMouseEnter={e => { if (activeNav !== item.id) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
-                  onMouseLeave={e => { if (activeNav !== item.id) e.currentTarget.style.background = 'transparent' }}
                 >
                   <item.icon className="w-4 h-4 flex-shrink-0" />
                   <span className="flex-1 text-left">{item.label}</span>
@@ -3719,19 +3873,19 @@ export default function ChatPage() {
               ))}
             </div>
 
-            <div className="border-t border-white/[0.06] my-1 mx-3 flex-shrink-0" />
+            <div className="border-t border-border-subtle my-1 mx-3 flex-shrink-0" />
 
             {/* Recents */}
             <div className="flex-1 overflow-y-auto px-3 py-2">
               {(pinnedThreads.length > 0 || recentThreads.length > 0) && (
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-600 mb-2 px-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-foreground-muted/65 mb-2 px-2">
                   Recents
                 </p>
               )}
 
               {pinnedThreads.length > 0 && (
                 <div className="mb-2">
-                  <p className="text-[10px] font-medium text-gray-600 px-2 mb-1">Pinned</p>
+                  <p className="text-[10px] font-semibold text-foreground-muted px-2 mb-1">Pinned</p>
                   {pinnedThreads.map(t => (
                     <ThreadItem
                       key={t._id}
@@ -3759,13 +3913,13 @@ export default function ChatPage() {
               </div>
 
               {threads.length === 0 && (
-                <p className="text-xs text-gray-600 text-center mt-6">No conversations yet</p>
+                <p className="text-xs text-foreground-muted text-center mt-6">No conversations yet</p>
               )}
             </div>
 
             {/* Bottom user bar with Popover */}
             <div 
-              className="flex-shrink-0 border-t border-white/[0.06] p-3 relative"
+              className="flex-shrink-0 border-t border-border-subtle p-3 relative"
               onMouseEnter={() => handleUserBarMouseEnter()}
               onMouseLeave={handleUserBarMouseLeave}
             >
@@ -3776,75 +3930,75 @@ export default function ChatPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute bottom-full left-3 right-3 mb-2 rounded-2xl border border-white/[0.08] shadow-2xl p-2 z-50 flex flex-col gap-0.5"
+                    className="absolute bottom-full left-3 right-3 mb-2 rounded-2xl border border-border-subtle shadow-2xl p-2 z-50 flex flex-col gap-0.5"
                     style={{ 
-                      background: 'rgba(26, 26, 26, 0.98)', 
+                      background: 'var(--bg-elevated)', 
                       backdropFilter: 'blur(12px)',
-                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
                     }}
                   >
                     <button 
                       onClick={() => openSettings('general')}
                       onMouseEnter={() => setHoveredSubmenu(null)}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left group"
                     >
                       <div className="flex items-center gap-2.5">
-                        <Settings className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                        <Settings className="w-4 h-4 text-foreground-muted group-hover:text-[#D97757] transition-colors" />
                         <span>Settings</span>
                       </div>
-                      <span className="text-[9px] text-gray-600 tracking-tight font-bold uppercase">⚙ ↑Ctrl,</span>
+                      <span className="text-[9px] text-foreground-muted tracking-tight font-bold uppercase">⚙ ↑Ctrl,</span>
                     </button>
 
                     <button 
                       onMouseEnter={() => setHoveredSubmenu('language')}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left group"
                     >
                       <div className="flex items-center gap-2.5">
-                        <Globe className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                        <Globe className="w-4 h-4 text-foreground-muted group-hover:text-[#D97757] transition-colors" />
                         <span>Language</span>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+                      <ChevronRight className="w-3.5 h-3.5 text-foreground-muted" />
                     </button>
 
                     <button 
                       onClick={() => window.open('mailto:support@cybermindcli.com')}
                       onMouseEnter={() => setHoveredSubmenu(null)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left group"
                     >
-                      <HelpCircle className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                      <HelpCircle className="w-4 h-4 text-foreground-muted group-hover:text-[#D97757] transition-colors" />
                       <span>Get help</span>
                     </button>
 
                     <button 
                       onClick={() => openSettings('billing')}
                       onMouseEnter={() => setHoveredSubmenu(null)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left group"
                     >
-                      <ArrowUpCircle className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                      <ArrowUpCircle className="w-4 h-4 text-foreground-muted group-hover:text-[#D97757] transition-colors" />
                       <span>Upgrade plan</span>
                     </button>
 
                     <button 
                       onClick={() => alert('CyberCli App & Extension links will be sent to your email.')}
                       onMouseEnter={() => setHoveredSubmenu(null)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left group"
                     >
-                      <Download className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                      <Download className="w-4 h-4 text-foreground-muted group-hover:text-[#D97757] transition-colors" />
                       <span>Get apps and extensions</span>
                     </button>
 
                     <button 
                       onMouseEnter={() => setHoveredSubmenu('learn_more')}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left group"
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left group"
                     >
                       <div className="flex items-center gap-2.5">
-                        <Info className="w-4 h-4 text-gray-500 group-hover:text-[#D97757] transition-colors" />
+                        <Info className="w-4 h-4 text-foreground-muted group-hover:text-[#D97757] transition-colors" />
                         <span>Learn more</span>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+                      <ChevronRight className="w-3.5 h-3.5 text-foreground-muted" />
                     </button>
 
-                    <div className="h-[1px] bg-white/[0.06] my-1" />
+                    <div className="h-[1px] bg-border-subtle my-1" />
 
                     <button 
                       onClick={handleLogOut}
@@ -3868,14 +4022,14 @@ export default function ChatPage() {
                     transition={{ duration: 0.15 }}
                     onMouseEnter={() => handleUserBarMouseEnter('language')}
                     onMouseLeave={handleUserBarMouseLeave}
-                    className="fixed bottom-[140px] left-[285px] w-[240px] rounded-2xl border border-white/[0.08] shadow-2xl p-2 z-[60] flex flex-col gap-0.5"
+                    className="fixed bottom-[140px] left-[285px] w-[240px] rounded-2xl border border-border-subtle shadow-2xl p-2 z-[60] flex flex-col gap-0.5"
                     style={{ 
-                      background: 'rgba(26, 26, 26, 0.98)', 
+                      background: 'var(--bg-elevated)', 
                       backdropFilter: 'blur(12px)',
-                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
                     }}
                   >
-                    <div className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-white/[0.04] mb-1">Select Language</div>
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-foreground-muted uppercase tracking-wider border-b border-border-subtle mb-1">Select Language</div>
                     <div className="max-h-[300px] overflow-y-auto pr-1">
                       {LANGUAGES.map(lang => (
                         <button
@@ -3885,7 +4039,7 @@ export default function ChatPage() {
                             localStorage.setItem('user_language', lang.code)
                             localStorage.setItem('user_language_name', lang.name)
                           }}
-                          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left"
+                          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left"
                         >
                           <span>{lang.name}</span>
                           {userLanguage === lang.code && <Check className="w-3.5 h-3.5 text-[#D97757]" />}
@@ -3905,29 +4059,29 @@ export default function ChatPage() {
                     transition={{ duration: 0.15 }}
                     onMouseEnter={() => handleUserBarMouseEnter('learn_more')}
                     onMouseLeave={handleUserBarMouseLeave}
-                    className="fixed bottom-[90px] left-[285px] w-[240px] rounded-2xl border border-white/[0.08] shadow-2xl p-2 z-[60] flex flex-col gap-0.5"
+                    className="fixed bottom-[90px] left-[285px] w-[240px] rounded-2xl border border-border-subtle shadow-2xl p-2 z-[60] flex flex-col gap-0.5"
                     style={{ 
-                      background: 'rgba(26, 26, 26, 0.98)', 
+                      background: 'var(--bg-elevated)', 
                       backdropFilter: 'blur(12px)',
-                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
                     }}
                   >
-                    <div className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-white/[0.04] mb-1">Resources</div>
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-foreground-muted uppercase tracking-wider border-b border-border-subtle mb-1">Resources</div>
                     <Link
                       to="/docs"
-                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left block"
                     >
                       API Console
                     </Link>
                     <Link
                       to="/about"
-                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left block"
                     >
                       About CyberMindCLI
                     </Link>
                     <Link
                       to="/docs"
-                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left block"
                     >
                       Tutorials
                     </Link>
@@ -3935,40 +4089,40 @@ export default function ChatPage() {
                       href="https://cybermindcli.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left block"
                     >
                       Courses
                     </a>
                     <Link
                       to="/terms-of-service"
-                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left block"
                     >
                       Usage policy
                     </Link>
                     <Link
                       to="/privacy-policy"
-                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left block"
                     >
                       Privacy policy
                     </Link>
                     <Link
                       to="/privacy-policy#choices"
-                      className="w-full px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left block"
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left block"
                     >
                       Your privacy choices
                     </Link>
                     <button
                       onClick={() => setShowShortcutsModal(true)}
-                      className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 transition-all text-left"
+                      className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left"
                     >
                       <span>Keyboard shortcuts</span>
-                      <span className="text-[10px] text-gray-500 font-semibold font-mono">Ctrl+/</span>
+                      <span className="text-[10px] text-foreground-muted font-semibold font-mono">Ctrl+/</span>
                     </button>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/[0.04] transition-all cursor-pointer">
+              <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-foreground-primary/[0.04] transition-all cursor-pointer">
                 {/* Avatar */}
                 <div
                   className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -3977,13 +4131,12 @@ export default function ChatPage() {
                   {userInitials}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-medium text-gray-200 truncate">{userName}</div>
-                  <div className="text-[10px] text-gray-600 truncate">{userEmail || 'Free Plan'}</div>
+                  <div className="text-[13px] font-medium text-foreground-primary truncate">{userName}</div>
+                  <div className="text-[10px] text-foreground-muted truncate">{userEmail || 'Free Plan'}</div>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <span
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-md border border-white/[0.08] text-gray-400 uppercase tracking-wide"
-                    style={{ background: 'rgba(255,255,255,0.04)' }}
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-md border border-border-subtle text-foreground-secondary uppercase tracking-wide bg-background-tertiary"
                   >
                     {userLanguage}
                   </span>
@@ -4008,12 +4161,12 @@ export default function ChatPage() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* Header strip */}
-        <header className="flex items-center gap-3 px-4 py-3 flex-shrink-0 border-b border-white/[0.03] bg-[#0A0A0F]">
+        <header className="flex items-center gap-3 px-4 py-3 flex-shrink-0 border-b border-border-subtle bg-background-secondary/85 backdrop-blur-md">
           {!sidebarOpen && (
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors"
+                className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5 transition-colors"
               >
                 <Menu className="w-4 h-4" />
               </button>
@@ -4025,14 +4178,14 @@ export default function ChatPage() {
 
           {activeThreadId && activeNav === 'chats' && (
             <div className="flex items-center gap-2 text-sm">
-              <span className="truncate max-w-[200px] font-medium text-gray-300">
+              <span className="truncate max-w-[200px] font-medium text-foreground-secondary">
                 {threads.find(t => t._id === activeThreadId)?.title || 'Chat'}
               </span>
             </div>
           )}
 
           {activeNav !== 'chats' && (
-            <span className="text-sm font-semibold capitalize text-gray-300">
+            <span className="text-sm font-semibold capitalize text-foreground-secondary">
               {activeNav}
             </span>
           )}
