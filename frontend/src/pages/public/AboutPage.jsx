@@ -60,9 +60,92 @@ const STATS = [
   { label: 'Uptime SLA', value: '99.9%' },
 ]
 
+const TIMELINE_MILESTONES = [
+  {
+    year: 'Early 2024',
+    title: 'The Genesis',
+    desc: 'Founder Chandan Pandey starts building CyberMindCLI as a local Python-based CLI framework to automate threat intelligence gathering and local vulnerability analysis.',
+    tags: ['CLI Core', 'Local Dev', 'Security Automation'],
+  },
+  {
+    year: 'Mid 2024',
+    title: 'Gateway Architecture',
+    desc: 'Co-Founder & CTO Rishab Thakur joins to architect a highly concurrent, unified routing API gateway. Shift from a purely local CLI to a multi-model SaaS framework leveraging distributed LLM execution nodes.',
+    tags: ['API Gateway', 'Multi-Model', 'Supabase Auth'],
+  },
+  {
+    year: 'Early 2025',
+    title: 'Web Interface & Beta Launch',
+    desc: 'Launch of the CyberCli Chat web app, introducing unique features like Council Mode, conversation branching, and interactive tsParticles backgrounds. The platform scales to 15,000+ developers.',
+    tags: ['Vite + React', 'Council Mode', 'UI Overhaul'],
+  },
+  {
+    year: 'Late 2025',
+    title: 'Multimodal Voice & Core Optimization',
+    desc: 'Integration of real-time audio channels utilizing Gemini Flash TTS and ElevenLabs. Latency decreases to sub-second responses, and local-daemons are integrated into the web client via WebSockets.',
+    tags: ['Voice Chat', 'WebSockets', 'Latency Fixes'],
+  },
+  {
+    year: '2026 & Beyond',
+    title: 'Support AI Hub & Public Release',
+    desc: 'Rollout of the full-stack real-user feedback engine, Claude-style preview drawer for artifacts, and an automated support desk agent. Global expansion of CyberMindCLI across security teams.',
+    tags: ['Feedback Loop', 'Help Desk Agent', 'Artifacts Drawer'],
+  }
+]
+
 export default function AboutPage() {
+  const personChandan = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: 'Chandan Pandey',
+    jobTitle: 'Founder & CEO',
+    worksFor: {
+      '@type': 'Organization',
+      name: 'CyberMindCLI',
+      url: 'https://cybermindcli.com'
+    },
+    image: 'https://cybermindcli.info/chandan.jpeg',
+    url: 'https://cybermindcli.com',
+    sameAs: [
+      'https://github.com/thecnical'
+    ]
+  }
+
+  const personRishab = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: 'Rishab Thakur',
+    jobTitle: 'Co-Founder & CTO',
+    worksFor: {
+      '@type': 'Organization',
+      name: 'CyberMindCLI',
+      url: 'https://cybermindcli.com'
+    },
+    image: 'https://cybermindcli.info/Rishab_thakur.jpeg',
+    sameAs: [
+      'https://github.com'
+    ]
+  }
+
+  const structuredData = [
+    StructuredData.organization(),
+    StructuredData.breadcrumb([
+      { name: 'Home', path: '/' },
+      { name: 'About', path: '/about' }
+    ]),
+    personChandan,
+    personRishab
+  ]
+
   return (
     <div className="pt-28 pb-20">
+      <SEOHead
+        title="About Us — Our Team & Mission"
+        description="Learn about CyberMindCLI — the team building the next generation of AI chat. Meet our Founder & CEO Chandan Pandey and CTO Rishab Thakur."
+        keywords="about CyberMindCLI, AI team, mission, Chandan Pandey, Rishab Thakur, tech startup"
+        path="/about"
+        structuredData={structuredData}
+      />
 
       {/* ── Hero ── */}
       <div className="section-padding mb-20">
@@ -121,14 +204,15 @@ export default function AboutPage() {
             {/* Left — Photo Card */}
             <ScrollReveal direction="right" className="lg:col-span-2">
               <div className="card-glass p-8 text-center">
-                <motion.div
-                  className="w-28 h-28 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #D97757, #C4613A)' }}
-                  whileHover={{ scale: 1.05, rotate: 2 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                >
-                  CP
-                </motion.div>
+                <div className="w-28 h-28 rounded-2xl mx-auto mb-6 overflow-hidden border border-white/10 relative bg-background-tertiary">
+                  <motion.img
+                    src="/chandan.jpeg"
+                    alt="Chandan Pandey"
+                    className="w-full h-full object-cover filter grayscale hover:grayscale-0 transition-all duration-500 scale-100 hover:scale-105"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: 'spring', stiffness: 300 }}
+                  />
+                </div>
                 <h3 className="text-2xl font-semibold text-foreground-primary mb-1">Chandan Pandey</h3>
                 <p className="text-accent text-sm font-medium mb-4">Founder & CEO · CyberMindCLI</p>
                 <div className="flex flex-wrap gap-2 justify-center mb-6">
@@ -223,6 +307,52 @@ export default function AboutPage() {
                 </motion.div>
               </ScrollReveal>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Journey Timeline ── */}
+      <div className="section-padding mb-24">
+        <div className="container-custom">
+          <ScrollReveal>
+            <span className="text-xs font-semibold tracking-widest uppercase text-accent mb-3 block">Our Evolution</span>
+            <h2 className="text-4xl font-serif font-light text-foreground-primary mb-16">The Journey of CyberCli</h2>
+          </ScrollReveal>
+
+          <div className="relative max-w-4xl mx-auto py-8">
+            {/* Central Line */}
+            <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#7C3AED] via-[#D97757] to-border-subtle transform -translate-x-1/2 opacity-35" />
+
+            <div className="space-y-12">
+              {TIMELINE_MILESTONES.map((m, i) => {
+                const isEven = i % 2 === 0
+                return (
+                  <div key={m.title} className="relative flex flex-col md:flex-row items-start md:items-center">
+                    {/* Pulsing Node */}
+                    <div className="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-accent border-2 border-background-primary transform -translate-x-1/2 z-10 shadow-[0_0_10px_rgba(217,119,87,0.8)] animate-pulse" />
+
+                    {/* Left space/card spacer for desktop */}
+                    <div className={`w-full md:w-1/2 ${isEven ? 'md:pr-12 md:text-right' : 'md:order-2 md:pl-12 text-left'} pl-12 md:pl-0`}>
+                      <ScrollReveal direction={isEven ? 'right' : 'left'} delay={i * 0.1}>
+                        <div className="card-glass p-6 hover:border-accent/30 transition-all duration-350 relative group">
+                          <span className="text-xs font-bold text-accent tracking-widest block mb-1.5">{m.year}</span>
+                          <h3 className="text-lg font-bold text-white mb-2 group-hover:text-accent transition-colors">{m.title}</h3>
+                          <p className="text-xs text-foreground-secondary leading-relaxed mb-4">{m.desc}</p>
+                          <div className={`flex flex-wrap gap-1.5 justify-start ${isEven ? 'md:justify-end' : ''}`}>
+                            {m.tags.map(tag => (
+                              <span key={tag} className="text-[10px] px-2 py-0.5 rounded bg-white/[0.04] text-foreground-muted border border-white/[0.06]">{tag}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </ScrollReveal>
+                    </div>
+
+                    {/* Right spacer to align grid */}
+                    <div className="hidden md:block md:w-1/2" />
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>

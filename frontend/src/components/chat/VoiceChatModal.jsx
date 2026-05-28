@@ -6,9 +6,9 @@ import CyberCliMark from '../ui/CyberCliLogo.jsx'
 
 
 const VOICE_MODELS = [
-  { id: 'gemini_flash',  label: 'Sahadeva (Gemini Flash)', desc: 'AI Native Voice (Fast & Friendly)', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
-  { id: 'gemini_pro',    label: 'Sahadeva Pro (Gemini Pro)', desc: 'Advanced AI Voice (Analytical)',  color: '#8B5CF6', orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'] },
-  { id: 'mistral_large', label: 'Vayu (Mistral Large)', desc: 'Technical & Expressive Advisor',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
+  { id: 'gemini_female',  label: 'Aoede (Gemini Female)', desc: 'AI Native Voice (Fast & Friendly)', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
+  { id: 'gemini_male_1',  label: 'Charon (Gemini Male 1)', desc: 'Advanced AI Voice (Analytical)',  color: '#8B5CF6', orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'] },
+  { id: 'gemini_male_2',  label: 'Puck (Gemini Male 2)', desc: 'Technical & Expressive Advisor',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
 ]
 
 const BAR_COUNT = 36

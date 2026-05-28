@@ -15,9 +15,9 @@ import { motion } from 'framer-motion'
 
 /**
  * CyberCliMark
- * Stylized, animated Sudarshan Chakra in theme-adaptive currentColor with a stealth tech aesthetic.
+ * Stylized, animated Sudarshan Chakra in theme-adaptive terracotta with a stealth tech aesthetic.
  */
-export function CyberCliMark({ size = 40, className = '' }) {
+export function CyberCliMark({ size = 40, className = '', color = '#D97757' }) {
   const s = size
   
   return (
@@ -33,14 +33,15 @@ export function CyberCliMark({ size = 40, className = '' }) {
       style={{
         display: 'inline-block',
         verticalAlign: 'middle',
+        color: color,
       }}
     >
       <defs>
         {/* Radial glow for central hub */}
         <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="currentColor" stopOpacity="1" />
-          <stop offset="50%" stopColor="currentColor" stopOpacity="0.75" />
-          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+          <stop offset="0%" stopColor={color} stopOpacity="1" />
+          <stop offset="50%" stopColor={color} stopOpacity="0.75" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
         </radialGradient>
       </defs>
 
@@ -68,23 +69,23 @@ export function CyberCliMark({ size = 40, className = '' }) {
       `}</style>
       
       {/* Cardinal crosshair markers (radar/alignment style) */}
-      <g stroke="currentColor" strokeWidth="1.2" opacity="0.35">
-        <line x1="50" y1="12" x2="50" y2="28" />
-        <line x1="50" y1="72" x2="50" y2="88" />
-        <line x1="12" y1="50" x2="28" y2="50" />
-        <line x1="72" y1="50" x2="88" y2="50" />
+      <g stroke={color} strokeWidth="1.2" opacity="0.35">
+        <line x1="50" y1="12" x2="50" y2="28" stroke={color} />
+        <line x1="50" y1="72" x2="50" y2="88" stroke={color} />
+        <line x1="12" y1="50" x2="28" y2="50" stroke={color} />
+        <line x1="72" y1="50" x2="88" y2="50" stroke={color} />
       </g>
 
       {/* Decorative dashed outer ring */}
-      <circle cx="50" cy="50" r="44" stroke="currentColor" strokeWidth="1" strokeDasharray="3 6" opacity="0.2" />
+      <circle cx="50" cy="50" r="44" stroke={color} strokeWidth="1" strokeDasharray="3 6" opacity="0.2" />
 
       {/* Symmetrical concentric rings */}
-      <circle cx="50" cy="50" r="36" stroke="currentColor" strokeWidth="1.5" opacity="0.15" />
-      <circle cx="50" cy="50" r="26" stroke="currentColor" strokeWidth="1" strokeDasharray="4 2" opacity="0.3" />
-      <circle cx="50" cy="50" r="18" stroke="currentColor" strokeWidth="1.2" opacity="0.45" />
+      <circle cx="50" cy="50" r="36" stroke={color} strokeWidth="1.5" opacity="0.15" />
+      <circle cx="50" cy="50" r="26" stroke={color} strokeWidth="1" strokeDasharray="4 2" opacity="0.3" />
+      <circle cx="50" cy="50" r="18" stroke={color} strokeWidth="1.2" opacity="0.45" />
 
       {/* 8 Geometric Stealth Blades of the Sudarshan Chakra */}
-      <g fill="currentColor">
+      <g fill={color}>
         {Array.from({ length: 8 }).map((_, i) => {
           const angle = (i / 8) * Math.PI * 2
           
@@ -112,17 +113,18 @@ export function CyberCliMark({ size = 40, className = '' }) {
               key={i}
               points={`${baseX.toFixed(2)},${baseY.toFixed(2)} ${outX.toFixed(2)},${outY.toFixed(2)} ${tipX.toFixed(2)},${tipY.toFixed(2)} ${cutX.toFixed(2)},${cutY.toFixed(2)}`}
               opacity="0.85"
+              fill={color}
             />
           )
         })}
       </g>
 
       {/* Cardinal tiny dots representing cosmic nodes */}
-      <g fill="currentColor" opacity="0.75">
-        <circle cx="50" cy="8" r="1.5" />
-        <circle cx="92" cy="50" r="1.5" />
-        <circle cx="50" cy="92" r="1.5" />
-        <circle cx="8" cy="50" r="1.5" />
+      <g fill={color} opacity="0.75">
+        <circle cx="50" cy="8" r="1.5" fill={color} />
+        <circle cx="92" cy="50" r="1.5" fill={color} />
+        <circle cx="50" cy="92" r="1.5" fill={color} />
+        <circle cx="8" cy="50" r="1.5" fill={color} />
       </g>
 
       {/* Multi-layered transparent central hub with glow */}
@@ -130,7 +132,7 @@ export function CyberCliMark({ size = 40, className = '' }) {
       <circle cx="50" cy="50" r="12" fill="url(#hubGlow)" opacity="0.4" />
 
       {/* Center geometric octagon representing stability */}
-      <g stroke="currentColor" strokeWidth="1.2" opacity="0.8">
+      <g stroke={color} strokeWidth="1.2" opacity="0.8">
         {Array.from({ length: 8 }).map((_, i) => {
           const a1 = (i / 8) * Math.PI * 2
           const a2 = ((i + 1) / 8) * Math.PI * 2
@@ -140,13 +142,13 @@ export function CyberCliMark({ size = 40, className = '' }) {
           const x2 = 50 + Math.cos(a2) * r
           const y2 = 50 + Math.sin(a2) * r
           return (
-            <line key={i} x1={x1.toFixed(2)} y1={y1.toFixed(2)} x2={x2.toFixed(2)} y2={y2.toFixed(2)} />
+            <line key={i} x1={x1.toFixed(2)} y1={y1.toFixed(2)} x2={x2.toFixed(2)} y2={y2.toFixed(2)} stroke={color} />
           )
         })}
       </g>
 
       {/* Central hub core dot */}
-      <circle cx="50" cy="50" r="3.5" fill="currentColor" />
+      <circle cx="50" cy="50" r="3.5" fill={color} />
     </svg>
   )
 }
@@ -156,13 +158,13 @@ export function CyberCliMark({ size = 40, className = '' }) {
  * Horizontal lock-up: [icon] [CyberCli text]
  * The text is set in Inter with a custom high-end styling.
  */
-export function CyberCliWordmark({ size = 40, className = '', textClassName = '' }) {
+export function CyberCliWordmark({ size = 40, className = '', textClassName = '', color = '#D97757' }) {
   return (
     <span
       className={`inline-flex items-center gap-3 select-none ${className}`}
       aria-label="CyberCli"
     >
-      <CyberCliMark size={size} />
+      <CyberCliMark size={size} color={color} />
       <span
         className={`font-semibold tracking-tight text-foreground-primary ${textClassName}`}
         style={{

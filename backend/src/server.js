@@ -35,9 +35,12 @@ import contactRoutes from './routes/contact.routes.js'
 import projectsRoutes from './routes/projects.routes.js'
 import workflowsRoutes from './routes/workflows.routes.js'
 import inviteRoutes from './routes/invite.routes.js'
+import feedbackRoutes from './routes/feedback.routes.js'
+import supportRoutes from './routes/support.routes.js'
 import http from 'http'
 import { WebSocketServer } from 'ws'
 import ApiKey from './models/ApiKey.js'
+import Feedback from './models/Feedback.js'
 import { registerDaemon, removeDaemon, handleDaemonResponse } from './utils/daemonBridge.js'
 
 
@@ -154,6 +157,8 @@ app.use('/api/v1/contact', contactRoutes)
 app.use('/api/v1/projects', projectsRoutes)
 app.use('/api/v1/workflows', workflowsRoutes)
 app.use('/api/v1/invite', inviteRoutes)
+app.use('/api/v1/feedback', feedbackRoutes)
+app.use('/api/v1/support', supportRoutes)
 
 
 // 404 handler
@@ -226,7 +231,80 @@ wss.on('connection', (ws, request, userId) => {
   })
 })
 
-connectMongoDB().then(() => {
+connectMongoDB().then(async () => {
+  // Seed feedback testimonials if none exist
+  try {
+    const feedbackCount = await Feedback.countDocuments()
+    if (feedbackCount === 0) {
+      const defaultTestimonials = [
+        {
+          user_id: 'seed-user-1',
+          name: 'Riya Mehta',
+          initials: 'RM',
+          quote: 'Council Mode completely changed how I analyse threat models. Three different AI perspectives on the same CVE in under 10 seconds — nothing else comes close.',
+          role: 'Senior Security Researcher',
+          company: 'Trail of Bits',
+          stars: 5,
+          accentColor: '#D97757',
+        },
+        {
+          user_id: 'seed-user-2',
+          name: 'James Okafor',
+          initials: 'JO',
+          quote: 'I switched from Claude Pro the moment I tried conversation branching. Being able to explore two hypotheses in parallel without losing context is a game-changer.',
+          role: 'Staff Software Engineer',
+          company: 'Linear',
+          stars: 5,
+          accentColor: '#D97757',
+        },
+        {
+          user_id: 'seed-user-3',
+          name: 'Sara Chen',
+          initials: 'SC',
+          quote: 'As a PhD student on a tight budget, having 200K+ free models is wild. CyberCli lets me run literature reviews and summarise papers without paying a cent.',
+          role: 'PhD Candidate',
+          company: 'MIT CSAIL',
+          stars: 5,
+          accentColor: '#06B6D4',
+        },
+        {
+          user_id: 'seed-user-4',
+          name: 'Tomás Vélez',
+          initials: 'TV',
+          quote: "The ElevenLabs voice integration is silky smooth. I use it for hands-free code reviews while I'm in the gym. The audio quality beats every other AI voice I've tried.",
+          role: 'Indie Developer',
+          company: '',
+          stars: 5,
+          accentColor: '#10B981',
+        },
+        {
+          user_id: 'seed-user-5',
+          name: 'Priya Nair',
+          initials: 'PN',
+          quote: 'Custom Agents saved our team hours a week. We built a security-policy agent with our internal docs and now junior devs get instant, accurate answers without pinging us.',
+          role: 'Head of Platform Security',
+          company: 'Stripe',
+          stars: 5,
+          accentColor: '#F59E0B',
+        },
+        {
+          user_id: 'seed-user-6',
+          name: 'Luca Moretti',
+          initials: 'LM',
+          quote: "The fact that it's truly free — not some freemium bait-and-switch — is what won me over. I've recommended CyberCli to my entire bootcamp cohort.",
+          role: 'Full-Stack Developer',
+          company: 'Freelance',
+          stars: 5,
+          accentColor: '#D97757',
+        }
+      ]
+      await Feedback.insertMany(defaultTestimonials)
+      console.log('Seeded default feedback testimonials into MongoDB.')
+    }
+  } catch (seedErr) {
+    console.error('Error seeding testimonials:', seedErr.message)
+  }
+
   server.listen(PORT, () => {
     console.log(`CyberCli API server running on port ${PORT}`)
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)

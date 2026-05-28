@@ -5,9 +5,9 @@ const TTS_PROVIDERS = {
     name: 'Google Gemini Flash TTS',
     description: 'Google Gemini Flash Text-to-Speech (Server-side)',
     voices: [
-      { id: 'gemini_flash', name: 'Sahadeva (Gemini Flash)', gender: 'female', accent: 'multilingual' },
-      { id: 'gemini_pro', name: 'Sahadeva Pro (Gemini Pro)', gender: 'male', accent: 'multilingual' },
-      { id: 'mistral_large', name: 'Vayu (Mistral Large)', gender: 'male', accent: 'multilingual' },
+      { id: 'gemini_female', name: 'Aoede (Gemini Female)', gender: 'female', accent: 'multilingual' },
+      { id: 'gemini_male_1', name: 'Charon (Gemini Male 1)', gender: 'male', accent: 'multilingual' },
+      { id: 'gemini_male_2', name: 'Puck (Gemini Male 2)', gender: 'male', accent: 'multilingual' },
     ],
   },
   browser: {
@@ -20,7 +20,7 @@ const TTS_PROVIDERS = {
 class TTSService {
   constructor() {
     this.currentProvider = 'gemini'
-    this.currentVoice = 'gemini_flash'
+    this.currentVoice = 'gemini_female'
     this.currentSpeed = 1.0
     this.currentPitch = 1.0
     this.browserVoices = []
@@ -39,7 +39,7 @@ class TTSService {
       this.currentProvider = provider
       // Set a default voice for the provider if none selected
       if (provider === 'gemini') {
-        this.currentVoice = 'gemini_flash'
+        this.currentVoice = 'gemini_female'
       } else if (provider === 'browser' && this.browserVoices.length > 0) {
         this.currentVoice = this.browserVoices[0].name
       }
@@ -87,15 +87,18 @@ class TTSService {
   async speakWithGemini(text) {
     try {
       const token = localStorage.getItem('sb-access-token')
+      const clientKey = this.geminiApiKey || localStorage.getItem('client_gemini_api_key')
+
       const response = await fetch(`${API_BASE}/tts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(clientKey ? { 'X-Gemini-API-Key': clientKey } : {}),
         },
         body: JSON.stringify({
           text,
-          voice_id: this.currentVoice || 'gemini_flash',
+          voice_id: this.currentVoice || 'gemini_female',
           speed: this.currentSpeed,
         }),
       })

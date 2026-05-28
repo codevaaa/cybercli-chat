@@ -20,6 +20,7 @@ import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
 import { useAuthStore } from '@stores/authStore.js'
 import CyberCliMark, { CyberCliWordmark } from '../../components/ui/CyberCliLogo.jsx'
 import InviteFriendsModal from '../../components/invite/InviteFriendsModal.jsx'
+import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -2079,10 +2080,20 @@ function ProjectsView({ threads, navigate, setActiveNav, handleCreateThread }) {
   )
 }
 
-// ─── Artifacts Sub-View Component ─────────────────────────────────────────────
-
 function ArtifactsView({ messages }) {
-  const [artifacts, setArtifacts] = useState([])
+  const [sessionArtifacts, setSessionArtifacts] = useState([])
+  const [customArtifacts, setCustomArtifacts] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
+  
+  // Drawer & detail state
+  const [selectedArt, setSelectedArt] = useState(null)
+  const [drawerTab, setDrawerTab] = useState('preview') // preview | code
+
+  // Custom creation modal
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [newLang, setNewLang] = useState('html')
+  const [newContent, setNewContent] = useState('')
 
   useEffect(() => {
     const items = []
@@ -2104,6 +2115,7 @@ function ArtifactsView({ messages }) {
           language: lang,
           content: code,
           preview: preview,
+          date: 'Generated during session'
         })
         blockIdx++
       }
@@ -2120,92 +2132,330 @@ function ArtifactsView({ messages }) {
           type: 'image',
           title: alt,
           url: url,
+          date: 'Generated during session'
         })
         imgIdx++
       }
     })
-    setArtifacts(items)
+    setSessionArtifacts(items)
   }, [messages])
+
+  // Combine generated & custom artifacts
+  const allArtifacts = [...customArtifacts, ...sessionArtifacts]
+
+  // Filter based on search query
+  const filteredArtifacts = allArtifacts.filter(art => {
+    const titleMatch = art.title.toLowerCase().includes(searchQuery.toLowerCase())
+    const contentMatch = art.content?.toLowerCase().includes(searchQuery.toLowerCase()) || false
+    const langMatch = art.language?.toLowerCase().includes(searchQuery.toLowerCase()) || false
+    return titleMatch || contentMatch || langMatch
+  })
 
   const handleCopy = (content) => {
     navigator.clipboard.writeText(content)
     alert('Copied snippet to clipboard!')
   }
 
+  const handleCreateArtifact = (e) => {
+    e.preventDefault()
+    if (!newTitle.trim() || !newContent.trim()) return
+
+    const newItem = {
+      id: `custom-${Date.now()}`,
+      type: 'code',
+      title: newTitle.trim(),
+      language: newLang,
+      content: newContent,
+      preview: newContent.split('\n').slice(0, 3).join('\n'),
+      date: 'Created manually'
+    }
+
+    setCustomArtifacts(prev => [newItem, ...prev])
+    setIsCreateModalOpen(false)
+    setNewTitle('')
+    setNewContent('')
+    setSelectedArt(newItem)
+    setDrawerTab('preview')
+  }
+
   return (
-    <div className="p-6 max-w-5xl mx-auto w-full">
-      <div className="mb-6">
-        <h2 className="text-2xl font-serif font-bold text-foreground-primary">Artifacts Gallery</h2>
-        <p className="text-xs text-foreground-muted">Interactive catalog of code scripts and images generated in this chat session.</p>
+    <div className="p-6 max-w-5xl mx-auto w-full relative min-h-[calc(100vh-100px)]">
+      {/* Title Header with New Artifact button */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-serif font-bold text-foreground-primary">Artifacts</h2>
+          <p className="text-xs text-foreground-muted mt-1">Interactive catalog of code, vectors, and layouts generated in this session.</p>
+        </div>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="px-4 py-2 bg-white text-black font-semibold text-xs rounded-full hover:bg-white/90 transition-all select-none shadow-md hover:shadow-lg"
+        >
+          New artifact
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {artifacts.map(art => (
-          <div
-            key={art.id}
-            className="rounded-2xl border border-border-subtle bg-background-secondary overflow-hidden hover:border-accent/40 transition-all flex flex-col justify-between"
-          >
-            {art.type === 'image' ? (
-              <div className="flex flex-col">
-                <div className="aspect-square w-full bg-black relative group overflow-hidden">
-                  <img
-                    src={art.url}
-                    alt={art.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
-                    <a
-                      href={art.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3.5 py-1.5 bg-white text-black text-xs font-bold rounded-xl shadow-lg hover:scale-105 transition-all"
-                    >
-                      Open Full Image
-                    </a>
-                  </div>
+      {/* Search Input Bar */}
+      <div className="relative mb-8 max-w-md">
+        <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <input
+          type="text"
+          placeholder="Search artifacts..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] focus:border-accent/40 outline-none text-xs text-white placeholder-white/20 transition-all"
+        />
+      </div>
+
+      {/* Grid of Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredArtifacts.map(art => {
+          const isCode = art.type === 'code'
+          const isHtmlSvg = isCode && (art.language === 'html' || art.language === 'svg' || art.language === 'xml')
+          
+          return (
+            <div
+              key={art.id}
+              onClick={() => {
+                setSelectedArt(art)
+                setDrawerTab(isHtmlSvg ? 'preview' : 'code')
+              }}
+              className="group rounded-2xl border border-white/[0.05] bg-white/[0.01] hover:bg-white/[0.02] p-5 hover:border-accent/35 transition-all flex flex-col justify-between h-48 cursor-pointer relative"
+              style={{
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)'
+              }}
+            >
+              <div>
+                {/* Central Icon inside a rounded box */}
+                <div className="w-10 h-10 rounded-xl bg-[#D97757]/10 flex items-center justify-center border border-[#D97757]/20 mb-4 group-hover:scale-105 transition-all">
+                  {art.type === 'image' ? (
+                    <ImageIcon className="w-5 h-5 text-[#D97757]" />
+                  ) : (
+                    <FileCode className="w-5 h-5 text-[#D97757]" />
+                  )}
                 </div>
-                <div className="p-4 border-t border-border-subtle">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider" style={{ color: '#D97757', background: 'rgba(217,119,87,0.1)', borderColor: 'rgba(217,119,87,0.25)' }}>Image Asset</span>
-                  <h3 className="text-sm font-semibold text-foreground-primary mt-2 truncate">{art.title}</h3>
-                </div>
+
+                <h3 className="text-sm font-bold text-white group-hover:text-accent transition-colors truncate mb-1">{art.title}</h3>
+                <span className="text-[10px] text-foreground-muted">{art.date}</span>
               </div>
-            ) : (
-              <div className="p-5 flex flex-col justify-between h-full">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-bold text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded-md border border-[#10B981]/20 uppercase tracking-wider font-mono">{art.language}</span>
-                    <button
-                      onClick={() => handleCopy(art.content)}
-                      className="text-xs text-foreground-muted hover:text-foreground-primary flex items-center gap-1"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      Copy
-                    </button>
-                  </div>
-                  <h3 className="text-sm font-semibold text-foreground-primary truncate mb-2">{art.title}</h3>
-                  <pre className="bg-[#0f0f13] border border-white/[0.03] p-3 rounded-lg font-mono text-[11px] text-foreground-secondary overflow-hidden max-h-24 leading-relaxed">
-                    {art.preview}
-                    {art.content.split('\n').length > 3 && '\n...'}
-                  </pre>
-                </div>
-                <div className="mt-4 pt-3 border-t border-white/[0.04] flex justify-end">
-                  <button
-                    onClick={() => handleCopy(art.content)}
-                    className="px-3.5 py-1.5 bg-background-tertiary hover:bg-background-elevated text-xs font-semibold rounded-xl text-foreground-primary transition-all"
-                  >
-                    Copy Snippet
-                  </button>
-                </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-white/[0.04]">
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-md border tracking-wider uppercase font-mono bg-white/[0.03] text-foreground-muted border-white/[0.08]">
+                  {art.type === 'image' ? 'Image' : art.language}
+                </span>
+                <span className="text-[10px] font-semibold text-accent opacity-0 group-hover:opacity-100 transition-all flex items-center gap-0.5">
+                  Open <ChevronRight className="w-3 h-3" />
+                </span>
               </div>
-            )}
-          </div>
-        ))}
-        {artifacts.length === 0 && (
-          <div className="col-span-full text-center py-16 text-foreground-muted text-sm border border-dashed border-border-subtle rounded-3xl bg-background-secondary/50">
-            No artifacts found in this chat session. Generate code or images to build up this gallery!
+            </div>
+          )
+        })}
+
+        {filteredArtifacts.length === 0 && (
+          <div className="col-span-full text-center py-16 text-foreground-muted text-xs border border-dashed border-white/[0.08] rounded-3xl bg-white/[0.01]">
+            No artifacts matching "{searchQuery}" found.
           </div>
         )}
       </div>
+
+      {/* Side drawer panel overlay (Claude style) */}
+      <AnimatePresence>
+        {selectedArt && (
+          <>
+            {/* Split layout overlay trigger */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.3 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedArt(null)}
+              className="fixed inset-0 bg-black z-40"
+            />
+
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed inset-y-0 right-0 z-50 w-full sm:w-[640px] bg-[#0A0A0F] border-l border-white/[0.06] flex flex-col shadow-2xl overflow-hidden font-sans"
+            >
+              {/* Header */}
+              <div className="p-4 border-b border-white/[0.04] bg-[#08080C] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#D97757]/10 flex items-center justify-center border border-[#D97757]/20">
+                    {selectedArt.type === 'image' ? (
+                      <ImageIcon className="w-4 h-4 text-[#D97757]" />
+                    ) : (
+                      <FileCode className="w-4 h-4 text-[#D97757]" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-white">{selectedArt.title}</h3>
+                    <span className="text-[9px] text-foreground-muted uppercase tracking-wider font-semibold font-mono">{selectedArt.type === 'image' ? 'Image' : selectedArt.language}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleCopy(selectedArt.type === 'image' ? selectedArt.url : selectedArt.content)}
+                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] font-semibold text-white/80 hover:text-white transition-all"
+                  >
+                    Copy
+                  </button>
+                  <button
+                    onClick={() => setSelectedArt(null)}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Tabs for Drawer */}
+              {selectedArt.type === 'code' && (
+                <div className="flex items-center border-b border-white/[0.03] bg-[#07070B] px-4 py-1.5 gap-1">
+                  {[
+                    { id: 'preview', label: 'Preview' },
+                    { id: 'code', label: 'Code' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setDrawerTab(tab.id)}
+                      className={`text-xs px-3 py-1 rounded-md transition-all font-medium ${
+                        drawerTab === tab.id
+                          ? 'bg-white/[0.06] text-white border border-white/[0.08]'
+                          : 'text-gray-500 hover:text-gray-300'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Panel Content Viewer */}
+              <div className="flex-1 overflow-auto bg-[#040406] relative">
+                {selectedArt.type === 'image' ? (
+                  <div className="flex items-center justify-center p-8 h-full bg-black/40">
+                    <img src={selectedArt.url} alt={selectedArt.title} className="max-h-full max-w-full object-contain rounded-lg border border-white/[0.08]" />
+                  </div>
+                ) : drawerTab === 'preview' ? (
+                  // Iframe or preview sandbox
+                  selectedArt.language === 'html' || selectedArt.language === 'svg' || selectedArt.language === 'xml' ? (
+                    <iframe
+                      srcDoc={selectedArt.content}
+                      className="w-full h-full border-0 bg-white"
+                      title="Artifact Live Render"
+                      sandbox="allow-scripts"
+                    />
+                  ) : (
+                    // Fallback to formatted pre block for non-html code preview
+                    <pre className="p-5 font-mono text-[11px] text-foreground-secondary leading-relaxed whitespace-pre-wrap select-text">
+                      {selectedArt.content}
+                    </pre>
+                  )
+                ) : (
+                  // Raw code tab
+                  <SyntaxHighlighter
+                    language={selectedArt.language || 'javascript'}
+                    style={oneDark}
+                    customStyle={{
+                      margin: 0,
+                      padding: '20px',
+                      background: 'transparent',
+                      fontSize: '11px',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      lineHeight: '1.6',
+                    }}
+                  >
+                    {selectedArt.content}
+                  </SyntaxHighlighter>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Manual Creation Dialog */}
+      <AnimatePresence>
+        {isCreateModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#101018] border border-white/[0.08] rounded-2xl w-full max-w-xl p-6 relative shadow-2xl"
+            >
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <h3 className="text-base font-bold text-white mb-6">Create New Artifact</h3>
+              
+              <form onSubmit={handleCreateArtifact} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-foreground-muted uppercase tracking-wider mb-2">Title</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="e.g. My Custom Dashboard"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-background-tertiary border border-white/[0.08] focus:border-accent/40 outline-none text-xs text-white placeholder-white/20 transition-all"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-foreground-muted uppercase tracking-wider mb-2">Type / Language</label>
+                    <select
+                      value={newLang}
+                      onChange={(e) => setNewLang(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-background-tertiary border border-white/[0.08] focus:border-accent/40 outline-none text-xs text-white transition-all cursor-pointer"
+                    >
+                      <option value="html">HTML Layout</option>
+                      <option value="svg">SVG Vector</option>
+                      <option value="javascript">JavaScript</option>
+                      <option value="css">CSS stylesheet</option>
+                      <option value="markdown">Markdown</option>
+                      <option value="json">JSON data</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-foreground-muted uppercase tracking-wider mb-2">Code Content</label>
+                  <textarea
+                    required
+                    rows={8}
+                    placeholder="Paste or write code here..."
+                    value={newContent}
+                    onChange={(e) => setNewContent(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-background-tertiary border border-white/[0.08] focus:border-accent/40 outline-none text-xs font-mono text-white placeholder-white/20 transition-all resize-none"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    className="px-4 py-2 rounded-xl border border-white/[0.08] text-xs font-semibold text-white/80 hover:text-white transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-white/95 transition-all shadow-md"
+                  >
+                    Create Artifact
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -3824,6 +4074,7 @@ export default function ChatPage() {
   const [userLanguage, setUserLanguage] = useState(() => localStorage.getItem('user_language') || 'EN')
 
   const [showProfilePopover, setShowProfilePopover] = useState(false)
+  const [helpPanelOpen, setHelpPanelOpen] = useState(false)
   const popoverTimeoutRef = useRef(null)
 
   const handleUserBarMouseEnter = (submenu = null) => {
@@ -4033,7 +4284,10 @@ export default function ChatPage() {
                     </button>
 
                     <button 
-                      onClick={() => window.open('mailto:cybermindcli@cybermindcli.com')}
+                      onClick={() => {
+                        setHelpPanelOpen(true)
+                        setShowProfilePopover(false)
+                      }}
                       onMouseEnter={() => setHoveredSubmenu(null)}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left group"
                     >
@@ -4250,7 +4504,7 @@ export default function ChatPage() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* Header strip */}
-        <header className="flex items-center gap-3 px-4 py-3 flex-shrink-0 border-b border-border-subtle bg-background-secondary/85 backdrop-blur-md">
+        <header className="relative flex items-center gap-3 px-4 py-3 flex-shrink-0 border-b border-border-subtle bg-background-secondary/85 backdrop-blur-md">
           {!sidebarOpen && (
             <div className="flex items-center gap-3">
               <button
@@ -4278,6 +4532,18 @@ export default function ChatPage() {
               {activeNav}
             </span>
           )}
+
+          {/* Top-Center Billing Badge */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center pointer-events-auto z-10">
+            <Link
+              to="/pricing"
+              className="text-[11px] font-sans px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.1] hover:bg-white/[0.06] text-foreground-secondary hover:text-foreground-primary transition-all flex items-center gap-1.5 select-none"
+            >
+              <span className="text-white/60">Free plan</span>
+              <span className="w-1 h-1 rounded-full bg-white/20" />
+              <span className="text-[#D97757] font-semibold underline underline-offset-2">Upgrade</span>
+            </Link>
+          </div>
 
           <div className="flex-1" />
           
@@ -4856,6 +5122,9 @@ cybercli link --key YOUR_API_KEY</pre>
 
       {/* Invite Friends Modal */}
       <InviteFriendsModal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} />
+
+      {/* Help Center panel */}
+      <HelpCenterPanel isOpen={helpPanelOpen} onClose={() => setHelpPanelOpen(false)} />
     </div>
   )
 }
