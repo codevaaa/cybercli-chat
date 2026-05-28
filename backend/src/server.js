@@ -42,6 +42,7 @@ import { registerDaemon, removeDaemon, handleDaemonResponse } from './utils/daem
 
 import { errorHandler } from './middleware/errorHandler.js'
 import { requestLogger } from './middleware/requestLogger.js'
+import { optionalAuth } from './middleware/auth.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -101,6 +102,7 @@ const limiter = rateLimit({
     })
   },
 })
+app.use(optionalAuth)
 app.use(limiter)
 
 // Body parsing
