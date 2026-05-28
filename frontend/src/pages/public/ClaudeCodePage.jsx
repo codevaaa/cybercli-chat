@@ -50,7 +50,7 @@ export default function ClaudeCodePage() {
   const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
 
   const copyInstallCommand = () => {
-    navigator.clipboard.writeText('npm install -g @cybermind/cli && cybercoder login');
+    navigator.clipboard.writeText('npm install -g @cybermind/cli && cybermind login');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -110,7 +110,7 @@ export default function ClaudeCodePage() {
           >
             <div className="flex items-center gap-3 px-6 py-4 bg-[#1A1A2E] rounded-xl border border-white/10 font-mono text-sm">
               <span className="text-violet-400">$</span>
-              <span className="text-gray-300">npm install -g @cybermind/cybercoder</span>
+              <span className="text-gray-300">npm install -g @cybermind/cli</span>
               <button
                 onClick={copyInstallCommand}
                 className="ml-2 p-2 hover:bg-white/10 rounded-lg transition-colors"
