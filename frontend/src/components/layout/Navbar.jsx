@@ -25,14 +25,15 @@ const MENU_GROUPS = [
     label: 'Product',
     columns: 2,
     featured: {
-      title: 'CyberCli Code',
-      desc: 'Meet the new agentic AI coding assistant that lives in your terminal.',
-      href: '/code',
+      title: 'CyberCoder CLI',
+      desc: 'AI coding assistant for your terminal. Code faster with multi-model AI power.',
+      href: '/product',
       img: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=400&h=300'
     },
     items: [
+      { label: 'CyberCoder CLI', href: '/product', desc: 'Terminal AI coding assistant - Better than Claude Code', icon: 'Terminal' },
       { label: 'CyberCli Chat', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
-      { label: 'Models', href: '/models', desc: 'Browse our 200K+ model proxy', icon: 'Cpu' },
+      { label: 'Models', href: '/models', desc: 'Browse 200K+ AI models from 8+ providers', icon: 'Cpu' },
       { label: 'Workflows', href: '/chat', desc: 'Automate multi-agent tasks', icon: 'Layers' },
       { label: 'Discover', href: '/models', desc: 'Find custom agents', icon: 'Globe' },
     ]
