@@ -55,34 +55,8 @@ export default function ClaudeCodePage() {
   };
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-[#0A0A0F] overflow-x-hidden">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-lg flex items-center justify-center">
-              <Terminal className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-white font-semibold">CyberCoder</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-8 text-sm">
-            <a href="#features" className="text-gray-400 hover:text-white transition-colors">Features</a>
-            <a href="#installation" className="text-gray-400 hover:text-white transition-colors">Installation</a>
-            <a href="#pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a>
-            <a href="#docs" className="text-gray-400 hover:text-white transition-colors">Docs</a>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link to="/login" className="text-sm text-gray-400 hover:text-white transition-colors">
-              Sign In
-            </Link>
-            <Link to="/signup" className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
+    <div ref={containerRef} className="min-h-screen bg-[#0A0A0F] overflow-x-hidden pt-16">
+      {/* Hero Section - No internal nav since PublicLayout provides it */}
       <section className="relative min-h-screen flex items-center justify-center pt-20">
         <motion.div 
           className="absolute inset-0 opacity-30"
@@ -502,28 +476,6 @@ export default function ClaudeCodePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-lg flex items-center justify-center">
-                <Terminal className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-white font-semibold">CyberCoder</span>
-            </div>
-            <div className="flex items-center gap-6 text-sm text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Security</a>
-              <a href="#" className="hover:text-white transition-colors">GitHub</a>
-            </div>
-            <p className="text-sm text-gray-500">
-              © 2025 CyberCoder. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

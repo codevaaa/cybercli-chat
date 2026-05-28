@@ -175,7 +175,7 @@ export default function Navbar() {
     { label: 'Overview', href: '/' },
     { label: 'Features', href: '/features' },
     { label: 'Models', href: '/models' },
-    { label: 'CyberCli Code', href: '/code' },
+    { label: 'CyberCoder CLI', href: '/product' },
     { label: 'Downloads', href: '/downloads' },
     { label: 'Documentation', href: '/docs' }
   ]
