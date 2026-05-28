@@ -1,0 +1,129 @@
+CyberMind CLI — multi-session progress log
+============================================
+
+LAST UPDATED: 2026-05-24 (session 1)
+
+═══════════════════════════════════════════
+WHAT WORKS RIGHT NOW
+═══════════════════════════════════════════
+
+A working CLI exists at d:\claudealternative\. You can run:
+
+  pnpm install           # one-time
+  pnpm dev               # interactive Ink TUI (welcome card + slash commands)
+  pnpm --filter @cybermind/cli run build
+  node packages/cli/bin/cybermind.mjs --help
+  node packages/cli/bin/cybermind.mjs --print "your prompt"
+
+Smoke tests verified:
+  ✓ --version prints 0.1.0
+  ✓ --help prints commander help
+  ✓ --print "..." invokes the agent loop (hits Ollama fallback if no key)
+  ✓ Interactive mode renders welcome card with mascot + slash command framework
+
+To talk to Anthropic, set ANTHROPIC_API_KEY in env before running.
+Or for our hosted cloud, set CYBERMIND_API_KEY (once backend is deployed).
+Otherwise it falls back to local Ollama at 127.0.0.1:11434.
+
+═══════════════════════════════════════════
+MILESTONE STATUS
+═══════════════════════════════════════════
+
+M1  ✅ Skeleton — pnpm monorepo (9 packages), Ink CLI, welcome card, /help /clear /exit + 40+ stub slash commands
+M2  ✅ Providers + agent loop — Anthropic, Ollama, cybermind-cloud, ProviderRouter with auto-fallback, multi-model consensus runner
+M3  ✅ Tools + approval — 6 built-in tools (read_file, write_file, edit, list_dir, grep, run_command), ApprovalGate w/ 3 modes,
+       persistent trust store at ~/.cybermind/trust.json, encrypted SecretsVault at ~/.cybermind/secrets.enc (AES-256-GCM),
+       Ink ApprovalDialog (y/s/t/n keys)
+M6  ✅ Backend prompt delivered — see ./backend-prompt.md (~14KB, deeply detailed spec covering auth, LLM proxy, billing,
+       75-skill marketplace, team workspaces, cloud sync, telemetry, web dashboard, DB schema, infra, security checklist)
+
+M4  ⏳ IN PROGRESS — Skills system (loader + sub-agent runner; research, plan, code-review skills)
+M5  ⏳ Slash command full set (wire /rewind, /secret, /workflow, /palette, /trust, /sync etc. into real handlers — currently stubs)
+M7  ⏳ Original bundled skills (agent-browser w/ Playwright, frontend-design, init, cyber-recon stub)
+M8  ⏳ Extra skills batch 1 (db-architect, api-designer, test-writer, refactor, doc-writer, git-master, dep-doctor)
+M9  ⏳ Extra skills batch 2 (deploy, devops, perf-profiler, migrate, monorepo-doctor, infra-as-code)
+M10 ⏳ Advanced agent intelligence (time-travel checkpoints, persistent memory graph, workflows-as-code, auto-resume, replay, profiles)
+M11 ⏳ Parallel & collab (multi-cursor agents via git worktrees, web UI mirror at localhost:7777, live pair mode)
+M12 ⏳ Rich I/O (inline images via Kitty/iTerm/WT, mermaid-in-terminal, hotkey palette Ctrl+K, cost meter, screenshot-coder, mobile-dev)
+M13 ⏳ Ecosystem (MCP marketplace, skill marketplace client wired to backend with 75 seed skills, telemetry off-default)
+M14 ⏳ Final polish + release (full test suite, CI/CD, docs site at cybermindcli.info/docs, Windows installer, npm publish, v1.0.0)
+
+═══════════════════════════════════════════
+REPO LAYOUT
+═══════════════════════════════════════════
+
+d:\claudealternative\
+  package.json + pnpm-workspace.yaml + tsconfig.base.json + .npmrc
+  README.md
+  backend-prompt.md          ← M6 deliverable (paste into backend agent)
+  progress.txt               ← this file
+  packages/
+    cli/                     Ink-based CyberMind CLI (binary: cybermind, alias cm)
+    core/                    Agent loop + multi-model consensus runner
+    providers/               Anthropic / Ollama / cybermind-cloud (Anthropic-compatible)
+    tools/                   6 built-in tools + ApprovalGate + SecretsVault
+    skills/                  (stub — to be fleshed out in M4)
+    auth/                    (stub — to be fleshed out in M6 CLI side)
+    config/                  (stub — to be fleshed out in M5/M10)
+    telemetry/               (stub — to be fleshed out in M13)
+    shared/                  types, logger, ~/.cybermind/ paths, version
+
+═══════════════════════════════════════════
+WHAT TO DO NEXT SESSION
+═══════════════════════════════════════════
+
+1. Continue M4: implement @cybermind/skills (SKILL.md loader, frontmatter parser, skill registry,
+   sub-agent spawner that runs a skill in an isolated agent loop with restricted toolset).
+   Write the 3 sub-agent skills: research, plan, code-review.
+
+2. M5: replace remaining slash command stubs with real handlers — /trust, /secret, /workflow,
+   /palette, /sync, /usage, /cost, /model, /provider, /rewind (stub for M10), /consensus.
+
+3. M7-M9: author the bundled skills as SKILL.md files under d:\claudealternative\skills-bundled\.
+   Wire the skill loader to discover them. Implement agent-browser using Playwright.
+
+4. M10: time-travel checkpoints (snapshot file tree + conversation per turn; /rewind N),
+   persistent memory graph (sqlite under ~/.cybermind/memory.db with simple graph schema +
+   auto-inject relevant facts into context), workflows-as-code (.cybermind/workflows/*.yml parser).
+
+5. M11: multi-cursor parallel agents via git worktrees, web UI mirror server (Fastify on 7777
+   that streams the same session over websocket), live pair mode (LAN tunnel).
+
+6. M12: inline images via Kitty/iTerm protocols, mermaid-in-terminal renderer,
+   Ctrl+K command palette, pinned cost meter, screenshot-coder + mobile-dev skills.
+
+7. M13: MCP server marketplace (`cm mcp install <name>`), skill marketplace client wired to
+   backend (search/install/publish), telemetry-off-default with opt-in toggle.
+
+8. M14: Vitest unit tests for every package, Playwright e2e for CLI smoke,
+   GitHub Actions CI matrix, Astro Starlight docs site, npm publish, v1.0.0 release.
+
+═══════════════════════════════════════════
+HOW TO VERIFY / DEBUG
+═══════════════════════════════════════════
+
+  pnpm -r --parallel run typecheck   # all 9 packages must pass
+  pnpm --filter @cybermind/cli run build
+  node packages/cli/bin/cybermind.mjs --version
+
+If typecheck fails: most issues are stale IDE state. Run the command above
+to see what tsc actually sees. The IDE may show ghost "Cannot find module" lints
+that disappear once you re-open the workspace.
+
+Logs go to ~/.cybermind/logs/cybermind-YYYY-MM-DD.log (set CYBERMIND_LOG_LEVEL=debug
+for verbose output). Trust store is at ~/.cybermind/trust.json. Encrypted secrets
+vault is at ~/.cybermind/secrets.enc.
+
+═══════════════════════════════════════════
+USER-FACING DECISIONS LOCKED IN
+═══════════════════════════════════════════
+
+- Brand: CyberMind CLI (matches cybermindcli.info domain)
+- Package: cybermind · binary: cybermind · alias: cm
+- Tech: Node.js + TypeScript, Ink/React for terminal UI, pnpm monorepo
+- Providers: cybermind-cloud (default) → Anthropic BYOK → Ollama (auto-fallback)
+- Auth: email/password + sk-cm-... API keys (Anthropic-Console-style)
+- Voice mode: REMOVED per user request (no Whisper STT/TTS)
+- Cyber-recon mode: stub reserved (full autonomous bug-bounty in Phase 2)
+- Skills: 23 bundled + 75 curated marketplace seed (from skills.sh)
+- All 20 unique-features-vs-Claude-Code from the plan are in scope

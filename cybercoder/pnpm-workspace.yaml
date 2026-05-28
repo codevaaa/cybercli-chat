@@ -1,0 +1,3 @@
+packages:
+  - 'packages/*'
+# skills-bundled/* are plain SKILL.md folders, NOT npm packages — do not include.
