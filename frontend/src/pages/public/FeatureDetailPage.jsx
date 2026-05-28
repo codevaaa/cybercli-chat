@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Users, Mic, GitBranch, Cpu, Globe, Shield, Brain, FileText, ChevronDown, ChevronUp, Check, Star, Zap } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
+import { useAuthStore } from '@stores/authStore.js'
 
 const FEATURE_DATA = {
   'council-mode': {
@@ -338,6 +339,7 @@ const RELATED_LABELS = {
 }
 
 export default function FeatureDetailPage() {
+  const { user } = useAuthStore()
   const { slug } = useParams()
   const [openFaq, setOpenFaq] = useState(null)
 
@@ -465,7 +467,7 @@ export default function FeatureDetailPage() {
               </motion.div>
               <p className="text-foreground-muted text-sm">{feature.title} — Live Demo</p>
               <Link
-                to="/auth/signup"
+                to={user ? "/chat" : "/auth/signup"}
                 className="flex items-center gap-2 text-sm font-semibold px-6 py-3 rounded-xl text-white transition-all hover:opacity-90 hover:scale-105"
                 style={{ background: feature.iconColor }}
               >
@@ -585,7 +587,7 @@ export default function FeatureDetailPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/auth/signup"
+                to={user ? "/chat" : "/auth/signup"}
                 className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-white font-semibold text-sm transition-all hover:opacity-90 hover:scale-105"
                 style={{ background: feature.iconColor }}
               >

@@ -171,8 +171,8 @@ If you are an EU/EEA resident and we have not resolved your concern satisfactori
 function LegalSidebar({ sections, activeId }) {
   return (
     <aside className="sticky top-24 hidden lg:block w-64 flex-shrink-0">
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0D0D14] p-5">
-        <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-widest mb-4">Contents</p>
+      <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-5">
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-widest mb-4">Contents</p>
         <nav className="space-y-1">
           {sections.map((s) => (
             <a
@@ -180,11 +180,11 @@ function LegalSidebar({ sections, activeId }) {
               href={`#${s.id}`}
               className={`flex items-center gap-2 text-xs py-1.5 px-2 rounded-lg transition-all duration-200 leading-snug ${
                 activeId === s.id
-                  ? 'text-white bg-orange-500/10 border-l-2 border-orange-500 pl-3'
-                  : 'text-[#6B7280] hover:text-white hover:bg-white/[0.03]'
+                  ? 'text-[#D97757] font-semibold bg-[#D97757]/5 border-l-2 border-[#D97757] pl-3'
+                  : 'text-[#666666] hover:text-[#191919] hover:bg-black/[0.02]'
               }`}
             >
-              <ChevronRight className={`w-3 h-3 flex-shrink-0 ${activeId === s.id ? 'text-orange-400' : 'text-[#374151]'}`} />
+              <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${activeId === s.id ? 'text-[#D97757]' : 'text-black/20'}`} />
               {s.title}
             </a>
           ))}
@@ -216,7 +216,7 @@ function formatContent(text) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g)
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="text-white font-semibold">{part.slice(2, -2)}</strong>
+      return <strong key={i} className="text-[#191919] font-semibold">{part.slice(2, -2)}</strong>
     }
     return <span key={i}>{part}</span>
   })
@@ -226,7 +226,7 @@ export default function PrivacyPolicyPage() {
   const activeId = useSectionTracker(SECTIONS)
 
   return (
-    <div className="pt-28 pb-20 bg-[#0A0A0F]">
+    <div className="pt-28 pb-20 bg-[#FBF9F6] text-[#191919]">
       <SEOHead
         title="Privacy Policy"
         description="CyberMindCLI privacy policy. Learn how we collect, use, and protect your data. GDPR and CCPA compliant."
@@ -235,49 +235,49 @@ export default function PrivacyPolicyPage() {
       />
       <div className="section-padding">
         <div className="container-custom">
-          <div className="mb-12">
-            <span className="text-xs font-semibold text-accent tracking-widest uppercase mb-4 block">Legal</span>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-3">Privacy Policy</h1>
-            <p className="text-sm text-[#6B7280]">Last updated: {LAST_UPDATED} · Effective immediately</p>
+          <div className="mb-12 border-b border-black/[0.06] pb-8">
+            <span className="text-xs font-semibold text-[#D97757] tracking-widest uppercase mb-4 block">Legal & Policies</span>
+            <h1 className="text-4xl md:text-5xl font-serif font-medium text-[#191919] mb-3 tracking-tight">Privacy Policy</h1>
+            <p className="text-sm text-[#666666]">Last updated: {LAST_UPDATED} · Effective immediately</p>
           </div>
 
           <div className="flex gap-12 items-start">
             <LegalSidebar sections={SECTIONS} activeId={activeId} />
 
             <main className="flex-1 min-w-0">
-              <div className="rounded-2xl border border-white/[0.06] bg-[#0D0D14] p-8 mb-6">
-                <p className="text-[#9CA3AF] text-sm leading-relaxed">
+              <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-8 mb-8">
+                <p className="text-[#444444] text-sm leading-relaxed">
                   At CyberMindCLI, privacy is not a checkbox — it is a design principle. We are committed to being transparent about the data we collect, why we collect it, and how we protect it. This policy applies to all users of CyberCli Chat globally.
                 </p>
               </div>
 
-              <div className="space-y-10">
+              <div className="space-y-12">
                 {SECTIONS.map((section) => (
                   <motion.section
                     key={section.id}
                     id={section.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-80px' }}
-                    transition={{ duration: 0.5 }}
+                    transition={{ duration: 0.4 }}
                     className="scroll-mt-24"
                   >
-                    <h2 className="text-xl font-bold text-white mb-4 pb-3 border-b border-white/[0.06]">
+                    <h2 className="text-2xl font-serif font-medium text-[#191919] mb-4 pb-2 border-b border-black/[0.06]">
                       {section.title}
                     </h2>
                     <div className="space-y-4">
                       {section.content.split('\n\n').map((para, j) => (
                         para.startsWith('• ') ? (
-                          <ul key={j} className="space-y-2 pl-2">
+                          <ul key={j} className="space-y-2.5 pl-2">
                             {para.split('\n').map((item, k) => (
-                              <li key={k} className="flex items-start gap-2 text-sm text-[#9CA3AF] leading-relaxed">
-                                <span className="text-orange-400 flex-shrink-0 mt-0.5">•</span>
+                              <li key={k} className="flex items-start gap-2.5 text-sm text-[#444444] leading-relaxed">
+                                <span className="text-[#D97757] flex-shrink-0 mt-1">•</span>
                                 <span>{formatContent(item.replace('• ', ''))}</span>
                               </li>
                             ))}
                           </ul>
                         ) : (
-                          <p key={j} className="text-sm text-[#9CA3AF] leading-[1.8]">
+                          <p key={j} className="text-sm text-[#444444] leading-[1.8]">
                             {formatContent(para)}
                           </p>
                         )
@@ -287,9 +287,9 @@ export default function PrivacyPolicyPage() {
                 ))}
               </div>
 
-              <div className="mt-12 p-6 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                <p className="text-xs text-[#6B7280]">
-                  Last updated: {LAST_UPDATED}. Contact <a href="mailto:cybermindcli@cybermindcli.com" className="text-orange-400">cybermindcli@cybermindcli.com</a> with questions.
+              <div className="mt-16 p-6 rounded-xl border border-black/[0.06] bg-[#FAF8F5]">
+                <p className="text-xs text-[#666666] leading-relaxed">
+                  Last updated: {LAST_UPDATED}. Contact <a href="mailto:cybermindcli@cybermindcli.com" className="text-[#D97757] hover:underline">cybermindcli@cybermindcli.com</a> with questions.
                 </p>
               </div>
             </main>

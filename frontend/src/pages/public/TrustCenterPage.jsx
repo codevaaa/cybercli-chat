@@ -7,51 +7,50 @@ const LAST_UPDATED = 'May 20, 2026'
 
 const SECTIONS = [
   {
-    id: 'prohibited-uses',
-    title: '1. Prohibited Uses',
-    content: `You may not use CyberCli Chat for any purpose that is unlawful, harmful, or violates this Acceptable Use Policy. Specifically, you agree not to use the platform to:
+    id: 'security-architecture',
+    title: '1. Security Architecture',
+    content: `CyberCli is designed with deep security principles at its core. Our full-stack platform implements the following protective measures:
 
-• Engage in, facilitate, or promote illegal activities, including but not limited to human trafficking, illegal drug trade, child exploitation, and cybercrime.
-• Generate or distribute malicious software, including ransomware, keyloggers, viruses, or exploit scripts designed to compromise computer systems.
-• Impersonate individuals, organizations, or governmental bodies to conduct phishing attacks, identity theft, or financial fraud.
-• Conduct unauthorized penetration testing or vulnerability scanning on third-party networks without explicit legal authorization.`,
+• **Authentication Security**: Managed by Supabase Auth utilizing standard JSON Web Tokens (JWT) with secure bcrypt password hashing.
+• **Database Isolation**: PostgreSQL tables leverage Supabase Row-Level Security (RLS) policies, verifying that users only query their own records.
+• **Field-Level Encryption**: Sensitive user data in MongoDB (such as API keys, custom system prompts, and workspace variables) is encrypted at the field level using AES-256 before disk write.
+• **TLS 1.3 Transmission**: All data in transit between users, our servers, and third-party AI gateways is fully encrypted.`,
   },
   {
-    id: 'content-standards',
-    title: '2. Content Standards',
-    content: `Any content you input into the platform, or generate through our custom AI models, must conform to high safety and ethical standards. You are prohibited from generating:
+    id: 'uptime-failover',
+    title: '2. Uptime & Failover',
+    content: `We maintain high availability for our AI compute gateway:
 
-• Content that incites violence, promotes hate speech, or harasses and doxxes individuals.
-• Sexually explicit content, pornography, or material promoting non-consensual sexual content.
-• Misinformation or disinformation campaigns intended to mislead the public, disrupt democratic processes, or damage reputations.
-• Content violating intellectual property, copyright, trademark, or patent rights of other individuals or companies.`,
+• **Multi-Provider Fallback**: Our intelligent routing gateway links to 8+ free and premium AI providers. If one provider experiences degradation, we fail over automatically.
+• **Uptime Monitoring**: We target a 99.9% availability index on our edge compute orchestration engines.
+• **Edge Geo-Distribution**: Distributed cache nodes ensure minimal response latencies.`,
   },
   {
-    id: 'api-abuse',
-    title: '3. API & System Abuse',
-    content: `To ensure high availability and fair access for all users, we enforce strict controls on system usage. The following behaviors are prohibited:
+    id: 'data-privacy',
+    title: '3. Data Privacy & Isolation',
+    content: `We believe your data belongs strictly to you:
 
-• Bypassing rate limiters, security sandboxes, or prompt-injection guards through adversarial input construction.
-• Scraping, reverse engineering, or extracting model weights or proprietary backend endpoints without authorization.
-• Deploying automated bots, scripts, or spiders to register accounts, run chats, or crawl CyberCli assets in bulk.
-• Attempting to disrupt, overload, or compromise the availability of the AI gateway cluster or database layers.`,
+• **No Model Training**: We do not use your chat conversations, documents, or terminal command histories to train underlying models.
+• **Sandboxed execution**: Code execution features and terminal actions are run in secure sandbox instances.
+• **Instant Data Deletion**: Deleting your account Purges all MongoDB database records, Supabase user entries, and usage histories within 24 hours.`,
   },
   {
-    id: 'monitoring-enforcement',
-    title: '4. Enforcement & Monitoring',
-    content: `We monitor system usage patterns for abuse and security verification purposes. If we determine that you have violated these policies:
+    id: 'compliance-roadmap',
+    title: '4. Compliance Roadmap',
+    content: `We align our operations with global regulatory frameworks:
 
-• We reserve the right to suspend or terminate your account immediately without prior warning or refund.
-• We may redact, filter, or block inputs and outputs that trigger safety classifiers.
-• We will cooperate with law enforcement and reporting authorities if we detect illegal activities or credible threats of violence.`,
+• **GDPR/UK GDPR**: Fully compliant with data minimization, portability (JSON exports), and Article 17 deletion rights.
+• **CCPA/CPRA**: We do not sell or share user data with advertising networks.
+• **SOC2 Alignment**: We are currently building our controls framework toward SOC2 Type 1 audits in Q3 2026 and Type 2 compliance in early 2027.`,
   },
   {
-    id: 'reporting',
-    title: '5. Reporting Abuse',
-    content: `We rely on our community to maintain a secure and productive environment. If you encounter any generated content or user activity that violates these terms:
+    id: 'vulnerability-management',
+    title: '5. Vulnerability Management',
+    content: `We maintain continuous safety checks on our codebase:
 
-• Send a detailed report to **cybermindcli@cybermindcli.com** including prompt references or thread identifiers.
-• Our safety team reviews all incident tickets within 24 hours and takes appropriate administrative action.`,
+• **Automated Scanning**: New code integrations are automatically scanned for static analysis vulnerabilities.
+• **Dependency Audits**: We run weekly Snyk scans to catch package vulnerabilities.
+• **Responsible Disclosure**: We collaborate with security researchers under our safe harbor disclosure policy.`,
   },
 ]
 
@@ -83,6 +82,7 @@ function LegalSidebar({ sections, activeId }) {
 
 function useSectionTracker(sections) {
   const [activeId, setActiveId] = useState(sections[0]?.id)
+
   useEffect(() => {
     const handler = () => {
       const scrollPos = window.scrollY + 120
@@ -96,6 +96,7 @@ function useSectionTracker(sections) {
     window.addEventListener('scroll', handler, { passive: true })
     return () => window.removeEventListener('scroll', handler)
   }, [sections])
+
   return activeId
 }
 
@@ -109,32 +110,34 @@ function formatContent(text) {
   })
 }
 
-export default function AcceptableUsePage() {
+export default function TrustCenterPage() {
   const activeId = useSectionTracker(SECTIONS)
 
   return (
     <div className="pt-28 pb-20 bg-[#FBF9F6] text-[#191919]">
       <SEOHead
-        title="Acceptable Use Policy"
-        description="CyberMindCLI acceptable use policy. Guidelines for responsible AI usage, prohibited activities, and reporting violations."
-        path="/acceptable-use"
-        keywords={['acceptable use', 'AI policy', 'usage guidelines', 'CyberMindCLI', 'responsible AI']}
+        title="Trust Center & Security Portal"
+        description="CyberMindCLI Trust Center. Read about our security protocols, database field encryption, uptime failovers, compliance roadmap, and vulnerability fixes."
+        path="/trust"
+        keywords={['Trust Center', 'security architecture', 'SLA uptime', 'GDPR compliance', 'SOC2 roadmap', 'CyberMindCLI security']}
       />
       <div className="section-padding">
         <div className="container-custom">
+          {/* Header */}
           <div className="mb-12 border-b border-black/[0.06] pb-8">
-            <span className="text-xs font-semibold text-[#D97757] tracking-widest uppercase mb-4 block">Legal & Policies</span>
-            <h1 className="text-4xl md:text-5xl font-serif font-medium text-[#191919] mb-3 tracking-tight">Acceptable Use Policy</h1>
+            <span className="text-xs font-semibold text-[#D97757] tracking-widest uppercase mb-4 block">Security & Trust</span>
+            <h1 className="text-4xl md:text-5xl font-serif font-medium text-[#191919] mb-3 tracking-tight">Trust Center</h1>
             <p className="text-sm text-[#666666]">Last updated: {LAST_UPDATED} · Effective immediately</p>
           </div>
 
           <div className="flex gap-12 items-start">
             <LegalSidebar sections={SECTIONS} activeId={activeId} />
 
+            {/* Main content */}
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-8 mb-8">
                 <p className="text-[#444444] text-sm leading-relaxed">
-                  This Acceptable Use Policy outlines the rules and standards governing your use of CyberCli Chat and our AI model gateway. By accessing our services, you commit to respecting these boundaries.
+                  Welcome to the CyberMindCLI Trust Center. We are dedicated to providing a secure, reliable, and transparent platform for artificial intelligence operations. Explore details on our database encryption, uptime SLA failovers, and compliance standards. For custom auditing requests, email us at <a href="mailto:cybermindcli@cybermindcli.com" className="text-[#D97757] hover:underline font-semibold">cybermindcli@cybermindcli.com</a>.
                 </p>
               </div>
 
@@ -154,7 +157,7 @@ export default function AcceptableUsePage() {
                     </h2>
                     <div className="space-y-4">
                       {section.content.split('\n\n').map((para, j) => (
-                        para.startsWith('• ') || para.includes('\n• ') ? (
+                        para.startsWith('• ') ? (
                           <ul key={j} className="space-y-2.5 pl-2">
                             {para.split('\n').map((item, k) => (
                               <li key={k} className="flex items-start gap-2.5 text-sm text-[#444444] leading-relaxed">
@@ -176,7 +179,7 @@ export default function AcceptableUsePage() {
 
               <div className="mt-16 p-6 rounded-xl border border-black/[0.06] bg-[#FAF8F5]">
                 <p className="text-xs text-[#666666] leading-relaxed">
-                  Last updated: {LAST_UPDATED}. Contact <a href="mailto:cybermindcli@cybermindcli.com" className="text-[#D97757] hover:underline">cybermindcli@cybermindcli.com</a> for policy inquiries or to report violations.
+                  This trust portal was last updated on {LAST_UPDATED}. For direct inquiries regarding security posture, pen-testing reports, or audits, email <a href="mailto:cybermindcli@cybermindcli.com" className="text-[#D97757] hover:underline">cybermindcli@cybermindcli.com</a>.
                 </p>
               </div>
             </main>

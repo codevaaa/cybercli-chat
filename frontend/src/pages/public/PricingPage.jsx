@@ -232,7 +232,7 @@ export default function PricingPage() {
 
                 {/* Action button */}
                 <Link
-                  to={isAuth && tier.href === '/auth/signup' ? '/chat' : tier.href}
+                  to={isAuth ? (tier.price === 'Custom' ? '/contact?plan=enterprise' : (tier.name === 'Free' ? '/chat' : '/settings/billing')) : tier.href}
                   className={`w-full py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     tier.popular
                       ? 'bg-orange-600 text-white hover:bg-orange-500 hover:shadow-[0_0_15px_rgba(217,119,87,0.4)]'

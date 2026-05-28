@@ -162,6 +162,13 @@ export default function Navbar() {
 
   if (isAppRoute || isAuthRoute) return null
 
+  const lightPaths = [
+    '/legal/consumer-terms', '/legal/commercial-terms', '/legal/privacy', '/legal/aup',
+    '/privacy-policy', '/terms-of-service', '/acceptable-use', '/responsible-disclosure-policy',
+    '/trust', '/research', '/usage-limit-best-practices'
+  ]
+  const isLightTheme = lightPaths.includes(location.pathname)
+
   // Define global sub-navbar items (similar to Claude Code's sub-nav)
   const subNavItems = [
     { label: 'Overview', href: '/' },
@@ -176,9 +183,13 @@ export default function Navbar() {
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? 'bg-[#0f0f14]/95 backdrop-blur-md border-b border-white/[0.04]'
-            : 'bg-[#0a0a0f] border-b border-white/[0.02]'
+          isLightTheme
+            ? scrolled
+              ? 'bg-[#FBF9F6]/95 backdrop-blur-md border-b border-black/[0.06] text-[#191919]'
+              : 'bg-[#FBF9F6] border-b border-black/[0.03] text-[#191919]'
+            : scrolled
+              ? 'bg-[#0f0f14]/95 backdrop-blur-md border-b border-white/[0.04] text-foreground-primary'
+              : 'bg-[#0a0a0f] border-b border-white/[0.02] text-foreground-primary'
         }`}
       >
         <div className="section-padding">
@@ -200,7 +211,11 @@ export default function Navbar() {
                   <Link
                     key={group.label}
                     to={group.href}
-                    className="px-3 py-1.5 text-[14px] font-medium text-[#a3a3a3] hover:text-white hover:bg-white/5 transition-colors rounded-md"
+                    className={`px-3 py-1.5 text-[14px] font-medium transition-colors rounded-md ${
+                      isLightTheme
+                        ? 'text-[#666666] hover:text-[#191919] hover:bg-black/5'
+                        : 'text-[#a3a3a3] hover:text-white hover:bg-white/5'
+                    }`}
                   >
                     {group.label}
                   </Link>
@@ -216,12 +231,16 @@ export default function Navbar() {
               >
                 <button
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-[14px] font-medium transition-colors rounded-md ${
-                    activeDropdown === group.label ? 'text-white bg-white/5' : 'text-[#a3a3a3] hover:text-white hover:bg-white/5'
+                    activeDropdown === group.label
+                      ? isLightTheme ? 'text-[#191919] bg-black/5' : 'text-white bg-white/5'
+                      : isLightTheme ? 'text-[#666666] hover:text-[#191919] hover:bg-black/5' : 'text-[#a3a3a3] hover:text-white hover:bg-white/5'
                   }`}
                 >
                   {group.label}
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${
-                    activeDropdown === group.label ? 'rotate-180 text-foreground-primary' : 'text-foreground-muted'
+                    activeDropdown === group.label
+                      ? 'rotate-180 text-foreground-primary'
+                      : isLightTheme ? 'text-black/35' : 'text-foreground-muted'
                   }`} />
                 </button>
 
@@ -372,7 +391,11 @@ export default function Navbar() {
               <>
                 <Link
                   to="/auth/login"
-                  className="text-[13px] font-medium text-[#a3a3a3] hover:text-white transition-colors px-3 py-1.5 hover:bg-white/5 rounded-md"
+                  className={`text-[13px] font-medium transition-colors px-3 py-1.5 rounded-md ${
+                    isLightTheme
+                      ? 'text-[#666666] hover:text-[#191919] hover:bg-black/5'
+                      : 'text-[#a3a3a3] hover:text-white hover:bg-white/5'
+                  }`}
                 >
                   Log in
                 </Link>
@@ -386,7 +409,9 @@ export default function Navbar() {
           {/* ── Mobile hamburger ── */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden p-2 rounded-lg hover:bg-white/5 transition-colors text-white"
+            className={`lg:hidden p-2 rounded-lg transition-colors ${
+              isLightTheme ? 'text-[#191919] hover:bg-black/5' : 'text-white hover:bg-white/5'
+            }`}
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -396,9 +421,11 @@ export default function Navbar() {
     </header>
 
       {/* ── Sub Navbar (Claude Code style) ── */}
-      <div className="fixed top-14 left-0 right-0 z-40 hidden lg:block">
-        <SubNavbar items={subNavItems} />
-      </div>
+      {!isLightTheme && (
+        <div className="fixed top-14 left-0 right-0 z-40 hidden lg:block">
+          <SubNavbar items={subNavItems} />
+        </div>
+      )}
 
       {/* ── Mobile full-screen slide-in panel ── */}
       <AnimatePresence>

@@ -38,6 +38,7 @@ export const FOOTER_SECTIONS = [
       { label: 'Documentation', href: '/docs' },
       { label: 'API Reference', href: '/api-reference' },
       { label: 'Blog', href: '/blog' },
+      { label: 'AI Research', href: '/research' },
       { label: 'About Us', href: '/about' },
       { label: 'Careers', href: '/careers' },
       { label: 'Contact', href: '/contact' },
@@ -45,12 +46,15 @@ export const FOOTER_SECTIONS = [
     ],
   },
   {
-    title: 'Legal',
+    title: 'Legal & Security',
     links: [
-      { label: 'Privacy Policy', href: '/privacy-policy' },
-      { label: 'Terms of Service', href: '/terms-of-service' },
-      { label: 'Cookie Policy', href: '/cookie-policy' },
-      { label: 'Acceptable Use', href: '/acceptable-use' },
+      { label: 'Consumer Terms', href: '/legal/consumer-terms' },
+      { label: 'Commercial Terms', href: '/legal/commercial-terms' },
+      { label: 'Privacy Policy', href: '/legal/privacy' },
+      { label: 'Acceptable Use', href: '/legal/aup' },
+      { label: 'Trust Center', href: '/trust' },
+      { label: 'Disclosure Policy', href: '/responsible-disclosure-policy' },
+      { label: 'Usage Best Practices', href: '/usage-limit-best-practices' },
     ],
   },
 ]

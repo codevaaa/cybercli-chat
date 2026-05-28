@@ -2,8 +2,10 @@ import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, Sparkles } from 'lucide-react'
 import { PRICING_TIERS } from '@lib/constants'
+import { useAuthStore } from '@stores/authStore.js'
 
 export default function PricingSection() {
+  const { user } = useAuthStore()
   const sectionRef = useRef(null)
 
   useEffect(() => {
@@ -91,7 +93,7 @@ export default function PricingSection() {
               </ul>
 
               <Link
-                to={tier.price === 'Custom' ? '/contact' : '/auth/signup'}
+                to={user ? (tier.price === 'Custom' ? '/contact' : (tier.name === 'Free' ? '/chat' : '/settings/billing')) : (tier.price === 'Custom' ? '/contact' : '/auth/signup')}
                 className={`block text-center py-3 rounded-lg text-sm font-medium transition-all ${
                   tier.popular
                     ? 'bg-accent text-white hover:bg-accent-light'

@@ -24,6 +24,12 @@ import PrivacyPolicyPage from '@pages/public/PrivacyPolicyPage'
 import TermsPage from '@pages/public/TermsPage'
 import CookiePolicyPage from '@pages/public/CookiePolicyPage'
 import AcceptableUsePage from '@pages/public/AcceptableUsePage'
+import ConsumerTermsPage from '@pages/public/ConsumerTermsPage'
+import CommercialTermsPage from '@pages/public/CommercialTermsPage'
+import ResponsibleDisclosurePage from '@pages/public/ResponsibleDisclosurePage'
+import TrustCenterPage from '@pages/public/TrustCenterPage'
+import ResearchPage from '@pages/public/ResearchPage'
+import UsageLimitBestPracticesPage from '@pages/public/UsageLimitBestPracticesPage'
 import GDPRPage from '@pages/public/GDPRPage'
 import ChangelogPage from '@pages/public/ChangelogPage'
 import ApiReferencePage from '@pages/public/ApiReferencePage'
@@ -57,7 +63,9 @@ const PUBLIC_PATHS = [
   '/', '/features', '/models', '/pricing', '/contact', '/about',
   '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy',
   '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr',
-  '/changelog', '/api-reference', '/developers', '/code', '/status', '/downloads'
+  '/changelog', '/api-reference', '/developers', '/code', '/status', '/downloads',
+  '/legal/consumer-terms', '/legal/commercial-terms', '/legal/privacy', '/legal/aup',
+  '/responsible-disclosure-policy', '/trust', '/research', '/company', '/usage-limit-best-practices'
 ]
 const AUTH_PATHS = [
   '/auth/signup', '/auth/login', '/auth/forgot-password',
@@ -107,6 +115,15 @@ function App() {
           <Route path="/terms-of-service" element={<PublicLayout><TermsPage /></PublicLayout>} />
           <Route path="/cookie-policy" element={<PublicLayout><CookiePolicyPage /></PublicLayout>} />
           <Route path="/acceptable-use" element={<PublicLayout><AcceptableUsePage /></PublicLayout>} />
+          <Route path="/legal/consumer-terms" element={<PublicLayout><ConsumerTermsPage /></PublicLayout>} />
+          <Route path="/legal/commercial-terms" element={<PublicLayout><CommercialTermsPage /></PublicLayout>} />
+          <Route path="/legal/privacy" element={<PublicLayout><PrivacyPolicyPage /></PublicLayout>} />
+          <Route path="/legal/aup" element={<PublicLayout><AcceptableUsePage /></PublicLayout>} />
+          <Route path="/responsible-disclosure-policy" element={<PublicLayout><ResponsibleDisclosurePage /></PublicLayout>} />
+          <Route path="/trust" element={<PublicLayout><TrustCenterPage /></PublicLayout>} />
+          <Route path="/research" element={<PublicLayout><ResearchPage /></PublicLayout>} />
+          <Route path="/company" element={<PublicLayout><AboutPage /></PublicLayout>} />
+          <Route path="/usage-limit-best-practices" element={<PublicLayout><UsageLimitBestPracticesPage /></PublicLayout>} />
           <Route path="/gdpr" element={<PublicLayout><GDPRPage /></PublicLayout>} />
           <Route path="/changelog" element={<Navigate to="/docs/changelog" replace />} />
           <Route path="/api-reference" element={<PublicLayout><ApiReferencePage /></PublicLayout>} />

@@ -7,51 +7,40 @@ const LAST_UPDATED = 'May 20, 2026'
 
 const SECTIONS = [
   {
-    id: 'prohibited-uses',
-    title: '1. Prohibited Uses',
-    content: `You may not use CyberCli Chat for any purpose that is unlawful, harmful, or violates this Acceptable Use Policy. Specifically, you agree not to use the platform to:
+    id: 'intelligent-routing',
+    title: '1. Intelligent Routing Gateway',
+    content: `Our research focuses on solving the provider-lockin and reliability challenges of AI infrastructure.
 
-• Engage in, facilitate, or promote illegal activities, including but not limited to human trafficking, illegal drug trade, child exploitation, and cybercrime.
-• Generate or distribute malicious software, including ransomware, keyloggers, viruses, or exploit scripts designed to compromise computer systems.
-• Impersonate individuals, organizations, or governmental bodies to conduct phishing attacks, identity theft, or financial fraud.
-• Conduct unauthorized penetration testing or vulnerability scanning on third-party networks without explicit legal authorization.`,
+Traditional architectures bind clients to a single vendor. Our gateway dynamically routes requests across 8+ distinct LLM providers based on continuous latency polling, current API error rates, rate limit windows, and model capabilities.
+
+By treating compute units as a fluid utility, we maximize execution speeds and provide 99.9% fault-tolerance for user interactions.`,
   },
   {
-    id: 'content-standards',
-    title: '2. Content Standards',
-    content: `Any content you input into the platform, or generate through our custom AI models, must conform to high safety and ethical standards. You are prohibited from generating:
+    id: 'ensemble-reasoning',
+    title: '2. Ensemble Reasoning (Council Mode)',
+    content: `A central branch of our research is multi-model consensus and synthesis.
 
-• Content that incites violence, promotes hate speech, or harasses and doxxes individuals.
-• Sexually explicit content, pornography, or material promoting non-consensual sexual content.
-• Misinformation or disinformation campaigns intended to mislead the public, disrupt democratic processes, or damage reputations.
-• Content violating intellectual property, copyright, trademark, or patent rights of other individuals or companies.`,
+Through Council Mode, we run parallel inference pathways. Instead of presenting a single model's output, our synthesis layer parses three independent models (such as Cyber-Smart, Cyber-Balanced, and Cyber-Mini).
+
+We analyze overlapping semantic structures, filter out outlier hallucinations, and compile a unified response. Public benchmarks demonstrate that ensemble reasoning reduces factual hallucinations by up to 47%.`,
   },
   {
-    id: 'api-abuse',
-    title: '3. API & System Abuse',
-    content: `To ensure high availability and fair access for all users, we enforce strict controls on system usage. The following behaviors are prohibited:
+    id: 'latency-reduction',
+    title: '3. Latency Optimization & TTS',
+    content: `Conversational AI requires low latency. We optimize performance at three critical bottlenecks:
 
-• Bypassing rate limiters, security sandboxes, or prompt-injection guards through adversarial input construction.
-• Scraping, reverse engineering, or extracting model weights or proprietary backend endpoints without authorization.
-• Deploying automated bots, scripts, or spiders to register accounts, run chats, or crawl CyberCli assets in bulk.
-• Attempting to disrupt, overload, or compromise the availability of the AI gateway cluster or database layers.`,
+• **Streaming SSE Gateway**: Optimizing server-sent events (SSE) pipeline setups to ensure characters stream immediately to the client.
+• **High-speed compute pools**: Utilizing low-latency providers (such as Groq and Cerebras) for voice execution steps to maintain sub-500ms tokens-per-second outputs.
+• **Server-side speech orchestration**: Orchestrating Gemini Flash TTS on the backend to begin audio caching before text streaming completes.`,
   },
   {
-    id: 'monitoring-enforcement',
-    title: '4. Enforcement & Monitoring',
-    content: `We monitor system usage patterns for abuse and security verification purposes. If we determine that you have violated these policies:
+    id: 'safety-guardrails',
+    title: '4. AI Safety & Watermarking',
+    content: `We research balanced safety guardrails that protect users without restricting access to raw information:
 
-• We reserve the right to suspend or terminate your account immediately without prior warning or refund.
-• We may redact, filter, or block inputs and outputs that trigger safety classifiers.
-• We will cooperate with law enforcement and reporting authorities if we detect illegal activities or credible threats of violence.`,
-  },
-  {
-    id: 'reporting',
-    title: '5. Reporting Abuse',
-    content: `We rely on our community to maintain a secure and productive environment. If you encounter any generated content or user activity that violates these terms:
-
-• Send a detailed report to **cybermindcli@cybermindcli.com** including prompt references or thread identifiers.
-• Our safety team reviews all incident tickets within 24 hours and takes appropriate administrative action.`,
+• **Transparent reasoning**: Exposing collapsible chain-of-thought traces so users can verify the model's intermediate logic.
+• **Input-Output sanitization**: Running local classifiers to detect malicious injection payloads or attempts to generate toxic content.
+• **Ethics watermarking**: Injecting traceable watermarks into API outputs to encourage responsible, authentic sharing.`,
   },
 ]
 
@@ -83,6 +72,7 @@ function LegalSidebar({ sections, activeId }) {
 
 function useSectionTracker(sections) {
   const [activeId, setActiveId] = useState(sections[0]?.id)
+
   useEffect(() => {
     const handler = () => {
       const scrollPos = window.scrollY + 120
@@ -96,6 +86,7 @@ function useSectionTracker(sections) {
     window.addEventListener('scroll', handler, { passive: true })
     return () => window.removeEventListener('scroll', handler)
   }, [sections])
+
   return activeId
 }
 
@@ -109,32 +100,34 @@ function formatContent(text) {
   })
 }
 
-export default function AcceptableUsePage() {
+export default function ResearchPage() {
   const activeId = useSectionTracker(SECTIONS)
 
   return (
     <div className="pt-28 pb-20 bg-[#FBF9F6] text-[#191919]">
       <SEOHead
-        title="Acceptable Use Policy"
-        description="CyberMindCLI acceptable use policy. Guidelines for responsible AI usage, prohibited activities, and reporting violations."
-        path="/acceptable-use"
-        keywords={['acceptable use', 'AI policy', 'usage guidelines', 'CyberMindCLI', 'responsible AI']}
+        title="AI Routing & Synthesis Research"
+        description="CyberMindCLI Research portal. Learn about our dynamic AI routing systems, ensemble reasoning algorithms, and latency reduction experiments."
+        path="/research"
+        keywords={['AI research', 'ensemble reasoning', 'intelligent gateway', 'hallucination reduction', 'CyberMindCLI research']}
       />
       <div className="section-padding">
         <div className="container-custom">
+          {/* Header */}
           <div className="mb-12 border-b border-black/[0.06] pb-8">
-            <span className="text-xs font-semibold text-[#D97757] tracking-widest uppercase mb-4 block">Legal & Policies</span>
-            <h1 className="text-4xl md:text-5xl font-serif font-medium text-[#191919] mb-3 tracking-tight">Acceptable Use Policy</h1>
+            <span className="text-xs font-semibold text-[#D97757] tracking-widest uppercase mb-4 block">Intelligence & Innovation</span>
+            <h1 className="text-4xl md:text-5xl font-serif font-medium text-[#191919] mb-3 tracking-tight">AI Research</h1>
             <p className="text-sm text-[#666666]">Last updated: {LAST_UPDATED} · Effective immediately</p>
           </div>
 
           <div className="flex gap-12 items-start">
             <LegalSidebar sections={SECTIONS} activeId={activeId} />
 
+            {/* Main content */}
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-8 mb-8">
                 <p className="text-[#444444] text-sm leading-relaxed">
-                  This Acceptable Use Policy outlines the rules and standards governing your use of CyberCli Chat and our AI model gateway. By accessing our services, you commit to respecting these boundaries.
+                  CyberMindCLI conducts research in distributed inference, ensemble learning, and multi-model synthesis. Our mission is to make advanced reasoning architectures faster, more reliable, and universally accessible. Explore our ongoing research topics below.
                 </p>
               </div>
 
@@ -154,7 +147,7 @@ export default function AcceptableUsePage() {
                     </h2>
                     <div className="space-y-4">
                       {section.content.split('\n\n').map((para, j) => (
-                        para.startsWith('• ') || para.includes('\n• ') ? (
+                        para.startsWith('• ') ? (
                           <ul key={j} className="space-y-2.5 pl-2">
                             {para.split('\n').map((item, k) => (
                               <li key={k} className="flex items-start gap-2.5 text-sm text-[#444444] leading-relaxed">
@@ -176,7 +169,7 @@ export default function AcceptableUsePage() {
 
               <div className="mt-16 p-6 rounded-xl border border-black/[0.06] bg-[#FAF8F5]">
                 <p className="text-xs text-[#666666] leading-relaxed">
-                  Last updated: {LAST_UPDATED}. Contact <a href="mailto:cybermindcli@cybermindcli.com" className="text-[#D97757] hover:underline">cybermindcli@cybermindcli.com</a> for policy inquiries or to report violations.
+                  This research index was last updated on {LAST_UPDATED}. For research collaborations or academic compute grants, please contact our research board at <a href="mailto:cybermindcli@cybermindcli.com" className="text-[#D97757] hover:underline">cybermindcli@cybermindcli.com</a>.
                 </p>
               </div>
             </main>
