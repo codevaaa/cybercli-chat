@@ -35,6 +35,7 @@ import ChangelogPage from '@pages/public/ChangelogPage'
 import ApiReferencePage from '@pages/public/ApiReferencePage'
 import DevelopersPage from '@pages/public/DevelopersPage'
 import CyberCliCodePage from '@pages/public/CyberCliCodePage'
+import ClaudeCodePage from '@pages/public/ClaudeCodePage'
 import SystemStatusPage from '@pages/public/SystemStatusPage'
 import DownloadsPage from '@pages/public/DownloadsPage'
 
@@ -64,6 +65,7 @@ const PUBLIC_PATHS = [
   '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy',
   '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr',
   '/changelog', '/api-reference', '/developers', '/code', '/status', '/downloads',
+  '/product',
   '/legal/consumer-terms', '/legal/commercial-terms', '/legal/privacy', '/legal/aup',
   '/responsible-disclosure-policy', '/trust', '/research', '/company', '/usage-limit-best-practices'
 ]
@@ -129,6 +131,7 @@ function App() {
           <Route path="/api-reference" element={<PublicLayout><ApiReferencePage /></PublicLayout>} />
           <Route path="/developers" element={<PublicLayout><DevelopersPage /></PublicLayout>} />
           <Route path="/code" element={<PublicLayout><CyberCliCodePage /></PublicLayout>} />
+          <Route path="/product" element={<PublicLayout><ClaudeCodePage /></PublicLayout>} />
           <Route path="/status" element={<PublicLayout><SystemStatusPage /></PublicLayout>} />
           <Route path="/downloads" element={<PublicLayout><DownloadsPage /></PublicLayout>} />
 

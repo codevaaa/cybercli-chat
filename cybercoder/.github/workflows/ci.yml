@@ -103,7 +103,7 @@ jobs:
         version: ${{ env.PNPM_VERSION }}
         
     - name: Install dependencies
-      run: pnpm install --frozen-lockform
+      run: pnpm install --frozen-lockfile
       
     - name: Build packages
       run: pnpm build
@@ -135,7 +135,7 @@ jobs:
         version: ${{ env.PNPM_VERSION }}
         
     - name: Install dependencies
-      run: pnpm install --frozen-lockform
+      run: pnpm install --frozen-lockfile
       
     - name: Type check
       run: pnpm -r --parallel run typecheck
@@ -175,7 +175,7 @@ jobs:
         version: ${{ env.PNPM_VERSION }}
         
     - name: Install dependencies
-      run: pnpm install --frozen-lockform
+      run: pnpm install --frozen-lockfile
       
     - name: Build packages
       run: pnpm build

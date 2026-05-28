@@ -1,5 +1,6 @@
 import { verifyJWT } from '../config/supabase.js'
 import ApiKey from '../models/ApiKey.js'
+import CLISession from '../models/CLISession.js'
 
 export const requireAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization
@@ -93,6 +94,63 @@ export const optionalAuth = async (req, res, next) => {
         plan: user.user_metadata?.plan_tier || 'free',
       }
     }
+  }
+
+  next()
+}
+
+// CLI Session Authentication
+export const authenticateCLI = async (req, res, next) => {
+  const authHeader = req.headers.authorization
+  const sessionHeader = req.headers['x-cli-session']
+
+  if (!authHeader || !sessionHeader) {
+    return res.status(401).json({ 
+      error: 'Missing authorization or session header',
+      hint: 'Include Authorization: Bearer <api_key> and X-CLI-Session: <session_id>'
+    })
+  }
+
+  // Extract API key
+  let apiKey = authHeader
+  if (authHeader.startsWith('Bearer ')) {
+    apiKey = authHeader.split(' ')[1]
+  }
+
+  // Validate API key
+  if (!apiKey.startsWith('sk_cyber_')) {
+    return res.status(401).json({ error: 'Invalid API key format' })
+  }
+
+  const apiKeyDoc = await ApiKey.findOne({ key: apiKey, is_active: true })
+  if (!apiKeyDoc) {
+    return res.status(401).json({ error: 'Invalid or revoked API key' })
+  }
+
+  // Validate session
+  const session = await CLISession.findOne({
+    session_id: sessionHeader,
+    user_id: apiKeyDoc.user_id,
+    status: { $in: ['active', 'idle'] }
+  })
+
+  if (!session) {
+    return res.status(401).json({ 
+      error: 'Invalid or expired session',
+      hint: 'Authenticate first with POST /api/v1/cli/auth'
+    })
+  }
+
+  // Update last activity
+  session.last_activity_at = new Date()
+  await session.save()
+
+  // Attach to request
+  req.apiKey = apiKeyDoc
+  req.session = session
+  req.user = {
+    id: apiKeyDoc.user_id,
+    plan: 'pro'
   }
 
   next()
