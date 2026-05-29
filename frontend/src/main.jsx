@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, HashRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
 import App from './App.jsx'
@@ -17,6 +17,10 @@ const queryClient = new QueryClient({
   },
 })
 
+// Use HashRouter in desktop (file:// protocol) — BrowserRouter needs a server
+const isDesktop = typeof window !== 'undefined' && !!window.electronAPI
+const Router = isDesktop ? HashRouter : BrowserRouter
+
 function AppWrapper() {
   const initialize = useAuthStore((state) => state.initialize)
 
@@ -31,9 +35,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
+        <Router>
           <AppWrapper />
-        </BrowserRouter>
+        </Router>
       </QueryClientProvider>
     </HelmetProvider>
   </React.StrictMode>,
