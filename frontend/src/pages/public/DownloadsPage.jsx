@@ -122,7 +122,7 @@ export default function DownloadsPage() {
                 <h3 className="text-lg font-serif text-[#ECECEC] mb-1">CyberCoder CLI</h3>
                 <p className="text-[13px] text-[#A0A0A0] mb-3">The fastest way to install. Works on all platforms with Node.js 20+.</p>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0A0A0F] border border-white/[0.08]">
-                  <code className="text-[12px] text-blue-300 font-mono">npm i -g @cybermind/cli</code>
+                  <code className="text-[12px] text-blue-300 font-mono">npm i -g @cybercli_chat/cli</code>
                 </div>
               </div>
             </div>
