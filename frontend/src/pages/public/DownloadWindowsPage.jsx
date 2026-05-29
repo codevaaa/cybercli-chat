@@ -27,10 +27,12 @@ const STEPS = [
 export default function DownloadWindowsPage() {
   const [downloading, setDownloading] = useState(false)
 
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
   const handleDownload = () => {
     setDownloading(true)
     const link = document.createElement('a')
-    link.href = '/downloads/CyberCli-win-x64.exe'
+    link.href = `${API_BASE}/api/v1/downloads/CyberCli-win-x64.exe`
     link.download = 'CyberCli-Setup-Windows-x64.exe'
     document.body.appendChild(link)
     link.click()

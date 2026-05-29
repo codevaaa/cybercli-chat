@@ -27,10 +27,12 @@ const STEPS = [
 export default function DownloadMacPage() {
   const [downloading, setDownloading] = useState(false)
 
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
   const handleDownload = () => {
     setDownloading(true)
     const link = document.createElement('a')
-    link.href = '/downloads/CyberCli-mac-universal.dmg'
+    link.href = `${API_BASE}/api/v1/downloads/CyberCli-mac-universal.dmg`
     link.download = 'CyberCli-macOS-universal.dmg'
     document.body.appendChild(link)
     link.click()

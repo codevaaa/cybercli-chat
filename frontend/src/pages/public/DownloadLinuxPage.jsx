@@ -28,15 +28,17 @@ export default function DownloadLinuxPage() {
   const [downloadingAppImage, setDownloadingAppImage] = useState(false)
   const [downloadingDeb, setDownloadingDeb] = useState(false)
 
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
   const handleDownload = (type) => {
     const setter = type === 'appimage' ? setDownloadingAppImage : setDownloadingDeb
     setter(true)
     const link = document.createElement('a')
     if (type === 'appimage') {
-      link.href = '/downloads/CyberCli-linux-x64.AppImage'
+      link.href = `${API_BASE}/api/v1/downloads/CyberCli-linux-x64.AppImage`
       link.download = 'CyberCli-linux-x86_64.AppImage'
     } else {
-      link.href = '/downloads/CyberCli-linux-x64.deb'
+      link.href = `${API_BASE}/api/v1/downloads/CyberCli-linux-x64.deb`
       link.download = 'CyberCli-linux-amd64.deb'
     }
     document.body.appendChild(link)
