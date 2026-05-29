@@ -138,7 +138,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         return;
       }
       if (key.return) {
-        const url = 'https://cybermindcli.info/login?redirect=cli';
+        const url = 'https://cybermindcli.info/subscribe?redirect=cli';
         openBrowser(url);
         markOnboardingComplete('cybercli');
         onComplete('cybercli');
@@ -155,17 +155,19 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         <DottedBorder width={58} />
 
         <Box flexDirection="column" marginTop={1} paddingLeft={2} paddingRight={2}>
-          <Text bold color="white">Sign in to CyberCli</Text>
+          <Text bold color="white">CyberCli subscription required</Text>
           <Box marginTop={1} />
           <Text color="gray">
-            Browser didn't open? Use the url below to sign in (c to copy)
+            A Pro, Max, or Team subscription is required to use CyberCli Code.
           </Text>
           <Box marginTop={1} />
-          <Text color="cyan">https://cybermindcli.info/login?redirect=cli</Text>
+          <Text color="gray">
+            Browser didn't open? Use the url below:
+          </Text>
           <Box marginTop={1} />
-          <Text color="gray">Paste code here if prompted {'>'} </Text>
+          <Text color="cyan">https://cybermindcli.info/subscribe?redirect=cli</Text>
           <Box marginTop={1} />
-          <Text color="gray">Press Enter to open browser, ESC to go back</Text>
+          <Text color="gray">Press Enter to choose a plan, ESC to go back</Text>
         </Box>
       </Box>
     );

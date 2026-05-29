@@ -38,6 +38,7 @@ import ClaudeCodePage from '@pages/public/ClaudeCodePage'
 import SystemStatusPage from '@pages/public/SystemStatusPage'
 import DownloadsPage from '@pages/public/DownloadsPage'
 import CliLoginPage from '@pages/public/CliLoginPage'
+import CliSubscribePage from '@pages/public/CliSubscribePage'
 
 import SignupPage from '@pages/auth/SignupPage'
 import LoginPage from '@pages/auth/LoginPage'
@@ -65,7 +66,7 @@ const PUBLIC_PATHS = [
   '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy',
   '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr',
   '/changelog', '/api-reference', '/developers', '/status', '/downloads',
-  '/product', '/login',
+  '/product', '/login', '/subscribe',
   '/legal/consumer-terms', '/legal/commercial-terms', '/legal/privacy', '/legal/aup',
   '/responsible-disclosure-policy', '/trust', '/research', '/company', '/usage-limit-best-practices'
 ]
@@ -134,6 +135,7 @@ function App() {
           <Route path="/status" element={<PublicLayout><SystemStatusPage /></PublicLayout>} />
           <Route path="/downloads" element={<PublicLayout><DownloadsPage /></PublicLayout>} />
           <Route path="/login" element={<CliLoginPage />} />
+          <Route path="/subscribe" element={<CliSubscribePage />} />
 
           {/* ── Auth Routes ── */}
           <Route path="/auth/signup" element={<SignupPage />} />
