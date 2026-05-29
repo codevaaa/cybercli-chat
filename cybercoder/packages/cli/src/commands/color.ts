@@ -15,6 +15,7 @@ const ALLOWED = new Set([
  * `/color <name>` — pick a chalk-compatible accent color for the prompt bar
  * and welcome card. Cosmetic only; resets to cyan on next launch unless a
  * /profile (M10) is saved.
+ * `/theme` — open the interactive theme picker (dark/light mode + syntax).
  */
 export function buildColorCommand(ctx: CommandContext): SlashCommandHandler {
   return {
@@ -40,6 +41,49 @@ export function buildColorCommand(ctx: CommandContext): SlashCommandHandler {
       }
       ctx.setPromptColor(name);
       reply(`Accent color set to ${name}.`);
+    },
+  };
+}
+
+export function buildThemeCommand(ctx: CommandContext): SlashCommandHandler {
+  return {
+    name: 'theme',
+    description: 'Open the interactive theme picker (dark/light mode + syntax highlighting).',
+    category: 'config',
+    usage: '/theme',
+    run: () => {
+      if (ctx.setScreen) {
+        ctx.setScreen('theme');
+      } else {
+        ctx.appendMessage({
+          id: `theme-${Date.now()}`,
+          role: 'system',
+          content: 'Theme picker is not available in this context.',
+          createdAt: Date.now(),
+        });
+      }
+    },
+  };
+}
+
+export function buildSettingsCommand(ctx: CommandContext): SlashCommandHandler {
+  return {
+    name: 'settings',
+    description: 'Open the settings screen (general, appearance, AI, safety).',
+    category: 'config',
+    usage: '/settings',
+    aliases: ['config'],
+    run: () => {
+      if (ctx.setScreen) {
+        ctx.setScreen('settings');
+      } else {
+        ctx.appendMessage({
+          id: `settings-${Date.now()}`,
+          role: 'system',
+          content: 'Settings are not available in this context.',
+          createdAt: Date.now(),
+        });
+      }
     },
   };
 }

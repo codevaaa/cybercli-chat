@@ -11,9 +11,9 @@ async function main(): Promise<void> {
   const program = new Command();
 
   program
-    .name('cybermind')
-    .description('CyberMind CLI — fullstack agentic coding assistant')
-    .version(CYBERMIND_VERSION, '-v, --version', 'print the CyberMind version')
+    .name('cm')
+    .description('CyberCoder CLI — fullstack agentic coding assistant')
+    .version(CYBERMIND_VERSION, '-v, --version', 'print the CyberCoder version')
     .option('-d, --debug', 'enable debug logging')
     .option('--no-welcome', 'skip the welcome screen on startup')
     .option('-p, --print <prompt>', 'print mode: run a single prompt non-interactively and exit')

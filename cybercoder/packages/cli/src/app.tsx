@@ -1,6 +1,9 @@
 import { Box, useApp, useInput } from 'ink';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Welcome } from './components/Welcome.js';
+import { Onboarding } from './components/Onboarding.js';
+import { ThemePicker, type ThemeConfig } from './components/ThemePicker.js';
+import { Settings } from './components/Settings.js';
 import { Prompt } from './components/Prompt.js';
 import { MessageList } from './components/MessageList.js';
 import { StatusBar } from './components/StatusBar.js';
@@ -11,6 +14,8 @@ import { runChat } from './runtime/chat.js';
 import type { ApprovalDecision, ApprovalPrompt, ApprovalUI } from '@cybermind/tools';
 import type { SessionMessage, SessionStatus } from './state/session.js';
 
+type Screen = 'onboarding' | 'theme' | 'settings' | 'welcome' | 'chat';
+
 interface AppProps {
   showWelcome: boolean;
   initialModel?: string;
@@ -19,6 +24,11 @@ interface AppProps {
 
 export const App: React.FC<AppProps> = ({ showWelcome, initialModel, initialProvider }) => {
   const { exit } = useApp();
+
+  // Determine initial screen based on whether user has completed onboarding
+  const hasCompletedOnboarding = false; // TODO: check config file
+  const [screen, setScreen] = useState<Screen>(hasCompletedOnboarding ? 'welcome' : 'onboarding');
+  const [themeConfig, setThemeConfig] = useState<ThemeConfig>({ mode: 'dark', syntaxTheme: 'Monokai Extended' });
 
   const [messages, setMessages] = useState<SessionMessage[]>([]);
   const [status, setStatus] = useState<SessionStatus>('idle');
@@ -79,6 +89,7 @@ export const App: React.FC<AppProps> = ({ showWelcome, initialModel, initialProv
         getProvider: () => provider,
         setProvider,
         setPromptColor,
+        setScreen: (s: string) => setScreen(s as Screen),
       }),
     [appendMessage, clearMessages, exit, model, provider],
   );
@@ -202,14 +213,58 @@ export const App: React.FC<AppProps> = ({ showWelcome, initialModel, initialProv
     [appendMessage, commandRegistry, welcomeVisible, driveChat],
   );
 
+  // Screen navigation handlers
+  const handleOnboardingComplete = useCallback((method: string) => {
+    void method;
+    setScreen('theme');
+  }, []);
+
+  const handleThemeComplete = useCallback((theme: ThemeConfig) => {
+    setThemeConfig(theme);
+    setScreen('welcome');
+  }, []);
+
+  const handleSettingsClose = useCallback(() => {
+    setScreen('chat');
+  }, []);
+
+  // Render based on current screen
+  const renderScreen = () => {
+    switch (screen) {
+      case 'onboarding':
+        return <Onboarding onComplete={handleOnboardingComplete} />;
+      case 'theme':
+        return <ThemePicker onComplete={handleThemeComplete} />;
+      case 'settings':
+        return <Settings onClose={handleSettingsClose} />;
+      case 'welcome':
+        return (
+          <>
+            {welcomeVisible && <Welcome provider={provider} model={model} />}
+            <MessageList messages={messages} />
+            {pendingApproval && <ApprovalDialog pending={pendingApproval} />}
+            <Prompt onSubmit={handleSubmit} disabled={status !== 'idle'} />
+            <StatusBar status={status} model={model} provider={provider} />
+            {exitConfirm && <ExitConfirm />}
+          </>
+        );
+      case 'chat':
+      default:
+        return (
+          <>
+            <MessageList messages={messages} />
+            {pendingApproval && <ApprovalDialog pending={pendingApproval} />}
+            <Prompt onSubmit={handleSubmit} disabled={status !== 'idle'} />
+            <StatusBar status={status} model={model} provider={provider} />
+            {exitConfirm && <ExitConfirm />}
+          </>
+        );
+    }
+  };
+
   return (
     <Box flexDirection="column">
-      {welcomeVisible && <Welcome provider={provider} model={model} />}
-      <MessageList messages={messages} />
-      {pendingApproval && <ApprovalDialog pending={pendingApproval} />}
-      <Prompt onSubmit={handleSubmit} disabled={status !== 'idle'} />
-      <StatusBar status={status} model={model} provider={provider} />
-      {exitConfirm && <ExitConfirm />}
+      {renderScreen()}
     </Box>
   );
 };
