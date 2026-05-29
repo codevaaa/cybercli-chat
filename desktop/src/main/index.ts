@@ -22,18 +22,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // ─── Constants ──────────────────────────────────────────────
 
-const isDev = !app.isPackaged
+const isDev = process.env.NODE_ENV === 'development' || (!app.isPackaged && process.env.NODE_ENV !== 'production')
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
 
 // Load URL: dev = frontend dev server (if running), prod = built frontend
 const FRONTEND_DEV_URL = 'http://localhost:5173'
-const FRONTEND_PROD_PATH = path.join(__dirname, '../../frontend/dist/index.html')
+const FRONTEND_PROD_PATH = path.join(__dirname, '../../../frontend/dist/index.html')
 
-// Renderer HTML files (built)
-const RENDERER_DIR = isDev
-  ? path.join(__dirname, '../renderer')  // dist/renderer after build
-  : path.join(__dirname, '../renderer')
+// Renderer HTML files (built) — from dist/main/ → dist/renderer/
+const RENDERER_DIR = path.join(__dirname, '../../renderer')
 
 // ─── State ────────────────────────────────────────────────────
 
@@ -54,9 +52,9 @@ function createMainWindow(): BrowserWindow {
     titleBarStyle: isMac ? 'hiddenInset' : 'default',
     trafficLightPosition: isMac ? { x: 12, y: 12 } : undefined,
     backgroundColor: '#0A0A0F',
-    icon: path.join(__dirname, '../../resources/icon.png'),
+    icon: path.join(__dirname, '../../../resources/icon.png'),
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.mjs'),
       contextIsolation: true,
       nodeIntegration: false,
       allowRunningInsecureContent: false,
@@ -110,9 +108,9 @@ function createLandingWindow(): BrowserWindow {
     backgroundColor: '#0A0A0F',
     titleBarStyle: 'hidden',
     frame: false,
-    icon: path.join(__dirname, '../../resources/icon.png'),
+    icon: path.join(__dirname, '../../../resources/icon.png'),
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.mjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -133,9 +131,9 @@ function createLoginWindow(): BrowserWindow {
     backgroundColor: '#0A0A0F',
     titleBarStyle: 'hidden',
     frame: false,
-    icon: path.join(__dirname, '../../resources/icon.png'),
+    icon: path.join(__dirname, '../../../resources/icon.png'),
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.mjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -340,7 +338,7 @@ ipcMain.handle('app:get-info', () => ({
 // Notifications
 ipcMain.handle('notify:show', async (_event, title: string, body: string) => {
   const { Notification } = await import('electron')
-  new Notification({ title, body, icon: path.join(__dirname, '../../resources/icon.png') }).show()
+  new Notification({ title, body, icon: path.join(__dirname, '../../../resources/icon.png') }).show()
 })
 
 // ─── Exports for other modules ───────────────────────────────

@@ -3437,6 +3437,23 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingIndex])
 
+  // Desktop shortcuts via Electron IPC
+  useEffect(() => {
+    if (!window.electronAPI) return
+
+    const removeNewChat = window.electronAPI.onShortcutNewChat?.(() => {
+      handleNewChat()
+    })
+    const removeFocusInput = window.electronAPI.onShortcutFocusInput?.(() => {
+      inputRef.current?.focus()
+    })
+
+    return () => {
+      removeNewChat?.()
+      removeFocusInput?.()
+    }
+  }, [])
+
   const loadThreads = async () => {
     try {
       const { data } = await api.get('/chat')

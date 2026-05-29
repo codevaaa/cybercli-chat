@@ -14,6 +14,21 @@ export const useAuthStore = create(
         set({ loading: true, error: null })
 
         try {
+          // Check for desktop auth token (Electron IPC)
+          if (typeof window !== 'undefined' && window.electronAPI?.onAuthToken) {
+            window.electronAPI.onAuthToken((token) => {
+              localStorage.setItem('sb-access-token', token)
+              // Trigger a session refresh to validate token
+              supabase.auth.getUser(token).then(({ data }) => {
+                if (data.user) {
+                  localStorage.setItem('user_name', data.user.user_metadata?.name || data.user.email || '')
+                  localStorage.setItem('user_email', data.user.email || '')
+                  set({ user: data.user, session: { access_token: token, user: data.user }, loading: false })
+                }
+              })
+            })
+          }
+
           const { data: { session } } = await supabase.auth.getSession()
           if (session?.access_token) {
             localStorage.setItem('sb-access-token', session.access_token)
