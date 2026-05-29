@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
 
 const MODELS = [
-  { id: 'gemini', label: 'Gemini 2.5 Flash', color: '#4285F4', emoji: '🧠', x: 50, y: 220 },
-  { id: 'mistral', label: 'Mistral Large', color: '#FF7000', emoji: '⚙️', x: 250, y: 220 },
-  { id: 'groq', label: 'Llama 3.3 70B', color: '#F5415F', emoji: '⚡', x: 450, y: 220 },
-  { id: 'openrouter', label: 'GPT-4o Mini', color: '#10A37F', emoji: '🔬', x: 650, y: 220 },
+  { id: 'gemini', label: 'Sahadeva', color: '#4285F4', emoji: '🧠', x: 50, y: 220 },
+  { id: 'mistral', label: 'Saptarishi', color: '#FF7000', emoji: '⚙️', x: 250, y: 220 },
+  { id: 'groq', label: 'Yudhishthira', color: '#F5415F', emoji: '⚡', x: 450, y: 220 },
+  { id: 'openrouter', label: 'Bheem', color: '#10A37F', emoji: '🔬', x: 650, y: 220 },
 ]
 
 const PHASES = [

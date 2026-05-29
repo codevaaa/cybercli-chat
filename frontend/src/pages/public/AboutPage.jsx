@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Shield, Target, Heart, Zap, Globe, Award, Code2, Lock, Github } from 'lucide-react'
+import { ArrowRight, Shield, Target, Heart, Zap, Globe, Award, Code2, Lock, Github, ShieldAlert } from 'lucide-react'
 import ScrollReveal, { ScrollRevealGroup } from '@components/ui/ScrollReveal'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 import { useAuthStore } from '@stores/authStore.js'
+import SystemOrchestration from '@components/landing/SystemOrchestration'
 
 const VALUES = [
   {
@@ -285,6 +286,85 @@ export default function AboutPage() {
         </div>
       </div>
 
+      {/* ── Co-Founder Spotlight ── */}
+      <div className="section-padding mb-24">
+        <div className="container-custom">
+          <ScrollReveal>
+            <span className="text-xs font-semibold tracking-widest uppercase text-accent mb-3 block">Co-Founder Spotlight</span>
+            <h2 className="text-4xl font-serif font-light text-foreground-primary mb-16">The architect of scaling</h2>
+          </ScrollReveal>
+
+          <div className="grid lg:grid-cols-5 gap-12 items-start">
+            {/* Left — Photo Card */}
+            <ScrollReveal direction="right" className="lg:col-span-2">
+              <div className="card-glass p-8 text-center">
+                <div className="w-28 h-28 rounded-2xl mx-auto mb-6 overflow-hidden border border-white/10 relative bg-background-tertiary">
+                  <motion.img
+                    src="/Rishab_thakur.jpeg"
+                    alt="Rishab Thakur"
+                    className="w-full h-full object-cover filter grayscale hover:grayscale-0 transition-all duration-500 scale-100 hover:scale-105"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: 'spring', stiffness: 300 }}
+                  />
+                </div>
+                <h3 className="text-2xl font-semibold text-foreground-primary mb-1">Rishab Thakur</h3>
+                <p className="text-accent text-sm font-medium mb-4">Co-Founder & STO · CFO · CMO</p>
+                <div className="flex flex-wrap gap-2 justify-center mb-6">
+                  {['Web Influencer', 'Security Tester', 'Product Manager', 'Marketing Mastermind'].map(tag => (
+                    <span key={tag} className="text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">{tag}</span>
+                  ))}
+                </div>
+                <div className="flex gap-3 justify-center">
+                  <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-sm text-foreground-muted hover:text-accent transition-colors">
+                    <Github className="w-4 h-4" />
+                    github.com
+                  </a>
+                </div>
+              </div>
+            </ScrollReveal>
+
+            {/* Right — Bio */}
+            <ScrollReveal direction="left" delay={0.1} className="lg:col-span-3">
+              <div className="space-y-5 text-foreground-secondary leading-relaxed">
+                <p className="text-lg">
+                  <strong className="text-foreground-primary">Rishab Thakur</strong> is the Co-Founder, STO (Chief Strategy & Technology Officer),
+                  CFO (Chief Financial Officer), and CMO (Chief Marketing Officer) of CyberCli. He is a multi-disciplinary leader combining deep
+                  cybersecurity testing skills with digital marketing mastery and high-performance product management.
+                </p>
+                <p>
+                  As a seasoned <strong className="text-foreground-primary">cybersecurity tester</strong> and distributed systems architect,
+                  Rishab drives the core orchestration layout of the CyberCli platform. He is also a highly prominent 
+                  <strong className="text-foreground-primary">production product manager</strong>, coordinating cross-functional efforts to ensure
+                  sub-second latency across 8+ AI models and the native desktop Electron app execution nodes.
+                </p>
+                <p>
+                  Beyond technical engineering, Rishab is a powerful <strong className="text-foreground-primary">media powerhouse and website influencer</strong>
+                  across social channels. His expertise as a <strong className="text-foreground-primary">digital marketing mastermind</strong> has fueled
+                  viral growth, positioning CyberMindCLI as a leading open-weights AI hub. As CFO and CMO, he handles the financial structuring,
+                  Stripe billing loops, and marketing campaigns that scale the platform to thousands of global developers.
+                </p>
+                <div className="grid sm:grid-cols-3 gap-4 pt-4">
+                  {[
+                    { icon: Zap, label: 'Strategy & Ops', sub: 'STO · CFO · CMO roles' },
+                    { icon: Shield, label: 'Cybersecurity Tester', sub: 'Distributed system testing' },
+                    { icon: Award, label: 'Media Powerhouse', sub: 'Influencing & digital marketing' },
+                  ].map(({ icon: Icon, label, sub }) => (
+                    <div key={label} className="flex items-start gap-3 p-4 rounded-xl bg-background-secondary border border-border-subtle">
+                      <Icon className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground-primary">{label}</p>
+                        <p className="text-xs text-foreground-muted">{sub}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </div>
+
       {/* ── Values ── */}
       <div className="section-padding mb-24">
         <div className="container-custom">
@@ -359,67 +439,8 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* ── Team ── */}
-      <div className="section-padding mb-20">
-        <div className="container-custom">
-          <ScrollReveal>
-            <span className="text-xs font-semibold tracking-widest uppercase text-accent mb-3 block">The Team</span>
-            <h2 className="text-4xl font-serif font-light text-foreground-primary mb-12">Built by believers</h2>
-          </ScrollReveal>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {TEAM.map((member, i) => (
-              <ScrollReveal key={member.name} delay={i * 0.08}>
-                <motion.div
-                  className="card-glass p-6 md:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left h-full relative group border border-white/[0.05] hover:border-white/[0.12] transition-all bg-white/[0.01]"
-                  whileHover={{ y: -4, boxShadow: '0 10px 30px -15px rgba(124,58,237,0.15)' }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                >
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden flex-shrink-0 border border-white/10 relative bg-background-tertiary">
-                    <img
-                      src={member.image}
-                      alt={member.name}
-                      className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-500 scale-100 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="flex-1 flex flex-col">
-                    <h3 className="text-lg font-bold text-white mb-0.5 group-hover:text-accent transition-colors leading-tight">
-                      {member.name}
-                    </h3>
-                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-accent mb-3">
-                      {member.role}
-                    </p>
-                    <p className="text-xs text-foreground-secondary leading-relaxed mb-4 flex-1">
-                      {member.bio}
-                    </p>
-                    <div className="flex items-center gap-3 justify-center sm:justify-start">
-                      {member.socials.globe && (
-                        <a
-                          href={member.socials.globe}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-foreground-muted hover:text-white transition-colors"
-                        >
-                          <Globe className="w-4 h-4" />
-                        </a>
-                      )}
-                      {member.socials.github && (
-                        <a
-                          href={member.socials.github}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-foreground-muted hover:text-white transition-colors"
-                        >
-                          <Github className="w-4 h-4" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* ── System Orchestration ── */}
+      <SystemOrchestration />
 
       {/* ── CTA ── */}
       <div className="section-padding">

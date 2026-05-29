@@ -15,7 +15,7 @@ import { llmGateway } from './gateway.js'
 const COUNCIL_MODELS = [
   {
     id: 'gemini/gemini-2.5-flash',
-    label: 'Gemini 2.5 Flash',
+    label: 'Sahadeva',
     provider: 'gemini',
     role: 'creative_strategist',
     emoji: '🧠',
@@ -23,7 +23,7 @@ const COUNCIL_MODELS = [
   },
   {
     id: 'mistral/mistral-large-latest',
-    label: 'Mistral Large',
+    label: 'Saptarishi',
     provider: 'mistral',
     role: 'technical_architect',
     emoji: '⚙️',
@@ -31,7 +31,7 @@ const COUNCIL_MODELS = [
   },
   {
     id: 'groq/llama-3.3-70b',
-    label: 'Llama 3.3 70B',
+    label: 'Yudhishthira',
     provider: 'groq',
     role: 'factual_analyst',
     emoji: '⚡',
@@ -39,7 +39,7 @@ const COUNCIL_MODELS = [
   },
   {
     id: 'openrouter/gpt-4o-mini',
-    label: 'GPT-4o Mini',
+    label: 'Bheem',
     provider: 'openrouter',
     role: 'comprehensive_expert',
     emoji: '🔬',
