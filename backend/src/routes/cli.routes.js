@@ -35,6 +35,13 @@ router.post('/auth', async (req, res, next) => {
     await apiKeyDoc.save()
 
     // Create new CLI session
+    let normalizedOs = 'linux'
+    if (os) {
+      const lowerOs = os.toLowerCase()
+      if (lowerOs.includes('win')) normalizedOs = 'windows'
+      else if (lowerOs.includes('darwin') || lowerOs.includes('mac')) normalizedOs = 'macos'
+    }
+
     const sessionId = `sess_${uuidv4().replace(/-/g, '')}`
     const session = new CLISession({
       session_id: sessionId,
@@ -42,7 +49,7 @@ router.post('/auth', async (req, res, next) => {
       api_key_id: apiKeyDoc._id,
       machine_id,
       machine_name: machine_name || `Machine-${machine_id.slice(0, 8)}`,
-      os: os || 'unknown',
+      os: normalizedOs,
       shell: shell || 'unknown',
       working_directory: cwd || '/',
       ip_address: req.ip,
