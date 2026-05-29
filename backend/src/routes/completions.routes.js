@@ -121,60 +121,8 @@ Rules:
 
       let generator
       if (model === 'council') {
-        const councilModels = [
-          { id: 'openrouter/gpt-4o-mini', label: 'GPT-4o Mini' },
-          { id: 'groq/llama-3.1-8b', label: 'Llama 3.1 8B' },
-          { id: 'gemini/gemini-2.5-flash', label: 'Gemini 2.5 Flash' }
-        ]
-        
-        let replies = {
-          'openrouter/gpt-4o-mini': '',
-          'groq/llama-3.1-8b': '',
-          'gemini/gemini-2.5-flash': ''
-        }
-
-        res.write(`data: ${JSON.stringify({ type: 'info', content: '💬 Initiating parallel model debate... (GPT-4o Mini, Llama 3.1, Gemini Flash)' })}\n\n`)
-
-        await Promise.all(councilModels.map(async ({ id }) => {
-          try {
-            const gen = await llmGateway.complete({ messages: history, model: id, temperature: 0.7 })
-            for await (const chunk of gen) {
-              if (chunk.type === 'token') {
-                replies[id] += chunk.content
-              }
-            }
-          } catch (err) {
-            console.error(`Council model ${id} failed in completions route:`, err)
-          }
-        }))
-
-        const debateTranscript = `
-Here is the debate transcript from three expert models on the user's query:
-
-Model 1 (GPT-4o Mini):
-"${replies['openrouter/gpt-4o-mini']}"
-
-Model 2 (Llama 3.1 8B):
-"${replies['groq/llama-3.1-8b']}"
-
-Model 3 (Gemini 2.5 Flash):
-"${replies['gemini/gemini-2.5-flash']}"
-
-Please analyze their responses, identify areas of consensus, resolve contradictions, and synthesize the single best comprehensive answer. Make sure it directly addresses the user query.
-`
-        const synthesisMessages = [
-          ...history,
-          { role: 'system', content: 'You are the Synthesis Engine of the AI Council. Your job is to read a debate between three models, combine their strengths, resolve any contradictions, and produce a single definitive response.' },
-          { role: 'user', content: debateTranscript }
-        ]
-
-        res.write(`data: ${JSON.stringify({ type: 'info', content: '🧠 Synthesizing final response...' })}\n\n`)
-
-        generator = await llmGateway.complete({
-          messages: synthesisMessages,
-          model: 'gemini/gemini-2.5-flash',
-          temperature: 0.5
-        })
+        const { runCouncilStream } = await import('../services/llm/councilEngine.js')
+        generator = runCouncilStream(history)
       } else {
         generator = await llmGateway.complete({ messages: history, model: model || 'auto', temperature })
       }
@@ -204,7 +152,7 @@ Please analyze their responses, identify areas of consensus, resolve contradicti
   }
 })
 
-// Real Council Mode: parallel debates + synthesis stream
+// Council Mode: 4-model ensemble with prompt routing + synthesis
 router.post('/council', optionalAuth, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')

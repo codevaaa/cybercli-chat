@@ -235,38 +235,10 @@ export const llmGateway = {
     let activeModelId = modelId
     let workingMessages = messages
     
-    // Council Mode Real Implementation
+    // Council Mode is handled by councilEngine.js — if it reaches here, fallback
     if (activeModelId === 'council') {
-      yield { type: 'info', content: 'Summoning the Council of Minds (Gemini, Mistral, Llama)...' }
-      try {
-        const p1 = this.completeNonStream({ messages: workingMessages, model: 'gemini/gemini-2.5-flash', temperature });
-        const p2 = this.completeNonStream({ messages: workingMessages, model: 'mistral/mistral-large-latest', temperature });
-        const p3 = this.completeNonStream({ messages: workingMessages, model: 'groq/llama-3.1-70b', temperature });
-        
-        const [r1, r2, r3] = await Promise.all([p1, p2, p3]);
-        
-        // Assemble the comparative view instead of synthesizing a single paragraph
-        const comparativeView = `### 👁️ Sahadeva (Gemini 2.5 Flash)
-${r1.content ? r1.content.trim() : (r1.error || 'Response error')}
-
----
-
-### 🌪️ Vayu (Mistral Large)
-${r2.content ? r2.content.trim() : (r2.error || 'Response error')}
-
----
-
-### ⚖️ Yudhishthira (Groq / Llama 70B)
-${r3.content ? r3.content.trim() : (r3.error || 'Response error')}`;
-
-        yield { type: 'token', content: comparativeView }
-        yield { type: 'done' }
-        return // End stream directly
-      } catch (err) {
-        console.error("Council Mode Failed:", err);
-        yield { type: 'info', content: 'Council synthesis failed, falling back to standard reasoning.' }
-        activeModelId = 'openrouter/gpt-4o-mini';
-      }
+      yield { type: 'info', content: 'Council Mode should use councilEngine. Falling back to Gemini...' }
+      activeModelId = 'gemini/gemini-2.5-pro'
     }
 
     const totalChars = workingMessages.reduce((sum, m) => sum + (m.content || '').length, 0)
