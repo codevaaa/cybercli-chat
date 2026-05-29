@@ -3,6 +3,7 @@ import { render } from 'ink';
 import { CYBERMIND_VERSION, createLogger } from '@cybermind/shared';
 import { App } from './app.js';
 import { runChat } from './runtime/chat.js';
+import { clearLogin, isOnboardingComplete } from './utils/config.js';
 import type { SessionMessage } from './state/session.js';
 
 const log = createLogger('cli');
@@ -50,6 +51,71 @@ async function main(): Promise<void> {
           process.exit(1);
         },
       );
+    });
+
+  // ── Status subcommand (like `claude status`) ──
+  program
+    .command('status')
+    .description('Show CyberCoder authentication status')
+    .action(() => {
+      const loggedIn = isOnboardingComplete();
+      // eslint-disable-next-line no-console
+      console.log('🔐 CyberCoder Status');
+      // eslint-disable-next-line no-console
+      console.log(`   Authentication: ${loggedIn ? '✅ Logged in' : '❌ Not logged in'}`);
+      // eslint-disable-next-line no-console
+      console.log(`   Version: ${CYBERMIND_VERSION}`);
+      if (!loggedIn) {
+        // eslint-disable-next-line no-console
+        console.log('   Run `cm` to start the login flow.');
+      }
+      process.exit(0);
+    });
+
+  // ── Login subcommand (like `claude login`) ──
+  program
+    .command('login')
+    .description('Login to CyberCoder (opens browser)')
+    .action(() => {
+      const loggedIn = isOnboardingComplete();
+      if (loggedIn) {
+        // eslint-disable-next-line no-console
+        console.log('✅ Already logged in to CyberCoder.');
+        // eslint-disable-next-line no-console
+        console.log('   Run `cm` to start coding.');
+      } else {
+        // eslint-disable-next-line no-console
+        console.log('🔐 CyberCoder Login');
+        // eslint-disable-next-line no-console
+        console.log('   Opening browser to https://cybermindcli.info/login ...');
+        import('open').then((mod) => {
+          mod.default('https://cybermindcli.info/login?redirect=cli');
+          // eslint-disable-next-line no-console
+          console.log('   Browser opened. Complete login there, then run `cm`.');
+          process.exit(0);
+        }).catch(() => {
+          // eslint-disable-next-line no-console
+          console.log('   Visit: https://cybermindcli.info/login?redirect=cli');
+          process.exit(0);
+        });
+        return;
+      }
+      process.exit(0);
+    });
+
+  // ── Logout subcommand (like `claude logout`) ──
+  program
+    .command('logout')
+    .description('Logout from CyberCoder and clear all session data')
+    .action(() => {
+      clearLogin();
+      // eslint-disable-next-line no-console
+      console.log('👋 Logged out from CyberCoder.');
+      // eslint-disable-next-line no-console
+      console.log('   All session data and API keys cleared.');
+      // eslint-disable-next-line no-console
+      console.log('   Run `cm` again to log in.');
+      process.exit(0);
     });
 
   program.parseAsync(process.argv).catch((err) => {

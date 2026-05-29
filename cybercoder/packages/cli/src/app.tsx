@@ -117,7 +117,7 @@ export const App: React.FC<AppProps> = ({ showWelcome, initialModel, initialProv
           setScreen('onboarding');
         },
       }),
-    [appendMessage, clearMessages, exit, model, provider],
+    [appendMessage, clearMessages, exit, model, provider, setScreen, setMessages, setWelcomeVisible],
   );
 
   // Handle Ctrl+C: first press asks for confirmation, second press exits.
