@@ -4,6 +4,8 @@ import { Welcome } from './components/Welcome.js';
 import { Onboarding } from './components/Onboarding.js';
 import { ThemePicker, type ThemeConfig } from './components/ThemePicker.js';
 import { Settings } from './components/Settings.js';
+import { ModelPicker } from './components/ModelPicker.js';
+import { ReleaseNotes } from './components/ReleaseNotes.js';
 import { Prompt } from './components/Prompt.js';
 import { MessageList } from './components/MessageList.js';
 import { StatusBar } from './components/StatusBar.js';
@@ -17,7 +19,7 @@ import { getUpdateMessage } from './utils/update.js';
 import type { ApprovalDecision, ApprovalPrompt, ApprovalUI } from '@cybermind/tools';
 import type { SessionMessage, SessionStatus } from './state/session.js';
 
-type Screen = 'onboarding' | 'theme' | 'settings' | 'welcome' | 'chat';
+type Screen = 'onboarding' | 'theme' | 'settings' | 'model' | 'release-notes' | 'welcome' | 'chat';
 
 interface AppProps {
   showWelcome: boolean;
@@ -269,6 +271,19 @@ export const App: React.FC<AppProps> = ({ showWelcome, initialModel, initialProv
     setScreen('chat');
   }, []);
 
+  const handleModelSelect = useCallback((modelId: string) => {
+    setModel(modelId);
+    setScreen('chat');
+  }, []);
+
+  const handleModelClose = useCallback(() => {
+    setScreen('chat');
+  }, []);
+
+  const handleReleaseNotesClose = useCallback(() => {
+    setScreen('chat');
+  }, []);
+
   // Render based on current screen
   const renderScreen = () => {
     switch (screen) {
@@ -278,6 +293,10 @@ export const App: React.FC<AppProps> = ({ showWelcome, initialModel, initialProv
         return <ThemePicker onComplete={handleThemeComplete} />;
       case 'settings':
         return <Settings onClose={handleSettingsClose} />;
+      case 'model':
+        return <ModelPicker currentModel={model} onSelect={handleModelSelect} onClose={handleModelClose} />;
+      case 'release-notes':
+        return <ReleaseNotes onClose={handleReleaseNotesClose} />;
       case 'welcome':
         return (
           <>

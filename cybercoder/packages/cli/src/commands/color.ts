@@ -87,3 +87,25 @@ export function buildSettingsCommand(ctx: CommandContext): SlashCommandHandler {
     },
   };
 }
+
+export function buildReleaseNotesCommand(ctx: CommandContext): SlashCommandHandler {
+  return {
+    name: 'release-notes',
+    description: 'View the release notes and changelog.',
+    category: 'utility',
+    usage: '/release-notes',
+    aliases: ['changelog', 'news'],
+    run: () => {
+      if (ctx.setScreen) {
+        ctx.setScreen('release-notes');
+      } else {
+        ctx.appendMessage({
+          id: `release-notes-${Date.now()}`,
+          role: 'system',
+          content: 'Release notes are not available in this context.',
+          createdAt: Date.now(),
+        });
+      }
+    },
+  };
+}

@@ -13,7 +13,7 @@ import { buildTrustCommand } from './trust.js';
 import { buildSecretCommand } from './secret.js';
 import { buildModelCommand, buildProviderCommand } from './model-provider.js';
 import { buildConsensusCommand } from './consensus.js';
-import { buildColorCommand, buildThemeCommand, buildSettingsCommand } from './color.js';
+import { buildColorCommand, buildThemeCommand, buildSettingsCommand, buildReleaseNotesCommand } from './color.js';
 import { buildWorkflowCommand } from './workflow.js';
 import { buildRewindCommand } from './rewind.js';
 import { buildDiffCommand } from './diff.js';
@@ -96,6 +96,7 @@ export function buildCommandRegistry(ctx: CommandContext): CommandRegistry {
     buildColorCommand(ctx),
     buildThemeCommand(ctx),
     buildSettingsCommand(ctx),
+    buildReleaseNotesCommand(ctx),
     buildWorkflowCommand(ctx),
     buildRewindCommand(ctx),
     buildDiffCommand(ctx),

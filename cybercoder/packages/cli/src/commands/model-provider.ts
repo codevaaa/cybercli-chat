@@ -22,19 +22,13 @@ export function buildModelCommand(ctx: CommandContext): SlashCommandHandler {
         ctx.appendMessage({ id: `model-${Date.now()}`, role: 'system', content, createdAt: Date.now() });
 
       if (!name) {
-        const current = ctx.getModel?.() ?? '(unknown)';
-        let available: string[] = [];
-        try {
-          available = await getRouter().listModels();
-        } catch {
-          // Provider may not expose listModels in offline mode.
+        // Open interactive model picker
+        if (ctx.setScreen) {
+          ctx.setScreen('model');
+        } else {
+          const current = ctx.getModel?.() ?? '(unknown)';
+          reply(`Current model: ${current}\nUse /model <name> to switch.`);
         }
-        const preview = available.slice(0, 8).join(', ');
-        reply(
-          `Current model: ${current}\n` +
-            (preview ? `Available (first 8): ${preview}\n` : '') +
-            'Use /model <name> to switch.',
-        );
         return;
       }
       if (!ctx.setModel) {
