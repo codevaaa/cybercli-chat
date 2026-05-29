@@ -78,8 +78,17 @@ export default function ClaudeCodePage() {
 
   const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
 
+  const [activeTab, setActiveTab] = useState('npm');
+
+  const installCommands = {
+    npm: 'npm install -g @cybercli_chat/cli@latest',
+    curl: 'curl -fsSL https://cybermindcli.info/install.sh | bash',
+    ps1: 'irm https://cybermindcli.info/install.ps1 | iex',
+    cmd: 'curl -fsSL https://cybermindcli.info/install.cmd -o install.cmd && install.cmd && del install.cmd',
+  };
+
   const copyInstallCommand = () => {
-    navigator.clipboard.writeText('npm install -g @cybercli_chat/cli@latest && cybermind login');
+    navigator.clipboard.writeText(installCommands[activeTab]);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -162,7 +171,7 @@ export default function ClaudeCodePage() {
   const faqs = [
     {
       q: 'How do I get started with CyberCoder?',
-      a: 'Install CyberCoder with npm: npm install -g @cybermind/cli. Then run cybermind login to authenticate with your API key. You can get an API key from your CyberCli dashboard after signing up.'
+      a: 'Install CyberCoder with npm: npm install -g @cybercli_chat/cli. Then run cm /init to set up your project and configure your API key. You can get an API key from your CyberCli dashboard after signing up.'
     },
     {
       q: 'What kinds of tasks can CyberCoder handle?',
@@ -247,32 +256,67 @@ export default function ClaudeCodePage() {
             Work with 8+ AI providers directly in your codebase. Build, debug, and ship from your terminal, IDE, or the web.
           </motion.p>
 
-          {/* Install Command */}
+          {/* Install Command Tabs */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8"
+            className="max-w-2xl mx-auto mb-8"
           >
+            {/* Tabs */}
+            <div className="flex items-center justify-center gap-1 mb-3">
+              {[
+                { id: 'npm', label: 'npm' },
+                { id: 'curl', label: 'macOS / Linux' },
+                { id: 'ps1', label: 'Windows (PowerShell)' },
+                { id: 'cmd', label: 'Windows (CMD)' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                  style={{
+                    backgroundColor: activeTab === tab.id ? 'rgba(217,119,54,0.2)' : 'transparent',
+                    color: activeTab === tab.id ? ACCENT : '#888',
+                    border: activeTab === tab.id ? `1px solid ${ACCENT}` : '1px solid transparent',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Command Box */}
             <div className="flex items-center gap-3 px-5 py-3 rounded-lg font-mono text-sm border" style={{ backgroundColor: CARD_BG, borderColor: BORDER }}>
               <span style={{ color: ACCENT }}>$</span>
-              <span className="text-gray-300">npm install -g @cybermind/cli</span>
+              <span className="text-gray-300 truncate">{installCommands[activeTab]}</span>
               <button
                 onClick={copyInstallCommand}
-                className="ml-2 p-1.5 rounded hover:bg-white/10 transition-colors"
+                className="ml-auto p-1.5 rounded hover:bg-white/10 transition-colors flex-shrink-0"
                 title="Copy to clipboard"
               >
                 {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-gray-500" />}
               </button>
             </div>
-            <Link
-              to="/signup"
-              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all hover:opacity-90"
-              style={{ backgroundColor: ACCENT, color: '#000' }}
-            >
-              <Download className="w-5 h-5" />
-              Get API Key
-            </Link>
+
+            <div className="flex items-center justify-center gap-4 mt-4">
+              <Link
+                to="/signup"
+                className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all hover:opacity-90"
+                style={{ backgroundColor: ACCENT, color: '#000' }}
+              >
+                <Download className="w-5 h-5" />
+                Get API Key
+              </Link>
+              <Link
+                to="/docs"
+                className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all hover:bg-white/5 border"
+                style={{ borderColor: BORDER, color: '#ccc' }}
+              >
+                <ExternalLink className="w-5 h-5" />
+                Documentation
+              </Link>
+            </div>
           </motion.div>
 
           <motion.p
@@ -305,7 +349,7 @@ export default function ClaudeCodePage() {
                 <div className="flex items-start gap-2 mb-3">
                   <span style={{ color: ACCENT }}>$</span>
                   <div>
-                    <span className="text-white">cybermind</span>
+                    <span className="text-white">cm</span>
                     <span className="text-gray-500"> ask </span>
                     <span className="text-green-400">"Refactor this auth middleware to use JWT"</span>
                   </div>

@@ -204,7 +204,7 @@ export const App: React.FC<AppProps> = ({ showWelcome, initialModel, initialProv
 
   return (
     <Box flexDirection="column">
-      {welcomeVisible && <Welcome />}
+      {welcomeVisible && <Welcome provider={provider} model={model} />}
       <MessageList messages={messages} />
       {pendingApproval && <ApprovalDialog pending={pendingApproval} />}
       <Prompt onSubmit={handleSubmit} disabled={status !== 'idle'} />

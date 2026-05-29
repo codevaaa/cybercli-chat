@@ -5,12 +5,14 @@
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "cybermind": "./bin/cybermind.mjs",
     "cm": "./bin/cybermind.mjs"
   },
   "files": [
     "bin",
     "dist",
+    "install.sh",
+    "install.ps1",
+    "install.cmd",
     "README.md"
   ],
   "engines": {
