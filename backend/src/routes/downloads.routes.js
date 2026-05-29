@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { Readable } from 'node:stream'
+import { r2FileExists, getR2PublicUrl, isR2Available } from '../services/downloads/r2Service.js'
 
 const router = Router()
 
@@ -13,10 +14,16 @@ const FILE_MAP = {
   'CyberCli-linux-x64.deb': 'CyberCli-linux-x64.deb',
 }
 
+const DOWNLOAD_META = {
+  'CyberCli-win-x64.exe': { platform: 'windows', name: 'CyberCli for Windows', size: '~78 MB', arch: 'x64' },
+  'CyberCli-mac-universal.dmg': { platform: 'macos', name: 'CyberCli for Mac', size: '~80 MB', arch: 'universal' },
+  'CyberCli-linux-x64.AppImage': { platform: 'linux', name: 'CyberCli for Linux (AppImage)', size: '~75 MB', arch: 'x64' },
+  'CyberCli-linux-x64.deb': { platform: 'linux', name: 'CyberCli for Linux (.deb)', size: '~70 MB', arch: 'amd64' },
+}
+
 /**
- * GET /api/v1/downloads/:filename
- * Proxies the download from GitHub releases so the user sees the website URL
- * but gets the file from GitHub behind the scenes.
+ * Primary: R2 CDN redirect (fast, zero egress cost)
+ * Fallback: GitHub proxy (streams through our server)
  */
 router.get('/:filename', async (req, res, next) => {
   try {
@@ -27,20 +34,29 @@ router.get('/:filename', async (req, res, next) => {
       return res.status(404).json({ error: 'File not found' })
     }
 
+    // --- Try R2 CDN first (fastest, cheapest) ---
+    if (isR2Available()) {
+      const exists = await r2FileExists(githubFilename)
+      if (exists) {
+        const cdnUrl = getR2PublicUrl(githubFilename)
+        console.log(`[Download] R2 redirect: ${filename} → ${cdnUrl}`)
+        // 302 redirect to CDN — user gets file directly from edge
+        return res.redirect(302, cdnUrl)
+      }
+    }
+
+    // --- Fallback: GitHub proxy ---
+    console.log(`[Download] GitHub proxy: ${filename}`)
     const githubUrl = `${GITHUB_RELEASE_BASE}/${githubFilename}`
 
-    // Fetch from GitHub and stream back to client
     const response = await fetch(githubUrl, {
-      headers: {
-        'Accept': 'application/octet-stream',
-      },
+      headers: { 'Accept': 'application/octet-stream' },
     })
 
     if (!response.ok) {
       return res.status(404).json({ error: 'Release file not found on GitHub' })
     }
 
-    // Set headers to force download with the original filename
     const contentLength = response.headers.get('content-length')
     const contentType = response.headers.get('content-type') || 'application/octet-stream'
 
@@ -50,8 +66,6 @@ router.get('/:filename', async (req, res, next) => {
       res.setHeader('Content-Length', contentLength)
     }
 
-    // Stream the response body directly to client
-    // response.body is a Web ReadableStream, convert to Node stream and pipe
     const nodeStream = Readable.fromWeb(response.body)
     nodeStream.pipe(res)
 
@@ -69,44 +83,20 @@ router.get('/:filename', async (req, res, next) => {
 
 /**
  * GET /api/v1/downloads
- * Returns available downloads info
+ * Returns available downloads with current source info
  */
 router.get('/', (req, res) => {
+  const r2Enabled = isR2Available()
+  const downloads = Object.entries(DOWNLOAD_META).map(([filename, meta]) => ({
+    ...meta,
+    filename,
+    url: `/api/v1/downloads/${filename}`,
+    source: r2Enabled ? 'r2-cdn' : 'github-proxy',
+  }))
+
   res.json({
-    downloads: [
-      {
-        platform: 'windows',
-        name: 'CyberCli for Windows',
-        filename: 'CyberCli-win-x64.exe',
-        url: '/api/v1/downloads/CyberCli-win-x64.exe',
-        size: '~78 MB',
-        arch: 'x64',
-      },
-      {
-        platform: 'macos',
-        name: 'CyberCli for Mac',
-        filename: 'CyberCli-mac-universal.dmg',
-        url: '/api/v1/downloads/CyberCli-mac-universal.dmg',
-        size: '~80 MB',
-        arch: 'universal',
-      },
-      {
-        platform: 'linux',
-        name: 'CyberCli for Linux (AppImage)',
-        filename: 'CyberCli-linux-x64.AppImage',
-        url: '/api/v1/downloads/CyberCli-linux-x64.AppImage',
-        size: '~75 MB',
-        arch: 'x64',
-      },
-      {
-        platform: 'linux',
-        name: 'CyberCli for Linux (.deb)',
-        filename: 'CyberCli-linux-x64.deb',
-        url: '/api/v1/downloads/CyberCli-linux-x64.deb',
-        size: '~70 MB',
-        arch: 'amd64',
-      },
-    ],
+    source: r2Enabled ? 'r2-cdn' : 'github-proxy',
+    downloads,
   })
 })
 

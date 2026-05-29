@@ -137,3 +137,15 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to Cloudflare R2 CDN
+        if: ${{ env.R2_ENABLED == 'true' }}
+        env:
+          R2_ENABLED: ${{ vars.R2_ENABLED }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npm install -g wrangler
+          wrangler r2 object put cybercli-downloads/CyberCli-win-x64.exe --file=artifacts/CyberCli-Windows/CyberCli-win-x64.exe --content-type=application/octet-stream
+          wrangler r2 object put cybercli-downloads/CyberCli-mac-universal.dmg --file=artifacts/CyberCli-macOS/CyberCli-mac-universal.dmg --content-type=application/octet-stream
+          wrangler r2 object put cybercli-downloads/CyberCli-linux-x64.AppImage --file=artifacts/CyberCli-Linux/CyberCli-linux-x64.AppImage --content-type=application/octet-stream
+          wrangler r2 object put cybercli-downloads/CyberCli-linux-x64.deb --file=artifacts/CyberCli-Linux/CyberCli-linux-x64.deb --content-type=application/octet-stream
