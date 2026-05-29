@@ -12,6 +12,13 @@ files:
   - resources/**/*
   - '!node_modules/electron/**/*'
 
+# Auto-update publish config (GitHub Releases)
+publish:
+  provider: github
+  owner: stilcybermindcli
+  repo: cybercli-chat
+  releaseType: release
+
 # macOS
 mac:
   category: public.app-category.productivity
@@ -20,7 +27,7 @@ mac:
       arch:
         - x64
         - arm64
-  icon: resources/icon.icns
+  icon: resources/icon.png
   darkModeSupport: true
   hardenedRuntime: true
   gatekeeperAssess: false
@@ -43,11 +50,7 @@ win:
     - target: nsis
       arch:
         - x64
-        - ia32
-    - target: portable
-      arch:
-        - x64
-  icon: resources/icon.ico
+  icon: resources/icon.png
   publisherName: CyberCli Team
   verifyUpdateCodeSignature: false
 
@@ -58,7 +61,7 @@ nsis:
   createDesktopShortcut: always
   createStartMenuShortcut: true
   shortcutName: CyberCli
-  include: resources/installer.nsh
+  include: "" # No custom NSIS script
 
 # Linux
 linux:

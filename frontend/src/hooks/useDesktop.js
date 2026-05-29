@@ -29,26 +29,21 @@ export function useDesktop() {
     // Notifications
     showNotification: (title, body) => api?.showNotification?.(title, body),
 
+    // Landing → Main
+    openMainWindow: () => api?.openMainWindow?.(),
+
+    // Drag & Drop
+    readDroppedFiles: (paths) => api?.readDroppedFiles?.(paths),
+
+    // Auto-updater
+    restartToUpdate: () => api?.restartToUpdate?.(),
+
     // Event listeners
-    onAuthToken: (cb) => {
-      api?.onAuthToken?.(cb)
-      return () => api?.removeAllListeners?.('auth:token')
-    },
-    onNavigateChat: (cb) => {
-      api?.onNavigateChat?.(cb)
-      return () => api?.removeAllListeners?.('navigate:chat')
-    },
-    onNavigateSettings: (cb) => {
-      api?.onNavigateSettings?.(cb)
-      return () => api?.removeAllListeners?.('navigate:settings')
-    },
-    onShortcutNewChat: (cb) => {
-      api?.onShortcutNewChat?.(cb)
-      return () => api?.removeAllListeners?.('shortcut:new-chat')
-    },
-    onShortcutFocusInput: (cb) => {
-      api?.onShortcutFocusInput?.(cb)
-      return () => api?.removeAllListeners?.('shortcut:focus-input')
-    },
+    onAuthToken: (cb) => api?.onAuthToken?.(cb),
+    onNavigateChat: (cb) => api?.onNavigateChat?.(cb),
+    onNavigateSettings: (cb) => api?.onNavigateSettings?.(cb),
+    onShortcutNewChat: (cb) => api?.onShortcutNewChat?.(cb),
+    onShortcutFocusInput: (cb) => api?.onShortcutFocusInput?.(cb),
+    onUpdateAvailable: (cb) => api?.onUpdateAvailable?.(cb),
   }
 }

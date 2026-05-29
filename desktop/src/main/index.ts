@@ -17,6 +17,8 @@ import fs from 'node:fs'
 import { createTray } from './tray.js'
 import { registerShortcuts, unregisterShortcuts } from './shortcuts.js'
 import { setupDeepLinkProtocol, handleDeepLink } from './deeplink.js'
+import pkg from 'electron-updater'
+const { autoUpdater } = pkg
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -30,8 +32,8 @@ const isWin = process.platform === 'win32'
 const FRONTEND_DEV_URL = 'http://localhost:5173'
 const FRONTEND_PROD_PATH = path.join(__dirname, '../../../frontend/dist/index.html')
 
-// Renderer HTML files (built) — from dist/main/ → dist/renderer/
-const RENDERER_DIR = path.join(__dirname, '../../renderer')
+// Renderer HTML files (built) — resolve from app path for reliability
+const RENDERER_DIR = path.join(app.getAppPath(), 'dist', 'renderer')
 
 // ─── State ────────────────────────────────────────────────────
 
@@ -39,6 +41,31 @@ let mainWindow: BrowserWindow | null = null
 let landingWindow: BrowserWindow | null = null
 let loginWindow: BrowserWindow | null = null
 let tray: ReturnType<typeof createTray> | null = null
+
+// ─── Auto Updater ─────────────────────────────────────────────
+
+function setupAutoUpdater() {
+  if (isDev) return
+
+  autoUpdater.checkForUpdatesAndNotify()
+
+  autoUpdater.on('update-available', () => {
+    new (require('electron').Notification)({
+      title: 'CyberCli Update Available',
+      body: 'A new version is being downloaded.',
+    }).show()
+  })
+
+  autoUpdater.on('update-downloaded', () => {
+    new (require('electron').Notification)({
+      title: 'CyberCli Update Ready',
+      body: 'Restart to install the latest version.',
+    }).show()
+
+    // Notify renderer that update is ready
+    mainWindow?.webContents.send('update:available')
+  })
+}
 
 // ─── Window Factories ───────────────────────────────────────
 
@@ -65,7 +92,6 @@ function createMainWindow(): BrowserWindow {
   // Load the frontend
   if (isDev) {
     win.loadURL(FRONTEND_DEV_URL).catch(() => {
-      // Fallback: load built renderer index if dev server not running
       win.loadFile(path.join(RENDERER_DIR, 'index.html'))
     })
     win.webContents.openDevTools({ mode: 'detach' })
@@ -92,6 +118,26 @@ function createMainWindow(): BrowserWindow {
       event.preventDefault()
       shell.openExternal(url)
     }
+  })
+
+  // File drag & drop — expose to renderer
+  win.webContents.on('dom-ready', () => {
+    // Inject drag-drop CSS + JS
+    win.webContents.insertCSS(`
+      .desktop-drag-overlay {
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(124, 58, 237, 0.15);
+        border: 3px dashed #7C3AED;
+        display: none;
+        align-items: center; justify-content: center;
+        pointer-events: none;
+      }
+      .desktop-drag-overlay.active { display: flex; }
+      .desktop-drag-overlay span {
+        color: #ECECEC; font-size: 18px; font-weight: 600;
+        background: rgba(10,10,15,0.8); padding: 16px 32px; border-radius: 12px;
+      }
+    `)
   })
 
   return win
@@ -148,13 +194,20 @@ function createLoginWindow(): BrowserWindow {
 
 app.whenReady().then(() => {
   setupDeepLinkProtocol()
+  setupAutoUpdater()
 
   // Create main window (hidden initially)
   mainWindow = createMainWindow()
   mainWindow.hide()
 
-  // Show landing window on first launch
-  landingWindow = createLandingWindow()
+  // Show landing window on first launch (no auth token yet)
+  const hasToken = false // Will check localStorage in renderer
+  if (!hasToken) {
+    landingWindow = createLandingWindow()
+  } else {
+    mainWindow.show()
+    mainWindow.focus()
+  }
 
   // Create system tray
   tray = createTray({
@@ -282,15 +335,55 @@ ipcMain.handle('auth:open-login', () => {
 })
 
 ipcMain.handle('auth:complete', (_event, token: string) => {
-  // Store token and show main window
+  // Send token to main window renderer
   mainWindow?.webContents.send('auth:token', token)
+  // Show main window
   mainWindow?.show()
   mainWindow?.focus()
-  // Close login/landing windows
+  // Close landing/login windows with fade animation
+  if (landingWindow) {
+    landingWindow.close()
+    landingWindow = null
+  }
+  if (loginWindow) {
+    loginWindow.close()
+    loginWindow = null
+  }
+})
+
+// Landing window: user clicked "Get Started" or "Open App"
+ipcMain.handle('landing:open-main', () => {
+  mainWindow?.show()
+  mainWindow?.focus()
   landingWindow?.close()
-  loginWindow?.close()
   landingWindow = null
-  loginWindow = null
+})
+
+// Drag & Drop file handling
+ipcMain.handle('dragdrop:read-files', async (_event, filePaths: string[]) => {
+  const results = []
+  for (const filePath of filePaths) {
+    try {
+      const stats = await fs.promises.stat(filePath)
+      if (stats.isDirectory()) {
+        // Read directory recursively
+        const files = await fs.promises.readdir(filePath)
+        results.push({ type: 'directory', path: filePath, files })
+      } else {
+        const content = await fs.promises.readFile(filePath, 'utf-8')
+        const name = path.basename(filePath)
+        results.push({ type: 'file', path: filePath, name, content, size: stats.size })
+      }
+    } catch (err) {
+      results.push({ type: 'error', path: filePath, error: (err as Error).message })
+    }
+  }
+  return { success: true, files: results }
+})
+
+// Auto-updater: restart and install
+ipcMain.handle('update:restart', () => {
+  autoUpdater.quitAndInstall()
 })
 
 // File system (via MCP-like local access)

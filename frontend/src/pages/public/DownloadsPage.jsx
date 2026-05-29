@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Download, Monitor, Apple, Smartphone, ArrowRight, ShieldCheck,
-  Server, Terminal, Chrome, Code2, Sparkles, ChevronDown, ChevronUp,
-  MessageSquare, Zap, Globe
+  Download, Monitor, Apple, ArrowRight, ShieldCheck,
+  Terminal, Chrome, Code2, ChevronDown, ChevronUp,
+  ArrowUpRight
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
 
@@ -34,15 +35,22 @@ function Section({ title, children, className = '' }) {
   )
 }
 
-function DownloadCard({ os, primary, href = '#' }) {
+const PAGE_MAP = {
+  win32: '/downloads/windows',
+  darwin: '/downloads/mac',
+  linux: '/downloads/linux',
+}
+
+function DownloadCard({ os, primary }) {
   const Icon = OS_MAP[os]?.icon || Monitor
   const name = OS_MAP[os]?.name || os
   const ext = os === 'darwin' ? 'DMG' : os === 'win32' ? 'EXE' : 'AppImage'
   const req = os === 'darwin' ? 'macOS 12.0+' : os === 'win32' ? 'Windows 10+' : 'Ubuntu 20.04+'
+  const page = PAGE_MAP[os]
 
   return (
     <ScrollReveal>
-      <div className={`p-8 md:p-10 rounded-3xl border transition-all duration-300 group flex flex-col h-full relative overflow-hidden ${
+      <Link to={page} className={`block p-8 md:p-10 rounded-3xl border transition-all duration-300 group flex flex-col h-full relative overflow-hidden ${
         primary
           ? 'bg-[#ECECEC] text-[#0A0A0F] border-transparent'
           : 'bg-[#14141A] border-white/[0.06] hover:bg-[#1A1A22]'
@@ -56,21 +64,19 @@ function DownloadCard({ os, primary, href = '#' }) {
         <p className={`text-sm mb-6 flex-1 leading-relaxed ${primary ? 'text-[#0A0A0F]/70' : 'text-[#A0A0A0]'}`}>
           All of CyberCli, in one app. Works with your files and apps to get things done.
         </p>
-        <a
-          href={href}
-          className={`w-full py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 text-[14px] ${
-            primary
-              ? 'bg-[#0A0A0F] text-white hover:bg-[#1A1A22]'
-              : 'bg-[#1c1c24] border border-white/[0.1] hover:bg-white/[0.08] text-[#ECECEC]'
-          }`}
-        >
+        <div className={`w-full py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 text-[14px] ${
+          primary
+            ? 'bg-[#0A0A0F] text-white group-hover:bg-[#1A1A22]'
+            : 'bg-[#1c1c24] border border-white/[0.1] group-hover:bg-white/[0.08] text-[#ECECEC]'
+        }`}>
           <Download className="w-4 h-4" />
           Download {ext}
-        </a>
+          <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
         <p className={`text-center text-[11px] mt-3 ${primary ? 'text-[#0A0A0F]/50' : 'text-[#707070]'}`}>
           Requires {req}
         </p>
-      </div>
+      </Link>
     </ScrollReveal>
   )
 }
@@ -148,7 +154,7 @@ export default function DownloadsPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] pt-32 pb-24 overflow-hidden relative">
-      <SEOHead title="Download CyberCli | Desktop, Mobile & CLI" />
+      <SEOHead title="Download CyberCli | Desktop App for Windows, Mac & Linux" />
 
       {/* Background ambient glow */}
       <div className="absolute top-0 right-0 w-3/4 h-[500px] bg-[#D97757]/5 blur-[150px] rounded-bl-full pointer-events-none" />
@@ -165,7 +171,7 @@ export default function DownloadsPage() {
           </ScrollReveal>
           <ScrollReveal delay={0.1}>
             <p className="text-[17px] md:text-lg text-[#A0A0A0] max-w-xl mx-auto leading-relaxed font-light">
-              Access all of CyberCli on desktop and mobile.
+              Get the CyberCli desktop app for your computer.
             </p>
           </ScrollReveal>
         </div>
@@ -187,39 +193,6 @@ export default function DownloadsPage() {
           <div className="mt-6 flex items-center gap-2 text-[#707070] text-[12px]">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>All downloads are signed and notarized for your security.</span>
-          </div>
-        </Section>
-
-        {/* Mobile */}
-        <Section title="Mobile">
-          <p className="text-[#A0A0A0] mb-8 max-w-2xl">
-            Take CyberCli anywhere. Pair with the desktop app.
-          </p>
-          <div className="grid md:grid-cols-2 gap-5">
-            <ScrollReveal>
-              <div className="p-6 rounded-2xl bg-[#14141A] border border-white/[0.06] flex items-center gap-5">
-                <div className="w-12 h-12 rounded-xl bg-[#D97757]/10 flex items-center justify-center flex-shrink-0">
-                  <Apple className="w-6 h-6 text-[#D97757]" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-[15px] font-semibold text-[#ECECEC] mb-1">iOS</h4>
-                  <p className="text-[13px] text-[#A0A0A0]">App Store — Coming soon</p>
-                </div>
-                <span className="text-xs text-[#707070] px-3 py-1 rounded-full bg-white/[0.05]">Soon</span>
-              </div>
-            </ScrollReveal>
-            <ScrollReveal>
-              <div className="p-6 rounded-2xl bg-[#14141A] border border-white/[0.06] flex items-center gap-5">
-                <div className="w-12 h-12 rounded-xl bg-[#D97757]/10 flex items-center justify-center flex-shrink-0">
-                  <Smartphone className="w-6 h-6 text-[#D97757]" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-[15px] font-semibold text-[#ECECEC] mb-1">Android</h4>
-                  <p className="text-[13px] text-[#A0A0A0]">Google Play — Coming soon</p>
-                </div>
-                <span className="text-xs text-[#707070] px-3 py-1 rounded-full bg-white/[0.05]">Soon</span>
-              </div>
-            </ScrollReveal>
           </div>
         </Section>
 

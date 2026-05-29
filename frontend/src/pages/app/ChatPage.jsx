@@ -3015,6 +3015,9 @@ export default function ChatPage() {
   const [workspaceWidth, setWorkspaceWidth] = useState(600) // Default 600px
   const [isResizing, setIsResizing] = useState(false)
 
+  // Desktop drag & drop
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false)
+
   const startResizing = useCallback((e) => {
     setIsResizing(true)
     e.preventDefault()
@@ -4130,8 +4133,60 @@ export default function ChatPage() {
   const selectedModelObj = [...MODELS, ...EXTRA_MODELS].find(m => m.id === selectedModel)
   const isKaliMode = selectedModelObj?.kali === true
 
+  // Desktop drag & drop handlers
+  const handleDragOver = useCallback((e) => {
+    if (!window.electronAPI) return
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDraggingFiles(true)
+    }
+  }, [])
+
+  const handleDragLeave = useCallback((e) => {
+    if (!window.electronAPI) return
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingFiles(false)
+  }, [])
+
+  const handleDrop = useCallback(async (e) => {
+    if (!window.electronAPI) return
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingFiles(false)
+
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length === 0) return
+
+    const filePaths = files.map(f => f.path).filter(Boolean)
+    if (filePaths.length === 0) return
+
+    try {
+      const result = await window.electronAPI.readDroppedFiles(filePaths)
+      if (result.success) {
+        // Add dropped file contents as context to input
+        const fileContexts = result.files
+          .filter(f => f.type === 'file')
+          .map(f => `\n\n--- File: ${f.name} ---\n${f.content.substring(0, 10000)}`)
+          .join('')
+        if (fileContexts) {
+          setInput(prev => prev + fileContexts)
+        }
+      }
+    } catch (err) {
+      console.error('Drag-drop error:', err)
+    }
+  }, [])
+
   return (
-    <div className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${isKaliMode ? 'kali-theme' : ''}`} style={{ background: '#0C0C0C' }}>
+    <div
+      className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${isKaliMode ? 'kali-theme' : ''}`}
+      style={{ background: '#0C0C0C' }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
 
       {/* ── Sidebar ── */}
       {isMobile && sidebarOpen && (
@@ -4650,7 +4705,16 @@ export default function ChatPage() {
         <div className="flex-1 flex overflow-hidden relative">
           
           {/* Chat Content Panel (Left/Main side) */}
-          <div className={`flex-1 flex flex-col min-w-0 h-full ${workspaceOpen && !isMobile ? 'w-[55%]' : 'w-full'}`}>
+          <div className={`flex-1 flex flex-col min-w-0 h-full relative ${workspaceOpen && !isMobile ? 'w-[55%]' : 'w-full'}`}>
+            {/* Desktop Drag Overlay */}
+            {isDraggingFiles && (
+              <div className="absolute inset-0 z-[100] bg-[#7C3AED]/15 border-[3px] border-dashed border-[#7C3AED] flex items-center justify-center pointer-events-none animate-fade-in">
+                <div className="bg-[#0A0A0F]/80 px-8 py-4 rounded-2xl text-center">
+                  <p className="text-[#ECECEC] text-lg font-semibold">Drop files here</p>
+                  <p className="text-[#A0A0A0] text-sm mt-1">Files will be added to your message</p>
+                </div>
+              </div>
+            )}
             {/* Main Content Area based on Nav selection */}
             <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
               {activeNav === 'chats' ? (

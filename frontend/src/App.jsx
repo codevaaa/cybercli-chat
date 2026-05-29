@@ -5,6 +5,7 @@ import Footer from '@components/layout/Footer'
 import PublicLayout from '@components/layout/PublicLayout'
 import CookieConsent from '@components/legal/CookieConsent'
 import ProtectedRoute from '@components/auth/ProtectedRoute.jsx'
+import DesktopUpdateNotification from '@components/desktop/DesktopUpdateNotification.jsx'
 
 import HomePage from '@pages/public/HomePage'
 import FeaturesPage from '@pages/public/FeaturesPage'
@@ -37,6 +38,9 @@ import DevelopersPage from '@pages/public/DevelopersPage'
 import ClaudeCodePage from '@pages/public/ClaudeCodePage'
 import SystemStatusPage from '@pages/public/SystemStatusPage'
 import DownloadsPage from '@pages/public/DownloadsPage'
+import DownloadWindowsPage from '@pages/public/DownloadWindowsPage'
+import DownloadMacPage from '@pages/public/DownloadMacPage'
+import DownloadLinuxPage from '@pages/public/DownloadLinuxPage'
 import CliLoginPage from '@pages/public/CliLoginPage'
 import CliSubscribePage from '@pages/public/CliSubscribePage'
 
@@ -134,6 +138,9 @@ function App() {
           <Route path="/product" element={<PublicLayout><ClaudeCodePage /></PublicLayout>} />
           <Route path="/status" element={<PublicLayout><SystemStatusPage /></PublicLayout>} />
           <Route path="/downloads" element={<PublicLayout><DownloadsPage /></PublicLayout>} />
+          <Route path="/downloads/windows" element={<PublicLayout><DownloadWindowsPage /></PublicLayout>} />
+          <Route path="/downloads/mac" element={<PublicLayout><DownloadMacPage /></PublicLayout>} />
+          <Route path="/downloads/linux" element={<PublicLayout><DownloadLinuxPage /></PublicLayout>} />
           <Route path="/login" element={<CliLoginPage />} />
           <Route path="/subscribe" element={<CliSubscribePage />} />
 
@@ -168,6 +175,7 @@ function App() {
       </main>
       {isPublicRoute() && !window.location.pathname.startsWith('/auth') && <Footer />}
       <CookieConsent />
+      <DesktopUpdateNotification />
     </div>
   )
 }

@@ -28,32 +28,56 @@ const electronAPI = {
   openLoginInBrowser: () => ipcRenderer.invoke('auth:open-login'),
   completeAuth: (token: string) => ipcRenderer.invoke('auth:complete', token),
 
+  // Landing → Main transition
+  openMainWindow: () => ipcRenderer.invoke('landing:open-main'),
+
   // File system
   readFile: (path: string) => ipcRenderer.invoke('fs:read-file', path),
   writeFile: (path: string, content: string) => ipcRenderer.invoke('fs:write-file', path, content),
   selectFile: () => ipcRenderer.invoke('fs:select-file'),
+  readDroppedFiles: (paths: string[]) => ipcRenderer.invoke('dragdrop:read-files', paths),
 
   // Notifications
   showNotification: (title: string, body: string) => ipcRenderer.invoke('notify:show', title, body),
 
+  // Auto-updater
+  restartToUpdate: () => ipcRenderer.invoke('update:restart'),
+
   // Event listeners (from main → renderer)
   onAuthToken: (callback: (token: string) => void) => {
-    ipcRenderer.on('auth:token', (_event, token) => callback(token))
+    const handler = (_event: any, token: string) => callback(token)
+    ipcRenderer.on('auth:token', handler)
+    return () => ipcRenderer.removeListener('auth:token', handler)
   },
   onNavigateChat: (callback: (chatId?: string) => void) => {
-    ipcRenderer.on('navigate:chat', (_event, chatId) => callback(chatId))
+    const handler = (_event: any, chatId?: string) => callback(chatId)
+    ipcRenderer.on('navigate:chat', handler)
+    return () => ipcRenderer.removeListener('navigate:chat', handler)
   },
   onNavigateSettings: (callback: () => void) => {
-    ipcRenderer.on('navigate:settings', () => callback())
+    const handler = () => callback()
+    ipcRenderer.on('navigate:settings', handler)
+    return () => ipcRenderer.removeListener('navigate:settings', handler)
   },
   onShortcutNewChat: (callback: () => void) => {
-    ipcRenderer.on('shortcut:new-chat', () => callback())
+    const handler = () => callback()
+    ipcRenderer.on('shortcut:new-chat', handler)
+    return () => ipcRenderer.removeListener('shortcut:new-chat', handler)
   },
   onShortcutFocusInput: (callback: () => void) => {
-    ipcRenderer.on('shortcut:focus-input', () => callback())
+    const handler = () => callback()
+    ipcRenderer.on('shortcut:focus-input', handler)
+    return () => ipcRenderer.removeListener('shortcut:focus-input', handler)
   },
   onDeepLink: (callback: (url: string) => void) => {
-    ipcRenderer.on('deeplink', (_event, url) => callback(url))
+    const handler = (_event: any, url: string) => callback(url)
+    ipcRenderer.on('deeplink', handler)
+    return () => ipcRenderer.removeListener('deeplink', handler)
+  },
+  onUpdateAvailable: (callback: () => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('update:available', handler)
+    return () => ipcRenderer.removeListener('update:available', handler)
   },
 
   // Remove listeners (cleanup)
