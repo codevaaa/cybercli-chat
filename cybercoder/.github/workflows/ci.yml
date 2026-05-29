@@ -139,7 +139,14 @@ jobs:
     - name: Publish CLI package
       run: |
         cd packages/cli
-        npm publish --access public
+        npm publish --access public 2>&1 | tee publish.log
+        EXIT_CODE=${PIPESTATUS[0]}
+        if [ $EXIT_CODE -ne 0 ]; then
+          echo "=== NPM PUBLISH FAILED ==="
+          cat publish.log
+          echo "=========================="
+          exit 1
+        fi
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
