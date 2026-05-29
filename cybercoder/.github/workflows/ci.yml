@@ -46,7 +46,7 @@ jobs:
       run: pnpm install
       
     - name: Build packages
-      run: pnpm build || echo "Build step skipped"
+      run: pnpm build
 
   test:
     name: Test
@@ -109,7 +109,6 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && github.event_name == 'push'
-    continue-on-error: true
     
     steps:
     - name: Checkout code
@@ -130,13 +129,21 @@ jobs:
       run: pnpm install
       
     - name: Build packages
-      run: pnpm build || echo "Build step skipped"
+      run: pnpm build
       
     - name: Verify NPM auth
       run: npm whoami
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         
+    - name: Verify dist/ exists
+      run: |
+        if [ ! -f packages/cli/dist/index.js ]; then
+          echo "ERROR: packages/cli/dist/index.js not found! Build failed."
+          exit 1
+        fi
+        echo "dist/index.js found: $(wc -c < packages/cli/dist/index.js) bytes"
+      
     - name: Publish CLI package
       run: |
         cd packages/cli
