@@ -17,16 +17,22 @@ export const Prompt: React.FC<PromptProps> = ({ onSubmit, disabled }) => {
 
   if (disabled) {
     return (
-      <Box>
-        <Text color="gray">⏳ (waiting…)</Text>
+      <Box flexDirection="row">
+        <Text color="gray">{'>'} </Text>
+        <Text color="gray">(thinking…)</Text>
       </Box>
     );
   }
 
   return (
-    <Box>
-      <Text color="cyan">{'› '}</Text>
-      <TextInput value={value} onChange={setValue} onSubmit={handleSubmit} placeholder="Try /help or describe what you want…" />
+    <Box flexDirection="row">
+      <Text color="cyan">{'>'} </Text>
+      <TextInput
+        value={value}
+        onChange={setValue}
+        onSubmit={handleSubmit}
+        placeholder="write a test for <filepath>"
+      />
     </Box>
   );
 };
