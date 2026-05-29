@@ -28,19 +28,14 @@ export default function DownloadLinuxPage() {
   const [downloadingAppImage, setDownloadingAppImage] = useState(false)
   const [downloadingDeb, setDownloadingDeb] = useState(false)
 
+  const GITHUB_APPIMAGE_URL = 'https://github.com/stilcybermindcli/cybercli-chat/releases/latest/download/CyberCli-linux-x64.AppImage'
+  const GITHUB_DEB_URL = 'https://github.com/stilcybermindcli/cybercli-chat/releases/latest/download/CyberCli-linux-x64.deb'
+
   const handleDownload = (type) => {
     const setter = type === 'appimage' ? setDownloadingAppImage : setDownloadingDeb
     setter(true)
-    const link = document.createElement('a')
-    link.href = type === 'appimage'
-      ? '/downloads/CyberCli-linux-x86_64.AppImage'
-      : '/downloads/CyberCli-linux-amd64.deb'
-    link.download = type === 'appimage'
-      ? 'CyberCli-linux-x86_64.AppImage'
-      : 'CyberCli-linux-amd64.deb'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const url = type === 'appimage' ? GITHUB_APPIMAGE_URL : GITHUB_DEB_URL
+    window.open(url, '_blank')
     setTimeout(() => setter(false), 3000)
   }
 

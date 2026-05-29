@@ -12,6 +12,9 @@ files:
   - resources/**/*
   - '!node_modules/electron/**/*'
 
+# Clean artifact names for GitHub Releases
+artifactName: ${productName}-${os}-${arch}.${ext}
+
 # Auto-update publish config (GitHub Releases)
 publish:
   provider: github
@@ -24,9 +27,7 @@ mac:
   category: public.app-category.productivity
   target:
     - target: dmg
-      arch:
-        - x64
-        - arm64
+      arch: universal
   icon: resources/icon.png
   darkModeSupport: true
   hardenedRuntime: true
