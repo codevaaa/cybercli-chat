@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberCli</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0A0A0F;
+      color: #ECECEC;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-app-region: drag;
+    }
+    .logo {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo svg {
+      width: 48px;
+      height: 48px;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .platform {
+      font-size: 15px;
+      color: #A0A0A0;
+      margin-bottom: 40px;
+    }
+    .tagline {
+      font-size: 13px;
+      color: #707070;
+      margin-bottom: 40px;
+      text-align: center;
+      padding: 0 40px;
+      line-height: 1.5;
+    }
+    .btn {
+      -webkit-app-region: no-drag;
+      width: 280px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: none;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #ECECEC;
+      color: #0A0A0F;
+      margin-bottom: 12px;
+    }
+    .btn-primary:hover {
+      background: #fff;
+    }
+    .btn-secondary {
+      background: transparent;
+      color: #A0A0A0;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.05);
+      color: #ECECEC;
+    }
+    .version {
+      position: absolute;
+      bottom: 16px;
+      font-size: 11px;
+      color: #505050;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#D97757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="16" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+      <line x1="9.5" y1="9.5" x2="14.5" y2="14.5" />
+      <line x1="14.5" y1="9.5" x2="9.5" y2="14.5" />
+    </svg>
+  </div>
+  <div class="title">CyberCli</div>
+  <div class="platform" id="platform-text">for Windows</div>
+  <div class="tagline">The fastest way to talk with AI.<br>Code, create, and collaborate.</div>
+  <button class="btn btn-primary" id="btn-start">Get started</button>
+  <button class="btn btn-secondary" id="btn-signin">I already have an account</button>
+  <div class="version" id="version-text">v0.1.0</div>
+
+  <script>
+    const platformMap = {
+      win32: 'for Windows',
+      darwin: 'for macOS',
+      linux: 'for Linux'
+    };
+    document.getElementById('platform-text').textContent = platformMap[window.electronAPI?.platform || 'win32'];
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+      window.electronAPI?.openLoginInBrowser?.();
+    });
+
+    document.getElementById('btn-signin').addEventListener('click', () => {
+      window.electronAPI?.openLoginInBrowser?.();
+    });
+
+    // Load version
+    window.electronAPI?.getAppInfo?.().then(info => {
+      document.getElementById('version-text').textContent = 'v' + (info?.version || '0.1.0');
+    }).catch(() => {});
+  </script>
+</body>
+</html>

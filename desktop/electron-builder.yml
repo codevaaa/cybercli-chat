@@ -1,0 +1,79 @@
+appId: com.cybermindcli.desktop
+productName: CyberCli
+copyright: Copyright © 2026 CyberCli Team
+
+asar: true
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - dist/**/*
+  - resources/**/*
+  - '!node_modules/electron/**/*'
+
+# macOS
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: resources/icon.icns
+  darkModeSupport: true
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+
+dmg:
+  sign: false
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+# Windows
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32
+    - target: portable
+      arch:
+        - x64
+  icon: resources/icon.ico
+  publisherName: CyberCli Team
+  verifyUpdateCodeSignature: false
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: CyberCli
+  include: resources/installer.nsh
+
+# Linux
+linux:
+  target:
+    - target: AppImage
+      arch: x64
+    - target: deb
+      arch: x64
+  category: Office
+  icon: resources/icon.png
+  maintainer: CyberCli Team
+  synopsis: AI-powered coding and chat assistant
+  description: CyberCli Desktop brings the full AI chat experience to your desktop.
+
+protocols:
+  - name: CyberCli Protocol
+    schemes:
+      - cybercli
