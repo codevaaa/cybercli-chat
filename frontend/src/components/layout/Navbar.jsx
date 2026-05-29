@@ -5,7 +5,7 @@ import {
   Sparkles, Cpu, CreditCard, History, 
   BookOpen, Terminal, Rss, Gift, 
   Building2, Briefcase, Mail, Bot, Code2,
-  FolderOpen, Layers, Globe
+  FolderOpen, Layers, Globe, Brain
 } from 'lucide-react'
 import { useAuthStore } from '@stores/authStore.js'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -17,7 +17,7 @@ const ICON_MAP = {
   Sparkles, Cpu, CreditCard, History,
   BookOpen, Terminal, Rss, Gift,
   Building2, Briefcase, Mail, Bot, Code2,
-  FolderOpen, Layers, Globe
+  FolderOpen, Layers, Globe, Brain
 }
 
 const MENU_GROUPS = [
@@ -33,6 +33,7 @@ const MENU_GROUPS = [
     items: [
       { label: 'CyberCoder CLI', href: '/product', desc: 'Terminal AI coding assistant - Better than Claude Code', icon: 'Terminal' },
       { label: 'CyberCli Chat', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
+      { label: 'Council Mode', href: '/council-mode', desc: '4-model ensemble intelligence — One best answer', icon: 'Brain' },
       { label: 'Models', href: '/models', desc: 'Browse 200K+ AI models from 8+ providers', icon: 'Cpu' },
       { label: 'Workflows', href: '/chat', desc: 'Automate multi-agent tasks', icon: 'Layers' },
       { label: 'Discover', href: '/models', desc: 'Find custom agents', icon: 'Globe' },
@@ -175,6 +176,7 @@ export default function Navbar() {
     { label: 'Overview', href: '/' },
     { label: 'Features', href: '/features' },
     { label: 'Models', href: '/models' },
+    { label: 'Council Mode', href: '/council-mode' },
     { label: 'CyberCoder CLI', href: '/product' },
     { label: 'Downloads', href: '/downloads' },
     { label: 'Documentation', href: '/docs' }

@@ -1,12 +1,17 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../stores/authStore.js'
 import { CyberCliMark } from '../../components/ui/CyberCliLogo'
+import { supabase } from '../../lib/supabase.js'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get('redirect') || ''
+  const port = searchParams.get('port') || ''
+
   const { signInWithEmail, signInWithOAuth, loading, error, clearError } = useAuthStore()
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
@@ -14,9 +19,19 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     clearError()
-    const result = await signInWithOAuth('google')
-    if (result.success && result.url) {
-      window.location.href = result.url
+    try {
+      const nextPath = redirect === 'cli' ? `/login?redirect=cli&port=${port}` : '/chat'
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo }
+      })
+      if (error) throw error
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (err) {
+      console.error('Google Sign In error:', err)
     }
   }
 
@@ -24,7 +39,13 @@ export default function LoginPage() {
     e.preventDefault()
     clearError()
     const result = await signInWithEmail(form.email, form.password)
-    if (result.success) navigate('/chat')
+    if (result.success) {
+      if (redirect === 'cli') {
+        navigate(`/login?redirect=cli&port=${port}`)
+      } else {
+        navigate('/chat')
+      }
+    }
   }
 
   return (

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../stores/authStore.js'
 import { CyberCliMark } from '../../components/ui/CyberCliLogo'
 import api from '../../lib/api.js'
+import { supabase } from '../../lib/supabase.js'
 
 function getStrength(pw) {
   if (!pw) return { level: 0, label: '', color: '' }
@@ -21,6 +22,10 @@ function getStrength(pw) {
 
 export default function SignupPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get('redirect') || ''
+  const port = searchParams.get('port') || ''
+
   const { signUpWithEmail, signInWithOAuth, loading, error, clearError } = useAuthStore()
   const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' })
   const [showPassword, setShowPassword] = useState(false)
@@ -42,9 +47,19 @@ export default function SignupPage() {
   const handleGoogleSignUp = async () => {
     clearError()
     setLocalError(null)
-    const result = await signInWithOAuth('google')
-    if (result.success && result.url) {
-      window.location.href = result.url
+    try {
+      const nextPath = redirect === 'cli' ? `/login?redirect=cli&port=${port}` : '/chat'
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo }
+      })
+      if (error) throw error
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (err) {
+      console.error('Google Sign Up error:', err)
     }
   }
 
@@ -82,7 +97,11 @@ export default function SignupPage() {
           console.error('Failed to accept invite:', err)
         }
       }
-      navigate('/auth/verify-email')
+      if (redirect === 'cli') {
+        navigate(`/auth/verify-email?redirect=cli&port=${port}`)
+      } else {
+        navigate('/auth/verify-email')
+      }
     }
   }
 

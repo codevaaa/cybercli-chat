@@ -17,6 +17,7 @@ export const FOOTER_SECTIONS = [
     links: [
       { label: 'Features', href: '/features' },
       { label: 'Models', href: '/models' },
+      { label: 'Council Mode', href: '/council-mode' },
       { label: 'AI Agents', href: '/agents' },
       { label: 'Developers', href: '/developers' },
       { label: 'Pricing', href: '/pricing' },
@@ -74,7 +75,7 @@ export const HERO_FEATURES = [
   },
   {
     title: 'Cyber-Council Mode',
-    description: 'Three models debate your question in parallel and synthesize the best comprehensive answer.',
+    description: 'Four expert AI models analyze your question from different angles, then synthesize one definitive best answer.',
     icon: 'users',
   },
   {

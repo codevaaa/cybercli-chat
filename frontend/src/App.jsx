@@ -41,6 +41,7 @@ import DownloadsPage from '@pages/public/DownloadsPage'
 import DownloadWindowsPage from '@pages/public/DownloadWindowsPage'
 import DownloadMacPage from '@pages/public/DownloadMacPage'
 import DownloadLinuxPage from '@pages/public/DownloadLinuxPage'
+import CouncilModePage from '@pages/public/CouncilModePage'
 import CliLoginPage from '@pages/public/CliLoginPage'
 import CliSubscribePage from '@pages/public/CliSubscribePage'
 
@@ -70,7 +71,7 @@ const PUBLIC_PATHS = [
   '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy',
   '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr',
   '/changelog', '/api-reference', '/developers', '/status', '/downloads',
-  '/product', '/login', '/subscribe',
+  '/product', '/login', '/subscribe', '/council-mode',
   '/legal/consumer-terms', '/legal/commercial-terms', '/legal/privacy', '/legal/aup',
   '/responsible-disclosure-policy', '/trust', '/research', '/company', '/usage-limit-best-practices'
 ]
@@ -141,6 +142,7 @@ function App() {
           <Route path="/downloads/windows" element={<PublicLayout><DownloadWindowsPage /></PublicLayout>} />
           <Route path="/downloads/mac" element={<PublicLayout><DownloadMacPage /></PublicLayout>} />
           <Route path="/downloads/linux" element={<PublicLayout><DownloadLinuxPage /></PublicLayout>} />
+          <Route path="/council-mode" element={<PublicLayout><CouncilModePage /></PublicLayout>} />
           <Route path="/login" element={<CliLoginPage />} />
           <Route path="/subscribe" element={<CliSubscribePage />} />
 

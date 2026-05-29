@@ -14,12 +14,12 @@ import { llmGateway } from './gateway.js'
 
 const COUNCIL_MODELS = [
   {
-    id: 'gemini/gemini-2.5-pro',
-    label: 'Gemini 2.5 Pro',
+    id: 'gemini/gemini-2.5-flash',
+    label: 'Gemini 2.5 Flash',
     provider: 'gemini',
     role: 'creative_strategist',
     emoji: '🧠',
-    desc: 'Creative & strategic thinking',
+    desc: 'Creative & strategic thinking — 1,500 req/day free',
   },
   {
     id: 'mistral/mistral-large-latest',
@@ -27,15 +27,15 @@ const COUNCIL_MODELS = [
     provider: 'mistral',
     role: 'technical_architect',
     emoji: '⚙️',
-    desc: 'Structured technical reasoning',
+    desc: 'Structured technical reasoning — European AI leader',
   },
   {
-    id: 'groq/llama-3.1-70b',
-    label: 'Llama 3.1 70B',
+    id: 'groq/llama-3.3-70b',
+    label: 'Llama 3.3 70B',
     provider: 'groq',
     role: 'factual_analyst',
     emoji: '⚡',
-    desc: 'Fast factual analysis',
+    desc: '300+ TPS blazing fast factual analysis',
   },
   {
     id: 'openrouter/gpt-4o-mini',
@@ -43,7 +43,7 @@ const COUNCIL_MODELS = [
     provider: 'openrouter',
     role: 'comprehensive_expert',
     emoji: '🔬',
-    desc: 'Deep comprehensive analysis',
+    desc: 'Deep comprehensive analysis — OpenRouter free tier',
   },
 ]
 
