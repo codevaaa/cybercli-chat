@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/downloads/(.*)", "destination": "https://github.com/stilcybermindcli/cybercli-chat/releases/latest/download/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

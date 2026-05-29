@@ -27,12 +27,14 @@ const STEPS = [
 export default function DownloadMacPage() {
   const [downloading, setDownloading] = useState(false)
 
-  const GITHUB_RELEASE_URL = 'https://github.com/stilcybermindcli/cybercli-chat/releases/latest/download/CyberCli-mac-universal.dmg'
-
   const handleDownload = () => {
     setDownloading(true)
-    // Open GitHub release download in new tab
-    window.open(GITHUB_RELEASE_URL, '_blank')
+    const link = document.createElement('a')
+    link.href = '/downloads/CyberCli-mac-universal.dmg'
+    link.download = 'CyberCli-macOS-universal.dmg'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
     setTimeout(() => setDownloading(false), 3000)
   }
 

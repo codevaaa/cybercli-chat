@@ -27,12 +27,14 @@ const STEPS = [
 export default function DownloadWindowsPage() {
   const [downloading, setDownloading] = useState(false)
 
-  const GITHUB_RELEASE_URL = 'https://github.com/stilcybermindcli/cybercli-chat/releases/latest/download/CyberCli-win-x64.exe'
-
   const handleDownload = () => {
     setDownloading(true)
-    // Open GitHub release download in new tab
-    window.open(GITHUB_RELEASE_URL, '_blank')
+    const link = document.createElement('a')
+    link.href = '/downloads/CyberCli-win-x64.exe'
+    link.download = 'CyberCli-Setup-Windows-x64.exe'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
     setTimeout(() => setDownloading(false), 3000)
   }
 
