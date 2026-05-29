@@ -19,16 +19,16 @@
       -webkit-app-region: drag;
     }
     .logo {
-      width: 64px;
-      height: 64px;
-      margin-bottom: 24px;
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .logo svg {
-      width: 48px;
-      height: 48px;
+      width: 72px;
+      height: 72px;
     }
     .title {
       font-size: 24px;
@@ -87,12 +87,51 @@
 </head>
 <body>
   <div class="logo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#D97757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="16" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-      <line x1="9.5" y1="9.5" x2="14.5" y2="14.5" />
-      <line x1="14.5" y1="9.5" x2="9.5" y2="14.5" />
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#D97757" stop-opacity="1" />
+          <stop offset="50%" stop-color="#D97757" stop-opacity="0.75" />
+          <stop offset="100%" stop-color="#D97757" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <style>
+        @keyframes chakra-rotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.8; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.1); }
+        }
+        .logo-chakra-spin {
+          animation: chakra-rotate 12s linear infinite;
+          transform-origin: 50px 50px;
+        }
+        .hub-pulse {
+          animation: pulse-glow 3s ease-in-out infinite;
+          transform-origin: 50px 50px;
+        }
+      </style>
+      <circle cx="50" cy="50" r="46" stroke="#D97757" stroke-width="2" stroke-opacity="0.3" />
+      <circle cx="50" cy="50" r="46" stroke="#D97757" stroke-width="1" stroke-dasharray="4 8" stroke-opacity="0.5" />
+      <circle cx="50" cy="50" r="12" fill="url(#hubGlow)" class="hub-pulse" />
+      <circle cx="50" cy="50" r="6" fill="#1C1C1C" />
+      <circle cx="50" cy="50" r="2" fill="#D97757" />
+      <g class="logo-chakra-spin">
+        <path d="M50 35 C50 20 60 10 50 4 C40 10 50 20 50 35 Z" fill="#D97757" fill-opacity="0.8" />
+        <path d="M50 35 L50 4 L56 18 Z" fill="#FFFFFF" fill-opacity="0.3" />
+        <path d="M65 50 C80 50 90 40 96 50 C90 60 80 50 65 50 Z" fill="#D97757" fill-opacity="0.8" />
+        <path d="M65 50 L96 50 L82 44 Z" fill="#FFFFFF" fill-opacity="0.3" />
+        <path d="M50 65 C50 80 40 90 50 96 C60 90 50 80 50 65 Z" fill="#D97757" fill-opacity="0.8" />
+        <path d="M50 65 L50 96 L44 82 Z" fill="#FFFFFF" fill-opacity="0.3" />
+        <path d="M35 50 C20 50 10 60 4 50 C10 40 20 50 35 50 Z" fill="#D97757" fill-opacity="0.8" />
+        <path d="M35 50 L4 50 L18 56 Z" fill="#FFFFFF" fill-opacity="0.3" />
+        <circle cx="50" cy="4" r="2" fill="#D97757" />
+        <circle cx="96" cy="50" r="2" fill="#D97757" />
+        <circle cx="50" cy="96" r="2" fill="#D97757" />
+        <circle cx="4" cy="50" r="2" fill="#D97757" />
+      </g>
     </svg>
   </div>
   <div class="title">CyberCli</div>
@@ -111,11 +150,13 @@
     document.getElementById('platform-text').textContent = platformMap[window.electronAPI?.platform || 'win32'];
 
     document.getElementById('btn-start').addEventListener('click', () => {
-      window.electronAPI?.openLoginInBrowser?.();
+      // Open main window - chat app will handle auth state
+      window.electronAPI?.openMainWindow?.();
     });
 
     document.getElementById('btn-signin').addEventListener('click', () => {
-      window.electronAPI?.openLoginInBrowser?.();
+      // Open main window - chat app will show login if not authenticated
+      window.electronAPI?.openMainWindow?.();
     });
 
     // Load version

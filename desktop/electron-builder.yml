@@ -53,6 +53,7 @@ win:
   icon: resources/icon.png
   publisherName: CyberCli Team
   verifyUpdateCodeSignature: false
+  signingHashAlgorithms: []
 
 nsis:
   oneClick: false

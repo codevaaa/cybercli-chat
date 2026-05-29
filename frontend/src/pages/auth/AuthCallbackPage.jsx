@@ -11,6 +11,7 @@ export default function AuthCallbackPage() {
   const { initialize } = useAuthStore()
   const [status, setStatus] = useState('processing') // 'processing' | 'success' | 'error'
   const [errorMessage, setErrorMessage] = useState('')
+  const [isDesktopRedirect, setIsDesktopRedirect] = useState(false)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -18,11 +19,15 @@ export default function AuthCallbackPage() {
         // Parse code from query parameters (for PKCE flow)
         const params = new URLSearchParams(window.location.search)
         const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        
+
         // Detect if this is a password recovery/reset event
         const isRecovery = hashParams.get('type') === 'recovery' || params.get('type') === 'recovery'
         const code = params.get('code')
         const next = isRecovery ? '/auth/reset-password' : (params.get('next') || '/chat')
+
+        // Check if this is a desktop app redirect flow
+        const redirectParam = params.get('redirect') === 'desktop'
+        if (redirectParam) setIsDesktopRedirect(true)
 
         // Check for error parameters in hash or search
         const errorDescription = params.get('error_description') || hashParams.get('error_description')
@@ -77,12 +82,21 @@ export default function AuthCallbackPage() {
 
         // Fetch session to confirm auth is successful
         const { data: { session } } = await supabase.auth.getSession()
-        
+
         if (session) {
+          // Desktop app redirect: send token via deep link protocol
+          if (redirectParam) {
+            const token = session.access_token
+            // Redirect to cybercli:// deep link with token
+            window.location.href = `cybercli://auth?token=${encodeURIComponent(token)}`
+            setStatus('success')
+            return
+          }
+
           setStatus('success')
           // Initialize auth store to sync session details and state
           await initialize()
-          
+
           // Small delay for showing success checkmark
           setTimeout(() => {
             navigate(next)
@@ -144,7 +158,9 @@ export default function AuthCallbackPage() {
                 <ShieldCheck className="w-8 h-8 text-green-500" />
               </div>
               <p className="text-foreground-primary font-medium">Session secured successfully!</p>
-              <p className="text-xs text-foreground-muted mt-2">Redirecting you to the console...</p>
+              <p className="text-xs text-foreground-muted mt-2">
+                {isDesktopRedirect ? 'Opening CyberCli Desktop...' : 'Redirecting you to the console...'}
+              </p>
             </div>
           )}
 

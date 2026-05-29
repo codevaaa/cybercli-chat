@@ -41,3 +41,6 @@ coverage/
 # Misc
 .cache/
 .temp/
+
+# Sub-repos (managed separately)
+cybercoder/
