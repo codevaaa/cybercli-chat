@@ -3,165 +3,134 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CyberCli</title>
+  <title>Codeva</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #1f1e1d;
+      --text: #f5f4f2;
+      --muted: #a3a097;
+      --accent: #d97757;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0A0A0F;
-      color: #ECECEC;
+      background: var(--bg);
+      color: var(--text);
       height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-app-region: drag;
+      overflow: hidden;
+    }
+    /* Top drag bar with traffic-light spacing */
+    .titlebar { height: 40px; flex-shrink: 0; }
+    .center {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      user-select: none;
-      -webkit-app-region: drag;
+      gap: 0;
     }
-    .logo {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .logo svg {
-      width: 72px;
-      height: 72px;
-    }
+    .logo { width: 64px; height: 64px; margin-bottom: 36px; }
+    .logo svg { width: 64px; height: 64px; }
     .title {
-      font-size: 24px;
-      font-weight: 600;
-      margin-bottom: 8px;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 34px;
+      font-weight: 500;
       letter-spacing: -0.5px;
+      margin-bottom: 14px;
     }
-    .platform {
-      font-size: 15px;
-      color: #A0A0A0;
-      margin-bottom: 40px;
-    }
-    .tagline {
-      font-size: 13px;
-      color: #707070;
-      margin-bottom: 40px;
-      text-align: center;
-      padding: 0 40px;
-      line-height: 1.5;
+    .title em { font-style: italic; font-weight: 400; }
+    .tagline { font-size: 15px; color: var(--muted); }
+    .footer {
+      padding: 20px;
+      flex-shrink: 0;
     }
     .btn {
       -webkit-app-region: no-drag;
-      width: 280px;
-      padding: 12px 24px;
+      width: 100%;
+      padding: 14px;
       border-radius: 12px;
       border: none;
       font-size: 15px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background 0.15s;
+      background: var(--text);
+      color: #1a1a1a;
+      font-family: inherit;
     }
-    .btn-primary {
-      background: #ECECEC;
-      color: #0A0A0F;
-      margin-bottom: 12px;
+    .btn:hover { background: #ffffff; }
+    .menu-btn {
+      -webkit-app-region: no-drag;
+      position: absolute; top: 10px; left: 12px;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; color: var(--muted); cursor: pointer; border-radius: 6px;
     }
-    .btn-primary:hover {
-      background: #fff;
-    }
-    .btn-secondary {
-      background: transparent;
-      color: #A0A0A0;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .btn-secondary:hover {
-      background: rgba(255,255,255,0.05);
-      color: #ECECEC;
-    }
-    .version {
-      position: absolute;
-      bottom: 16px;
-      font-size: 11px;
-      color: #505050;
-    }
+    .menu-btn:hover { background: rgba(255,255,255,0.06); }
+    .version { position: absolute; bottom: 76px; left: 0; right: 0; text-align: center; font-size: 11px; color: #6b6862; }
   </style>
 </head>
 <body>
-  <div class="logo">
-    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#D97757" stop-opacity="1" />
-          <stop offset="50%" stop-color="#D97757" stop-opacity="0.75" />
-          <stop offset="100%" stop-color="#D97757" stop-opacity="0" />
-        </radialGradient>
-      </defs>
-      <style>
-        @keyframes chakra-rotate {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.8; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.1); }
-        }
-        .logo-chakra-spin {
-          animation: chakra-rotate 12s linear infinite;
-          transform-origin: 50px 50px;
-        }
-        .hub-pulse {
-          animation: pulse-glow 3s ease-in-out infinite;
-          transform-origin: 50px 50px;
-        }
-      </style>
-      <circle cx="50" cy="50" r="46" stroke="#D97757" stroke-width="2" stroke-opacity="0.3" />
-      <circle cx="50" cy="50" r="46" stroke="#D97757" stroke-width="1" stroke-dasharray="4 8" stroke-opacity="0.5" />
-      <circle cx="50" cy="50" r="12" fill="url(#hubGlow)" class="hub-pulse" />
-      <circle cx="50" cy="50" r="6" fill="#1C1C1C" />
-      <circle cx="50" cy="50" r="2" fill="#D97757" />
-      <g class="logo-chakra-spin">
-        <path d="M50 35 C50 20 60 10 50 4 C40 10 50 20 50 35 Z" fill="#D97757" fill-opacity="0.8" />
-        <path d="M50 35 L50 4 L56 18 Z" fill="#FFFFFF" fill-opacity="0.3" />
-        <path d="M65 50 C80 50 90 40 96 50 C90 60 80 50 65 50 Z" fill="#D97757" fill-opacity="0.8" />
-        <path d="M65 50 L96 50 L82 44 Z" fill="#FFFFFF" fill-opacity="0.3" />
-        <path d="M50 65 C50 80 40 90 50 96 C60 90 50 80 50 65 Z" fill="#D97757" fill-opacity="0.8" />
-        <path d="M50 65 L50 96 L44 82 Z" fill="#FFFFFF" fill-opacity="0.3" />
-        <path d="M35 50 C20 50 10 60 4 50 C10 40 20 50 35 50 Z" fill="#D97757" fill-opacity="0.8" />
-        <path d="M35 50 L4 50 L18 56 Z" fill="#FFFFFF" fill-opacity="0.3" />
-        <circle cx="50" cy="4" r="2" fill="#D97757" />
-        <circle cx="96" cy="50" r="2" fill="#D97757" />
-        <circle cx="50" cy="96" r="2" fill="#D97757" />
-        <circle cx="4" cy="50" r="2" fill="#D97757" />
-      </g>
-    </svg>
+  <button class="menu-btn" title="Menu">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="titlebar"></div>
+  <div class="center">
+    <div class="logo">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Codeva">
+        <g id="burst" fill="#d97757">
+          <!-- 12-ray asterisk burst, Claude-style -->
+          <script type="application/x-ignore"></script>
+        </g>
+        <g fill="#d97757">
+          <rect x="47" y="6" width="6" height="28" rx="3"/>
+          <rect x="47" y="66" width="6" height="28" rx="3"/>
+          <rect x="6" y="47" width="28" height="6" rx="3"/>
+          <rect x="66" y="47" width="28" height="6" rx="3"/>
+          <g transform="rotate(45 50 50)">
+            <rect x="47" y="10" width="6" height="24" rx="3"/>
+            <rect x="47" y="66" width="6" height="24" rx="3"/>
+            <rect x="10" y="47" width="24" height="6" rx="3"/>
+            <rect x="66" y="47" width="24" height="6" rx="3"/>
+          </g>
+          <g transform="rotate(22.5 50 50)">
+            <rect x="47.5" y="12" width="5" height="22" rx="2.5"/>
+            <rect x="47.5" y="66" width="5" height="22" rx="2.5"/>
+            <rect x="12" y="47.5" width="22" height="5" rx="2.5"/>
+            <rect x="66" y="47.5" width="22" height="5" rx="2.5"/>
+          </g>
+          <g transform="rotate(67.5 50 50)">
+            <rect x="47.5" y="12" width="5" height="22" rx="2.5"/>
+            <rect x="47.5" y="66" width="5" height="22" rx="2.5"/>
+            <rect x="12" y="47.5" width="22" height="5" rx="2.5"/>
+            <rect x="66" y="47.5" width="22" height="5" rx="2.5"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <div class="title">Codeva <em>for</em> <span id="platform">Windows</span></div>
+    <div class="tagline">The fastest way to talk with Codeva</div>
   </div>
-  <div class="title">CyberCli</div>
-  <div class="platform" id="platform-text">for Windows</div>
-  <div class="tagline">The fastest way to talk with AI.<br>Code, create, and collaborate.</div>
-  <button class="btn btn-primary" id="btn-start">Get started</button>
-  <button class="btn btn-secondary" id="btn-signin">I already have an account</button>
-  <div class="version" id="version-text">v0.1.0</div>
+  <div class="version" id="version">v0.1.0</div>
+  <div class="footer">
+    <button class="btn" id="btn-start">Get started</button>
+  </div>
 
   <script>
-    const platformMap = {
-      win32: 'for Windows',
-      darwin: 'for macOS',
-      linux: 'for Linux'
-    };
-    document.getElementById('platform-text').textContent = platformMap[window.electronAPI?.platform || 'win32'];
+    const platformMap = { win32: 'Windows', darwin: 'Mac', linux: 'Linux' };
+    const p = window.electronAPI?.platform || 'win32';
+    document.getElementById('platform').textContent = platformMap[p] || 'Desktop';
 
     document.getElementById('btn-start').addEventListener('click', () => {
-      // Open main window - chat app will handle auth state
-      window.electronAPI?.openMainWindow?.();
+      window.electronAPI?.openSignIn?.();
     });
 
-    document.getElementById('btn-signin').addEventListener('click', () => {
-      // Open main window - chat app will show login if not authenticated
-      window.electronAPI?.openMainWindow?.();
-    });
-
-    // Load version
     window.electronAPI?.getAppInfo?.().then(info => {
-      document.getElementById('version-text').textContent = 'v' + (info?.version || '0.1.0');
+      if (info?.version) document.getElementById('version').textContent = 'v' + info.version;
     }).catch(() => {});
   </script>
 </body>

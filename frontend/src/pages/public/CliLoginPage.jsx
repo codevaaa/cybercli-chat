@@ -11,6 +11,7 @@ export default function CliLoginPage() {
   const redirect = searchParams.get('redirect') || ''
   const port = searchParams.get('port') || ''
   const isCli = redirect === 'cli'
+  const isDesktop = redirect === 'desktop'
 
   const { user, session, signInWithEmail, loading: authLoading, error: authError } = useAuthStore()
   
@@ -48,7 +49,9 @@ export default function CliLoginPage() {
   const handleGoogleSignIn = async () => {
     setLocalError(null)
     try {
-      const nextPath = `/login?redirect=cli&port=${port}`
+      const nextPath = isDesktop
+        ? `/login?redirect=desktop`
+        : `/login?redirect=cli&port=${port}`
       const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -64,14 +67,36 @@ export default function CliLoginPage() {
   }
 
   const handleAuthorize = async () => {
+    // Desktop flow: hand a session token back to the app via deep link.
+    if (isDesktop) {
+      setAuthStatus('authorizing')
+      setLocalError(null)
+      try {
+        // Use the live Supabase session token as the desktop auth token.
+        const token = session?.access_token || (await supabase.auth.getSession()).data?.session?.access_token
+        if (!token) {
+          setLocalError('No active session. Please sign in again.')
+          setAuthStatus('idle')
+          return
+        }
+        setAuthStatus('success')
+        // Deep-link back into the desktop app.
+        window.location.href = `codeva://auth?token=${encodeURIComponent(token)}`
+      } catch (err) {
+        setLocalError(err.message || 'Failed to authorize desktop app')
+        setAuthStatus('idle')
+      }
+      return
+    }
+
     if (!port) {
       setAuthStatus('manual')
       return
     }
-    
+
     setAuthStatus('authorizing')
     setLocalError(null)
-    
+
     try {
       // Generate a new CLI API key
       const keyName = `CyberCoder CLI (${navigator.platform || 'Local Machine'})`
@@ -139,9 +164,11 @@ export default function CliLoginPage() {
             /* Logged in: show authorization prompt */
             <div className="space-y-6">
               <div className="text-center">
-                <h1 className="text-white text-2xl font-semibold mb-2">Authorize CLI</h1>
+                <h1 className="text-white text-2xl font-semibold mb-2">{isDesktop ? 'Open Codeva Desktop' : 'Authorize CLI'}</h1>
                 <p className="text-gray-400 text-sm">
-                  Grant CyberCoder CLI access to your account <span className="text-white font-medium">({user.email})</span>.
+                  {isDesktop
+                    ? <>Sign in complete for <span className="text-white font-medium">{user.email}</span>. Click below to return to the desktop app.</>
+                    : <>Grant CyberCoder CLI access to your account <span className="text-white font-medium">({user.email})</span>.</>}
                 </p>
               </div>
 
@@ -152,10 +179,12 @@ export default function CliLoginPage() {
                     className="w-full bg-[#D97736] hover:bg-[#c2652b] text-white rounded-lg py-3 px-4 font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Lock className="w-5 h-5" />
-                    Authorize CyberCoder CLI
+                    {isDesktop ? 'Open Codeva Desktop' : 'Authorize CyberCoder CLI'}
                   </button>
                   <p className="text-xs text-gray-500 text-center">
-                    This generates an API key and connects it securely to your CLI agent.
+                    {isDesktop
+                      ? 'This securely returns you to the desktop app and signs you in.'
+                      : 'This generates an API key and connects it securely to your CLI agent.'}
                   </p>
                 </div>
               )}

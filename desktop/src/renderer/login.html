@@ -3,13 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign In — CyberCli</title>
+  <title>Sign In — Codeva</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #1f1e1d;
+      --card: #262422;
+      --text: #f5f4f2;
+      --muted: #a3a097;
+      --border: rgba(255,255,255,0.10);
+      --accent: #d97757;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0A0A0F;
-      color: #ECECEC;
+      background: var(--bg);
+      color: var(--text);
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -18,170 +26,103 @@
       user-select: none;
       -webkit-app-region: drag;
     }
-    .logo {
-      width: 56px;
-      height: 56px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .logo svg {
-      width: 48px;
-      height: 48px;
-    }
     .title {
-      font-size: 22px;
-      font-weight: 600;
-      margin-bottom: 28px;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 30px;
+      font-weight: 500;
+      margin-bottom: 32px;
       letter-spacing: -0.3px;
     }
-    .btn {
+    .card {
       -webkit-app-region: no-drag;
-      width: 300px;
-      padding: 11px 20px;
+      width: 340px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px 16px;
       border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid var(--border);
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      background: #14141A;
-      color: #ECECEC;
-      margin-bottom: 10px;
+      transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      background: transparent; color: var(--text);
+      font-family: inherit;
     }
-    .btn:hover {
-      background: #1A1A22;
-      border-color: rgba(255,255,255,0.15);
-    }
-    .btn-google {
-      background: #ECECEC;
-      color: #0A0A0F;
-      border: none;
-    }
-    .btn-google:hover {
-      background: #fff;
-    }
-    .divider {
-      display: flex;
-      align-items: center;
-      width: 300px;
-      margin: 14px 0;
-      color: #707070;
-      font-size: 12px;
-    }
-    .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(255,255,255,0.08);
-    }
-    .divider span {
-      padding: 0 12px;
-    }
+    .btn:hover { background: rgba(255,255,255,0.05); }
+    .btn-primary { background: var(--text); color: #1a1a1a; border: none; }
+    .btn-primary:hover { background: #ffffff; }
+    .divider { display: flex; align-items: center; color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .divider span { padding: 0 12px; }
     .input {
-      -webkit-app-region: no-drag;
-      width: 300px;
-      padding: 11px 14px;
+      width: 100%;
+      padding: 12px 14px;
       border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: #14141A;
-      color: #ECECEC;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+      color: var(--text);
       font-size: 14px;
-      margin-bottom: 10px;
       outline: none;
+      font-family: inherit;
     }
-    .input:focus {
-      border-color: #D97757;
-    }
-    .input::placeholder { color: #707070; }
-    .link {
+    .input:focus { border-color: var(--accent); }
+    .input::placeholder { color: var(--muted); }
+    .err { color: #f87171; font-size: 12px; min-height: 14px; text-align: center; }
+    .menu-btn {
       -webkit-app-region: no-drag;
-      color: #A0A0A0;
-      font-size: 12px;
-      margin-top: 16px;
-      cursor: pointer;
-      text-decoration: none;
+      position: absolute; top: 10px; left: 12px;
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; color: var(--muted); cursor: pointer; border-radius: 6px;
     }
-    .link:hover { color: #D97757; }
+    .menu-btn:hover { background: rgba(255,255,255,0.06); }
   </style>
 </head>
 <body>
-  <div class="logo">
-    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#D97757" stop-opacity="1" />
-          <stop offset="50%" stop-color="#D97757" stop-opacity="0.75" />
-          <stop offset="100%" stop-color="#D97757" stop-opacity="0" />
-        </radialGradient>
-      </defs>
-      <style>
-        @keyframes chakra-rotate {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.8; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.1); }
-        }
-        .logo-chakra-spin {
-          animation: chakra-rotate 12s linear infinite;
-          transform-origin: 50px 50px;
-        }
-        .hub-pulse {
-          animation: pulse-glow 3s ease-in-out infinite;
-          transform-origin: 50px 50px;
-        }
-      </style>
-      <circle cx="50" cy="50" r="46" stroke="#D97757" stroke-width="2" stroke-opacity="0.3" />
-      <circle cx="50" cy="50" r="46" stroke="#D97757" stroke-width="1" stroke-dasharray="4 8" stroke-opacity="0.5" />
-      <circle cx="50" cy="50" r="12" fill="url(#hubGlow)" class="hub-pulse" />
-      <circle cx="50" cy="50" r="6" fill="#1C1C1C" />
-      <circle cx="50" cy="50" r="2" fill="#D97757" />
-      <g class="logo-chakra-spin">
-        <path d="M50 35 C50 20 60 10 50 4 C40 10 50 20 50 35 Z" fill="#D97757" fill-opacity="0.8" />
-        <path d="M50 35 L50 4 L56 18 Z" fill="#FFFFFF" fill-opacity="0.3" />
-        <path d="M65 50 C80 50 90 40 96 50 C90 60 80 50 65 50 Z" fill="#D97757" fill-opacity="0.8" />
-        <path d="M65 50 L96 50 L82 44 Z" fill="#FFFFFF" fill-opacity="0.3" />
-        <path d="M50 65 C50 80 40 90 50 96 C60 90 50 80 50 65 Z" fill="#D97757" fill-opacity="0.8" />
-        <path d="M50 65 L50 96 L44 82 Z" fill="#FFFFFF" fill-opacity="0.3" />
-        <path d="M35 50 C20 50 10 60 4 50 C10 40 20 50 35 50 Z" fill="#D97757" fill-opacity="0.8" />
-        <path d="M35 50 L4 50 L18 56 Z" fill="#FFFFFF" fill-opacity="0.3" />
-        <circle cx="50" cy="4" r="2" fill="#D97757" />
-        <circle cx="96" cy="50" r="2" fill="#D97757" />
-        <circle cx="50" cy="96" r="2" fill="#D97757" />
-        <circle cx="4" cy="50" r="2" fill="#D97757" />
-      </g>
-    </svg>
-  </div>
-  <div class="title">Sign In</div>
-  <button class="btn btn-google" id="btn-google">
-    <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-    Continue with Google
+  <button class="menu-btn" id="back" title="Back">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
   </button>
-  <div class="divider"><span>or</span></div>
-  <input type="email" class="input" placeholder="Enter your email" id="email" />
-  <button class="btn" id="btn-email">Continue with email</button>
-  <a class="link" id="link-web">Open in browser instead</a>
+  <div class="title">Sign In</div>
+  <div class="card">
+    <button class="btn" id="btn-google">
+      <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continue with Google
+    </button>
+    <div class="divider"><span>OR</span></div>
+    <input type="email" class="input" placeholder="Enter your email" id="email" autocomplete="email" />
+    <button class="btn btn-primary" id="btn-email">Continue with email</button>
+    <div class="err" id="err"></div>
+  </div>
 
   <script>
-    document.getElementById('btn-google').addEventListener('click', () => {
-      window.electronAPI?.openLoginInBrowser?.();
-    });
+    function go(method, email) {
+      // Both methods open the secure web auth flow in the browser; it deep-links
+      // back to the desktop app with a token (codeva://auth?token=...).
+      window.electronAPI?.openLoginInBrowser?.({ method, email: email || '' });
+    }
+    document.getElementById('btn-google').addEventListener('click', () => go('google'));
     document.getElementById('btn-email').addEventListener('click', () => {
-      const email = document.getElementById('email').value;
-      if (email) {
-        window.electronAPI?.openLoginInBrowser?.();
+      const email = document.getElementById('email').value.trim();
+      const err = document.getElementById('err');
+      if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        err.textContent = 'Please enter a valid email address.';
+        return;
       }
+      err.textContent = '';
+      go('email', email);
     });
-    document.getElementById('link-web').addEventListener('click', () => {
-      window.electronAPI?.openLoginInBrowser?.();
+    document.getElementById('email').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('btn-email').click();
     });
+    document.getElementById('back').addEventListener('click', () => window.electronAPI?.backToLanding?.());
   </script>
 </body>
 </html>

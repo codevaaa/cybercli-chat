@@ -1,6 +1,6 @@
-appId: com.cybermindcli.desktop
-productName: CyberCli
-copyright: Copyright © 2026 CyberCli Team
+appId: com.codeva.desktop
+productName: Codeva
+copyright: Copyright © 2026 Codeva
 
 asar: true
 directories:
@@ -52,7 +52,7 @@ win:
       arch:
         - x64
   icon: resources/icon.png
-  publisherName: CyberCli Team
+  publisherName: Codeva
   verifyUpdateCodeSignature: false
   signingHashAlgorithms: []
 
@@ -62,7 +62,7 @@ nsis:
   deleteAppDataOnUninstall: true
   createDesktopShortcut: always
   createStartMenuShortcut: true
-  shortcutName: CyberCli
+  shortcutName: Codeva
   include: "" # No custom NSIS script
 
 # Linux
@@ -74,11 +74,11 @@ linux:
       arch: x64
   category: Office
   icon: resources/icon.png
-  maintainer: CyberCli Team
+  maintainer: Codeva
   synopsis: AI-powered coding and chat assistant
-  description: CyberCli Desktop brings the full AI chat experience to your desktop.
+  description: Codeva Desktop brings the full AI chat and agentic coding experience to your desktop.
 
 protocols:
-  - name: CyberCli Protocol
+  - name: Codeva Protocol
     schemes:
-      - cybercli
+      - codeva

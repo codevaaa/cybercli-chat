@@ -1,5 +1,5 @@
 /**
- * CyberCli Desktop — System Tray / Menubar
+ * Codeva Desktop — System Tray / Menubar
  */
 
 import { Tray, Menu, nativeImage, app } from 'electron'
@@ -23,11 +23,11 @@ export function createTray(options: TrayOptions): Tray {
   icon.setTemplateImage(true) // For macOS dark mode
 
   const tray = new Tray(icon)
-  tray.setToolTip('CyberCli')
+  tray.setToolTip('Codeva')
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show/Hide CyberCli',
+      label: 'Show/Hide Codeva',
       click: options.onToggle,
     },
     { type: 'separator' },

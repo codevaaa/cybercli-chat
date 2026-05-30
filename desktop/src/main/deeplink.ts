@@ -1,18 +1,18 @@
 /**
- * CyberCli Desktop — Deep Link Protocol Handler
+ * Codeva Desktop — Deep Link Protocol Handler
  *
- * Handles cybercli:// URLs for:
- * - Auth: cybercli://auth?token=xxx
- * - Chat: cybercli://chat?id=xxx
- * - Settings: cybercli://settings
+ * Handles codeva:// URLs for:
+ * - Auth: codeva://auth?token=xxx
+ * - Chat: codeva://chat?id=xxx
+ * - Settings: codeva://settings
  */
 
 import { app, BrowserWindow } from 'electron'
 
 export function setupDeepLinkProtocol(): void {
-  // Register as default handler for cybercli:// protocol
-  if (!app.isDefaultProtocolClient('cybercli')) {
-    app.setAsDefaultProtocolClient('cybercli')
+  // Register as default handler for codeva:// protocol
+  if (!app.isDefaultProtocolClient('codeva')) {
+    app.setAsDefaultProtocolClient('codeva')
   }
 }
 
@@ -29,6 +29,8 @@ export function handleDeepLink(url: string, mainWindow: BrowserWindow): void {
           mainWindow.webContents.send('auth:token', token)
           mainWindow.show()
           mainWindow.focus()
+          // Tell the app to close the landing/sign-in windows.
+          ;(app as unknown as NodeJS.EventEmitter).emit('codeva:auth-complete')
         }
         break
       }

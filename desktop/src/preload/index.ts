@@ -1,5 +1,5 @@
 /**
- * CyberCli Desktop — Preload Script
+ * Codeva Desktop — Preload Script
  *
  * Secure bridge between renderer (web) and main (Node.js).
  * Exposes only safe APIs via contextBridge.
@@ -24,8 +24,10 @@ const electronAPI = {
   hideWindow: () => ipcRenderer.invoke('window:hide'),
   showWindow: () => ipcRenderer.invoke('window:show'),
 
-  // Auth
-  openLoginInBrowser: () => ipcRenderer.invoke('auth:open-login'),
+  // Auth (Claude-desktop style flow)
+  openSignIn: (opts?: { method?: string; email?: string }) => ipcRenderer.invoke('auth:open-signin', opts),
+  backToLanding: () => ipcRenderer.invoke('auth:back-to-landing'),
+  openLoginInBrowser: (opts?: { method?: string; email?: string }) => ipcRenderer.invoke('auth:open-login', opts),
   completeAuth: (token: string) => ipcRenderer.invoke('auth:complete', token),
 
   // Landing → Main transition

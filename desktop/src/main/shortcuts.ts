@@ -1,5 +1,5 @@
 /**
- * CyberCli Desktop — Global Keyboard Shortcuts
+ * Codeva Desktop — Global Keyboard Shortcuts
  */
 
 import { globalShortcut, BrowserWindow } from 'electron'

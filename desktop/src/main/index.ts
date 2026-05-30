@@ -1,11 +1,11 @@
 /**
- * CyberCli Desktop — Main Process
+ * Codeva Desktop — Main Process
  *
  * Responsibilities:
  * - Window lifecycle (create, show, hide, quit)
  * - System tray / menubar
  * - Global keyboard shortcuts
- * - Deep link protocol handlers (cybercli://)
+ * - Deep link protocol handlers (codeva://)
  * - Auto-updater
  * - IPC bridge to renderer
  */
@@ -51,14 +51,14 @@ function setupAutoUpdater() {
 
   autoUpdater.on('update-available', () => {
     new (require('electron').Notification)({
-      title: 'CyberCli Update Available',
+      title: 'Codeva Update Available',
       body: 'A new version is being downloaded.',
     }).show()
   })
 
   autoUpdater.on('update-downloaded', () => {
     new (require('electron').Notification)({
-      title: 'CyberCli Update Ready',
+      title: 'Codeva Update Ready',
       body: 'Restart to install the latest version.',
     }).show()
 
@@ -276,7 +276,7 @@ if (!gotTheLock) {
       mainWindow.focus()
     }
     // Handle deep link from second instance
-    const url = argv.find((arg) => arg.startsWith('cybercli://'))
+    const url = argv.find((arg) => arg.startsWith('codeva://'))
     if (url && mainWindow) {
       handleDeepLink(url, mainWindow)
     }
@@ -291,9 +291,15 @@ app.on('open-url', (event, url) => {
   }
 })
 
+// When auth completes via deep link, tear down the landing/sign-in windows.
+;(app as unknown as NodeJS.EventEmitter).on('codeva:auth-complete', () => {
+  if (landingWindow) { landingWindow.close(); landingWindow = null }
+  if (loginWindow) { loginWindow.close(); loginWindow = null }
+})
+
 // Deep link on Windows/Linux (protocol argv)
 app.on('ready', () => {
-  const url = process.argv.find((arg) => arg.startsWith('cybercli://'))
+  const url = process.argv.find((arg) => arg.startsWith('codeva://'))
   if (url && mainWindow) {
     handleDeepLink(url, mainWindow)
   }
@@ -327,11 +333,40 @@ ipcMain.handle('window:show', () => {
   mainWindow?.focus()
 })
 
-// Auth flow
-ipcMain.handle('auth:open-login', () => {
-  // Open the web login in browser, will redirect back via deep link
-  const loginUrl = 'https://cybermindcli.info/login?redirect=desktop'
-  shell.openExternal(loginUrl)
+// Auth flow — Claude-desktop style:
+//   landing → "Get started" opens the Sign In window
+//   Sign In → opens the secure web auth in the browser
+//   browser auth completes → deep-links back codeva://auth?token=...
+//   → token delivered to main window, main window shown, auth windows closed.
+
+ipcMain.handle('auth:open-signin', () => {
+  if (!loginWindow) {
+    loginWindow = createLoginWindow()
+  } else {
+    loginWindow.show()
+    loginWindow.focus()
+  }
+  // Close the landing window once we move to sign-in.
+  if (landingWindow) {
+    landingWindow.close()
+    landingWindow = null
+  }
+})
+
+ipcMain.handle('auth:back-to-landing', () => {
+  if (!landingWindow) landingWindow = createLandingWindow()
+  else { landingWindow.show(); landingWindow.focus() }
+  if (loginWindow) { loginWindow.close(); loginWindow = null }
+})
+
+ipcMain.handle('auth:open-login', (_event, opts?: { method?: string; email?: string }) => {
+  // Open the web auth flow in the system browser. It redirects back to the
+  // desktop via the codeva:// deep link once the user authenticates.
+  const base = (process.env.CODEVA_WEB_URL || 'https://cybermindcli.info').replace(/\/$/, '')
+  const params = new URLSearchParams({ redirect: 'desktop' })
+  if (opts?.method) params.set('method', opts.method)
+  if (opts?.email) params.set('email', opts.email)
+  shell.openExternal(`${base}/login?${params.toString()}`)
 })
 
 ipcMain.handle('auth:complete', (_event, token: string) => {
@@ -340,23 +375,16 @@ ipcMain.handle('auth:complete', (_event, token: string) => {
   // Show main window
   mainWindow?.show()
   mainWindow?.focus()
-  // Close landing/login windows with fade animation
-  if (landingWindow) {
-    landingWindow.close()
-    landingWindow = null
-  }
-  if (loginWindow) {
-    loginWindow.close()
-    loginWindow = null
-  }
+  // Close landing/login windows
+  if (landingWindow) { landingWindow.close(); landingWindow = null }
+  if (loginWindow) { loginWindow.close(); loginWindow = null }
 })
 
-// Landing window: user clicked "Get Started" or "Open App"
+// Landing window: user clicked "Get Started" → go to sign-in (kept for compat)
 ipcMain.handle('landing:open-main', () => {
   mainWindow?.show()
   mainWindow?.focus()
-  landingWindow?.close()
-  landingWindow = null
+  if (landingWindow) { landingWindow.close(); landingWindow = null }
 })
 
 // Drag & Drop file handling
