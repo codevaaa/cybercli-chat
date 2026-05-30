@@ -41,7 +41,7 @@ const TEAM = [
     bio: 'Cybersecurity researcher and AI pioneer. Founder of Codeva, driving the vision of secure, private, and open artificial intelligence.',
     socials: {
       globe: 'https://cybermindcli.com',
-      github: 'https://github.com/thecnical',
+      github: 'https://github.com/codevaaa',
     }
   },
   {
@@ -110,7 +110,7 @@ export default function AboutPage() {
     image: 'https://cybermindcli.info/chandan.jpeg',
     url: 'https://cybermindcli.com',
     sameAs: [
-      'https://github.com/thecnical'
+      'https://github.com/codevaaa'
     ]
   }
 

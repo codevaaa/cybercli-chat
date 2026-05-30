@@ -4,7 +4,7 @@ import { r2FileExists, getR2PublicUrl, isR2Available } from '../services/downloa
 
 const router = Router()
 
-const GITHUB_RELEASE_BASE = 'https://github.com/stilcybermindcli/codeva-chat/releases/latest/download'
+const GITHUB_RELEASE_BASE = 'https://github.com/codevaaa/codeva/releases/latest/download'
 
 // Map of friendly names to actual GitHub release filenames
 const FILE_MAP = {

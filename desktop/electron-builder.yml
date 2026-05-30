@@ -18,8 +18,8 @@ artifactName: ${productName}-${os}-${arch}.${ext}
 # Auto-update publish config (GitHub Releases)
 publish:
   provider: github
-  owner: stilcybermindcli
-  repo: cybercli-chat
+  owner: codevaaa
+  repo: codeva
   releaseType: release
 
 # macOS
