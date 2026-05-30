@@ -1161,7 +1161,7 @@ export default function DocsArticlePage() {
                 <h1 className="text-3xl md:text-4xl font-bold font-serif text-foreground-primary leading-tight tracking-tight mb-4">
                   {article.title}
                 </h1>
-                <div className="flex items-center gap-4 text-xs text-foreground-muted mb-6">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-foreground-muted mb-6">
                   <span className="flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5" />
                     Updated {article.lastUpdated}

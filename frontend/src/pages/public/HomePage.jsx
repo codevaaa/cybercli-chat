@@ -1,5 +1,6 @@
 import HeroSection from '@components/landing/HeroSection'
 import FeaturesSection from '@components/landing/FeaturesSection'
+import EverywhereSection from '@components/landing/EverywhereSection'
 import ModelsPreviewSection from '@components/landing/ModelsPreviewSection'
 import PricingSection from '@components/landing/PricingSection'
 import TestimonialsSection from '@components/landing/TestimonialsSection'
@@ -18,6 +19,7 @@ export default function HomePage() {
       />
       <HeroSection />
       <FeaturesSection />
+      <EverywhereSection />
       <ModelsPreviewSection />
       <PricingSection />
       <TestimonialsSection />
