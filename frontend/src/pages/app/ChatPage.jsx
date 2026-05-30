@@ -7,7 +7,7 @@ import {
   Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder, Camera,
   Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen, Menu,
   Pencil, GraduationCap, Coffee, Lightbulb, Skull, FileCode, GitBranch as GitIcon, FolderTree, ArrowRight,
-  Gift
+  Gift, Briefcase, Sparkles, Loader2, CheckCircle2, XCircle, Clock, Square, Send
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
@@ -79,6 +79,7 @@ const NAV_ITEMS = [
   { id: 'chats',     label: 'Chats',     icon: MessageSquare },
   { id: 'projects',  label: 'Projects',  icon: FolderOpen    },
   { id: 'artifacts', label: 'Artifacts', icon: Layers        },
+  { id: 'cowork',    label: 'Cowork',    icon: Briefcase     },
   { id: 'code',      label: 'Code',      icon: Code2,  badge: 'Pro' },
   { id: 'voice',     label: 'Voice',     icon: Radio         },
   { id: 'customize', label: 'Customize', icon: Sliders       },
@@ -2902,6 +2903,236 @@ function CustomizeView({
   )
 }
 
+// ─── Cowork Sub-View Component ────────────────────────────────────────────────
+// Claude-style "Cowork": delegate autonomous tasks that run in the background
+// while you keep chatting. Each task streams its result live and can be stopped,
+// retried, or copied. Real execution via the unified gateway (no simulation).
+
+const COWORK_TEMPLATES = [
+  { icon: FileCode,   label: 'Refactor code',     prompt: 'Refactor the following code for readability and performance, then explain what you changed:\n\n' },
+  { icon: BookOpen,   label: 'Research a topic',  prompt: 'Research and write a concise, well-structured briefing on: ' },
+  { icon: GitIcon,    label: 'Plan a feature',    prompt: 'Create a step-by-step implementation plan (with file-level tasks) for this feature: ' },
+  { icon: Brain,      label: 'Debug an issue',    prompt: 'Analyze this bug, list the most likely root causes, and propose concrete fixes:\n\n' },
+  { icon: Pencil,     label: 'Draft a document',  prompt: 'Draft a polished, professional document about: ' },
+  { icon: Sparkles,   label: 'Brainstorm ideas',  prompt: 'Brainstorm 10 strong, distinct ideas for: ' },
+]
+
+function CoworkStatusBadge({ status }) {
+  const map = {
+    queued:  { icon: Clock,        text: 'Queued',  cls: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
+    running: { icon: Loader2,      text: 'Running', cls: 'text-sky-400 bg-sky-400/10 border-sky-400/20', spin: true },
+    done:    { icon: CheckCircle2, text: 'Done',    cls: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
+    error:   { icon: XCircle,      text: 'Failed',  cls: 'text-rose-400 bg-rose-400/10 border-rose-400/20' },
+    stopped: { icon: Square,       text: 'Stopped', cls: 'text-foreground-muted bg-white/5 border-white/10' },
+  }
+  const s = map[status] || map.queued
+  const Icon = s.icon
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${s.cls}`}>
+      <Icon className={`w-3 h-3 ${s.spin ? 'animate-spin' : ''}`} />
+      {s.text}
+    </span>
+  )
+}
+
+function CoworkTaskCard({ task, onStop, onRetry, onRemove }) {
+  const [expanded, setExpanded] = useState(task.status === 'running')
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (task.status === 'running') setExpanded(true)
+  }, [task.status])
+
+  const elapsed = task.finishedAt && task.startedAt
+    ? `${((task.finishedAt - task.startedAt) / 1000).toFixed(1)}s`
+    : null
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(task.output || '')
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="rounded-2xl border border-border-subtle bg-background-secondary overflow-hidden">
+      <div className="p-4 flex items-start justify-between gap-3">
+        <button onClick={() => setExpanded(e => !e)} className="flex items-start gap-3 text-left flex-1 min-w-0">
+          <ChevronDown className={`w-4 h-4 mt-1 text-foreground-muted flex-shrink-0 transition-transform ${expanded ? '' : '-rotate-90'}`} />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground-primary truncate">{task.title}</p>
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              <CoworkStatusBadge status={task.status} />
+              <span className="text-[10px] text-foreground-muted font-mono truncate max-w-[160px]">{task.model}</span>
+              {elapsed && <span className="text-[10px] text-foreground-muted">· {elapsed}</span>}
+            </div>
+          </div>
+        </button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {task.status === 'running' && (
+            <button onClick={() => onStop(task.id)} title="Stop task"
+              className="p-1.5 text-foreground-muted hover:text-rose-400 hover:bg-white/5 rounded-lg transition-all">
+              <Square className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {(task.status === 'error' || task.status === 'stopped' || task.status === 'done') && (
+            <button onClick={() => onRetry(task.id)} title="Run again"
+              className="p-1.5 text-foreground-muted hover:text-accent hover:bg-white/5 rounded-lg transition-all">
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {task.output && (
+            <button onClick={handleCopy} title="Copy result"
+              className="p-1.5 text-foreground-muted hover:text-foreground-primary hover:bg-white/5 rounded-lg transition-all">
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          )}
+          <button onClick={() => onRemove(task.id)} title="Remove"
+            className="p-1.5 text-foreground-muted hover:text-rose-400 hover:bg-white/5 rounded-lg transition-all">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="border-t border-border-subtle/60"
+          >
+            <div className="p-4 space-y-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-foreground-muted font-semibold mb-1">Task</p>
+                <p className="text-xs text-foreground-secondary whitespace-pre-wrap leading-relaxed">{task.prompt}</p>
+              </div>
+              {task.error && (
+                <div className="p-3 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-300 text-xs">
+                  {task.error}
+                </div>
+              )}
+              {(task.output || task.status === 'running') && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-foreground-muted font-semibold mb-1">Result</p>
+                  <div className="rounded-xl border border-border-subtle/60 bg-background-tertiary/40 p-3 max-h-80 overflow-y-auto text-xs text-foreground-primary leading-relaxed prose-cowork">
+                    {task.output
+                      ? <ReactMarkdown>{task.output}</ReactMarkdown>
+                      : <span className="text-foreground-muted inline-flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> Working…</span>}
+                    {task.status === 'running' && task.output && <BlinkCursor />}
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function CoworkView({ tasks, models, selectedModel, onStart, onStop, onRetry, onRemove }) {
+  const [prompt, setPrompt] = useState('')
+  const [model, setModel] = useState(selectedModel)
+
+  const activeCount = tasks.filter(t => t.status === 'running' || t.status === 'queued').length
+  const doneCount = tasks.filter(t => t.status === 'done').length
+
+  const submit = () => {
+    if (!prompt.trim()) return
+    onStart(prompt, model)
+    setPrompt('')
+  }
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto w-full space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-serif font-bold text-foreground-primary flex items-center gap-2">
+            <Briefcase className="w-6 h-6 text-accent" />
+            Cowork
+          </h2>
+          <p className="text-xs text-foreground-muted mt-1 max-w-lg">
+            Delegate autonomous tasks that run in the background while you keep chatting. Each task executes end-to-end and streams its result live.
+          </p>
+        </div>
+        {tasks.length > 0 && (
+          <div className="flex items-center gap-3 text-[11px] text-foreground-muted flex-shrink-0">
+            <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" /> {activeCount} active</span>
+            <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400" /> {doneCount} done</span>
+          </div>
+        )}
+      </div>
+
+      {/* Task composer */}
+      <div className="p-4 rounded-2xl border border-border-subtle bg-background-secondary space-y-3">
+        <textarea
+          value={prompt}
+          onChange={e => setPrompt(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit() } }}
+          placeholder="Describe a task to run in the background. e.g. “Research the top 5 vector databases and compare them in a table.”"
+          rows={3}
+          className="w-full bg-background-tertiary text-sm text-foreground-primary placeholder:text-foreground-muted border border-border-subtle rounded-xl px-4 py-3 focus:outline-none focus:border-accent resize-none leading-relaxed"
+        />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wide text-foreground-muted font-semibold">Model</span>
+            <select
+              value={model}
+              onChange={e => setModel(e.target.value)}
+              className="bg-background-tertiary text-xs text-foreground-primary border border-border-subtle rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-accent max-w-[200px]"
+            >
+              {models.map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={submit}
+            disabled={!prompt.trim()}
+            className="px-4 py-2 bg-accent hover:bg-accent-light text-white text-xs font-semibold rounded-xl transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <Send className="w-3.5 h-3.5" />
+            Run task
+          </button>
+        </div>
+      </div>
+
+      {/* Quick templates */}
+      {tasks.length === 0 && (
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-foreground-muted font-semibold mb-2">Start with a template</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            {COWORK_TEMPLATES.map(t => {
+              const Icon = t.icon
+              return (
+                <button
+                  key={t.label}
+                  onClick={() => setPrompt(t.prompt)}
+                  className="p-3 rounded-xl border border-border-subtle bg-background-secondary hover:bg-background-tertiary hover:border-accent/30 transition-all text-left flex items-center gap-2.5 group"
+                >
+                  <Icon className="w-4 h-4 text-accent flex-shrink-0" />
+                  <span className="text-xs font-medium text-foreground-secondary group-hover:text-foreground-primary">{t.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Task list */}
+      {tasks.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-[10px] uppercase tracking-wide text-foreground-muted font-semibold">Tasks</p>
+          {tasks.map(task => (
+            <CoworkTaskCard key={task.id} task={task} onStop={onStop} onRetry={onRetry} onRemove={onRemove} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Search Sub-View Component ────────────────────────────────────────────────
 
 function SearchView({ navigate, setActiveNav }) {
@@ -3011,6 +3242,10 @@ export default function ChatPage() {
   const [terminalLoading, setTerminalLoading] = useState(false)
   const [activePreviewFile, setActivePreviewFile] = useState(null)
   const [profileMenuTab, setProfileMenuTab] = useState('main')
+
+  // Cowork — background/parallel autonomous tasks (lifted to parent so they survive tab switches)
+  const [coworkTasks, setCoworkTasks] = useState([])
+  const coworkAbortRef = useRef({})
 
   const [workspaceWidth, setWorkspaceWidth] = useState(600) // Default 600px
   const [isResizing, setIsResizing] = useState(false)
@@ -3493,6 +3728,119 @@ export default function ChatPage() {
       return null
     }
   }
+
+  // ── Cowork: run a real autonomous task in the background via SSE streaming ────
+  const updateCoworkTask = useCallback((id, patch) => {
+    setCoworkTasks(prev => prev.map(t => t.id === id ? { ...t, ...(typeof patch === 'function' ? patch(t) : patch) } : t))
+  }, [])
+
+  const runCoworkTask = useCallback(async (taskId) => {
+    let task
+    setCoworkTasks(prev => {
+      task = prev.find(t => t.id === taskId)
+      return prev.map(t => t.id === taskId ? { ...t, status: 'running', output: '', error: null, startedAt: Date.now() } : t)
+    })
+    if (!task) return
+
+    const controller = new AbortController()
+    coworkAbortRef.current[taskId] = controller
+
+    const systemPrompt = `You are Codeva Cowork, an autonomous agent that completes a delegated task end-to-end without asking follow-up questions. Work step by step, show your reasoning briefly, and finish with a clear, structured result. If the task is ambiguous, make reasonable assumptions and state them.`
+
+    try {
+      const token = await getFreshToken()
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      }
+      const response = await fetch(`${API_BASE}/completions`, {
+        method: 'POST',
+        headers,
+        signal: controller.signal,
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: task.prompt },
+          ],
+          model: task.model || selectedModel,
+          stream: true,
+        }),
+      })
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '')
+        throw new Error(`HTTP ${response.status}${text ? `: ${text.slice(0, 200)}` : ''}`)
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let acc = ''
+      let streamError = null
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6).trim()
+          if (data === '[DONE]') { continue }
+          try {
+            const parsed = JSON.parse(data)
+            if (parsed.type === 'token' && parsed.content) {
+              acc += parsed.content
+              updateCoworkTask(taskId, { output: acc })
+            } else if (parsed.type === 'error' || parsed.error) {
+              streamError = parsed.content || parsed.error || 'Stream error'
+            }
+          } catch {
+            // ignore malformed lines
+          }
+        }
+      }
+
+      if (streamError && !acc) throw new Error(streamError)
+      updateCoworkTask(taskId, { status: 'done', output: acc, finishedAt: Date.now() })
+    } catch (err) {
+      if (controller.signal.aborted) {
+        updateCoworkTask(taskId, { status: 'stopped', finishedAt: Date.now() })
+      } else {
+        updateCoworkTask(taskId, { status: 'error', error: err.message || 'Task failed', finishedAt: Date.now() })
+      }
+    } finally {
+      delete coworkAbortRef.current[taskId]
+    }
+  }, [selectedModel, updateCoworkTask])
+
+  const handleStartCoworkTask = useCallback((prompt, model) => {
+    const id = `cw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+    const title = prompt.trim().split('\n')[0].slice(0, 60) || 'Untitled task'
+    setCoworkTasks(prev => [
+      { id, title, prompt: prompt.trim(), model: model || selectedModel, status: 'queued', output: '', error: null, createdAt: Date.now() },
+      ...prev,
+    ])
+    // kick off async (let state settle first)
+    setTimeout(() => runCoworkTask(id), 0)
+    return id
+  }, [selectedModel, runCoworkTask])
+
+  const handleStopCoworkTask = useCallback((taskId) => {
+    const controller = coworkAbortRef.current[taskId]
+    if (controller) controller.abort()
+  }, [])
+
+  const handleRetryCoworkTask = useCallback((taskId) => {
+    runCoworkTask(taskId)
+  }, [runCoworkTask])
+
+  const handleRemoveCoworkTask = useCallback((taskId) => {
+    const controller = coworkAbortRef.current[taskId]
+    if (controller) controller.abort()
+    setCoworkTasks(prev => prev.filter(t => t.id !== taskId))
+  }, [])
 
   const handleDeleteThread = async (id, e) => {
     e?.stopPropagation()
@@ -4826,6 +5174,16 @@ export default function ChatPage() {
               ) : activeNav === 'artifacts' ? (
                 <ArtifactsView
                   messages={messages}
+                />
+              ) : activeNav === 'cowork' ? (
+                <CoworkView
+                  tasks={coworkTasks}
+                  models={[...MODELS, ...EXTRA_MODELS].filter(m => m.id !== 'council' && m.id !== 'image-gen')}
+                  selectedModel={selectedModel}
+                  onStart={handleStartCoworkTask}
+                  onStop={handleStopCoworkTask}
+                  onRetry={handleRetryCoworkTask}
+                  onRemove={handleRemoveCoworkTask}
                 />
               ) : activeNav === 'code' ? (
                 <CodeView daemonConnected={daemonConnected} loadDaemonStatus={loadDaemonStatus} />
