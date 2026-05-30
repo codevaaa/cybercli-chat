@@ -3472,6 +3472,17 @@ export default function ChatPage() {
   const [voiceChatOpen, setVoiceChatOpen] = useState(false)
   const voiceChatOpenRef = useRef(false)
 
+  // User plan (drives voice deep-research gating: Pro/Max research before reply)
+  const [userPlan, setUserPlan] = useState('free')
+  useEffect(() => {
+    let cancelled = false
+    if (!isLoggedIn()) return
+    api.get('/auth/me/stats')
+      .then(({ data }) => { if (!cancelled && data?.plan) setUserPlan(String(data.plan).toLowerCase()) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
   // Inline Speech to Text state
   const [inlineSpeechListening, setInlineSpeechListening] = useState(false)
   const inlineRecognitionRef = useRef(null)
@@ -3941,22 +3952,30 @@ export default function ChatPage() {
     }
     
     if (voiceChatOpenRef.current) {
-      const voice = currentVoice ? currentVoice.toLowerCase() : 'gemini_flash'
+      const voice = currentVoice ? currentVoice.toLowerCase() : 'gemini_female'
+      // Plan-gated power: Pro/Max voice agents do deeper reasoning + web research
+      // before answering; Free stays fast and snappy.
+      const isPaid = userPlan === 'pro' || userPlan === 'max' || userPlan === 'enterprise'
+      const researchLine = isPaid
+        ? ' Before answering, briefly reason about the question and use any provided web/search context to give an accurate, well-grounded answer. Remember earlier turns in this conversation and stay consistent with them.'
+        : ' Remember earlier turns in this conversation and stay consistent with them.'
+
+      // Voice ids come from VoiceChatModal: gemini_female / gemini_male_1 / gemini_male_2
       const VOICE_AGENTS_BRAINS = {
-        gemini_flash: {
-          model: 'gemini/gemini-2.5-flash',
-          prompt: `You are Sahadeva, a warm, natural, and friendly conversational AI voice assistant. Keep your responses brief, conversational, and extremely concise (maximum 1-2 short sentences). Absolutely DO NOT use any markdown syntax, lists, bullet points, asterisks, or code blocks in your response, as your text will be read aloud. Speak in a warm and natural tone.`
+        gemini_female: {
+          model: isPaid ? 'gemini/gemini-2.5-pro' : 'gemini/gemini-2.5-flash',
+          prompt: `You are Aoede, a warm, natural, and friendly conversational AI voice assistant. Keep responses brief and conversational (max 1-2 short sentences). DO NOT use markdown, lists, bullet points, asterisks, or code blocks — your text is read aloud. Speak in a warm, natural tone.${researchLine}`
         },
-        gemini_pro: {
-          model: 'gemini/gemini-2.5-pro',
-          prompt: `You are Sahadeva Pro, an advanced, analytical, and highly capable voice assistant. Keep your responses precise, logical, and very concise (maximum 1-2 sentences). Absolutely DO NOT use any markdown syntax, bold text, or lists. Speak clearly and professionally.`
+        gemini_male_1: {
+          model: isPaid ? 'gemini/gemini-2.5-pro' : 'gemini/gemini-2.5-flash',
+          prompt: `You are Charon, an advanced, analytical, and highly capable male voice assistant. Keep responses precise, logical, and concise (max 1-2 sentences). DO NOT use markdown, bold text, or lists. Speak clearly and professionally with a calm male tone.${researchLine}`
         },
-        mistral_large: {
-          model: 'mistral/mistral-large-latest',
-          prompt: `You are Vayu, a technical, expressive, and wise strategic advisor. Keep your responses thoughtful, technical, and very short (maximum 1-2 sentences). Absolutely DO NOT use markdown formatting, bullet points, or code blocks. Speak with confidence and authority.`
+        gemini_male_2: {
+          model: isPaid ? 'mistral/mistral-large-latest' : 'groq/llama-3.1-8b',
+          prompt: `You are Puck, a technical, expressive male strategic advisor. Keep responses thoughtful, technical, and short (max 1-2 sentences). DO NOT use markdown, bullet points, or code blocks. Speak with confidence and an expressive male tone.${researchLine}`
         }
       }
-      const brain = VOICE_AGENTS_BRAINS[voice] || VOICE_AGENTS_BRAINS.gemini_flash
+      const brain = VOICE_AGENTS_BRAINS[voice] || VOICE_AGENTS_BRAINS.gemini_female
       activeModel = brain.model
       extraSystemMessages.push({ role: 'system', content: brain.prompt, _skip_inject: true })
     }
@@ -4431,7 +4450,7 @@ export default function ChatPage() {
       setStreamingIndex(null)
       setLoading(false)
     }
-  }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions])
+  }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions, userPlan])
 
   // ── User info (from state & localStorage) ──
   const [userName, setUserName] = useState(() => localStorage.getItem('user_name') || 'User')

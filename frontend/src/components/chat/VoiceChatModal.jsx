@@ -296,8 +296,10 @@ export default function VoiceChatModal({
     }
     rec.lang = resolvedLang
     rec.onresult = (event) => {
-      // Auto interrupt if AI is speaking
-      if (isPlayingRef.current) {
+      // Barge-in: the moment the user starts speaking, stop the assistant —
+      // whether it's already playing audio OR still fetching/processing TTS.
+      // This guarantees the voice models actually stop on interrupt.
+      if (isPlayingRef.current || isProcessingRef.current) {
         handleInterrupt()
       }
 
