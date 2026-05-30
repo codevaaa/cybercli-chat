@@ -14,15 +14,15 @@ const ALL_FEATURES = [
       { slug: 'council-mode', icon: BarChart3, title: 'Confidence Score', desc: 'Every answer includes a self-rated confidence score (0–100%). Know when to verify and when to trust.' },
       { slug: 'research-mode', icon: Sparkles, title: 'Auto-Fact-Check', desc: 'Flag uncertain claims automatically. One click to verify via integrated web search.' },
       { slug: 'research-mode', icon: BookOpen, title: 'Research Mode', desc: 'Generate full PDF-ready reports with table of contents, citations, and structured sections.' },
-      { slug: 'privacy-first', icon: Clock, title: 'Persistent Memory', desc: 'CyberCli remembers facts from all your past chats, not just the current thread.' },
+      { slug: 'privacy-first', icon: Clock, title: 'Persistent Memory', desc: 'Codeva remembers facts from all your past chats, not just the current thread.' },
     ],
   },
   {
     category: 'Voice & Multimodal',
     color: '#D97757',
     items: [
-      { slug: 'voice-chat', icon: Mic, title: 'Walkie-Talkie Voice Chat', desc: 'Hold Spacebar to talk. CyberCli hears, thinks, and responds automatically via natural TTS.' },
-      { slug: 'voice-chat', icon: Zap, title: 'Voice Interruption', desc: 'Cut CyberCli mid-sentence. It stops and listens immediately. True conversational flow.' },
+      { slug: 'voice-chat', icon: Mic, title: 'Walkie-Talkie Voice Chat', desc: 'Hold Spacebar to talk. Codeva hears, thinks, and responds automatically via natural TTS.' },
+      { slug: 'voice-chat', icon: Zap, title: 'Voice Interruption', desc: 'Cut Codeva mid-sentence. It stops and listens immediately. True conversational flow.' },
       { slug: 'voice-chat', icon: Palette, title: 'Unique AI Voices', desc: 'High-quality female and male voices powered by Gemini Flash and Web Speech APIs.' },
       { slug: 'voice-chat', icon: Image, title: 'Image Understanding', desc: 'Upload any image. Vision-capable models analyze, describe, and reason about visual content.' },
       { slug: 'voice-chat', icon: voiceChatGen(), iconName: 'Image Generation', title: 'Image Generation', desc: 'Use /generate to create images from text prompts via free image generation APIs.' },

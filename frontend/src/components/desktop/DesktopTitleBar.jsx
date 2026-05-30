@@ -41,7 +41,7 @@ export default function DesktopTitleBar() {
             />
           </div>
         ) : (
-          <span className="text-xs text-[#A0A0A0] font-medium ml-1">CyberCli</span>
+          <span className="text-xs text-[#A0A0A0] font-medium ml-1">Codeva</span>
         )}
       </div>
 

@@ -8,11 +8,12 @@ import {
 import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
+import { API_BASE } from '@lib/api'
 
 const OS_MAP = {
-  win32: { name: 'Windows', icon: Monitor, primary: true },
-  darwin: { name: 'macOS', icon: Apple, primary: true },
-  linux: { name: 'Linux', icon: Terminal, primary: false },
+  win32: { name: 'Windows', icon: Monitor, primary: true, file: 'Codeva-win-x64.exe', ext: 'EXE', req: 'Windows 10+' },
+  darwin: { name: 'macOS', icon: Apple, primary: true, file: 'Codeva-mac-universal.dmg', ext: 'DMG', req: 'macOS 12.0+' },
+  linux: { name: 'Linux', icon: Terminal, primary: false, file: 'Codeva-linux-x64.AppImage', ext: 'AppImage', req: 'Ubuntu 20.04+' },
 }
 
 function useDetectedOS() {
@@ -35,26 +36,26 @@ function Section({ title, children, className = '' }) {
   )
 }
 
-const PAGE_MAP = {
-  win32: '/downloads/windows',
-  darwin: '/downloads/mac',
-  linux: '/downloads/linux',
-}
-
 function DownloadCard({ os, primary }) {
-  const Icon = OS_MAP[os]?.icon || Monitor
-  const name = OS_MAP[os]?.name || os
-  const ext = os === 'darwin' ? 'DMG' : os === 'win32' ? 'EXE' : 'AppImage'
-  const req = os === 'darwin' ? 'macOS 12.0+' : os === 'win32' ? 'Windows 10+' : 'Ubuntu 20.04+'
-  const page = PAGE_MAP[os]
+  const meta = OS_MAP[os] || OS_MAP.win32
+  const Icon = meta.icon
+  const name = meta.name
+  const ext = meta.ext
+  const req = meta.req
+  // Real download endpoint (R2 CDN with GitHub fallback, handled server-side).
+  const downloadUrl = `${API_BASE}/downloads/${meta.file}`
 
   return (
     <ScrollReveal>
-      <Link to={page} className={`block p-8 md:p-10 rounded-3xl border transition-all duration-300 group flex flex-col h-full relative overflow-hidden ${
-        primary
-          ? 'bg-[#ECECEC] text-[#0A0A0F] border-transparent'
-          : 'bg-[#14141A] border-white/[0.06] hover:bg-[#1A1A22]'
-      }`}>
+      <a
+        href={downloadUrl}
+        download
+        className={`block p-8 md:p-10 rounded-3xl border transition-all duration-300 group flex flex-col h-full relative overflow-hidden ${
+          primary
+            ? 'bg-[#ECECEC] text-[#0A0A0F] border-transparent'
+            : 'bg-[#14141A] border-white/[0.06] hover:bg-[#1A1A22]'
+        }`}
+      >
         <div className="w-14 h-14 rounded-2xl bg-white/[0.08] flex items-center justify-center mb-6">
           <Icon className={`w-7 h-7 ${primary ? 'text-[#0A0A0F]' : 'text-[#ECECEC]'}`} />
         </div>
@@ -62,7 +63,7 @@ function DownloadCard({ os, primary }) {
           {name}
         </h3>
         <p className={`text-sm mb-6 flex-1 leading-relaxed ${primary ? 'text-[#0A0A0F]/70' : 'text-[#A0A0A0]'}`}>
-          All of CyberCli, in one app. Works with your files and apps to get things done.
+          All of Codeva, in one app. Works with your files and apps to get things done.
         </p>
         <div className={`w-full py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 text-[14px] ${
           primary
@@ -76,7 +77,7 @@ function DownloadCard({ os, primary }) {
         <p className={`text-center text-[11px] mt-3 ${primary ? 'text-[#0A0A0F]/50' : 'text-[#707070]'}`}>
           Requires {req}
         </p>
-      </Link>
+      </a>
     </ScrollReveal>
   )
 }
@@ -132,7 +133,7 @@ export default function DownloadsPage() {
   const faqs = [
     {
       q: 'Do I need a paid plan to use the desktop app?',
-      a: 'No. The desktop app is free to download and use with your existing CyberCli account. Free tier users get 50 messages per hour. Pro and Max plans offer higher limits.',
+      a: 'No. The desktop app is free to download and use with your existing Codeva account. Free tier users get 50 messages per hour. Pro and Max plans offer higher limits.',
     },
     {
       q: 'What\'s the difference between the desktop app and the web app?',
@@ -140,11 +141,11 @@ export default function DownloadsPage() {
     },
     {
       q: 'Can I use the same account across desktop, web, and CLI?',
-      a: 'Yes. Your CyberCli account, chats, settings, and API keys sync across all platforms automatically.',
+      a: 'Yes. Your Codeva account, chats, settings, and API keys sync across all platforms automatically.',
     },
     {
-      q: 'How do I connect CyberCli to my local files?',
-      a: 'The desktop app includes a local workspace daemon that allows CyberCli to read, write, and execute files in your project directories with your explicit approval.',
+      q: 'How do I connect Codeva to my local files?',
+      a: 'The desktop app includes a local workspace daemon that allows Codeva to read, write, and execute files in your project directories with your explicit approval.',
     },
     {
       q: 'Does my computer need to be on for background tasks?',
@@ -154,7 +155,7 @@ export default function DownloadsPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] pt-32 pb-24 overflow-hidden relative">
-      <SEOHead title="Download CyberCli | Desktop App for Windows, Mac & Linux" />
+      <SEOHead title="Download Codeva | Desktop App for Windows, Mac & Linux" />
 
       {/* Background ambient glow */}
       <div className="absolute top-0 right-0 w-3/4 h-[500px] bg-[#D97757]/5 blur-[150px] rounded-bl-full pointer-events-none" />
@@ -166,12 +167,12 @@ export default function DownloadsPage() {
         <div className="text-center mb-20">
           <ScrollReveal>
             <h1 className="text-4xl md:text-5xl lg:text-[56px] font-normal tracking-tight text-[#ECECEC] mb-6 leading-[1.1] font-serif">
-              Download CyberCli
+              Download Codeva
             </h1>
           </ScrollReveal>
           <ScrollReveal delay={0.1}>
             <p className="text-[17px] md:text-lg text-[#A0A0A0] max-w-xl mx-auto leading-relaxed font-light">
-              Get the CyberCli desktop app for your computer.
+              Get the Codeva desktop app for your computer.
             </p>
           </ScrollReveal>
         </div>
@@ -179,7 +180,7 @@ export default function DownloadsPage() {
         {/* Desktop */}
         <Section title="Desktop">
           <p className="text-[#A0A0A0] mb-8 max-w-2xl">
-            All of CyberCli, in one app. Works with your files and apps to get things done.
+            All of Codeva, in one app. Works with your files and apps to get things done.
           </p>
           <div className="grid md:grid-cols-3 gap-5">
             {(['darwin', 'win32', 'linux']).map((os) => (
@@ -199,26 +200,29 @@ export default function DownloadsPage() {
         {/* Go Further */}
         <Section title="Go Further">
           <p className="text-[#A0A0A0] mb-8 max-w-2xl">
-            Bring CyberCli to your workflow.
+            Bring Codeva to your workflow.
           </p>
           <div className="grid md:grid-cols-3 gap-5">
             <ExtensionCard
               title="VS Code Extension"
-              desc="Chat with CyberCli directly inside your editor. Code completion and inline suggestions."
+              desc="Chat with Codeva directly inside your editor. Code completion and inline suggestions."
               icon={Code2}
+              href="https://marketplace.visualstudio.com/search?term=codeva"
               label="Install"
             />
             <ExtensionCard
               title="Chrome Extension"
-              desc="Access CyberCli from any web page. Summarize articles, rewrite text, and more."
+              desc="Access Codeva from any web page. Summarize articles, rewrite text, and more."
               icon={Chrome}
+              href="https://chromewebstore.google.com/search/codeva"
               label="Install"
             />
             <ExtensionCard
               title="CyberCoder CLI"
               desc="The fastest way to install. Works on all platforms with Node.js 20+."
               icon={Terminal}
-              label="Install"
+              href="/product"
+              label="Learn more"
             />
           </div>
         </Section>
@@ -229,10 +233,10 @@ export default function DownloadsPage() {
             <p className="text-[#A0A0A0] text-sm mb-4">Install the CyberCoder CLI with a single command:</p>
             <div className="flex items-center gap-3">
               <code className="flex-1 px-4 py-3 rounded-xl bg-[#0A0A0F] border border-white/[0.08] text-[13px] text-blue-300 font-mono">
-                npm install -g @cybercli_chat/cli
+                npm install -g @codeva_chat/cli
               </code>
               <button
-                onClick={() => navigator.clipboard.writeText('npm install -g @cybercli_chat/cli')}
+                onClick={() => navigator.clipboard.writeText('npm install -g @codeva_chat/cli')}
                 className="px-4 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-[13px] text-[#ECECEC] transition-colors"
               >
                 Copy

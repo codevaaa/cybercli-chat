@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async'
 
-const SITE_NAME = 'CyberMindCLI'
+const SITE_NAME = 'Codeva'
 const SITE_URL = 'https://cybermindcli.info'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`
 const TWITTER_HANDLE = '@cybermindcli'
@@ -11,7 +11,7 @@ const TWITTER_HANDLE = '@cybermindcli'
  * canonical URL, keywords, and JSON-LD structured data.
  *
  * @param {object} props
- * @param {string} props.title — Page title (will be suffixed with " | CyberMindCLI")
+ * @param {string} props.title — Page title (will be suffixed with " | Codeva")
  * @param {string} props.description — Meta description (max 160 chars)
  * @param {string} [props.keywords] — Comma-separated keywords
  * @param {string} [props.path] — URL path (e.g., "/features") for canonical
@@ -40,7 +40,7 @@ export default function SEOHead({
     <Helmet>
       {/* Primary Meta */}
       <title>{fullTitle}</title>
-      <meta name="description" content={description || 'CyberMindCLI — The premium multi-model AI workspace. Access 50+ free AI models, Council Mode, voice chat, and more.'} />
+      <meta name="description" content={description || 'Codeva — The premium multi-model AI workspace. Access 50+ free AI models, Council Mode, voice chat, and more.'} />
       {keywords && <meta name="keywords" content={keywords} />}
       <link rel="canonical" href={canonicalUrl} />
       {noIndex && <meta name="robots" content="noindex, nofollow" />}
@@ -94,15 +94,15 @@ export const StructuredData = {
   organization: () => ({
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'CyberMindCLI',
+    name: 'Codeva',
     url: SITE_URL,
     logo: `${SITE_URL}/logo.png`,
     description: 'Premium multi-model AI chat platform with 50+ free AI models, Council Mode, voice chat, and developer API.',
     sameAs: [
       'https://twitter.com/cybermindcli',
-      'https://github.com/cybercli',
-      'https://discord.gg/cybercli',
-      'https://linkedin.com/company/cybercli',
+      'https://github.com/codeva',
+      'https://discord.gg/codeva',
+      'https://linkedin.com/company/codeva',
     ],
     contactPoint: {
       '@type': 'ContactPoint',
@@ -115,7 +115,7 @@ export const StructuredData = {
   website: () => ({
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'CyberMindCLI',
+    name: 'Codeva',
     url: SITE_URL,
     potentialAction: {
       '@type': 'SearchAction',
@@ -145,11 +145,11 @@ export const StructuredData = {
     dateModified: dateModified || datePublished,
     author: {
       '@type': 'Person',
-      name: author || 'CyberMindCLI Team',
+      name: author || 'Codeva Team',
     },
     publisher: {
       '@type': 'Organization',
-      name: 'CyberMindCLI',
+      name: 'Codeva',
       logo: {
         '@type': 'ImageObject',
         url: `${SITE_URL}/logo.png`,
@@ -175,7 +175,7 @@ export const StructuredData = {
     },
     provider: {
       '@type': 'Organization',
-      name: 'CyberMindCLI',
+      name: 'Codeva',
     },
   }),
 
@@ -197,7 +197,7 @@ export const StructuredData = {
     '@type': 'Product',
     name,
     description,
-    brand: { '@type': 'Brand', name: 'CyberMindCLI' },
+    brand: { '@type': 'Brand', name: 'Codeva' },
     offers: {
       '@type': 'Offer',
       price,

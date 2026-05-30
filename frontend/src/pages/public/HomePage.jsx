@@ -12,7 +12,7 @@ export default function HomePage() {
       <SEOHead
         title="Premium Multi-Model AI Chat Platform"
         description="Access 50+ free AI models including GPT, Gemini, Llama, DeepSeek. Features Council Mode, voice chat, and developer API."
-        keywords="AI chat, free AI chatbot, multi-model AI, ChatGPT alternative, Gemini alternative, Claude alternative, AI workspace, CyberMindCLI"
+        keywords="AI chat, free AI chatbot, multi-model AI, ChatGPT alternative, Gemini alternative, Claude alternative, AI workspace, Codeva"
         path="/"
         structuredData={[StructuredData.organization(), StructuredData.website()]}
       />

@@ -81,7 +81,7 @@ export default function ClaudeCodePage() {
   const [activeTab, setActiveTab] = useState('npm');
 
   const installCommands = {
-    npm: 'npm install -g @cybercli_chat/cli@latest',
+    npm: 'npm install -g @codeva_chat/cli@latest',
     curl: 'curl -fsSL https://cybermindcli.info/install.sh | bash',
     ps1: 'irm https://cybermindcli.info/install.ps1 | iex',
     cmd: 'curl -fsSL https://cybermindcli.info/install.cmd -o install.cmd && install.cmd && del install.cmd',
@@ -171,7 +171,7 @@ export default function ClaudeCodePage() {
   const faqs = [
     {
       q: 'How do I get started with CyberCoder?',
-      a: 'Install CyberCoder with npm: npm install -g @cybercli_chat/cli. Then run cm /init to set up your project and configure your API key. You can get an API key from your CyberCli dashboard after signing up.'
+      a: 'Install CyberCoder with npm: npm install -g @codeva_chat/cli. Then run cm /init to set up your project and configure your API key. You can get an API key from your Codeva dashboard after signing up.'
     },
     {
       q: 'What kinds of tasks can CyberCoder handle?',
@@ -198,8 +198,8 @@ export default function ClaudeCodePage() {
       a: 'CyberCoder offers a generous free tier with 50 requests/hour. Pro plans start at $9/month with 500 requests/hour and priority access to all AI providers. Enterprise plans available for teams.'
     },
     {
-      q: 'Does CyberCoder work with the CyberCli Chat web app?',
-      a: 'Yes. Your CyberCoder CLI account syncs with the CyberCli Chat web interface. You can start a conversation in the browser and continue it in the terminal, or vice versa.'
+      q: 'Does CyberCoder work with the Codeva web app?',
+      a: 'Yes. Your CyberCoder CLI account syncs with the Codeva web interface. You can start a conversation in the browser and continue it in the terminal, or vice versa.'
     },
     {
       q: 'What is Council Mode?',
@@ -301,7 +301,7 @@ export default function ClaudeCodePage() {
 
             <div className="flex items-center justify-center gap-4 mt-4">
               <Link
-                to="/signup"
+                to="/auth/signup"
                 className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all hover:opacity-90"
                 style={{ backgroundColor: ACCENT, color: '#000' }}
               >
@@ -666,7 +666,7 @@ export default function ClaudeCodePage() {
               Read Documentation
             </Link>
             <Link
-              to="/signup"
+              to="/auth/signup"
               className="px-6 py-3 rounded-lg font-medium transition-all hover:opacity-90"
               style={{ backgroundColor: ACCENT, color: '#000' }}
             >

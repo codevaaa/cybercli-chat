@@ -116,7 +116,7 @@ export default function CliLoginPage() {
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-[#D97736]" />
-            <span className="text-white text-xl font-semibold">CyberCli</span>
+            <span className="text-white text-xl font-semibold">Codeva</span>
           </div>
         </div>
 
@@ -225,7 +225,7 @@ export default function CliLoginPage() {
             <div className="space-y-6">
               <div className="text-center">
                 <h1 className="text-white text-2xl font-semibold mb-2">
-                  {isCli ? 'Sign in to CyberCli Code' : 'Sign in to CyberCli'}
+                  {isCli ? 'Sign in to Codeva Code' : 'Sign in to Codeva'}
                 </h1>
                 <p className="text-gray-400 text-sm">
                   Log in to authorize the coding CLI agent.

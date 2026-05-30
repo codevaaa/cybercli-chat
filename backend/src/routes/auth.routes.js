@@ -19,6 +19,24 @@ router.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user })
 })
 
+// Get profile stats (message + thread counts) for the logged-in user
+router.get('/me/stats', requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id
+    const [threadsCreated, messagesSent] = await Promise.all([
+      Thread.countDocuments({ user_id: userId }),
+      Message.countDocuments({ user_id: userId, role: 'user' }),
+    ])
+    res.json({
+      threadsCreated,
+      messagesSent,
+      plan: req.user.plan || 'free',
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
 // Mock/Token refresh endpoint
 router.post('/refresh', (req, res) => {
   res.json({ message: 'Token refresh endpoint' })

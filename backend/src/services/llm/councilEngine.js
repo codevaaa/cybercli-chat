@@ -1,7 +1,7 @@
 import { llmGateway } from './gateway.js'
 
 /**
- * CyberCli Council Engine — Multi-Model Ensemble with Prompt Routing
+ * Codeva Council Engine — Multi-Model Ensemble with Prompt Routing
  *
  * Flow:
  *   1. PROMPT ROUTER: User prompt → 4 specialized prompts (one per model role)

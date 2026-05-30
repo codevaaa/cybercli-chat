@@ -25,7 +25,7 @@ export default function UsageLimitBestPracticesPage() {
         title="Usage Limit Best Practices — Help Center"
         description="Help article explaining how to optimize your message quotas, write token-efficient prompts, manage system memory, and stay within limits."
         path="/usage-limit-best-practices"
-        keywords={['usage limits', 'rate limits', 'prompt optimization', 'token budgets', 'CyberCli support']}
+        keywords={['usage limits', 'rate limits', 'prompt optimization', 'token budgets', 'Codeva support']}
       />
 
       <div className="section-padding">
@@ -85,7 +85,7 @@ export default function UsageLimitBestPracticesPage() {
                 <section id="conversation-planning" className="scroll-mt-24">
                   <h2 className="text-lg font-bold text-[#191919] mb-3">1. Start by planning your conversations</h2>
                   <p className="mb-4">
-                    Before starting a conversation with CyberCli, plan what you intend to accomplish. Try to structure your queries to get the most information out of a single interaction rather than asking minor questions repeatedly.
+                    Before starting a conversation with Codeva, plan what you intend to accomplish. Try to structure your queries to get the most information out of a single interaction rather than asking minor questions repeatedly.
                   </p>
                   <ul className="space-y-1 pl-4 list-disc mb-4">
                     <li>What is the final output format you need?</li>
@@ -110,7 +110,7 @@ export default function UsageLimitBestPracticesPage() {
                   </p>
                   <ul className="space-y-1 pl-4 list-disc mb-4">
                     <li>**Use custom agent personas** with saveable system prompts to avoid repeating instructions.</li>
-                    <li>**Enable Memory** in Settings → Capabilities, so CyberCli remembers key technical configurations and preferences across separate threads.</li>
+                    <li>**Enable Memory** in Settings → Capabilities, so Codeva remembers key technical configurations and preferences across separate threads.</li>
                   </ul>
                 </section>
 
@@ -150,7 +150,7 @@ export default function UsageLimitBestPracticesPage() {
                 <section id="coding-tips" className="scroll-mt-24">
                   <h2 className="text-lg font-bold text-[#191919] mb-3">8. Quick coding tips</h2>
                   <p className="mb-4">
-                    When using CyberCli for code generation:
+                    When using Codeva for code generation:
                   </p>
                   <ul className="space-y-2 pl-2">
                     <li className="flex items-start gap-2">
@@ -159,7 +159,7 @@ export default function UsageLimitBestPracticesPage() {
                     </li>
                     <li className="flex items-start gap-2">
                       <CornerDownRight className="w-4 h-4 text-[#D97757] flex-shrink-0 mt-1" />
-                      <span>**Use local CLI integration** (CyberCli Daemon) to sync changes directly into your editor, preventing copy-paste steps.</span>
+                      <span>**Use local CLI integration** (Codeva Daemon) to sync changes directly into your editor, preventing copy-paste steps.</span>
                     </li>
                   </ul>
                 </section>

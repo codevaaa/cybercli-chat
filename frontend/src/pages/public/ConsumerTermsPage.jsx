@@ -9,9 +9,9 @@ const SECTIONS = [
   {
     id: 'introduction',
     title: '1. Introduction',
-    content: `These Consumer Terms of Service ("Terms") govern your access to and use of CyberCli Chat ("the Service") as an individual consumer. The Service is operated by CyberMindCLI ("we," "us," or "our").
+    content: `These Consumer Terms of Service ("Terms") govern your access to and use of Codeva ("the Service") as an individual consumer. The Service is operated by Codeva ("we," "us," or "our").
 
-By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree to these Terms, you may not access or use the Service. These Terms constitute a legally binding agreement between you and CyberMindCLI.
+By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree to these Terms, you may not access or use the Service. These Terms constitute a legally binding agreement between you and Codeva.
 
 Please read these Terms carefully before using the Service. They contain important information about your legal rights, remedies, and obligations, including limitations of liability and dispute resolution procedures.`,
   },
@@ -29,7 +29,7 @@ Please read these Terms carefully before using the Service. They contain importa
     title: '3. Your Content',
     content: `**Prompts and Outputs**: You may provide inputs to the Service ("Prompts") and receive generated outputs ("Outputs"). Together, Prompts and Outputs are "Your Content." You are responsible for Your Content, including ensuring that it does not violate any applicable law or these Terms.
 
-**Ownership**: As between you and CyberMindCLI, you retain all ownership rights in your Prompts. To the extent permitted by law, we assign to you all our rights, title, and interest in and to the Outputs generated in response to your Prompts.
+**Ownership**: As between you and Codeva, you retain all ownership rights in your Prompts. To the extent permitted by law, we assign to you all our rights, title, and interest in and to the Outputs generated in response to your Prompts.
 
 **Data Training Policy**: We value your privacy. We do not use Your Content (conversations, documents, or logs) to train our AI models without your explicit consent. Your data remains yours.`,
   },
@@ -47,14 +47,14 @@ Please read these Terms carefully before using the Service. They contain importa
   {
     id: 'intellectual-property',
     title: '5. Our Intellectual Property',
-    content: `The Service, including its software, UI/UX design, logos, assets, and documentation, is the exclusive property of CyberMindCLI and protected by copyright, trademark, and other laws.
+    content: `The Service, including its software, UI/UX design, logos, assets, and documentation, is the exclusive property of Codeva and protected by copyright, trademark, and other laws.
 
-You may not copy, modify, distribute, sell, lease, or reverse engineer any part of our Service. The brand names, logos (including the CyberCli mark), and product titles are trademarks of CyberMindCLI.`,
+You may not copy, modify, distribute, sell, lease, or reverse engineer any part of our Service. The brand names, logos (including the Codeva mark), and product titles are trademarks of Codeva.`,
   },
   {
     id: 'fees-payment',
     title: '6. Fees & Paid Subscriptions',
-    content: `**Subscription Fees**: If you sign up for a paid subscription (such as CyberCli Pro), you agree to pay the fees associated with that plan. All payments are billed in advance on a recurring monthly basis.
+    content: `**Subscription Fees**: If you sign up for a paid subscription (such as Codeva Pro), you agree to pay the fees associated with that plan. All payments are billed in advance on a recurring monthly basis.
 
 **Billing & Stripe**: Billing operations are securely handled through Stripe. You must provide a valid payment method. You can cancel your subscription at any time from your account dashboard, and you will retain access until the end of your billing cycle.
 
@@ -76,7 +76,7 @@ You may not copy, modify, distribute, sell, lease, or reverse engineer any part 
 
 **Warranty Disclaimer**: The Service is provided "as is" and "as available," without warranty of any kind, express or implied.
 
-**Limitation of Liability**: To the maximum extent permitted by law, CyberMindCLI shall not be liable for any indirect, incidental, special, or consequential damages, including loss of profits, data, or goodwill, arising from your use of the Service.`,
+**Limitation of Liability**: To the maximum extent permitted by law, Codeva shall not be liable for any indirect, incidental, special, or consequential damages, including loss of profits, data, or goodwill, arising from your use of the Service.`,
   },
   {
     id: 'disputes',
@@ -150,9 +150,9 @@ export default function ConsumerTermsPage() {
     <div className="pt-28 pb-20 bg-[#FBF9F6] text-[#191919]">
       <SEOHead
         title="Consumer Terms of Service"
-        description="CyberMindCLI consumer terms of service. Usage rules, user content details, billing policies, and legal agreements."
+        description="Codeva consumer terms of service. Usage rules, user content details, billing policies, and legal agreements."
         path="/legal/consumer-terms"
-        keywords={['consumer terms', 'terms of service', 'user agreement', 'CyberMindCLI', 'AI terms']}
+        keywords={['consumer terms', 'terms of service', 'user agreement', 'Codeva', 'AI terms']}
       />
       <div className="section-padding">
         <div className="container-custom">
@@ -170,7 +170,7 @@ export default function ConsumerTermsPage() {
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-8 mb-8">
                 <p className="text-[#444444] text-sm leading-relaxed">
-                  These Consumer Terms govern your access to and personal use of CyberCli Chat. By using our platform, you agree to comply with these rules. If you represent an organization or intend to use our API programmatically, please refer to our <a href="/legal/commercial-terms" className="text-[#D97757] hover:underline font-medium">Commercial Terms</a>.
+                  These Consumer Terms govern your access to and personal use of Codeva. By using our platform, you agree to comply with these rules. If you represent an organization or intend to use our API programmatically, please refer to our <a href="/legal/commercial-terms" className="text-[#D97757] hover:underline font-medium">Commercial Terms</a>.
                 </p>
               </div>
 

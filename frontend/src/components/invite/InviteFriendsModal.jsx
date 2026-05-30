@@ -114,7 +114,7 @@ export default function InviteFriendsModal({ isOpen, onClose }) {
                 <Users className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold text-white block mb-1">Share the Intelligence</span>
-                  <span className="text-gray-400">Invite your friends to CyberMindCLI. When they sign up, they get immediate access to all 50+ free models, and you get priority token processing speeds!</span>
+                  <span className="text-gray-400">Invite your friends to Codeva. When they sign up, they get immediate access to all 50+ free models, and you get priority token processing speeds!</span>
                 </div>
               </div>
 

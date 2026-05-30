@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Lock, Eye, EyeOff, ArrowRight, Loader2, Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../stores/authStore.js'
-import { CyberCliMark } from '../../components/ui/CyberCliLogo'
+import { CodevaMark } from '../../components/ui/CodevaLogo'
 
 function getStrength(pw) {
   if (!pw) return { level: 0, label: '', color: '' }
@@ -53,7 +53,7 @@ export default function ResetPasswordPage() {
         {/* Brand Mark Logo */}
         <div className="flex flex-col items-center mb-8">
           <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
-            <CyberCliMark size={56} />
+            <CodevaMark size={56} />
           </Link>
           <h1 className="text-3xl font-semibold text-foreground-primary tracking-tight font-serif mt-6">
             Choose a new password

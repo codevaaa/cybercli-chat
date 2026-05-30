@@ -1,4 +1,4 @@
-export const APP_NAME = 'CyberCli Chat'
+export const APP_NAME = 'Codeva'
 export const APP_TAGLINE = 'The most powerful AI chat platform'
 export const APP_DESCRIPTION = 'Multi-model, uncensored, voice-enabled, and entirely yours.'
 
@@ -61,10 +61,10 @@ export const FOOTER_SECTIONS = [
 ]
 
 export const SOCIAL_LINKS = [
-  { label: 'Twitter', href: 'https://twitter.com/cybercli', icon: 'twitter' },
-  { label: 'GitHub', href: 'https://github.com/cybercli', icon: 'github' },
-  { label: 'Discord', href: 'https://discord.gg/cybercli', icon: 'discord' },
-  { label: 'LinkedIn', href: 'https://linkedin.com/company/cybercli', icon: 'linkedin' },
+  { label: 'Twitter', href: 'https://twitter.com/codeva', icon: 'twitter' },
+  { label: 'GitHub', href: 'https://github.com/codeva', icon: 'github' },
+  { label: 'Discord', href: 'https://discord.gg/codeva', icon: 'discord' },
+  { label: 'LinkedIn', href: 'https://linkedin.com/company/codeva', icon: 'linkedin' },
 ]
 
 export const HERO_FEATURES = [
@@ -95,7 +95,7 @@ export const HERO_FEATURES = [
   },
   {
     title: 'Secure Local Integration',
-    description: 'Run the CyberCli daemon locally to read/write project files and execute commands securely.',
+    description: 'Run the Codeva daemon locally to read/write project files and execute commands securely.',
     icon: 'globe',
   },
 ]
@@ -159,7 +159,7 @@ export const PRICING_TIERS = [
 
 export const TESTIMONIALS = [
   {
-    quote: 'CyberCli replaced ChatGPT, Claude, and Perplexity for me. One platform, every model, zero switching.',
+    quote: 'Codeva replaced ChatGPT, Claude, and Perplexity for me. One platform, every model, zero switching.',
     author: 'Alex Chen',
     role: 'AI Researcher',
     company: 'Independent',

@@ -1,6 +1,6 @@
 /**
  * Desktop Integration Hook
- * Provides access to Electron IPC APIs when running inside CyberCli Desktop.
+ * Provides access to Electron IPC APIs when running inside Codeva Desktop.
  */
 
 const isDesktop = () => typeof window !== 'undefined' && !!window.electronAPI

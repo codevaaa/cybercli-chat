@@ -1,10 +1,10 @@
 /**
- * CyberCli brand logo components
+ * Codeva brand logo components
  *
  * Exports:
- *   CyberCliMark      — Animated Sudarshan Chakra SVG icon (stealth geometric redesign)
- *   CyberCliWordmark  — icon + "CyberCli" text side-by-side
- *   default           — CyberCliMark
+ *   CodevaMark      — Animated Sudarshan Chakra SVG icon (stealth geometric redesign)
+ *   CodevaWordmark  — icon + "Codeva" text side-by-side
+ *   default           — CodevaMark
  *
  * Props:
  *   size        {number}  pixel size of the icon square (default 40)
@@ -14,10 +14,10 @@
 import { motion } from 'framer-motion'
 
 /**
- * CyberCliMark
+ * CodevaMark
  * Stylized, animated Sudarshan Chakra in theme-adaptive terracotta with a stealth tech aesthetic.
  */
-export function CyberCliMark({ size = 40, className = '', color = '#D97757' }) {
+export function CodevaMark({ size = 40, className = '', color = '#D97757' }) {
   const s = size
   
   return (
@@ -28,7 +28,7 @@ export function CyberCliMark({ size = 40, className = '', color = '#D97757' }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={`${className} logo-chakra-spin logo-chakra-entrance`}
-      aria-label="CyberCli logo mark"
+      aria-label="Codeva logo mark"
       role="img"
       style={{
         display: 'inline-block',
@@ -154,17 +154,17 @@ export function CyberCliMark({ size = 40, className = '', color = '#D97757' }) {
 }
 
 /**
- * CyberCliWordmark
- * Horizontal lock-up: [icon] [CyberCli text]
+ * CodevaWordmark
+ * Horizontal lock-up: [icon] [Codeva text]
  * The text is set in Inter with a custom high-end styling.
  */
-export function CyberCliWordmark({ size = 40, className = '', textClassName = '', color = '#D97757' }) {
+export function CodevaWordmark({ size = 40, className = '', textClassName = '', color = '#D97757' }) {
   return (
     <span
       className={`inline-flex items-center gap-3 select-none ${className}`}
-      aria-label="CyberCli"
+      aria-label="Codeva"
     >
-      <CyberCliMark size={size} color={color} />
+      <CodevaMark size={size} color={color} />
       <span
         className={`font-semibold tracking-tight text-foreground-primary ${textClassName}`}
         style={{
@@ -175,10 +175,10 @@ export function CyberCliWordmark({ size = 40, className = '', textClassName = ''
           lineHeight: 1,
         }}
       >
-        CyberCli
+        Codeva
       </span>
     </span>
   )
 }
 
-export default CyberCliMark
+export default CodevaMark

@@ -234,7 +234,7 @@ function GeneralTab({ settings, onUpdate }) {
 
       <AvatarSection name={settings.full_name} avatarUrl={settings.avatar_url} onUpdate={onUpdate} />
 
-      <FieldRow label="Full name" hint="Your display name across CyberCli">
+      <FieldRow label="Full name" hint="Your display name across Codeva">
         <TextInput
           value={settings.full_name}
           onChange={v => onUpdate('full_name', v)}
@@ -243,7 +243,7 @@ function GeneralTab({ settings, onUpdate }) {
         />
       </FieldRow>
 
-      <FieldRow label="What should CyberCli call you?" hint="Used in responses to feel more personal">
+      <FieldRow label="What should Codeva call you?" hint="Used in responses to feel more personal">
         <TextInput
           value={settings.nickname}
           onChange={v => onUpdate('nickname', v)}
@@ -252,7 +252,7 @@ function GeneralTab({ settings, onUpdate }) {
         />
       </FieldRow>
 
-      <FieldRow label="Custom instructions" hint="Tell CyberCli how to respond to you by default">
+      <FieldRow label="Custom instructions" hint="Tell Codeva how to respond to you by default">
         <div className="w-64">
           <TextareaInput
             value={settings.instructions}
@@ -341,10 +341,10 @@ function PrivacyTab({ settings, onUpdate, onDownloadData }) {
   return (
     <div>
       <SectionHeading>Privacy</SectionHeading>
-      <FieldRow label="Share usage data" hint="Help improve CyberCli with anonymous usage analytics">
+      <FieldRow label="Share usage data" hint="Help improve Codeva with anonymous usage analytics">
         <Toggle checked={settings.share_usage || false} onChange={v => onUpdate('share_usage', v)} />
       </FieldRow>
-      <FieldRow label="Personalized ads" hint="Allow CyberCli to show relevant promotions">
+      <FieldRow label="Personalized ads" hint="Allow Codeva to show relevant promotions">
         <Toggle checked={settings.personalized_ads || false} onChange={v => onUpdate('personalized_ads', v)} />
       </FieldRow>
       <FieldRow label="Conversation history" hint="Save your chats to improve future responses">
@@ -362,7 +362,7 @@ function PrivacyTab({ settings, onUpdate, onDownloadData }) {
   )
 }
 
-function BillingTab({ onUpgrade }) {
+function BillingTab({ onUpgrade, onManageBilling }) {
   return (
     <div>
       <SectionHeading>Plan</SectionHeading>
@@ -388,7 +388,7 @@ function BillingTab({ onUpgrade }) {
       </div>
 
       <button
-        onClick={onUpgrade}
+        onClick={() => onUpgrade('pro')}
         className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white transition-all cursor-pointer"
         style={{ background: '#D97757' }}
         onMouseEnter={e => e.currentTarget.style.background = '#E8A590'}
@@ -401,6 +401,13 @@ function BillingTab({ onUpgrade }) {
       <p className="text-xs text-center text-foreground-muted mt-3">
         Upgrade for 500 msg/hr, Council Mode, ElevenLabs voices & more.
       </p>
+
+      <button
+        onClick={onManageBilling}
+        className="w-full mt-4 px-5 py-2.5 rounded-xl text-sm font-medium text-foreground-secondary border border-border-subtle hover:bg-white/[0.04] transition-colors"
+      >
+        Manage billing &amp; invoices
+      </button>
     </div>
   )
 }
@@ -408,11 +415,11 @@ function BillingTab({ onUpgrade }) {
 function CapabilitiesTab({ settings, onUpdate }) {
   const capabilities = [
     { key: 'code_execution', label: 'Code execution', hint: 'Run code snippets in a sandboxed environment' },
-    { key: 'web_search',     label: 'Web search',     hint: 'Allow CyberCli to search the internet' },
+    { key: 'web_search',     label: 'Web search',     hint: 'Allow Codeva to search the internet' },
     { key: 'image_gen',      label: 'Image generation', hint: 'Generate images from text descriptions' },
     { key: 'council_mode',   label: 'Council Mode',   hint: 'Enable multi-model debate on your queries' },
     { key: 'voice_input',    label: 'Voice input',    hint: 'Use your microphone for voice-to-text' },
-    { key: 'memory',         label: 'Memory',         hint: 'Let CyberCli remember facts about you' },
+    { key: 'memory',         label: 'Memory',         hint: 'Let Codeva remember facts about you' },
   ]
   return (
     <div>
@@ -490,7 +497,7 @@ function UsageTab() {
     <div className="space-y-6">
       <SectionHeading>Model Analytics</SectionHeading>
       <p className="text-sm text-foreground-muted mb-4 leading-relaxed">
-        Track your inference usage across the CyberCli multi-provider AI network.
+        Track your inference usage across the Codeva multi-provider AI network.
       </p>
 
       {loading ? (
@@ -590,7 +597,7 @@ function DeveloperTab() {
     <div className="space-y-6">
       <div>
         <p className="text-sm text-foreground-muted mb-4 leading-relaxed">
-          API keys allow you to integrate CyberCli completions programmatically into your scripts, CLI tools, and development workflows. Keep your keys secret.
+          API keys allow you to integrate Codeva completions programmatically into your scripts, CLI tools, and development workflows. Keep your keys secret.
         </p>
       </div>
 
@@ -734,7 +741,7 @@ function InviteTab({ onOpenModal }) {
   return (
     <div className="space-y-6">
       <p className="text-sm text-foreground-muted leading-relaxed">
-        Invite your friends to CyberMindCLI. When they sign up using your referral link, they'll get immediate access to all 50+ free models, and you'll receive priority token processing speeds!
+        Invite your friends to Codeva. When they sign up using your referral link, they'll get immediate access to all 50+ free models, and you'll receive priority token processing speeds!
       </p>
 
       <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary space-y-4">
@@ -1042,7 +1049,7 @@ export default function SettingsPage() {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2))
       const downloadAnchor = document.createElement('a')
       downloadAnchor.setAttribute("href",     dataStr)
-      downloadAnchor.setAttribute("download", `cybercli_export_${new Date().toISOString().split('T')[0]}.json`)
+      downloadAnchor.setAttribute("download", `codeva_export_${new Date().toISOString().split('T')[0]}.json`)
       document.body.appendChild(downloadAnchor)
       downloadAnchor.click()
       downloadAnchor.remove()
@@ -1073,21 +1080,29 @@ export default function SettingsPage() {
     }
   }
 
-  const handleUpgradeToPro = () => {
-    const confirmUpgrade = confirm('You are about to subscribe to CyberCli Pro for $12/month.\n\nThis will unlock 500 requests/hour, Council Mode, ElevenLabs Premium Voices, and Isolated Workspaces.\n\nProceed to simulated checkout?')
-    if (confirmUpgrade) {
+  const handleUpgradeToPro = async (plan = 'pro') => {
+    try {
       setSaving(true)
-      setTimeout(async () => {
-        try {
-          await api.patch('/settings', { appearance: settings.theme.toLowerCase() })
-          alert('Congratulations! Your account has been upgraded to Pro successfully.')
-          window.location.reload()
-        } catch (e) {
-          alert('Billing simulation complete. Pro features unlocked!')
-        } finally {
-          setSaving(false)
-        }
-      }, 1500)
+      const { data } = await api.post('/stripe/checkout', { plan })
+      if (data?.url) {
+        window.location.href = data.url
+      } else {
+        alert('Could not start checkout. Please try again.')
+      }
+    } catch (e) {
+      const msg = e?.response?.data?.error || 'Checkout is currently unavailable. Please try again later.'
+      alert(msg)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleManageBilling = async () => {
+    try {
+      const { data } = await api.post('/stripe/portal', {})
+      if (data?.url) window.location.href = data.url
+    } catch (e) {
+      alert(e?.response?.data?.error || 'Could not open billing portal.')
     }
   }
 
@@ -1095,7 +1110,7 @@ export default function SettingsPage() {
     general:      <GeneralTab      settings={settings} onUpdate={handleUpdate} />,
     account:      <AccountTab      settings={settings} onUpdate={handleUpdate} onChangePassword={handleChangePassword} onDeleteAccount={handleDeleteAccount} />,
     privacy:      <PrivacyTab      settings={settings} onUpdate={handleUpdate} onDownloadData={handleDownloadData} />,
-    billing:      <BillingTab      onUpgrade={handleUpgradeToPro} />,
+    billing:      <BillingTab      onUpgrade={handleUpgradeToPro} onManageBilling={handleManageBilling} />,
     capabilities: <CapabilitiesTab settings={settings} onUpdate={handleUpdate} />,
     connectors:   <ConnectorsTab />,
     'api-keys':   <DeveloperTab />,

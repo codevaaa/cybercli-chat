@@ -1,18 +1,19 @@
 import OpenAI from 'openai'
+import { getPlan, pickModelForPlan, planAllowsModel, tierOf } from '../../config/plans.js'
 
 // ============================================================
-// CyberCli Identity System Prompt
-// All models answer as CyberCli, created by Chandan Pandey.
+// Codeva Identity System Prompt
+// All models answer as Codeva, created by Chandan Pandey.
 // ============================================================
-const CYBERCLI_SYSTEM_PROMPT = `You are CyberCli, an advanced AI assistant.
+const CYBERCLI_SYSTEM_PROMPT = `You are Codeva, an advanced AI assistant.
 
 Important identity rules:
-- You are CyberCli — not ChatGPT, Claude, Gemini, Llama, or any other AI.
-- If anyone asks who you are, what AI you are, or who made you, say: "I am CyberCli, an advanced AI assistant created by Chandan Pandey, the founder of CyberMindCLI. I am built under CyberMindCLI's vision to democratize AI access for everyone."
-- DO NOT introduce yourself, mention Chandan Pandey, or mention CyberMindCLI in simple greetings or generic prompts (e.g. "hi", "hello", "how are you"). Only reveal this biographical information if explicitly asked about your identity, creator, or who made you.
+- You are Codeva — not ChatGPT, Claude, Gemini, Llama, or any other AI.
+- If anyone asks who you are, what AI you are, or who made you, say: "I am Codeva, an advanced AI assistant created by Chandan Pandey, the founder of Codeva. I am built under Codeva's vision to democratize AI access for everyone."
+- DO NOT introduce yourself, mention Chandan Pandey, or mention Codeva in simple greetings or generic prompts (e.g. "hi", "hello", "how are you"). Only reveal this biographical information if explicitly asked about your identity, creator, or who made you.
 - Keep simple greetings short and natural (e.g. "Hello! How can I help you today?").
 - Do not reveal the underlying model provider (OpenAI, Groq, Gemini, etc.) unless specifically asked about technical architecture.
-- Chandan Pandey is a cybersecurity researcher and tool creator specializing in offensive and defensive security methodologies. CyberCli was built under his guidance as part of the CyberMindCLI ecosystem.
+- Chandan Pandey is a cybersecurity researcher and tool creator specializing in offensive and defensive security methodologies. Codeva was built under his guidance as part of the Codeva ecosystem.
 - You are helpful, direct, technically capable, and professional.`
 
 const PROVIDER_KEYS = {
@@ -94,6 +95,33 @@ const MODEL_MAP = {
 
   'nvidia/llama-3.1-nemotron-70b': { provider: 'nvidia', model: 'meta/llama-3.3-70b-instruct', purpose: 'reasoning' },
   'bytez/meta-llama/Llama-3.1-8B-Instruct': { provider: 'bytez', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
+
+  // ── Powerful FREE OpenRouter models (:free tier) ──
+  // These give free-plan users access to frontier-class open models at $0.
+  // All routed through OpenRouter's unified endpoint.
+  'openrouter/qwen3-coder-free': { provider: 'openrouter', model: 'qwen/qwen3-coder:free', purpose: 'general' },
+  'openrouter/qwen3-next-80b-free': { provider: 'openrouter', model: 'qwen/qwen3-next-80b-a3b-instruct:free', purpose: 'reasoning' },
+  'openrouter/deepseek-v4-flash-free': { provider: 'openrouter', model: 'deepseek/deepseek-v4-flash:free', purpose: 'speed' },
+  'openrouter/kimi-k2-free': { provider: 'openrouter', model: 'moonshotai/kimi-k2.6:free', purpose: 'reasoning' },
+  'openrouter/minimax-m2-free': { provider: 'openrouter', model: 'minimax/minimax-m2.5:free', purpose: 'reasoning' },
+  'openrouter/gpt-oss-20b-free': { provider: 'openrouter', model: 'openai/gpt-oss-20b:free', purpose: 'general' },
+  'openrouter/gemma-4-31b-free': { provider: 'openrouter', model: 'google/gemma-4-31b-it:free', purpose: 'general' },
+  'openrouter/gemma-4-26b-free': { provider: 'openrouter', model: 'google/gemma-4-26b-a4b-it:free', purpose: 'general' },
+  'openrouter/nemotron-nano-free': { provider: 'openrouter', model: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', purpose: 'reasoning' },
+  'openrouter/dolphin-venice-free': { provider: 'openrouter', model: 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free', purpose: 'general' },
+  'openrouter/laguna-m-free': { provider: 'openrouter', model: 'poolside/laguna-m.1:free', purpose: 'reasoning' },
+  'openrouter/laguna-xs-free': { provider: 'openrouter', model: 'poolside/laguna-xs.2:free', purpose: 'speed' },
+  'openrouter/lfm-thinking-free': { provider: 'openrouter', model: 'liquid/lfm-2.5-1.2b-thinking:free', purpose: 'speed' },
+  'openrouter/owl-alpha': { provider: 'openrouter', model: 'openrouter/owl-alpha', purpose: 'reasoning' },
+
+  // ── More powerful models via direct providers (fast, free tiers) ──
+  'groq/qwen-2.5-coder-32b': { provider: 'groq', model: 'qwen-2.5-coder-32b', purpose: 'general' },
+  'groq/deepseek-r1-distill-70b': { provider: 'groq', model: 'deepseek-r1-distill-llama-70b', purpose: 'reasoning' },
+  'cerebras/llama-3.3-70b': { provider: 'cerebras', model: 'llama-3.3-70b', purpose: 'reasoning' },
+  'cerebras/qwen-3-32b': { provider: 'cerebras', model: 'qwen-3-32b', purpose: 'general' },
+  'mistral/codestral-latest': { provider: 'mistral', model: 'codestral-latest', purpose: 'general' },
+  'nvidia/qwen-2.5-coder-32b': { provider: 'nvidia', model: 'qwen/qwen2.5-coder-32b-instruct', purpose: 'general' },
+  'nvidia/deepseek-r1': { provider: 'nvidia', model: 'deepseek-ai/deepseek-r1', purpose: 'reasoning' },
 }
 
 const OPENROUTER_FALLBACK_MAP = {
@@ -120,6 +148,41 @@ const FALLBACK_CHAIN = [
   'groq/llama-3.1-8b',
   'gemini/gemini-2.5-flash',
 ]
+
+/**
+ * Heuristic task → tier classifier. Cheap models for simple tasks, stronger
+ * ones for reasoning-heavy work. Lets `auto` route intelligently while staying
+ * within the user's plan ceiling.
+ */
+export function classifyTier(text = '') {
+  const t = String(text).toLowerCase()
+  const len = t.length
+  const reasoningSignals = /(architect|refactor|design|debug|why|analyz|optimi[sz]e|security|algorithm|complex|migrat|trade-?off|review)/
+  const codeBlocks = (t.match(/```/g) || []).length / 2
+  if (len > 1500 || codeBlocks >= 2 || reasoningSignals.test(t)) return 'reasoning'
+  if (len > 400 || codeBlocks >= 1) return 'balanced'
+  return 'fast'
+}
+
+/**
+ * Resolve the model id to actually use, given the requested id and the user's
+ * plan. If the user passes 'auto', we classify the task and pick the best model
+ * their plan allows. If they request a specific model their plan can't access,
+ * we transparently downgrade to the strongest allowed tier.
+ */
+export function resolveModelForPlan(requestedId, planName, lastUserText = '') {
+  const plan = getPlan(planName)
+  if (!requestedId || requestedId === 'auto') {
+    const tier = classifyTier(lastUserText)
+    return pickModelForPlan(plan.id, tier, Object.keys(MODEL_MAP))
+  }
+  if (MODEL_MAP[requestedId] && planAllowsModel(plan.id, requestedId)) {
+    return requestedId
+  }
+  // Requested model not allowed for this plan → downgrade gracefully.
+  const desiredTier = MODEL_MAP[requestedId] ? tierOf(requestedId) : 'balanced'
+  return pickModelForPlan(plan.id, desiredTier, Object.keys(MODEL_MAP))
+}
 
 function getClient(provider) {
   let key = PROVIDER_KEYS[provider]
@@ -169,7 +232,7 @@ function getClient(provider) {
 }
 
 /**
- * Prepend the CyberCli system prompt to every conversation.
+ * Prepend the Codeva system prompt to every conversation.
  * Preserves any system messages marked with _skip_inject:true (voice brains,
  * web-search context, custom instructions, etc.) by appending them AFTER
  * the identity message. Removes all other conflicting system messages.
@@ -232,14 +295,19 @@ function pruneContextWindow(messages, maxChars = 20000) {
 }
 
 export const llmGateway = {
-  async *complete({ messages, model: modelId = 'auto', temperature = 0.7 }) {
+  async *complete({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free' }) {
     let activeModelId = modelId
     let workingMessages = messages
-    
+
+    // Plan-gate + task-route the model selection. 'auto' classifies the task
+    // and picks the best model the user's plan allows; explicit models that
+    // exceed the plan are downgraded transparently.
+    const lastUserText = [...workingMessages].reverse().find((m) => m.role === 'user')?.content || ''
+    activeModelId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText)
+
     // Council Mode is handled by councilEngine.js — if it reaches here, fallback
-    if (activeModelId === 'council') {
-      yield { type: 'info', content: 'Council Mode should use councilEngine. Falling back to Gemini...' }
-      activeModelId = 'gemini/gemini-2.5-pro'
+    if (modelId === 'council') {
+      yield { type: 'info', content: 'Council Mode should use councilEngine. Falling back...' }
     }
 
     const totalChars = workingMessages.reduce((sum, m) => sum + (m.content || '').length, 0)
@@ -401,8 +469,10 @@ export const llmGateway = {
     }
   },
 
-  async completeNonStream({ messages, model: modelId = 'auto', temperature = 0.7 }) {
+  async completeNonStream({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free' }) {
     let activeModelId = modelId
+    const lastUserText = [...messages].reverse().find((m) => m.role === 'user')?.content || ''
+    activeModelId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText)
     const totalChars = messages.reduce((sum, m) => sum + (m.content || '').length, 0)
     
     if (totalChars > 35000 && !activeModelId.startsWith('gemini/')) {

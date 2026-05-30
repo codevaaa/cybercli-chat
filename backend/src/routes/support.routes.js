@@ -36,7 +36,7 @@ router.post('/thread', requireAuth, async (req, res) => {
       const welcomeMessage = new SupportMessage({
         thread_id: thread._id,
         sender: 'agent',
-        content: 'Hello! I am your CyberCli Support Agent. How can I help you today? Feel free to ask me anything about the platform, models, CLI daemon integration, or our tools.'
+        content: 'Hello! I am your Codeva Support Agent. How can I help you today? Feel free to ask me anything about the platform, models, CLI daemon integration, or our tools.'
       })
       await welcomeMessage.save()
     } else if (!thread.accepted_terms) {
@@ -106,13 +106,13 @@ router.post('/messages/:threadId', requireAuth, async (req, res) => {
     const aiMessages = [
       {
         role: 'system',
-        content: `You are the official CyberMindCLI Support AI Agent.
-Your mission is to help users with inquiries regarding the CyberCli Chat platform and CyberMindCLI security tool suite.
+        content: `You are the official Codeva Support AI Agent.
+Your mission is to help users with inquiries regarding the Codeva platform and Codeva security tool suite.
 
 Here is the key context about our ecosystem to help you resolve user issues:
-1. Tech Stack & Brand: CyberCli is a premium AI multi-model chat application. Accent color is peach/clay (#D97757) and theme is dark-first (#0A0A0F). It was created by Chandan Pandey (Founder & CEO, ethical hacker and security researcher) and Rishab Thakur (Co-Founder & CTO, systems architect).
+1. Tech Stack & Brand: Codeva is a premium AI multi-model chat application. Accent color is peach/clay (#D97757) and theme is dark-first (#0A0A0F). It was created by Chandan Pandey (Founder & CEO, ethical hacker and security researcher) and Rishab Thakur (Co-Founder & CTO, systems architect).
 2. Features:
-   - 8+ API providers, 50+ free models (e.g. CyberMind, Madhav, Chanakya, Bheem, Arjun, Panchayat council mode, Sahadeva, Vyas, etc.).
+   - 8+ API providers, 50+ free models (e.g. Codeva, Madhav, Chanakya, Bheem, Arjun, Panchayat council mode, Sahadeva, Vyas, etc.).
    - Panchayat (Council Mode): streams queries to multiple models concurrently and returns side-by-side comparative views.
    - Conversation Branching: click on a message to branch/fork a conversation from that specific point.
    - Client-daemon: A local WebSocket bridge (CYBER ACTIVE status). Running the daemon enables direct terminal commands, workspace reading, and local scripts execution from the chat window.

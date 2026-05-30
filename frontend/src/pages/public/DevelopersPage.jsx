@@ -22,7 +22,7 @@ export default function DevelopersPage() {
           <ScrollReveal>
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-400 tracking-widest uppercase mb-6 px-3.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
               <Code2 className="w-3.5 h-3.5" />
-              CyberCli Developer Portal
+              Codeva Developer Portal
             </span>
           </ScrollReveal>
           <ScrollReveal delay={0.08}>
@@ -81,7 +81,7 @@ export default function DevelopersPage() {
           <div className="lg:col-span-5 space-y-6">
             <ScrollReveal>
               <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight">
-                Write code with CyberCli, at lightning speed
+                Write code with Codeva, at lightning speed
               </h2>
             </ScrollReveal>
             <ScrollReveal delay={0.08}>
@@ -114,14 +114,14 @@ export default function DevelopersPage() {
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
                   <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
                   <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-                  <span className="text-[10px] text-gray-600 ml-2">cybercli_quickstart.py</span>
+                  <span className="text-[10px] text-gray-600 ml-2">codeva_quickstart.py</span>
                 </div>
                 {/* Code Body */}
                 <pre className="text-left text-[11px] leading-relaxed text-gray-300 overflow-x-auto whitespace-pre pr-2">
-                  <span className="text-accent">import</span> cybercli{"\n"}
+                  <span className="text-accent">import</span> codeva{"\n"}
                   {"\n"}
                   <span className="text-gray-550"># Initialize the unified compute engine</span>{"\n"}
-                  client = cybercli.Client(api_key=<span className="text-emerald-400">"cc_sec_key_..."</span>){"\n"}
+                  client = codeva.Client(api_key=<span className="text-emerald-400">"cc_sec_key_..."</span>){"\n"}
                   {"\n"}
                   <span className="text-gray-550"># Dispatch structured coding agent using Vishwakarma</span>{"\n"}
                   response = client.completions.create(
@@ -136,11 +136,11 @@ export default function DevelopersPage() {
           </div>
         </section>
 
-        {/* Use CyberCli Across Your Stack */}
+        {/* Use Codeva Across Your Stack */}
         <section className="mb-24 text-center">
           <ScrollReveal>
             <h2 className="text-2xl font-bold text-white mb-4">Integrate with your local stack</h2>
-            <p className="text-xs text-gray-500 max-w-md mx-auto mb-10">CyberCli interfaces with local development daemons, giving the AI ability to safely run tests and preview UI.</p>
+            <p className="text-xs text-gray-500 max-w-md mx-auto mb-10">Codeva interfaces with local development daemons, giving the AI ability to safely run tests and preview UI.</p>
           </ScrollReveal>
 
           <ScrollReveal>
@@ -176,7 +176,7 @@ export default function DevelopersPage() {
               <div className="flex-1">
                 <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2 block">Enterprise API Platform</span>
                 <h2 className="text-2xl font-bold text-white mb-3">
-                  Build products on top of CyberCli API
+                  Build products on top of Codeva API
                 </h2>
                 <p className="text-xs text-gray-400 max-w-xl leading-relaxed mb-6 font-medium">
                   We supply standardized JSON and event-streaming endpoints, built for massive concurrency, load balancing, and rate limiting compliance. Use the keys generated inside your developer console to deploy products.

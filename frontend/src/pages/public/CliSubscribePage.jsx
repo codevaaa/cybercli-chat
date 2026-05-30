@@ -68,13 +68,13 @@ export default function CliSubscribePage() {
         <div className="flex justify-center mb-6">
           <div className="flex items-center gap-2">
             <Terminal className="w-6 h-6 text-[#D97736]" />
-            <span className="text-white text-xl font-semibold">CyberCli Code</span>
+            <span className="text-white text-xl font-semibold">Codeva Code</span>
           </div>
         </div>
 
         {/* Title */}
         <h1 className="text-white text-3xl md:text-4xl font-semibold mb-4">
-          A CyberCli subscription is required to connect to CyberCli Code
+          A Codeva subscription is required to connect to Codeva Code
         </h1>
         <p className="text-gray-400 text-base max-w-lg mx-auto mb-10">
           Sign up for a Pro, Max, or Team subscription to connect your account, or use your own API key.

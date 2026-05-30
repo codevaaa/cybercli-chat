@@ -19,9 +19,9 @@ const FEATURES = [
 
 const STEPS = [
   { num: '1', text: 'Download the .dmg file' },
-  { num: '2', text: 'Open the DMG and drag CyberCli to Applications' },
+  { num: '2', text: 'Open the DMG and drag Codeva to Applications' },
   { num: '3', text: 'Launch from Launchpad or Applications folder' },
-  { num: '4', text: 'Sign in with your CyberCli account' },
+  { num: '4', text: 'Sign in with your Codeva account' },
 ]
 
 export default function DownloadMacPage() {
@@ -32,8 +32,8 @@ export default function DownloadMacPage() {
   const handleDownload = () => {
     setDownloading(true)
     const link = document.createElement('a')
-    link.href = `${API_BASE}/api/v1/downloads/CyberCli-mac-universal.dmg`
-    link.download = 'CyberCli-macOS-universal.dmg'
+    link.href = `${API_BASE}/api/v1/downloads/Codeva-mac-universal.dmg`
+    link.download = 'Codeva-macOS-universal.dmg'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -42,7 +42,7 @@ export default function DownloadMacPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] pt-32 pb-24 overflow-hidden relative">
-      <SEOHead title="Download CyberCli for Mac" />
+      <SEOHead title="Download Codeva for Mac" />
 
       <div className="absolute top-0 right-0 w-3/4 h-[500px] bg-[#D97757]/5 blur-[150px] rounded-bl-full pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-1/2 h-[400px] bg-blue-500/5 blur-[150px] rounded-tr-full pointer-events-none" />
@@ -62,10 +62,10 @@ export default function DownloadMacPage() {
               <span className="text-sm text-[#A0A0A0] font-medium">macOS</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-normal tracking-tight text-[#ECECEC] mb-4 leading-[1.1] font-serif">
-              Download CyberCli for Mac
+              Download Codeva for Mac
             </h1>
             <p className="text-[17px] text-[#A0A0A0] max-w-xl leading-relaxed font-light">
-              All of CyberCli, in one app for macOS. Works with your files and apps to get things done.
+              All of Codeva, in one app for macOS. Works with your files and apps to get things done.
             </p>
           </ScrollReveal>
         </div>
@@ -74,7 +74,7 @@ export default function DownloadMacPage() {
           <div className="p-8 md:p-10 rounded-3xl bg-[#ECECEC] text-[#0A0A0F] mb-12">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
-                <h3 className="text-xl font-semibold mb-2">CyberCli for Mac</h3>
+                <h3 className="text-xl font-semibold mb-2">Codeva for Mac</h3>
                 <p className="text-[14px] text-[#0A0A0F]/70 mb-1">Version 0.1.0 (latest) · Universal (Intel + Apple Silicon)</p>
                 <p className="text-[12px] text-[#0A0A0F]/50">Requires macOS 12.0 or later</p>
               </div>

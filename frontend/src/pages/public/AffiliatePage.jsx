@@ -46,7 +46,7 @@ const FAQS = [
   },
   {
     q: 'Can I run paid advertisements to promote my link?',
-    a: 'Yes, you can run paid ads (Google Ads, Facebook Ads, etc.) but with restrictions: you are strictly prohibited from bidding on trademarked terms such as "CyberCli", "CyberMindCLI", "CyberCli Chat" or any variation. Doing so will result in immediate suspension.'
+    a: 'Yes, you can run paid ads (Google Ads, Facebook Ads, etc.) but with restrictions: you are strictly prohibited from bidding on trademarked terms such as "Codeva", "Codeva", "Codeva" or any variation. Doing so will result in immediate suspension.'
   },
   {
     q: 'Where do I view my clicks, conversions, and payouts?',
@@ -78,8 +78,8 @@ export default function AffiliatePage() {
     <div className="pt-28 pb-20">
       <SEOHead
         title="Affiliate Partner Program"
-        description="Earn commissions by referring users to CyberMindCLI. Join our affiliate program and earn up to 30% recurring revenue."
-        keywords="AI affiliate program, referral program, earn commissions, CyberMindCLI affiliate"
+        description="Earn commissions by referring users to Codeva. Join our affiliate program and earn up to 30% recurring revenue."
+        keywords="AI affiliate program, referral program, earn commissions, Codeva affiliate"
         path="/affiliate"
         structuredData={StructuredData.faqPage(
           FAQS.map(faq => ({ question: faq.q, answer: faq.a }))
@@ -93,12 +93,12 @@ export default function AffiliatePage() {
           </ScrollReveal>
           <ScrollReveal delay={0.08}>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-serif font-light text-foreground-primary mb-6">
-              Grow with <span className="text-gradient-accent">CyberCli</span>
+              Grow with <span className="text-gradient-accent">Codeva</span>
             </h1>
           </ScrollReveal>
           <ScrollReveal delay={0.15}>
             <p className="text-lg text-foreground-muted max-w-2xl mx-auto leading-relaxed">
-              Join the CyberCli Affiliate Partner program. Refer users to the most advanced multi-model AI platform and earn up to <span className="text-foreground-primary font-semibold">40% lifetime recurring commissions</span>.
+              Join the Codeva Affiliate Partner program. Refer users to the most advanced multi-model AI platform and earn up to <span className="text-foreground-primary font-semibold">40% lifetime recurring commissions</span>.
             </p>
           </ScrollReveal>
         </div>
@@ -326,7 +326,7 @@ export default function AffiliatePage() {
                           <textarea 
                             required
                             rows={3}
-                            placeholder="Tell us how you plan to promote CyberCli (e.g. blog reviews, YouTube channel, agency client referrals)..." 
+                            placeholder="Tell us how you plan to promote Codeva (e.g. blog reviews, YouTube channel, agency client referrals)..." 
                             value={formData.strategy}
                             onChange={e => setFormData({ ...formData, strategy: e.target.value })}
                             className="w-full bg-[#0E0E12] border border-white/8 focus:border-accent rounded-xl py-3 pl-10 pr-4 text-sm text-foreground-primary outline-none transition-all placeholder:text-white/20 resize-none"
@@ -344,7 +344,7 @@ export default function AffiliatePage() {
                           className="mt-1 rounded border-white/10 text-accent bg-[#0E0E12]"
                         />
                         <label htmlFor="agree" className="text-xs text-foreground-muted leading-relaxed cursor-pointer select-none">
-                          I agree to the CyberCli Affiliate Agreement terms and consent to having my application reviewed.
+                          I agree to the Codeva Affiliate Agreement terms and consent to having my application reviewed.
                         </label>
                       </div>
 

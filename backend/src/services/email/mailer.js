@@ -58,7 +58,7 @@ export const sendContactNotification = async (name, email, subject, message) => 
       <body>
         <div class="container">
           <div class="header">
-            <div class="logo">CyberMindCLI Admin Console</div>
+            <div class="logo">Codeva Admin Console</div>
           </div>
           <div class="content">
             <h2>New Contact Form Submission</h2>
@@ -79,7 +79,7 @@ export const sendContactNotification = async (name, email, subject, message) => 
             </div>
           </div>
           <div class="footer">
-            CyberMindCLI Audit Gateway Node &bull; Secured with TLS 1.3
+            Codeva Audit Gateway Node &bull; Secured with TLS 1.3
           </div>
         </div>
       </body>
@@ -109,12 +109,12 @@ export const sendContactNotification = async (name, email, subject, message) => 
       <body>
         <div class="container">
           <div class="header">
-            <div class="logo">CyberMindCLI</div>
+            <div class="logo">Codeva</div>
           </div>
           <div class="content">
             <h2>We have received your request</h2>
             <p>Hello ${name},</p>
-            <p>Thank you for getting in touch with CyberMindCLI. This email confirms that we have successfully received your message regarding "<strong>${subject}</strong>".</p>
+            <p>Thank you for getting in touch with Codeva. This email confirms that we have successfully received your message regarding "<strong>${subject}</strong>".</p>
             <p>Our technical support and operations team is reviewing your query and will reply to you at this address within 24 hours.</p>
             
             <div class="divider"></div>
@@ -123,7 +123,7 @@ export const sendContactNotification = async (name, email, subject, message) => 
             <a href="https://cybermindcli.info/docs" class="btn" style="color: #ffffff;">Browse Documentation</a>
           </div>
           <div class="footer">
-            &copy; 2026 CyberMindCLI. All rights reserved. &bull; cybermindcli@cybermindcli.com
+            &copy; 2026 Codeva. All rights reserved. &bull; cybermindcli@cybermindcli.com
           </div>
         </div>
       </body>
@@ -139,7 +139,7 @@ export const sendContactNotification = async (name, email, subject, message) => 
   try {
     // Send admin notification
     await transporter.sendMail({
-      from: `"CyberMindCLI Contact Portal" <${senderEmail}>`,
+      from: `"Codeva Contact Portal" <${senderEmail}>`,
       to: adminEmail,
       subject: `[Contact Form] ${subject} - From ${name}`,
       text: `New contact form submission:\n\nName: ${name}\nEmail: ${email}\nSubject: ${subject}\nMessage: ${message}`,
@@ -148,10 +148,10 @@ export const sendContactNotification = async (name, email, subject, message) => 
 
     // Send user confirmation
     await transporter.sendMail({
-      from: `"CyberMindCLI Support" <${senderEmail}>`,
+      from: `"Codeva Support" <${senderEmail}>`,
       to: email,
       subject: `We received your request: ${subject}`,
-      text: `Hello ${name},\n\nThank you for getting in touch. We have received your message regarding "${subject}" and will respond within 24 hours.\n\nBest regards,\nCyberMindCLI Team`,
+      text: `Hello ${name},\n\nThank you for getting in touch. We have received your message regarding "${subject}" and will respond within 24 hours.\n\nBest regards,\nCodeva Team`,
       html: userHtml
     })
 

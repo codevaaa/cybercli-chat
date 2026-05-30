@@ -18,14 +18,14 @@ import { useTTS } from '../../hooks/useTTS.js'
 import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
 import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
 import { useAuthStore } from '@stores/authStore.js'
-import CyberCliMark, { CyberCliWordmark } from '../../components/ui/CyberCliLogo.jsx'
+import CodevaMark, { CodevaWordmark } from '../../components/ui/CodevaLogo.jsx'
 import InviteFriendsModal from '../../components/invite/InviteFriendsModal.jsx'
 import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const MODELS = [
-  { id: 'huggingface/thecnical/cybermindcli', name: 'CyberMind',            tag: 'CyberMind', color: '#7C3AED', desc: 'The proprietary flagship model of CyberCli. Unmatched reasoning, security analysis, and specialized technical operations.', kali: false },
+  { id: 'huggingface/thecnical/cybermindcli', name: 'Codeva',            tag: 'Codeva', color: '#7C3AED', desc: 'The proprietary flagship model of Codeva. Unmatched reasoning, security analysis, and specialized technical operations.', kali: false },
   { id: 'opencode/deepseek-v4-pro',    name: 'Madhav',               tag: 'Madhav',    color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
   { id: 'apifreellm/gpt-4o',           name: 'Bheem',                tag: 'Bheem',     color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
   { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya', tag: 'Chanakya', color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving.', kali: false },
@@ -71,7 +71,7 @@ const QUICK_ACTIONS = [
   { id: 'learn', label: 'Learn', value: 'Explain the concept of ', icon: GraduationCap },
   { id: 'code', label: 'Code', value: 'Help me write code for ', icon: Code2 },
   { id: 'life', label: 'Life stuff', value: 'Give me advice on ', icon: Coffee },
-  { id: 'choice', label: "CyberCli's choice", value: "Give me a creative idea or recommendation ", icon: Lightbulb },
+  { id: 'choice', label: "Codeva's choice", value: "Give me a creative idea or recommendation ", icon: Lightbulb },
 ]
 
 const NAV_ITEMS = [
@@ -554,7 +554,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
         {isAssistant && (
           <div className="flex-shrink-0 mt-1">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-background-tertiary border border-border-subtle text-accent shadow-sm">
-              <CyberCliMark size={18} className="text-accent" />
+              <CodevaMark size={18} className="text-accent" />
             </div>
           </div>
         )}
@@ -1464,7 +1464,7 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
                 value={settings.nickname || ''}
                 onChange={e => setSettings(p => ({...p, nickname: e.target.value}))}
                 onBlur={e => handleBlurSave('nickname', e.target.value)}
-                placeholder="What should CyberCli call you?"
+                placeholder="What should Codeva call you?"
                 className="w-full bg-background-tertiary text-sm text-foreground-primary placeholder:text-foreground-muted border border-border-subtle rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-accent"
               />
             </div>
@@ -1652,7 +1652,7 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
     privacy: (
       <div className="space-y-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground-muted mb-3">Privacy Settings</h3>
-        <Row label="Improve AI with your data" desc="Allow CyberCli to use your messages to train models">
+        <Row label="Improve AI with your data" desc="Allow Codeva to use your messages to train models">
           <Toggle value={!!settings.improve_ai} onChange={v => patchSetting('improve_ai', v)} />
         </Row>
         <Row label="Share usage analytics" desc="Send anonymized usage metrics">
@@ -1689,7 +1689,7 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
           <button
             onClick={async () => {
               try {
-                const { data } = await api.post('/stripe/create-checkout-session', { plan: 'pro' })
+                const { data } = await api.post('/stripe/checkout', { plan: 'pro' })
                 window.location.href = data.url
               } catch(e) { alert('Stripe checkout failed') }
             }}
@@ -2532,7 +2532,7 @@ function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: pa
     <div className="p-6 max-w-4xl mx-auto w-full space-y-6">
       <div>
         <h2 className="text-2xl font-serif font-bold text-foreground-primary">Developer & Workspace Link</h2>
-        <p className="text-xs text-foreground-muted">Securely link your local folders to CyberCli for agentic filesystem execution.</p>
+        <p className="text-xs text-foreground-muted">Securely link your local folders to Codeva for agentic filesystem execution.</p>
       </div>
 
       {/* Daemon Status Card */}
@@ -2548,7 +2548,7 @@ function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: pa
             </h3>
             <p className="text-xs text-foreground-muted mt-1 max-w-md">
               {isConnected
-                ? 'Your local terminal daemon is actively connected. CyberCli is armed to safely read/write workspace files.'
+                ? 'Your local terminal daemon is actively connected. Codeva is armed to safely read/write workspace files.'
                 : 'No daemon linked. Start the secure daemon process in your local workspace to enable file edits.'}
             </p>
           </div>
@@ -2565,7 +2565,7 @@ function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: pa
           Open a terminal inside your target development directory on your local machine and run:
         </p>
         <pre className="bg-[#0f0f13] border border-white/[0.03] p-3 rounded-lg font-mono text-[11px] text-foreground-secondary select-all leading-relaxed whitespace-pre-wrap">
-          # Install CLI globally{"\n"}npm install -g cybercli{"\n\n"}# Link workspace using your API key below{"\n"}cybercli link --key YOUR_API_KEY
+          # Install CLI globally{"\n"}npm install -g codeva{"\n\n"}# Link workspace using your API key below{"\n"}codeva link --key YOUR_API_KEY
         </pre>
       </div>
 
@@ -2756,7 +2756,7 @@ function CustomizeView({
   return (
     <div className="p-6 max-w-4xl mx-auto w-full space-y-6">
       <div>
-        <h2 className="text-2xl font-serif font-bold text-foreground-primary">Customize CyberCli</h2>
+        <h2 className="text-2xl font-serif font-bold text-foreground-primary">Customize Codeva</h2>
         <p className="text-xs text-foreground-muted">Train your AI, define default behavior, and manage long-term agent memory.</p>
       </div>
 
@@ -2830,7 +2830,7 @@ function CustomizeView({
       {/* Custom Instructions */}
       <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary space-y-4">
         <h3 className="text-sm font-semibold text-foreground-primary">Custom Instructions</h3>
-        <p className="text-xs text-foreground-muted">Specify details or rules that you want CyberCli to remember across all your threads.</p>
+        <p className="text-xs text-foreground-muted">Specify details or rules that you want Codeva to remember across all your threads.</p>
         <textarea
           value={customInstructions}
           onChange={e => setCustomInstructions(e.target.value)}
@@ -2855,7 +2855,7 @@ function CustomizeView({
           <Brain className="w-4 h-4 text-accent" />
           Memory Database
         </h3>
-        <p className="text-xs text-foreground-muted">Facts CyberCli has captured or you have explicitly stored about yourself.</p>
+        <p className="text-xs text-foreground-muted">Facts Codeva has captured or you have explicitly stored about yourself.</p>
 
         <form onSubmit={handleAddMemory} className="flex gap-2">
           <input
@@ -2893,7 +2893,7 @@ function CustomizeView({
           ))}
           {memories.length === 0 && (
             <div className="text-center py-6 text-foreground-muted text-xs">
-              No memories saved yet. Add a fact to train CyberCli's memory.
+              No memories saved yet. Add a fact to train Codeva's memory.
             </div>
           )}
         </div>
@@ -3005,7 +3005,7 @@ export default function ChatPage() {
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [workspaceTab, setWorkspaceTab] = useState('terminal')
   const [terminalHistory, setTerminalHistory] = useState([
-    { type: 'output', text: 'Welcome to CyberCli Workspace Terminal! Type your command below and hit enter.' }
+    { type: 'output', text: 'Welcome to Codeva Workspace Terminal! Type your command below and hit enter.' }
   ])
   const [terminalInput, setTerminalInput] = useState('')
   const [terminalLoading, setTerminalLoading] = useState(false)
@@ -4213,11 +4213,11 @@ export default function ChatPage() {
                   className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: 'rgba(217,119,87,0.15)' }}
                 >
-                  <CyberCliMark size={24} />
+                  <CodevaMark size={24} />
                 </motion.div>
                 <div className="flex flex-col">
-                  <span className="font-semibold text-sm leading-tight text-foreground-primary">CyberCli</span>
-                  <span className="text-[9px] text-foreground-muted leading-none tracking-wide">by CyberMindCLI</span>
+                  <span className="font-semibold text-sm leading-tight text-foreground-primary">Codeva</span>
+                  <span className="text-[9px] text-foreground-muted leading-none tracking-wide">by Codeva</span>
                 </div>
               </Link>
               <button
@@ -4484,7 +4484,7 @@ export default function ChatPage() {
                       to="/about"
                       className="w-full px-3 py-1.5 rounded-lg text-xs text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left block"
                     >
-                      About CyberMindCLI
+                      About Codeva
                     </Link>
                     <Link
                       to="/docs"
@@ -4586,7 +4586,7 @@ export default function ChatPage() {
                 <Menu className="w-4 h-4" />
               </button>
               <Link to="/" className="flex items-center group transition-opacity hover:opacity-90">
-                <CyberCliWordmark size={24} />
+                <CodevaWordmark size={24} />
               </Link>
             </div>
           )}
@@ -4925,7 +4925,7 @@ export default function ChatPage() {
                           if (item.type === 'input') {
                             return (
                               <div key={idx} className="flex items-start gap-1.5">
-                                <span className="text-emerald-400 font-bold select-none shrink-0">user@cybercli:~/workspace$</span>
+                                <span className="text-emerald-400 font-bold select-none shrink-0">user@codeva:~/workspace$</span>
                                 <span className="text-gray-200 whitespace-pre-wrap select-all">{item.text}</span>
                               </div>
                             )
@@ -4955,8 +4955,8 @@ export default function ChatPage() {
                             Daemon Offline — Link your workspace
                           </p>
                           <pre className="p-2.5 bg-black/40 border border-white/5 rounded text-xs font-mono text-gray-300 leading-relaxed whitespace-pre-wrap select-all text-[10px]">
-npm install -g cybercli{"\n"}
-cybercli link --key YOUR_API_KEY</pre>
+npm install -g codeva{"\n"}
+codeva link --key YOUR_API_KEY</pre>
                         </div>
                       )}
 

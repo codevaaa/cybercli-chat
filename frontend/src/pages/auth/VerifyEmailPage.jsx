@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, RefreshCw, Check } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { CyberCliMark } from '../../components/ui/CyberCliLogo'
+import { CodevaMark } from '../../components/ui/CodevaLogo'
 
 export default function VerifyEmailPage() {
   const [resent, setResent] = useState(false)
@@ -31,7 +31,7 @@ export default function VerifyEmailPage() {
         {/* Brand Mark Logo */}
         <div className="flex flex-col items-center mb-8">
           <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
-            <CyberCliMark size={56} />
+            <CodevaMark size={56} />
           </Link>
           <h1 className="text-3xl font-semibold text-foreground-primary tracking-tight font-serif mt-6">
             Verify your email
@@ -50,7 +50,7 @@ export default function VerifyEmailPage() {
             </div>
 
             <p className="text-sm text-foreground-secondary leading-relaxed">
-              Click the link inside the verification email to activate your account and start using CyberCli.
+              Click the link inside the verification email to activate your account and start using Codeva.
             </p>
 
             {/* Instructions list */}
@@ -59,7 +59,7 @@ export default function VerifyEmailPage() {
               <ul className="space-y-2.5">
                 {[
                   'Open your email inbox',
-                  'Find the email from CyberCli',
+                  'Find the email from Codeva',
                   'Click the "Verify my email" button',
                 ].map((step, i) => (
                   <li key={i} className="flex items-start gap-3">

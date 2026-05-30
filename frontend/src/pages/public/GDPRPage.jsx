@@ -11,15 +11,15 @@ const SECTIONS = [
     title: '1. Overview & Scope',
     content: `This GDPR Notice applies to residents of the European Union (EU), European Economic Area (EEA), and the United Kingdom (UK). It supplements our Privacy Policy and provides specific information required by the General Data Protection Regulation (EU) 2016/679 (GDPR) and, where applicable, the UK GDPR.
 
-CyberMindCLI acts as the **data controller** for personal data collected through CyberCli Chat. As data controller, we determine the purposes and means of processing your personal data and bear responsibility for compliance with the GDPR.
+Codeva acts as the **data controller** for personal data collected through Codeva. As data controller, we determine the purposes and means of processing your personal data and bear responsibility for compliance with the GDPR.
 
 When AI model providers process your prompts to generate responses, they may act as **data processors** on our behalf (where we have Data Processing Agreements in place) or as independent controllers (where their own terms govern the processing). We provide details below.`,
   },
   {
     id: 'controller-details',
     title: '2. Data Controller Details',
-    content: `**Data Controller**: CyberMindCLI
-**Platform**: CyberCli Chat (cyberclichat.com)
+    content: `**Data Controller**: Codeva
+**Platform**: Codeva (codevachat.com)
 **DPO Contact**: cybermindcli@cybermindcli.com
 **Founded**: 2025
 **Jurisdiction**: International (primary operations)
@@ -31,7 +31,7 @@ You have the right to contact our privacy team at any time with questions, reque
     title: '3. Categories of Data Subjects',
     content: `We process personal data relating to the following categories of data subjects:
 
-**Registered Users**: Individuals who have created a CyberCli Chat account. We process account information, conversation data, and usage data for this group.
+**Registered Users**: Individuals who have created a Codeva account. We process account information, conversation data, and usage data for this group.
 
 **Visitors**: Individuals who visit our website without creating an account. We collect minimal technical data (IP address, browser type, pages visited) for security and analytics purposes.
 
@@ -213,9 +213,9 @@ export default function GDPRPage() {
     <div className="pt-28 pb-20 bg-[#0A0A0F]">
       <SEOHead
         title="GDPR Compliance"
-        description="CyberMindCLI GDPR compliance. Data protection rights, processing lawful basis, data transfers, and DPO contact."
+        description="Codeva GDPR compliance. Data protection rights, processing lawful basis, data transfers, and DPO contact."
         path="/gdpr"
-        keywords={['GDPR', 'data protection', 'EU privacy', 'data rights', 'CyberMindCLI', 'DPO']}
+        keywords={['GDPR', 'data protection', 'EU privacy', 'data rights', 'Codeva', 'DPO']}
       />
       <div className="section-padding">
         <div className="container-custom">

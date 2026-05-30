@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, VolumeX, ChevronLeft, ChevronRight, Send, Check, Mic, MicOff } from 'lucide-react'
-import CyberCliMark from '../ui/CyberCliLogo.jsx'
+import CodevaMark from '../ui/CodevaLogo.jsx'
 
 
 
@@ -449,11 +449,11 @@ export default function VoiceChatModal({
             {/* Brand */}
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-[#D97757]/15 flex items-center justify-center border border-[#D97757]/20">
-                <CyberCliMark size={18} />
+                <CodevaMark size={18} />
               </div>
               <div>
-                <span className="text-sm font-semibold text-white/80 font-sans">CyberCli</span>
-                <div className="text-[10px] text-white/30 font-medium tracking-wider">by CyberMindCLI</div>
+                <span className="text-sm font-semibold text-white/80 font-sans">Codeva</span>
+                <div className="text-[10px] text-white/30 font-medium tracking-wider">by Codeva</div>
               </div>
             </div>
 
@@ -621,7 +621,7 @@ export default function VoiceChatModal({
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400/80">CyberCli AI</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400/80">Codeva AI</span>
                       </div>
                       <p className="text-sm text-white/90 leading-relaxed font-sans text-left break-words">
                         {assistantReply}
@@ -651,7 +651,7 @@ export default function VoiceChatModal({
           {/* Footer */}
           <div className="pb-8 relative z-10 flex-shrink-0">
             <p className="text-[10px] text-white/20 text-center uppercase tracking-widest font-semibold font-sans">
-              CyberCli Secure Voice Channel
+              Codeva Secure Voice Channel
             </p>
           </div>
         </motion.div>

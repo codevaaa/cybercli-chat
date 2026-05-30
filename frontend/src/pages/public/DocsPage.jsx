@@ -28,20 +28,21 @@ export const CATEGORIES = [
     id: 'api-reference',
     icon: Code2,
     title: 'API Reference',
-    desc: 'Integrate CyberCli Chat into your apps using our REST API.',
+    desc: 'Integrate Codeva into your apps using our REST API.',
     color: '#3B82F6',
     articles: [
       { title: 'Authentication & API Keys', slug: 'authentication-api-keys', readTime: '4 min' },
       { title: 'Chat Completions Endpoint', slug: 'chat-completions-endpoint', readTime: '6 min' },
-      { title: 'Local CLI Daemon Bridge', slug: 'local-cli-daemon-bridge', readTime: '5 min' },
       { title: 'Streaming SSE Responses', slug: 'streaming-sse-responses', readTime: '5 min' },
+      { title: 'Rate Limits & Quotas', slug: 'rate-limits-quotas', readTime: '5 min' },
+      { title: 'Local CLI Daemon Bridge', slug: 'local-cli-daemon-bridge', readTime: '5 min' },
     ],
   },
   {
     id: 'integrations',
     icon: Layers,
     title: 'Integrations',
-    desc: 'Connect CyberCli Chat to VS Code, Obsidian, Notion, and more.',
+    desc: 'Connect Codeva to VS Code, Obsidian, Notion, and more.',
     color: '#10B981',
     articles: [
       { title: 'VS Code Extension', slug: 'vs-code-extension', readTime: '5 min' },
@@ -61,6 +62,16 @@ export const CATEGORIES = [
       { title: 'Conversation Branching', slug: 'conversation-branching', readTime: '5 min' },
       { title: 'Custom Personas & System Prompts', slug: 'custom-personas-system-prompts', readTime: '6 min' },
       { title: 'Slash Commands Reference', slug: 'slash-commands-reference', readTime: '4 min' },
+    ],
+  },
+  {
+    id: 'voice-tts',
+    icon: Mic,
+    title: 'Voice & TTS',
+    desc: 'Walkie-talkie voice chat and text-to-speech voices.',
+    color: '#EC4899',
+    articles: [
+      { title: 'Setting Up Voice Chat', slug: 'setting-up-voice-chat', readTime: '4 min' },
     ],
   },
 ]
@@ -232,8 +243,8 @@ export default function DocsPage() {
     <div className="min-h-screen bg-[#0A0A0F] pt-28">
       <SEOHead
         title="Documentation — Getting Started"
-        description="Complete documentation for CyberMindCLI. Setup guides, API quickstart, voice chat, Council Mode, and advanced configuration."
-        keywords="AI documentation, CyberMindCLI docs, getting started, API guide, user guide"
+        description="Complete documentation for Codeva. Setup guides, API quickstart, voice chat, Council Mode, and advanced configuration."
+        keywords="AI documentation, Codeva docs, getting started, API guide, user guide"
         path="/docs"
         structuredData={StructuredData.breadcrumb([
           { name: 'Home', path: '/' },
@@ -299,7 +310,7 @@ export default function DocsPage() {
             {/* Hero */}
             <ScrollReveal>
               <h1 className="text-4xl md:text-5xl lg:text-[56px] font-normal tracking-tight text-[#ECECEC] mb-6 leading-[1.1] font-serif">
-                Build with CyberCli
+                Build with Codeva
               </h1>
               <p className="text-[17px] text-[#A0A0A0] max-w-2xl leading-relaxed mb-16 font-light">
                 Explore our comprehensive guides, API reference, and interactive tutorials to integrate the world's most powerful AI gateway into your workflow.

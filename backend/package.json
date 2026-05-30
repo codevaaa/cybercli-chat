@@ -1,7 +1,7 @@
 {
-  "name": "cybercli-chat-backend",
+  "name": "codeva-backend",
   "version": "1.0.0",
-  "description": "CyberCli Chat - AI Gateway & API Server",
+  "description": "Codeva - AI Gateway & API Server",
   "main": "src/server.js",
   "type": "module",
   "scripts": {

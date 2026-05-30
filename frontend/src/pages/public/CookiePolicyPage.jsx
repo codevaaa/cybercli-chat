@@ -29,7 +29,7 @@ const SECTIONS = [
     title: '3. Managing Cookies',
     content: `You have the right to decide whether to accept or reject cookies. Most web browsers automatically accept cookies by default, but you can usually modify your browser settings to decline cookies if you prefer.
 
-If you choose to disable cookies, please note that you may not be able to sign in or use many of the interactive features of CyberCli Chat. Essential functionalities, including conversation tracking and multi-model routing, rely directly on secure cookie storage.`,
+If you choose to disable cookies, please note that you may not be able to sign in or use many of the interactive features of Codeva. Essential functionalities, including conversation tracking and multi-model routing, rely directly on secure cookie storage.`,
   },
   {
     id: 'third-party',
@@ -101,9 +101,9 @@ export default function CookiePolicyPage() {
     <div className="pt-28 pb-20 bg-[#0A0A0F]">
       <SEOHead
         title="Cookie Policy"
-        description="CyberMindCLI cookie policy. Learn about the cookies we use, their purposes, and how to manage your preferences."
+        description="Codeva cookie policy. Learn about the cookies we use, their purposes, and how to manage your preferences."
         path="/cookie-policy"
-        keywords={['cookie policy', 'cookies', 'tracking', 'CyberMindCLI', 'privacy']}
+        keywords={['cookie policy', 'cookies', 'tracking', 'Codeva', 'privacy']}
       />
       <div className="section-padding">
         <div className="container-custom">
@@ -119,7 +119,7 @@ export default function CookiePolicyPage() {
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-white/[0.06] bg-[#0D0D14] p-8 mb-6">
                 <p className="text-[#9CA3AF] text-sm leading-relaxed">
-                  CyberCli Chat uses cookies and similar storage technologies to maintain secure logins, remember your model and interface configurations, and analyze overall site performance. We do not use advertising tracking cookies.
+                  Codeva uses cookies and similar storage technologies to maintain secure logins, remember your model and interface configurations, and analyze overall site performance. We do not use advertising tracking cookies.
                 </p>
               </div>
 

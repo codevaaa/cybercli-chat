@@ -31,7 +31,7 @@ export default function DesktopUpdateNotification() {
           <div className="flex-1 min-w-0">
             <h4 className="text-sm font-semibold text-[#ECECEC] mb-1">Update Available</h4>
             <p className="text-xs text-[#A0A0A0] mb-3">
-              A new version of CyberCli has been downloaded. Restart to install.
+              A new version of Codeva has been downloaded. Restart to install.
             </p>
             <div className="flex items-center gap-2">
               <button

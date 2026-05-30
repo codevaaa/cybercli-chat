@@ -18,7 +18,7 @@ let fallbackMode = false
 export function setFallbackMode(val) {
   fallbackMode = val
   if (val) {
-    console.warn('⚠️ CyberCli Server: MongoDB fallback mode activated. Using local JSON database.')
+    console.warn('⚠️ Codeva Server: MongoDB fallback mode activated. Using local JSON database.')
   }
 }
 
@@ -378,7 +378,26 @@ function createFallbackModel(modelName, schema) {
   FallbackModel.deleteMany = (query) => new FallbackQuery(deleteManyDocs(modelName, query))
   FallbackModel.insertMany = (docs) => insertManyDocs(modelName, docs)
   FallbackModel.countDocuments = (query) => new FallbackQuery(countDocs(modelName, query))
+  FallbackModel.create = async (data) => {
+    const instance = new FallbackModel(data)
+    await instance.save()
+    return instance
+  }
   FallbackModel.schema = schema
+
+  // Mirror user-defined schema statics (e.g. ApiKey.generate / ApiKey.hashKey)
+  // and instance methods (e.g. doc.masked()) so app code behaves identically
+  // whether MongoDB is live or the JSON fallback is active.
+  if (schema && schema.statics) {
+    for (const [name, fn] of Object.entries(schema.statics)) {
+      FallbackModel[name] = fn.bind(FallbackModel)
+    }
+  }
+  if (schema && schema.methods) {
+    for (const [name, fn] of Object.entries(schema.methods)) {
+      FallbackModel.prototype[name] = fn
+    }
+  }
 
   return FallbackModel
 }

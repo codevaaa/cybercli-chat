@@ -81,8 +81,8 @@ app.use(cors({
     const defaults = [
       'http://localhost:5173',
       'http://localhost:3000',
-      'https://cybercli-chat.vercel.app',
-      'https://cybercli.vercel.app',
+      'https://codeva-chat.vercel.app',
+      'https://codeva.vercel.app',
       'https://cybermindcli.info',
       'https://www.cybermindcli.info'
     ]
@@ -114,6 +114,12 @@ const limiter = rateLimit({
 app.use(optionalAuth)
 app.use(limiter)
 
+// Stripe webhook needs the RAW request body for signature verification, so it
+// must be registered BEFORE the global JSON body parser below.
+app.post('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }), (req, res, next) => {
+  import('./routes/stripe.routes.js').then((m) => m.handleWebhook(req, res, next)).catch(next)
+})
+
 // Body parsing
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
@@ -128,7 +134,7 @@ app.get('/health', (req, res) => {
 
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'CyberCli API',
+    message: 'Codeva API',
     version: '1.0.0',
     endpoints: {
       health: '/health',
@@ -192,7 +198,7 @@ server.on('upgrade', async (request, socket, head) => {
         return
       }
 
-      const apiKeyDoc = await ApiKey.findOne({ key: apiKey, is_active: true })
+      const apiKeyDoc = await ApiKey.findOne({ key_hash: ApiKey.hashKey(apiKey), is_active: true })
       if (!apiKeyDoc) {
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n')
         socket.destroy()
@@ -267,7 +273,7 @@ connectMongoDB().then(async () => {
           user_id: 'seed-user-3',
           name: 'Sara Chen',
           initials: 'SC',
-          quote: 'As a PhD student on a tight budget, having 200K+ free models is wild. CyberCli lets me run literature reviews and summarise papers without paying a cent.',
+          quote: 'As a PhD student on a tight budget, having 200K+ free models is wild. Codeva lets me run literature reviews and summarise papers without paying a cent.',
           role: 'PhD Candidate',
           company: 'MIT CSAIL',
           stars: 5,
@@ -297,7 +303,7 @@ connectMongoDB().then(async () => {
           user_id: 'seed-user-6',
           name: 'Luca Moretti',
           initials: 'LM',
-          quote: "The fact that it's truly free — not some freemium bait-and-switch — is what won me over. I've recommended CyberCli to my entire bootcamp cohort.",
+          quote: "The fact that it's truly free — not some freemium bait-and-switch — is what won me over. I've recommended Codeva to my entire bootcamp cohort.",
           role: 'Full-Stack Developer',
           company: 'Freelance',
           stars: 5,
@@ -312,7 +318,7 @@ connectMongoDB().then(async () => {
   }
 
   server.listen(PORT, () => {
-    console.log(`CyberCli API server running on port ${PORT}`)
+    console.log(`Codeva API server running on port ${PORT}`)
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
   })
 })

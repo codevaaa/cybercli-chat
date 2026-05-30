@@ -6,7 +6,7 @@ const router = Router()
 
 // Default fallback system personas if DB is empty
 const DEFAULT_PERSONAS = [
-  { name: 'General AI', system_prompt: 'You are CyberCli, a helpful AI assistant.', temperature: 0.7, icon: 'sparkles', is_public: true },
+  { name: 'General AI', system_prompt: 'You are Codeva, a helpful AI assistant.', temperature: 0.7, icon: 'sparkles', is_public: true },
   { name: 'Code Expert', system_prompt: 'You are an expert software developer. Write clean, comments-assisted, optimized code.', temperature: 0.3, icon: 'code', is_public: true },
   { name: 'Creative Writer', system_prompt: 'You are a creative writer. Help draft stories, blogs, and essays.', temperature: 0.9, icon: 'pen', is_public: true },
   { name: 'Research Scholar', system_prompt: 'You are a rigorous scientific and academic research assistant.', temperature: 0.5, icon: 'search', is_public: true }

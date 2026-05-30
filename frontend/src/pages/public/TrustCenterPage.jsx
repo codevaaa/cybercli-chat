@@ -9,7 +9,7 @@ const SECTIONS = [
   {
     id: 'security-architecture',
     title: '1. Security Architecture',
-    content: `CyberCli is designed with deep security principles at its core. Our full-stack platform implements the following protective measures:
+    content: `Codeva is designed with deep security principles at its core. Our full-stack platform implements the following protective measures:
 
 • **Authentication Security**: Managed by Supabase Auth utilizing standard JSON Web Tokens (JWT) with secure bcrypt password hashing.
 • **Database Isolation**: PostgreSQL tables leverage Supabase Row-Level Security (RLS) policies, verifying that users only query their own records.
@@ -117,9 +117,9 @@ export default function TrustCenterPage() {
     <div className="pt-28 pb-20 bg-[#FBF9F6] text-[#191919]">
       <SEOHead
         title="Trust Center & Security Portal"
-        description="CyberMindCLI Trust Center. Read about our security protocols, database field encryption, uptime failovers, compliance roadmap, and vulnerability fixes."
+        description="Codeva Trust Center. Read about our security protocols, database field encryption, uptime failovers, compliance roadmap, and vulnerability fixes."
         path="/trust"
-        keywords={['Trust Center', 'security architecture', 'SLA uptime', 'GDPR compliance', 'SOC2 roadmap', 'CyberMindCLI security']}
+        keywords={['Trust Center', 'security architecture', 'SLA uptime', 'GDPR compliance', 'SOC2 roadmap', 'Codeva security']}
       />
       <div className="section-padding">
         <div className="container-custom">
@@ -137,7 +137,7 @@ export default function TrustCenterPage() {
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-8 mb-8">
                 <p className="text-[#444444] text-sm leading-relaxed">
-                  Welcome to the CyberMindCLI Trust Center. We are dedicated to providing a secure, reliable, and transparent platform for artificial intelligence operations. Explore details on our database encryption, uptime SLA failovers, and compliance standards. For custom auditing requests, email us at <a href="mailto:cybermindcli@cybermindcli.com" className="text-[#D97757] hover:underline font-semibold">cybermindcli@cybermindcli.com</a>.
+                  Welcome to the Codeva Trust Center. We are dedicated to providing a secure, reliable, and transparent platform for artificial intelligence operations. Explore details on our database encryption, uptime SLA failovers, and compliance standards. For custom auditing requests, email us at <a href="mailto:cybermindcli@cybermindcli.com" className="text-[#D97757] hover:underline font-semibold">cybermindcli@cybermindcli.com</a>.
                 </p>
               </div>
 

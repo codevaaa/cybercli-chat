@@ -7,8 +7,8 @@ import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 
 export const BLOG_POSTS = [
   {
-    slug: 'cybercli-ecosystem-security-tools',
-    title: 'Advanced Cybersecurity Ecosystem: Offensive and Defensive Developer-Level Tools Powered by CyberMindCLI',
+    slug: 'codeva-ecosystem-security-tools',
+    title: 'Advanced Cybersecurity Ecosystem: Offensive and Defensive Developer-Level Tools Powered by Codeva',
     excerpt: 'Explore the suite of secure security modules and tools created under founder Chandan Pandey. A deep dive into offensive and defensive tools, agentic penetration testing, and code analysis hubs.',
     author: 'Chandan Pandey',
     date: 'May 21, 2026',
@@ -20,9 +20,9 @@ export const BLOG_POSTS = [
     tags: ['security-tools', 'chandan-pandey', 'offensive-security', 'defensive-security', 'code-auditing'],
   },
   {
-    slug: 'ai-ide-comparison-cursor-windsurf-copilot-cybercli',
-    title: 'The Battle of the AI IDEs: A Comparative Analysis of Cursor, Windsurf, GitHub Copilot, and CyberCli',
-    excerpt: 'Which AI assistant reigns supreme for professional developer workflows? We compare Cursor, Windsurf, Copilot, and CyberCli on capabilities, agentic execution, local control, and cost, using a detailed comparison table.',
+    slug: 'ai-ide-comparison-cursor-windsurf-copilot-codeva',
+    title: 'The Battle of the AI IDEs: A Comparative Analysis of Cursor, Windsurf, GitHub Copilot, and Codeva',
+    excerpt: 'Which AI assistant reigns supreme for professional developer workflows? We compare Cursor, Windsurf, Copilot, and Codeva on capabilities, agentic execution, local control, and cost, using a detailed comparison table.',
     author: 'Chandan Pandey',
     date: 'May 21, 2026',
     readTime: '12 min read',
@@ -87,7 +87,7 @@ export const BLOG_POSTS = [
   {
     slug: 'council-mode-vs-single-model-ai',
     title: 'Council Mode vs. Single-Model AI: Why Multi-Model Deliberation Is the Future of Intelligence',
-    excerpt: 'Is a single massive LLM always the best answer? We explore the limits of individual models, the cognitive science of ensemble reasoning, and why CyberCli\'s Council Mode beats the competition.',
+    excerpt: 'Is a single massive LLM always the best answer? We explore the limits of individual models, the cognitive science of ensemble reasoning, and why Codeva\'s Council Mode beats the competition.',
     author: 'Chandan Pandey',
     date: 'May 05, 2026',
     readTime: '11 min read',
@@ -104,8 +104,8 @@ export default function BlogPage() {
     <div className="pt-28 pb-20">
       <SEOHead
         title="Blog — AI & Security Deep Dives"
-        description="Read the latest on AI technology, security best practices, and CyberMindCLI updates. Expert articles on Council Mode, encryption, and AI trends."
-        keywords="AI blog, AI security, tech blog, AI trends, CyberMindCLI blog, AI news"
+        description="Read the latest on AI technology, security best practices, and Codeva updates. Expert articles on Council Mode, encryption, and AI trends."
+        keywords="AI blog, AI security, tech blog, AI trends, Codeva blog, AI news"
         path="/blog"
         ogType="blog"
         structuredData={StructuredData.breadcrumb([
@@ -127,7 +127,7 @@ export default function BlogPage() {
           </ScrollReveal>
           <ScrollReveal delay={0.15}>
             <p className="text-lg text-foreground-muted max-w-2xl leading-relaxed">
-              Research-grade articles on cybersecurity, quantum computing, offensive tactics, and the future of AI — authored by Chandan Pandey and the CyberMindCLI team.
+              Research-grade articles on cybersecurity, quantum computing, offensive tactics, and the future of AI — authored by Chandan Pandey and the Codeva team.
             </p>
           </ScrollReveal>
         </div>

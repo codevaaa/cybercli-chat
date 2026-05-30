@@ -116,3 +116,259 @@ Next Session Focus
 1. Test end-to-end auth flow (signup → login → protected routes)
 2. Test chat streaming with AI providers
 3. Fix any bugs found during testing
+
+
+===================================================================
+CODEVA REBRAND + CYBERCODER CLI OVERHAUL (Session by Kiro)
+===================================================================
+
+Phase 1: Rebrand CyberCli/CyberMindCLI -> Codeva — COMPLETE
+-----------------------------------------------------------
+[✅] 79 files updated across frontend + backend
+[✅] Logo component renamed CyberCliLogo -> CodevaLogo (visual mark unchanged)
+[✅] Preserved live domains (cybermindcli.info/.com), email, and CyberCoder name
+[✅] package.json (frontend+backend), render.yaml, index.html SEO all rebranded
+[✅] Frontend builds clean, zero diagnostics
+
+Phase 2: CyberCoder CLI = Claude Code clone — CORE DONE
+-------------------------------------------------------
+[✅] REAL theme system (src/theme/theme.ts + useTheme.ts) — /theme now
+     repaints the entire UI live (7 modes incl. ANSI + colorblind)
+[✅] New pixel mascot + starry SkyScene matching Claude Code onboarding
+[✅] Rewrote Welcome, Onboarding/login, Prompt (rounded box), StatusBar,
+     HintBar, ThemePicker, MessageList — all theme-driven
+[✅] Display strings CyberMind -> CyberCoder / Codeva Cloud
+[✅] bin commands: cm / codeva / cybercoder; npm pkg @codeva_chat/cli
+[✅] /cybermind command -> /codeva (routes through real agent loop now)
+[✅] CLI builds + runs + provider fallback verified
+
+Phase 3: Website hero — DONE
+----------------------------
+[✅] HeroSection upgraded (new headline, trust strip, CTA)
+
+Phase 4: API Keys — SECURED + WORKING
+-------------------------------------
+[✅] Keys now SHA-256 hashed (no plaintext storage); prefix+last4 for display
+[✅] ApiKey model: generate()/hashKey()/masked() statics+methods
+[✅] Create/list/revoke route hardened (validation, 25-key limit)
+[✅] auth middleware + cli.routes hash-lookup; fixed usage_count + this.buildSystemPrompt bug
+[✅] fallbackDb now mirrors schema statics/methods + create()
+[✅] Verified: generation/hash/mask unit-tested; bad-key rejected (401) on live server
+
+Phase 5: Profile — FIXED
+------------------------
+[✅] Real initials (was hardcoded "DU"), real stats via new GET /auth/me/stats
+[✅] Editable display name (authStore.updateName -> Supabase metadata)
+[✅] Loading states, quick links to settings/billing/usage
+
+REMAINING (next sessions):
+- Downloads page -> match claude.com/product/claude-code section-for-section
+- Docs page -> Claude-style sidebar + all sub-pages + redirects
+- Payment/Stripe checkout working page
+- Backend hardening for ~10k concurrent users
+- CyberCoder multi-agent orchestration + more inbuilt skills
+- GitHub push + full audit/error fixes
+
+
+===================================================================
+CYBERCODER GAP-FILL OVERHAUL (Session 2 by Kiro) — making it
+match/beat Claude Code, 100% real, no fake/placeholder features
+===================================================================
+
+GAP 1: Token / context engine — DONE
+------------------------------------
+[✅] New packages/core/src/context.ts: estimateTokens, trimToolOutput,
+     manageContext (structural auto-compaction, no extra LLM call), windowForModel
+[✅] agent-loop.ts: auto-compacts history at 75% of model window; trims every
+     tool output to ~12k chars (head+tail) before it enters context
+[✅] Prompt caching in anthropic.ts: ephemeral cache_control on system prompt +
+     tool schemas → re-sends billed at cheap cache-read rate
+[✅] 'context' AgentEvent surfaced in CLI (compaction/retry notices)
+
+GAP 2: Parallel multi-agent orchestration — DONE (real)
+-------------------------------------------------------
+[✅] packages/skills/src/orchestrator.ts: bounded-concurrency parallel runner
+     + routeTaskToSkill() task→skill router
+[✅] team-tool.ts: spawn_team tool — main agent fans out independent tasks to
+     concurrent sub-agents, returns labelled synthesis
+[✅] Wired into chat.ts system prompt + tool list (concurrency 3)
+[✅] agent-loop executes read-only tools in PARALLEL, destructive sequentially
+
+GAP 3: Reliable skill bundling + more skills — DONE
+---------------------------------------------------
+[✅] scripts/bundle-skills.mjs copies skills-bundled/ into CLI package on
+     prebuild + prepublishOnly; added to package "files"
+[✅] loader.ts walk-up widened to 8 levels (finds package-local copy on global install)
+[✅] +5 new real skills: debugger, commit, security-audit, skill-creator,
+     web-research (25 total, all parse-verified)
+[✅] /skills reload; new shortcuts /debug /security /commit /web
+
+GAP 4: Self-correction — DONE
+-----------------------------
+[✅] AgentTool.verify() hook; edit + write_file re-read & verify after writing
+[✅] One transient-error retry (429/timeout/5xx/overloaded) in the loop
+
+GAP 5/6: Web research + automation (beyond Claude Code CLI) — DONE
+------------------------------------------------------------------
+[✅] web_search tool (keyless DuckDuckGo) — VERIFIED live, returns real results
+[✅] web_fetch tool (HTML→clean text) — VERIFIED live
+[✅] web-research skill ties them together with citations
+
+ANIMATION / UX — DONE
+---------------------
+[✅] ThinkingIndicator: Claude Code-style braille spinner + rotating gerund
+     words (Thinking/Pondering/Conjuring…) + elapsed + token count, wired to
+     'thinking' status in chat + welcome screens
+[✅] Removed fake "coming in MN" advertising from stubs; honest "planned" msg
+
+ALL packages build clean (tsc type-check + tsup bundle). 25 skills bundled.
+
+NEXT: backend powerful upgrade (fast/optimized/10k users), then web Downloads
+page (match claude.com/product/claude-code), Docs page, Stripe, GitHub push+audit.
+
+
+===================================================================
+BACKEND: PLAN-GATED UNIFIED GATEWAY (Session 3 by Kiro)
+===================================================================
+
+PROBLEM FOUND (real): two model systems existed —
+  - website used gateway.js (8 free providers, good)
+  - CLI used ModelOrchestrator.js (only 5 providers, couldn't use the free
+    ones, plan-gating broken, API-key users hardcoded to 'pro')
+
+FIX — single source of truth + plan gating:
+[✅] config/plans.js — PLANS (free/pro/max/enterprise), MODEL_TIER_MAP,
+     pickModelForPlan(), planAllowsModel(), tierOf() — the ONE place that
+     decides which models + throughput + features each plan gets
+[✅] auth.js — API-key + JWT users now resolve their REAL plan from Supabase
+     (60s cache), not hardcoded. Plan truly governs model access now.
+[✅] gateway.js — resolveModelForPlan() + classifyTier(): 'auto' classifies the
+     task (fast/balanced/reasoning) and picks the best model the plan allows;
+     over-tier requests downgrade gracefully. complete()/completeNonStream()
+     take a `plan` arg.
+[✅] v1.routes.js (CLI cloud entry) REWRITTEN to use the unified gateway with
+     plan gating — CLI now gets all 8 free providers + fallback, same as web
+[✅] completions.controller.js passes req.user.plan
+[✅] server.js WS daemon auth fixed to hash-lookup (was plaintext key)
+[✅] VERIFIED: free→reasoning task gets gpt-4o-mini (denied Gemini Pro);
+     pro→reasoning gets Gemini Pro. Server boots clean, /v1 enforces auth.
+
+ANSWER TO "does plan gate models?": NOW YES, end-to-end and real.
+
+
+MORE CYBERCODER POWER (Session 3 cont.):
+[✅] read_many tool — batch-read up to 20 files in one call (fewer round trips/tokens)
+[✅] Git awareness — getGitContext() injects branch/dirty/commits into the agent
+     system prompt every turn (VERIFIED on real repo: branch, status, recent commits)
+[✅] CYBERCODER_POWER_PLAN.md — full prioritized roadmap + library/skill recommendations
+[✅] All 6 packages rebuild clean; 25 skills bundled; CLI runs
+
+
+===================================================================
+CYBERCODER POWER PLAN — FULLSTACK IMPLEMENTATION (Session 4 by Kiro)
+===================================================================
+
+MORE POWERFUL FREE MODELS (user request) — DONE
+------------------------------------------------
+[✅] Added 20+ powerful FREE models to gateway MODEL_MAP via OpenRouter + direct:
+     qwen3-coder:free, qwen3-next-80b:free, deepseek-v4-flash:free, kimi-k2.6:free,
+     minimax-m2.5:free, gpt-oss-20b:free, gemma-4-31b/26b:free, nemotron-nano:free,
+     dolphin-venice:free, poolside laguna-m/xs:free, lfm-thinking:free, owl-alpha,
+     groq qwen-2.5-coder-32b + deepseek-r1-distill-70b, cerebras llama-3.3-70b +
+     qwen-3-32b, mistral codestral, nvidia qwen-coder + deepseek-r1
+[✅] All tiered in plans.js — FREE users get strong coding models (qwen3-coder),
+     reasoning-class (kimi/minimax/deepseek-r1) reserved for pro+
+[✅] VERIFIED: free→qwen3-coder allowed, free→kimi-k2 denied
+
+PLAN/ACT + GOAL — DONE (real)
+-----------------------------
+[✅] core/plan-act.ts: runPlan() (read-only planning pass → STEP list) +
+     runGoal() (multi-round loop until GOAL_COMPLETE or round cap)
+[✅] chat.ts: runGoalChat() + runPlanChat(); /goal <objective> wired in app.tsx
+     drives the autonomous multi-round loop
+
+CHECKPOINTS + /rewind — DONE (real filesystem time-travel)
+----------------------------------------------------------
+[✅] tools/workspace-checkpoint.ts: snapshots file bytes before every edit/write
+[✅] chat.ts auto-snapshots before destructive edit/write
+[✅] /rewind rewritten — real restore (VERIFIED: edit→rewind restores original;
+     create→rewind deletes the new file)
+
+HOOKS — DONE (real event automation)
+------------------------------------
+[✅] runtime/hooks.ts: preEdit/postEdit/postWrite/preCommand/postCommand/postTask/
+     sessionStart; config at .codeva/hooks.json (project) or ~/.codeva (global)
+[✅] Wired: preCommand can BLOCK dangerous shell; postEdit/postWrite/postCommand
+     run after tools; postTask runs after each agent turn; /hooks command
+[✅] VERIFIED: postEdit runs formatter on .ts; preCommand blocks rm -rf
+
+read_many tool + git awareness (prev session) also live. All packages build clean.
+
+NEXT: MCP client, repo-map index, test-gate self-heal; then website (Downloads,
+Docs, Stripe, GitHub push + audit).
+
+
+===================================================================
+CYBERCODER: MCP + REPO-MAP + TEST-HEAL (Session 5 by Kiro)
+===================================================================
+
+[✅] repo_map tool — compact dir tree + key symbols per file (TS/JS/PY/GO/RS/
+     JAVA/RB/PHP/C/CS). Agent navigates by structure, not repeated greps.
+     VERIFIED extracting symbols from tools/builtin.
+[✅] MCP client (mcp-client.ts) — dependency-free JSON-RPC over stdio. Launches
+     configured servers, handshake + tools/list, exposes each as mcp__<srv>__<tool>.
+     VERIFIED end-to-end against a mock MCP server (init→list→call). Windows
+     shell only for npx/npm shims (security).
+[✅] /mcp command rewritten REAL — reads/writes .codeva/mcp.json, add/remove,
+     lists configured servers (was a mock EcosystemManager before).
+[✅] MCP tools wired into agent session (cached per process, approval-gated).
+[✅] test-fixer skill (red→green self-heal loop) + /fix shortcut. 26 skills total.
+[✅] All packages build clean; 26/26 skills parse; CLI runs.
+
+CyberCoder now has: token engine, prompt caching, auto-compaction, parallel
+sub-agents + teams, self-correction, 30+ free models w/ plan-gated tiers,
+web search/fetch, repo-map, read_many, git awareness, checkpoints+/rewind,
+hooks, /goal, plan/act, MCP client, 26 skills. Real, verified, no fakes.
+
+NEXT: website — Downloads page (claude.com/product/claude-code parity), Docs
+page (sidebar + sub-pages), Stripe checkout, GitHub push + full audit.
+
+
+===================================================================
+WEBSITE: DOWNLOADS + DOCS (Session 6 by Kiro)
+===================================================================
+
+DOWNLOADS PAGE — DONE
+[✅] Wired real download URLs to backend (/api/v1/downloads/<file>, R2 CDN +
+     GitHub fallback already implemented server-side)
+[✅] Fixed broken auth links: /signup → /auth/signup (product page, 2 places)
+[✅] Go Further cards point to real destinations (VS Code/Chrome marketplace, /product)
+
+DOCS PAGE — DONE (Claude-style, all sub-pages real)
+[✅] Added 11 missing article pages with real content (were falling back to a
+     placeholder "Coming Soon"): creating-your-account, choosing-your-first-model,
+     understanding-the-chat-interface, streaming-sse-responses, vs-code-extension,
+     chrome-extension-setup, zapier-make-automation, slack-bot-integration,
+     conversation-branching, custom-personas-system-prompts, slash-commands-reference
+[✅] Added Voice & TTS sidebar category; surfaced rate-limits-quotas in sidebar
+[✅] 19 docs articles total, every sidebar link resolves to real content
+[✅] Frontend builds clean
+
+NEXT: Stripe checkout page, then GitHub push + full audit.
+
+
+===================================================================
+WEBSITE: STRIPE CHECKOUT (Session 6 cont.)
+===================================================================
+[✅] Stripe webhook now RAW-body mounted before JSON parser (sig verification works)
+[✅] handleWebhook REALLY updates user plan in Supabase on checkout.completed /
+     subscription.updated / subscription.deleted → drives the plan-gated gateway
+[✅] getOrCreateCustomer stores stripe_customer_id; /portal uses real customer id
+[✅] Multi-plan checkout (pro/max via STRIPE_PRO_PRICE_ID / STRIPE_MAX_PRICE_ID)
+[✅] Frontend: replaced SIMULATED upgrade with real /stripe/checkout redirect;
+     added Manage Billing (portal); fixed ChatPage endpoint mismatch
+     (/stripe/create-checkout-session → /stripe/checkout)
+[✅] .env.example documents STRIPE_MAX_PRICE_ID
+[✅] Backend boots clean; endpoints enforce auth + degrade gracefully w/o key
+
+NEXT: GitHub push + full audit.

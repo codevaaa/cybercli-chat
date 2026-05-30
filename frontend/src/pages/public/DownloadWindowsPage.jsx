@@ -20,8 +20,8 @@ const FEATURES = [
 const STEPS = [
   { num: '1', text: 'Download the installer (.exe)' },
   { num: '2', text: 'Run the installer and follow prompts' },
-  { num: '3', text: 'Launch CyberCli from Start Menu or Desktop' },
-  { num: '4', text: 'Sign in with your CyberCli account' },
+  { num: '3', text: 'Launch Codeva from Start Menu or Desktop' },
+  { num: '4', text: 'Sign in with your Codeva account' },
 ]
 
 export default function DownloadWindowsPage() {
@@ -32,8 +32,8 @@ export default function DownloadWindowsPage() {
   const handleDownload = () => {
     setDownloading(true)
     const link = document.createElement('a')
-    link.href = `${API_BASE}/api/v1/downloads/CyberCli-win-x64.exe`
-    link.download = 'CyberCli-Setup-Windows-x64.exe'
+    link.href = `${API_BASE}/api/v1/downloads/Codeva-win-x64.exe`
+    link.download = 'Codeva-Setup-Windows-x64.exe'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -42,7 +42,7 @@ export default function DownloadWindowsPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] pt-32 pb-24 overflow-hidden relative">
-      <SEOHead title="Download CyberCli for Windows" />
+      <SEOHead title="Download Codeva for Windows" />
 
       <div className="absolute top-0 right-0 w-3/4 h-[500px] bg-[#D97757]/5 blur-[150px] rounded-bl-full pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-1/2 h-[400px] bg-blue-500/5 blur-[150px] rounded-tr-full pointer-events-none" />
@@ -64,10 +64,10 @@ export default function DownloadWindowsPage() {
               <span className="text-sm text-[#A0A0A0] font-medium">Windows</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-normal tracking-tight text-[#ECECEC] mb-4 leading-[1.1] font-serif">
-              Download CyberCli for Windows
+              Download Codeva for Windows
             </h1>
             <p className="text-[17px] text-[#A0A0A0] max-w-xl leading-relaxed font-light">
-              All of CyberCli, in one app for Windows. Works with your files and apps to get things done.
+              All of Codeva, in one app for Windows. Works with your files and apps to get things done.
             </p>
           </ScrollReveal>
         </div>
@@ -77,7 +77,7 @@ export default function DownloadWindowsPage() {
           <div className="p-8 md:p-10 rounded-3xl bg-[#ECECEC] text-[#0A0A0F] mb-12">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
-                <h3 className="text-xl font-semibold mb-2">CyberCli for Windows</h3>
+                <h3 className="text-xl font-semibold mb-2">Codeva for Windows</h3>
                 <p className="text-[14px] text-[#0A0A0F]/70 mb-1">Version 0.1.0 (latest) · 64-bit</p>
                 <p className="text-[12px] text-[#0A0A0F]/50">Requires Windows 10 or later</p>
               </div>

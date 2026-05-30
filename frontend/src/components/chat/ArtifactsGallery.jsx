@@ -64,7 +64,7 @@ function CodeCard({ artifact }) {
     const blob = new Blob([artifact.content], { type: 'text/plain' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `cybercli-artifact-${artifact.id}.${ext}`
+    a.download = `codeva-artifact-${artifact.id}.${ext}`
     a.click()
   }
 
@@ -157,7 +157,7 @@ function ImageCard({ artifact }) {
     const blob = await res.blob()
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `cybercli-image-${artifact.id}.png`
+    a.download = `codeva-image-${artifact.id}.png`
     a.click()
   }
 
@@ -269,8 +269,8 @@ export default function ArtifactsGallery({ messages = [], onClose }) {
                 {filter === 'all'
                   ? 'Code blocks and generated images will appear here'
                   : filter === 'code'
-                    ? 'Ask CyberCli to write code to see it here'
-                    : 'Ask CyberCli to generate images to see them here'
+                    ? 'Ask Codeva to write code to see it here'
+                    : 'Ask Codeva to generate images to see them here'
                 }
               </p>
             </div>

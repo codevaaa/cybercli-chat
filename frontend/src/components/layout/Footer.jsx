@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import { FOOTER_SECTIONS } from '@lib/constants'
-import { CyberCliWordmark } from '@components/ui/CyberCliLogo'
+import { CodevaWordmark } from '@components/ui/CodevaLogo'
 
 const SOCIAL_LINKS = [
-  { label: 'Twitter', href: 'https://twitter.com/cybercli' },
-  { label: 'GitHub', href: 'https://github.com/cybercli' },
-  { label: 'Discord', href: 'https://discord.gg/cybercli' },
-  { label: 'LinkedIn', href: 'https://linkedin.com/company/cybercli' },
+  { label: 'Twitter', href: 'https://twitter.com/codeva' },
+  { label: 'GitHub', href: 'https://github.com/codeva' },
+  { label: 'Discord', href: 'https://discord.gg/codeva' },
+  { label: 'LinkedIn', href: 'https://linkedin.com/company/codeva' },
 ]
 
 export default function Footer() {
@@ -21,7 +21,7 @@ export default function Footer() {
             {/* Brand Logo & Contact */}
             <div>
               <div className="mb-6">
-                <CyberCliWordmark size={36} />
+                <CodevaWordmark size={36} />
               </div>
               <h3 className="text-xl font-light text-foreground-primary mb-2 tracking-tight">
                 Get in touch
@@ -42,7 +42,7 @@ export default function Footer() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8 sm:gap-16">
               <div className="text-right sm:text-left">
                 <p className="text-sm text-foreground-muted">
-                  &copy; {new Date().getFullYear()} CyberCli. All rights reserved.
+                  &copy; {new Date().getFullYear()} Codeva. All rights reserved.
                 </p>
               </div>
 

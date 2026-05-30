@@ -57,7 +57,7 @@ export default function SystemOrchestration() {
               Unified System <span className="text-gradient-accent italic">Orchestration</span>
             </h2>
             <p className="text-sm md:text-base text-foreground-muted leading-relaxed">
-              Explore how CyberCli merges Web, Desktop, and CLI experiences. Tap or hover on each node of the diagram to inspect its role in our 3D-lit intelligence framework.
+              Explore how Codeva merges Web, Desktop, and CLI experiences. Tap or hover on each node of the diagram to inspect its role in our 3D-lit intelligence framework.
             </p>
           </div>
         </ScrollReveal>

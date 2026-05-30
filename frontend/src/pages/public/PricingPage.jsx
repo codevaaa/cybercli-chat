@@ -48,7 +48,7 @@ const INDIVIDUAL_PLANS = [
     name: 'Developer',
     price: '$35',
     period: '/month',
-    description: 'For developers integrating CyberCli.',
+    description: 'For developers integrating Codeva.',
     features: [
       'Everything in Pro',
       '1,500 messages per hour',
@@ -104,7 +104,7 @@ const TEAM_PLANS = [
 ]
 
 const FAQ = [
-  { q: 'Is the free plan really free?', a: 'Yes. CyberCli\'s free tier gives you access to 50+ AI models with no credit card required. We route to the best available free provider automatically.' },
+  { q: 'Is the free plan really free?', a: 'Yes. Codeva\'s free tier gives you access to 50+ AI models with no credit card required. We route to the best available free provider automatically.' },
   { q: 'What happens when I hit my message limit?', a: 'Once you hit your hourly limit, you will need to wait for the next hour window to reset, or upgrade to a higher tier for a larger limit.' },
   { q: 'Can I cancel my subscription anytime?', a: 'Yes, subscription management is simple. Cancel from your profile dashboard settings at any time, and you will retain access until the end of your billing cycle.' },
   { q: 'Is user data securely isolated?', a: 'Absolutely. We do not use user conversations to train models. Enterprise workloads are isolated on private, SOC2 compliant database nodes.' },

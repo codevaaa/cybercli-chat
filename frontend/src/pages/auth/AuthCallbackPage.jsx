@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Loader2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase.js'
 import { useAuthStore } from '../../stores/authStore.js'
-import { CyberCliMark } from '../../components/ui/CyberCliLogo'
+import { CodevaMark } from '../../components/ui/CodevaLogo'
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate()
@@ -87,8 +87,8 @@ export default function AuthCallbackPage() {
           // Desktop app redirect: send token via deep link protocol
           if (redirectParam) {
             const token = session.access_token
-            // Redirect to cybercli:// deep link with token
-            window.location.href = `cybercli://auth?token=${encodeURIComponent(token)}`
+            // Redirect to codeva:// deep link with token
+            window.location.href = `codeva://auth?token=${encodeURIComponent(token)}`
             setStatus('success')
             return
           }
@@ -137,9 +137,9 @@ export default function AuthCallbackPage() {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="flex flex-col items-center mb-8">
-          <CyberCliMark size={60} className="animate-pulse" />
+          <CodevaMark size={60} className="animate-pulse" />
           <h1 className="text-3xl font-semibold text-foreground-primary tracking-tight font-serif mt-6">
-            CyberCli Secure Auth
+            Codeva Secure Auth
           </h1>
         </div>
 
@@ -159,7 +159,7 @@ export default function AuthCallbackPage() {
               </div>
               <p className="text-foreground-primary font-medium">Session secured successfully!</p>
               <p className="text-xs text-foreground-muted mt-2">
-                {isDesktopRedirect ? 'Opening CyberCli Desktop...' : 'Redirecting you to the console...'}
+                {isDesktopRedirect ? 'Opening Codeva Desktop...' : 'Redirecting you to the console...'}
               </p>
             </div>
           )}

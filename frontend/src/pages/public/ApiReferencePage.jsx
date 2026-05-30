@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
 
-const BASE_URL = 'https://api.cybercli.chat'
+const BASE_URL = 'https://api.codeva.chat'
 
 const SECTIONS = [
   { id: 'welcome', label: 'Welcome' },
@@ -41,9 +41,9 @@ const ENDPOINTS_DATA = {
     "model": "groq/llama-3.1-8b",
     "stream": true
   }'`,
-      javascript: `import { CyberCli } from '@cybercli/sdk';
+      javascript: `import { Codeva } from '@codeva/sdk';
 
-const cyber = new CyberCli({ apiKey: 'YOUR_API_KEY' });
+const cyber = new Codeva({ apiKey: 'YOUR_API_KEY' });
 
 const stream = await cyber.chat.messages.create({
   threadId: 'thr_01HX',
@@ -55,9 +55,9 @@ const stream = await cyber.chat.messages.create({
 for await (const chunk of stream) {
   process.stdout.write(chunk.content);
 }`,
-      python: `from cybercli import CyberCli
+      python: `from codeva import Codeva
 
-client = CyberCli(api_key="YOUR_API_KEY")
+client = Codeva(api_key="YOUR_API_KEY")
 
 stream = client.chat.messages.create(
     thread_id="thr_01HX",
@@ -154,8 +154,8 @@ print(res.json()["models"])`
     },
     response: {
       models: [
-        { id: 'groq/llama-3.1-8b', name: 'CyberCli-Swift', context: 131072, tier: 'Free' },
-        { id: 'gemini/gemini-2.5-pro', name: 'CyberCli-Pro', context: 1048576, tier: 'Pro' }
+        { id: 'groq/llama-3.1-8b', name: 'Codeva-Swift', context: 131072, tier: 'Free' },
+        { id: 'gemini/gemini-2.5-pro', name: 'Codeva-Pro', context: 1048576, tier: 'Pro' }
       ]
     }
   }
@@ -239,7 +239,7 @@ export default function ApiReferencePage() {
           </ScrollReveal>
           <ScrollReveal delay={0.15}>
             <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
-              Programmatic access to the CyberCli multi-provider AI orchestrator, enabling custom tool calls, parallel debate, and low-latency LLM gateway endpoints.
+              Programmatic access to the Codeva multi-provider AI orchestrator, enabling custom tool calls, parallel debate, and low-latency LLM gateway endpoints.
             </p>
           </ScrollReveal>
         </div>
@@ -277,7 +277,7 @@ export default function ApiReferencePage() {
             <div className="lg:col-span-7 space-y-4">
               <h2 className="text-2xl font-bold text-white tracking-tight">Introduction</h2>
               <p className="text-sm leading-relaxed text-gray-400">
-                The CyberCli API allows you to integrate state-of-the-art language processing, code synthesis, and multi-model consensus checks straight into your applications.
+                The Codeva API allows you to integrate state-of-the-art language processing, code synthesis, and multi-model consensus checks straight into your applications.
               </p>
               <p className="text-sm leading-relaxed text-gray-400">
                 All requests must be sent securely via HTTPS. Formats are standard JSON, and responses utilize standard HTTP return codes. If you have questions, join our developer Discord.

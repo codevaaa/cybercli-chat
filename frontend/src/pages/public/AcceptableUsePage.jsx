@@ -9,7 +9,7 @@ const SECTIONS = [
   {
     id: 'prohibited-uses',
     title: '1. Prohibited Uses',
-    content: `You may not use CyberCli Chat for any purpose that is unlawful, harmful, or violates this Acceptable Use Policy. Specifically, you agree not to use the platform to:
+    content: `You may not use Codeva for any purpose that is unlawful, harmful, or violates this Acceptable Use Policy. Specifically, you agree not to use the platform to:
 
 • Engage in, facilitate, or promote illegal activities, including but not limited to human trafficking, illegal drug trade, child exploitation, and cybercrime.
 • Generate or distribute malicious software, including ransomware, keyloggers, viruses, or exploit scripts designed to compromise computer systems.
@@ -33,7 +33,7 @@ const SECTIONS = [
 
 • Bypassing rate limiters, security sandboxes, or prompt-injection guards through adversarial input construction.
 • Scraping, reverse engineering, or extracting model weights or proprietary backend endpoints without authorization.
-• Deploying automated bots, scripts, or spiders to register accounts, run chats, or crawl CyberCli assets in bulk.
+• Deploying automated bots, scripts, or spiders to register accounts, run chats, or crawl Codeva assets in bulk.
 • Attempting to disrupt, overload, or compromise the availability of the AI gateway cluster or database layers.`,
   },
   {
@@ -116,9 +116,9 @@ export default function AcceptableUsePage() {
     <div className="pt-28 pb-20 bg-[#FBF9F6] text-[#191919]">
       <SEOHead
         title="Acceptable Use Policy"
-        description="CyberMindCLI acceptable use policy. Guidelines for responsible AI usage, prohibited activities, and reporting violations."
+        description="Codeva acceptable use policy. Guidelines for responsible AI usage, prohibited activities, and reporting violations."
         path="/acceptable-use"
-        keywords={['acceptable use', 'AI policy', 'usage guidelines', 'CyberMindCLI', 'responsible AI']}
+        keywords={['acceptable use', 'AI policy', 'usage guidelines', 'Codeva', 'responsible AI']}
       />
       <div className="section-padding">
         <div className="container-custom">
@@ -134,7 +134,7 @@ export default function AcceptableUsePage() {
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-8 mb-8">
                 <p className="text-[#444444] text-sm leading-relaxed">
-                  This Acceptable Use Policy outlines the rules and standards governing your use of CyberCli Chat and our AI model gateway. By accessing our services, you commit to respecting these boundaries.
+                  This Acceptable Use Policy outlines the rules and standards governing your use of Codeva and our AI model gateway. By accessing our services, you commit to respecting these boundaries.
                 </p>
               </div>
 

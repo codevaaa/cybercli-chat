@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../stores/authStore.js'
-import { CyberCliMark } from '../../components/ui/CyberCliLogo'
+import { CodevaMark } from '../../components/ui/CodevaLogo'
 import api from '../../lib/api.js'
 import { supabase } from '../../lib/supabase.js'
 
@@ -121,7 +121,7 @@ export default function SignupPage() {
         {/* Brand Mark Logo & Serif Heading */}
         <div className="flex flex-col items-center mb-8 text-center">
           <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
-            <CyberCliMark size={44} className="text-accent" />
+            <CodevaMark size={44} className="text-accent" />
           </Link>
           <h1 className="text-3xl font-serif font-medium text-foreground-primary tracking-tight mt-5">
             Create your account

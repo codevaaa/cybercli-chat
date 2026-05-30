@@ -280,12 +280,12 @@
   }
 
   /* ─── Blog article prose ─── */
-  .prose-cybercli {
+  .prose-codeva {
     color: var(--text-secondary);
     line-height: 1.8;
     font-size: 1.0625rem;
   }
-  .prose-cybercli h2 {
+  .prose-codeva h2 {
     font-size: 1.5rem;
     font-weight: 600;
     color: var(--text-primary);
@@ -293,18 +293,18 @@
     margin-bottom: 1rem;
     font-family: 'Cormorant Garamond', serif;
   }
-  .prose-cybercli h3 {
+  .prose-codeva h3 {
     font-size: 1.2rem;
     font-weight: 600;
     color: var(--text-primary);
     margin-top: 2rem;
     margin-bottom: 0.75rem;
   }
-  .prose-cybercli p { margin-bottom: 1.25rem; }
-  .prose-cybercli strong { color: var(--text-primary); }
-  .prose-cybercli ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; }
-  .prose-cybercli li { margin-bottom: 0.5rem; }
-  .prose-cybercli code {
+  .prose-codeva p { margin-bottom: 1.25rem; }
+  .prose-codeva strong { color: var(--text-primary); }
+  .prose-codeva ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+  .prose-codeva li { margin-bottom: 0.5rem; }
+  .prose-codeva code {
     font-family: 'JetBrains Mono', monospace;
     background: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.08);
@@ -313,7 +313,7 @@
     font-size: 0.85em;
     color: #D97757;
   }
-  .prose-cybercli blockquote {
+  .prose-codeva blockquote {
     border-left: 3px solid #D97757;
     padding-left: 1.25rem;
     margin-left: 0;

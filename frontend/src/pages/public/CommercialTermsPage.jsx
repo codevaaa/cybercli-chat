@@ -9,7 +9,7 @@ const SECTIONS = [
   {
     id: 'commercial-use',
     title: '1. Commercial Use & Accounts',
-    content: `These Commercial Terms of Service ("Commercial Terms") govern your access to and commercial use of the CyberCli Chat platform, API services, and developers dashboard. By accessing the Service on behalf of a company, organization, or commercial entity, you agree to these Commercial Terms.
+    content: `These Commercial Terms of Service ("Commercial Terms") govern your access to and commercial use of the Codeva platform, API services, and developers dashboard. By accessing the Service on behalf of a company, organization, or commercial entity, you agree to these Commercial Terms.
 
 You represent that you have the authority to bind your organization to these Commercial Terms. If you do not have such authority, or do not agree to these Commercial Terms, you must not use the Service.
 
@@ -49,7 +49,7 @@ You must maintain accurate registration data and take sole responsibility for ac
 
 **Output Rights**: We do not claim ownership of AI-generated Outputs. To the extent permitted by law, we assign all intellectual property rights in the Outputs to you.
 
-**Gateway IP**: CyberMindCLI owns all rights, title, and interest in the routing gateway algorithms, synthesis engine software, and UI/UX design components.`,
+**Gateway IP**: Codeva owns all rights, title, and interest in the routing gateway algorithms, synthesis engine software, and UI/UX design components.`,
   },
   {
     id: 'confidentiality',
@@ -61,7 +61,7 @@ You must maintain accurate registration data and take sole responsibility for ac
   {
     id: 'liability-caps',
     title: '7. Warranties & Liability Caps',
-    content: `**Warranties**: CyberMindCLI warrants that the Service will be performed in a professional manner. EXCEPT AS EXPRESSLY STATED, WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+    content: `**Warranties**: Codeva warrants that the Service will be performed in a professional manner. EXCEPT AS EXPRESSLY STATED, WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 **Liability Caps**: TO THE MAXIMUM EXTENT PERMITTED BY LAW, OUR TOTAL LIABILITY ARISING OUT OF THESE COMMERCIAL TERMS SHALL NOT EXCEED THE TOTAL FEES PAID BY YOU IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM.`,
   },
@@ -137,9 +137,9 @@ export default function CommercialTermsPage() {
     <div className="pt-28 pb-20 bg-[#FBF9F6] text-[#191919]">
       <SEOHead
         title="Commercial Terms of Service"
-        description="CyberMindCLI commercial terms of service. Guidelines for API consumption, SLA commitments, enterprise licensing, and payment policies."
+        description="Codeva commercial terms of service. Guidelines for API consumption, SLA commitments, enterprise licensing, and payment policies."
         path="/legal/commercial-terms"
-        keywords={['commercial terms', 'API terms', 'enterprise SLA', 'CyberMindCLI', 'developer agreements']}
+        keywords={['commercial terms', 'API terms', 'enterprise SLA', 'Codeva', 'developer agreements']}
       />
       <div className="section-padding">
         <div className="container-custom">
@@ -157,7 +157,7 @@ export default function CommercialTermsPage() {
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-8 mb-8">
                 <p className="text-[#444444] text-sm leading-relaxed">
-                  These Commercial Terms govern your business, development, or organizational use of the CyberCli platform. By integrating our APIs or deploying team workspaces, you agree to these commercial covenants. Individual users should refer to our <a href="/legal/consumer-terms" className="text-[#D97757] hover:underline font-medium">Consumer Terms</a>.
+                  These Commercial Terms govern your business, development, or organizational use of the Codeva platform. By integrating our APIs or deploying team workspaces, you agree to these commercial covenants. Individual users should refer to our <a href="/legal/consumer-terms" className="text-[#D97757] hover:underline font-medium">Consumer Terms</a>.
                 </p>
               </div>
 

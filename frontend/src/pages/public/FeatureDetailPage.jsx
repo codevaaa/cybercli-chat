@@ -12,7 +12,7 @@ const FEATURE_DATA = {
     gradient: 'from-[#1a0f06] via-[#130c04] to-[#0D0D12]',
     title: 'Council Mode',
     tagline: 'Three minds are better than one.',
-    description: 'Council Mode puts three elite CyberCli models in simultaneous debate over your query — Cyber-Smart, Cyber-Balanced, and Cyber-Mini — then synthesizes their perspectives into a consensus answer no single model could produce alone.',
+    description: 'Council Mode puts three elite Codeva models in simultaneous debate over your query — Cyber-Smart, Cyber-Balanced, and Cyber-Mini — then synthesizes their perspectives into a consensus answer no single model could produce alone.',
     badge: 'Intelligence',
     badgeColor: '#D97757',
     stats: [
@@ -23,7 +23,7 @@ const FEATURE_DATA = {
     sections: [
       {
         title: 'How Council Mode Works',
-        content: 'When you activate Council Mode, CyberCli routes your message to three different AI providers simultaneously. Each model reasons independently — no cross-contamination of thinking. Then a synthesis layer analyzes all three responses, identifies consensus points, flags disagreements, and produces a final unified answer that represents the best of all three perspectives.',
+        content: 'When you activate Council Mode, Codeva routes your message to three different AI providers simultaneously. Each model reasons independently — no cross-contamination of thinking. Then a synthesis layer analyzes all three responses, identifies consensus points, flags disagreements, and produces a final unified answer that represents the best of all three perspectives.',
       },
       {
         title: 'Real Use Cases',
@@ -31,11 +31,11 @@ const FEATURE_DATA = {
       },
       {
         title: 'The Science of Ensemble Reasoning',
-        content: 'Ensemble learning — combining multiple models — has been a cornerstone of machine learning since Random Forests. CyberCli applies the same principle to LLMs: by averaging over diverse model architectures, training data, and RLHF policies, we systematically reduce individual model biases and hallucinations.',
+        content: 'Ensemble learning — combining multiple models — has been a cornerstone of machine learning since Random Forests. Codeva applies the same principle to LLMs: by averaging over diverse model architectures, training data, and RLHF policies, we systematically reduce individual model biases and hallucinations.',
       },
       {
         title: 'Why No Other Platform Offers This',
-        content: 'Building Council Mode requires a unified AI gateway that can hit multiple providers simultaneously, a synthesis layer that understands model agreement vs. divergence, and a UI that shows reasoning transparently. CyberCli is the only free platform where all of these come together.',
+        content: 'Building Council Mode requires a unified AI gateway that can hit multiple providers simultaneously, a synthesis layer that understands model agreement vs. divergence, and a UI that shows reasoning transparently. Codeva is the only free platform where all of these come together.',
       },
     ],
     faq: [
@@ -51,7 +51,7 @@ const FEATURE_DATA = {
     iconColor: '#D97757',
     gradient: 'from-[#1a0f06] via-[#130c04] to-[#0D0D12]',
     title: 'Voice Chat',
-    description: 'Walkie-talkie voice mode with realistic AI voices powered by Gemini and native Web Speech API. Hold Space to speak, release to let CyberCli respond in a natural human voice with zero latency.',
+    description: 'Walkie-talkie voice mode with realistic AI voices powered by Gemini and native Web Speech API. Hold Space to speak, release to let Codeva respond in a natural human voice with zero latency.',
     badge: 'Voice & Multimodal',
     badgeColor: '#D97757',
     stats: [
@@ -66,22 +66,22 @@ const FEATURE_DATA = {
       },
       {
         title: 'Walkie-Talkie Mode',
-        content: 'Hold the Spacebar (or tap the microphone button on mobile) to activate your microphone. Speak naturally. Release to transmit. CyberCli processes your speech, generates a response, and speaks it back — creating a true conversational rhythm. Interrupt at any point to take back the floor.',
+        content: 'Hold the Spacebar (or tap the microphone button on mobile) to activate your microphone. Speak naturally. Release to transmit. Codeva processes your speech, generates a response, and speaks it back — creating a true conversational rhythm. Interrupt at any point to take back the floor.',
       },
       {
         title: 'Voice Interruption',
-        content: "Unlike most voice AI implementations that queue responses, CyberCli supports real interruption. If you start speaking while CyberCli is talking, it immediately stops and listens. This creates the natural conversational flow you expect from human conversation.",
+        content: "Unlike most voice AI implementations that queue responses, Codeva supports real interruption. If you start speaking while Codeva is talking, it immediately stops and listens. This creates the natural conversational flow you expect from human conversation.",
       },
       {
         title: 'Browser Native Fallback',
-        content: "When server-side TTS is offline, CyberCli falls back to browser native SpeechSynthesis — also free, running client-side with no network usage. You're never left without voice.",
+        content: "When server-side TTS is offline, Codeva falls back to browser native SpeechSynthesis — also free, running client-side with no network usage. You're never left without voice.",
       },
     ],
     faq: [
       { q: 'Do I need to install anything for voice?', a: 'No. Voice Chat runs entirely in your browser using native Web Speech and Audio APIs. No extensions, no downloads, no setup.' },
       { q: 'Which voices are available?', a: 'Ava (warm female), Nova (professional female), Luna (soft female), Orion (deep male), Echo (neutral male). Switch in Settings → Voice.' },
       { q: 'Does voice work on mobile?', a: 'Yes. Tap the microphone icon to speak. Voice interruption requires a browser that supports the Web Audio API (Chrome, Safari, Edge).' },
-      { q: 'Is my voice data stored?', a: 'No. Speech is processed locally or via secure API. CyberCli does not store audio recordings.' },
+      { q: 'Is my voice data stored?', a: 'No. Speech is processed locally or via secure API. Codeva does not store audio recordings.' },
     ],
     relatedSlugs: ['privacy-first', 'custom-agents', 'multi-provider'],
   },
@@ -154,12 +154,12 @@ const FEATURE_DATA = {
       },
       {
         title: 'Agent Sharing (Coming Soon)',
-        content: 'Export any agent as a JSON file and share it. Import agents from the community marketplace. This is the foundation of the CyberCli Agent Ecosystem — launching Q4 2026.',
+        content: 'Export any agent as a JSON file and share it. Import agents from the community marketplace. This is the foundation of the Codeva Agent Ecosystem — launching Q4 2026.',
       },
     ],
     faq: [
       { q: 'How many agents can I create?', a: 'Free: 3 agents. Pro: unlimited agents.' },
-      { q: 'Can agents have memory?', a: 'Yes. Enable "Agent Memory" in agent settings and CyberCli will automatically append relevant facts from your past conversations with that agent.' },
+      { q: 'Can agents have memory?', a: 'Yes. Enable "Agent Memory" in agent settings and Codeva will automatically append relevant facts from your past conversations with that agent.' },
       { q: 'Can I use agents in Council Mode?', a: 'Yes! You can assign custom agents to specific Council seats — meaning your customized Security Analyst debates your customized Code Reviewer.' },
       { q: 'Are agents private?', a: 'Yes, by default. Agents are private to your account. Sharing is opt-in.' },
     ],
@@ -182,7 +182,7 @@ const FEATURE_DATA = {
     sections: [
       {
         title: 'The Provider Problem',
-        content: 'Every AI platform is dependent on a single provider. When OpenAI has an outage, ChatGPT goes down. When Anthropic throttles traffic, Claude slows to a crawl. CyberCli routes around failures automatically — you never see a "service unavailable" screen.',
+        content: 'Every AI platform is dependent on a single provider. When OpenAI has an outage, ChatGPT goes down. When Anthropic throttles traffic, Claude slows to a crawl. Codeva routes around failures automatically — you never see a "service unavailable" screen.',
       },
       {
         title: 'Provider Routing Logic',
@@ -190,17 +190,17 @@ const FEATURE_DATA = {
       },
       {
         title: 'Speed Optimization via Cyber Speed Cluster',
-        content: 'For speed-sensitive use cases (voice chat, quick queries), CyberCli routes to the Cyber Speed Cluster — which runs Llama 3.1 70B at 500+ tokens/second on dedicated hardware. This is 10x faster than standard GPU-based inference, making voice interactions feel instantaneous.',
+        content: 'For speed-sensitive use cases (voice chat, quick queries), Codeva routes to the Cyber Speed Cluster — which runs Llama 3.1 70B at 500+ tokens/second on dedicated hardware. This is 10x faster than standard GPU-based inference, making voice interactions feel instantaneous.',
       },
       {
         title: 'Cost Optimization',
-        content: 'Free tier users are automatically routed to the most capable free models across providers. No degraded experience. As providers release new free tiers, CyberCli integrates them immediately.',
+        content: 'Free tier users are automatically routed to the most capable free models across providers. No degraded experience. As providers release new free tiers, Codeva integrates them immediately.',
       },
     ],
     faq: [
       { q: 'Can I manually choose which provider to use?', a: 'Yes. The model picker shows all available models grouped by provider. You can pin your favorite and it will be your default.' },
-      { q: 'What happens when my chosen provider is down?', a: "CyberCli automatically fails over to an equivalent model at another provider. You're notified via a subtle badge on the response." },
-      { q: 'Are all providers free?', a: 'The providers CyberCli uses all have generous free tiers. CyberCli absorbs the cost for free users up to the tier limits.' },
+      { q: 'What happens when my chosen provider is down?', a: "Codeva automatically fails over to an equivalent model at another provider. You're notified via a subtle badge on the response." },
+      { q: 'Are all providers free?', a: 'The providers Codeva uses all have generous free tiers. Codeva absorbs the cost for free users up to the tier limits.' },
       { q: 'Do you support local models (Ollama)?', a: 'Local model support via Ollama is planned for Phase 6 (Q3 2026).' },
     ],
     relatedSlugs: ['council-mode', 'custom-agents', 'privacy-first'],
@@ -222,7 +222,7 @@ const FEATURE_DATA = {
     sections: [
       {
         title: 'What "Privacy First" Actually Means',
-        content: "Most AI platforms use your conversations to improve their models. CyberCli does not. We have no incentive to — our value comes from routing to the best external models, not from training our own. Your conversations are your intellectual property.",
+        content: "Most AI platforms use your conversations to improve their models. Codeva does not. We have no incentive to — our value comes from routing to the best external models, not from training our own. Your conversations are your intellectual property.",
       },
       {
         title: 'Encryption Architecture',
@@ -238,9 +238,9 @@ const FEATURE_DATA = {
       },
     ],
     faq: [
-      { q: 'Is CyberCli GDPR compliant?', a: 'Yes. We are a UK-registered entity complying with UK GDPR. See our GDPR page for the full DPA.' },
+      { q: 'Is Codeva GDPR compliant?', a: 'Yes. We are a UK-registered entity complying with UK GDPR. See our GDPR page for the full DPA.' },
       { q: 'Do the AI providers see my messages?', a: 'Your messages are transmitted to the distributed computing nodes to generate responses — this is unavoidable for AI to work. We pass no PII beyond the message content.' },
-      { q: 'Can I use CyberCli for sensitive work?', a: 'For classified or highly sensitive work, we recommend our Enterprise tier with private cloud deployment. For standard professional use, CyberCli is appropriate.' },
+      { q: 'Can I use Codeva for sensitive work?', a: 'For classified or highly sensitive work, we recommend our Enterprise tier with private cloud deployment. For standard professional use, Codeva is appropriate.' },
       { q: 'How do I delete my account?', a: 'Settings → Account → Delete Account. All data is removed within 24 hours. We will email you confirmation.' },
     ],
     relatedSlugs: ['custom-agents', 'multi-provider', 'conversation-branching'],
@@ -262,11 +262,11 @@ const FEATURE_DATA = {
     sections: [
       {
         title: 'Why Transparency Matters',
-        content: "An AI that gives you an answer without showing reasoning is a black box. You can't evaluate its confidence, catch its errors, or learn from its process. CyberCli's Chain-of-Thought Viewer makes the reasoning visible — turning AI from oracle into collaborator.",
+        content: "An AI that gives you an answer without showing reasoning is a black box. You can't evaluate its confidence, catch its errors, or learn from its process. Codeva's Chain-of-Thought Viewer makes the reasoning visible — turning AI from oracle into collaborator.",
       },
       {
         title: 'How It Works',
-        content: 'When using models that support extended thinking, CyberCli captures the reasoning trace and displays it in an expandable panel above the final answer. Each reasoning step is timestamped and can be referenced.',
+        content: 'When using models that support extended thinking, Codeva captures the reasoning trace and displays it in an expandable panel above the final answer. Each reasoning step is timestamped and can be referenced.',
       },
       {
         title: 'Catching Errors Early',
@@ -355,7 +355,7 @@ export default function FeatureDetailPage() {
       <SEOHead
         title={feature.title}
         description={feature.description.slice(0, 155)}
-        keywords={`AI features, ${feature.title}, CyberMindCLI features, council mode, voice chat`}
+        keywords={`AI features, ${feature.title}, Codeva features, council mode, voice chat`}
         path={`/features/${slug}`}
         structuredData={StructuredData.breadcrumb([
           { name: 'Home', path: '/' },

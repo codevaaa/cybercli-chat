@@ -1,7 +1,7 @@
 import { S3Client, HeadObjectCommand } from '@aws-sdk/client-s3'
 
 /**
- * Cloudflare R2 Service for CyberCli Downloads
+ * Cloudflare R2 Service for Codeva Downloads
  * R2 is S3-compatible object storage with zero egress fees.
  */
 

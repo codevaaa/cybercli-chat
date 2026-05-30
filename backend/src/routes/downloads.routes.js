@@ -4,21 +4,21 @@ import { r2FileExists, getR2PublicUrl, isR2Available } from '../services/downloa
 
 const router = Router()
 
-const GITHUB_RELEASE_BASE = 'https://github.com/stilcybermindcli/cybercli-chat/releases/latest/download'
+const GITHUB_RELEASE_BASE = 'https://github.com/stilcybermindcli/codeva-chat/releases/latest/download'
 
 // Map of friendly names to actual GitHub release filenames
 const FILE_MAP = {
-  'CyberCli-win-x64.exe': 'CyberCli-win-x64.exe',
-  'CyberCli-mac-universal.dmg': 'CyberCli-mac-universal.dmg',
-  'CyberCli-linux-x64.AppImage': 'CyberCli-linux-x64.AppImage',
-  'CyberCli-linux-x64.deb': 'CyberCli-linux-x64.deb',
+  'Codeva-win-x64.exe': 'Codeva-win-x64.exe',
+  'Codeva-mac-universal.dmg': 'Codeva-mac-universal.dmg',
+  'Codeva-linux-x64.AppImage': 'Codeva-linux-x64.AppImage',
+  'Codeva-linux-x64.deb': 'Codeva-linux-x64.deb',
 }
 
 const DOWNLOAD_META = {
-  'CyberCli-win-x64.exe': { platform: 'windows', name: 'CyberCli for Windows', size: '~78 MB', arch: 'x64' },
-  'CyberCli-mac-universal.dmg': { platform: 'macos', name: 'CyberCli for Mac', size: '~80 MB', arch: 'universal' },
-  'CyberCli-linux-x64.AppImage': { platform: 'linux', name: 'CyberCli for Linux (AppImage)', size: '~75 MB', arch: 'x64' },
-  'CyberCli-linux-x64.deb': { platform: 'linux', name: 'CyberCli for Linux (.deb)', size: '~70 MB', arch: 'amd64' },
+  'Codeva-win-x64.exe': { platform: 'windows', name: 'Codeva for Windows', size: '~78 MB', arch: 'x64' },
+  'Codeva-mac-universal.dmg': { platform: 'macos', name: 'Codeva for Mac', size: '~80 MB', arch: 'universal' },
+  'Codeva-linux-x64.AppImage': { platform: 'linux', name: 'Codeva for Linux (AppImage)', size: '~75 MB', arch: 'x64' },
+  'Codeva-linux-x64.deb': { platform: 'linux', name: 'Codeva for Linux (.deb)', size: '~70 MB', arch: 'amd64' },
 }
 
 /**

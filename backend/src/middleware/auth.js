@@ -1,6 +1,28 @@
 import { verifyJWT } from '../config/supabase.js'
+import supabase from '../config/supabase.js'
 import ApiKey from '../models/ApiKey.js'
 import CLISession from '../models/CLISession.js'
+
+// Short-lived in-memory cache of user_id -> plan to avoid a Supabase lookup on
+// every API-key request. Entries expire after 60s so plan upgrades take effect
+// quickly without hammering the auth DB under load.
+const planCache = new Map()
+const PLAN_TTL_MS = 60_000
+
+async function resolveUserPlan(userId) {
+  if (!userId) return 'free'
+  const cached = planCache.get(userId)
+  if (cached && Date.now() - cached.at < PLAN_TTL_MS) return cached.plan
+  let plan = 'free'
+  try {
+    const { data } = await supabase.from('users').select('plan').eq('id', userId).single()
+    if (data?.plan) plan = String(data.plan).toLowerCase()
+  } catch {
+    // Network/DB hiccup — fall back to free; cache briefly to avoid a storm.
+  }
+  planCache.set(userId, { plan, at: Date.now() })
+  return plan
+}
 
 export const requireAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization
@@ -9,7 +31,7 @@ export const requireAuth = async (req, res, next) => {
     return res.status(401).json({ error: 'Missing authorization header' })
   }
 
-  // Check if it's a CyberCli API key
+  // Check if it's a Codeva API key
   let token = authHeader
   if (authHeader.startsWith('Bearer ')) {
     token = authHeader.split(' ')[1]
@@ -17,17 +39,24 @@ export const requireAuth = async (req, res, next) => {
 
   if (token.startsWith('sk_cyber_')) {
     try {
-      const apiKeyDoc = await ApiKey.findOne({ key: token, is_active: true })
+      const apiKeyDoc = await ApiKey.findOne({ key_hash: ApiKey.hashKey(token), is_active: true })
       if (!apiKeyDoc) {
         return res.status(401).json({ error: 'Invalid or deactivated API key' })
       }
-      // Update last used time asynchronously
-      ApiKey.updateOne({ _id: apiKeyDoc._id }, { $set: { last_used_at: new Date() } }).catch(console.error)
-      
+      // Update last used time + usage count asynchronously
+      ApiKey.updateOne(
+        { _id: apiKeyDoc._id },
+        { $set: { last_used_at: new Date() }, $inc: { usage_count: 1 } },
+      ).catch(console.error)
+
+      // Resolve the user's REAL plan (cached) so model access is plan-gated,
+      // not hardcoded. API-key users get exactly what their subscription allows.
+      const plan = await resolveUserPlan(apiKeyDoc.user_id)
       req.user = {
         id: apiKeyDoc.user_id,
-        email: `api-user-${apiKeyDoc.user_id.substring(0, 8)}@cybercli.local`,
-        plan: 'pro', // API Key users are treated as Pro
+        email: `api-user-${apiKeyDoc.user_id.substring(0, 8)}@codeva.local`,
+        plan,
+        viaApiKey: true,
       }
       return next()
     } catch (err) {
@@ -46,10 +75,12 @@ export const requireAuth = async (req, res, next) => {
     return res.status(401).json({ error: 'Invalid or expired token' })
   }
 
+  // Prefer the authoritative plan from the users table; fall back to JWT metadata.
+  const dbPlan = await resolveUserPlan(user.id)
   req.user = {
     id: user.id,
     email: user.email,
-    plan: user.user_metadata?.plan_tier || 'free',
+    plan: dbPlan || user.user_metadata?.plan_tier || 'free',
   }
 
   next()
@@ -69,12 +100,15 @@ export const optionalAuth = async (req, res, next) => {
 
   if (token.startsWith('sk_cyber_')) {
     try {
-      const apiKeyDoc = await ApiKey.findOne({ key: token, is_active: true })
+      const apiKeyDoc = await ApiKey.findOne({ key_hash: ApiKey.hashKey(token), is_active: true })
       if (apiKeyDoc) {
-        ApiKey.updateOne({ _id: apiKeyDoc._id }, { $set: { last_used_at: new Date() } }).catch(console.error)
+        ApiKey.updateOne(
+          { _id: apiKeyDoc._id },
+          { $set: { last_used_at: new Date() }, $inc: { usage_count: 1 } },
+        ).catch(console.error)
         req.user = {
           id: apiKeyDoc.user_id,
-          email: `api-user-${apiKeyDoc.user_id.substring(0, 8)}@cybercli.local`,
+          email: `api-user-${apiKeyDoc.user_id.substring(0, 8)}@codeva.local`,
           plan: 'pro',
         }
       }
@@ -122,7 +156,7 @@ export const authenticateCLI = async (req, res, next) => {
     return res.status(401).json({ error: 'Invalid API key format' })
   }
 
-  const apiKeyDoc = await ApiKey.findOne({ key: apiKey, is_active: true })
+  const apiKeyDoc = await ApiKey.findOne({ key_hash: ApiKey.hashKey(apiKey), is_active: true })
   if (!apiKeyDoc) {
     return res.status(401).json({ error: 'Invalid or revoked API key' })
   }

@@ -5,7 +5,7 @@ import api from '../../lib/api.js'
 
 const HELP_COLLECTIONS = [
   {
-    title: 'CyberCli Basics',
+    title: 'Codeva Basics',
     desc: 'Core features and how to use multi-model AI.',
     articles: [
       {
@@ -18,7 +18,7 @@ const HELP_COLLECTIONS = [
       },
       {
         title: 'What are Custom AI Personas?',
-        content: 'Personas are pre-configured system instructions that change CyberCli\'s tone, knowledge base, and style. You can create customized personas (e.g. Code Reviewer, threat modeling expert) from the Customize panel, setting specialized prompts that apply to all messages in a thread.'
+        content: 'Personas are pre-configured system instructions that change Codeva\'s tone, knowledge base, and style. You can create customized personas (e.g. Code Reviewer, threat modeling expert) from the Customize panel, setting specialized prompts that apply to all messages in a thread.'
       }
     ]
   },
@@ -223,7 +223,7 @@ export default function HelpCenterPanel({ isOpen, onClose }) {
                     <div>
                       <h3 className="text-sm font-bold text-white">Send us a message</h3>
                       <p className="text-xs text-foreground-muted mt-1 leading-relaxed">
-                        Talk with our automated support AI agent in real time. Our AI assistant is trained on CyberMindCLI guides and can answer queries instantly.
+                        Talk with our automated support AI agent in real time. Our AI assistant is trained on Codeva guides and can answer queries instantly.
                       </p>
                     </div>
                     <button

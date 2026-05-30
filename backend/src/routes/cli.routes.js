@@ -24,14 +24,14 @@ router.post('/auth', async (req, res, next) => {
     }
 
     // Validate API key
-    const apiKeyDoc = await ApiKey.findOne({ key: api_key, is_active: true })
+    const apiKeyDoc = await ApiKey.findOne({ key_hash: ApiKey.hashKey(api_key), is_active: true })
     if (!apiKeyDoc) {
       return res.status(401).json({ error: 'Invalid or revoked API key' })
     }
 
     // Update API key usage
     apiKeyDoc.last_used_at = new Date()
-    apiKeyDoc.usage_count += 1
+    apiKeyDoc.usage_count = (apiKeyDoc.usage_count || 0) + 1
     await apiKeyDoc.save()
 
     // Create new CLI session
@@ -246,7 +246,7 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
     const context = knowledgeGraph?.getContextForPrompt(prompt || messages?.[messages.length - 1]?.content || '')
 
     // Enhance system prompt with context
-    const enhancedSystem = system || this.buildSystemPrompt(context)
+    const enhancedSystem = system || buildSystemPrompt(context)
 
     const startTime = Date.now()
 

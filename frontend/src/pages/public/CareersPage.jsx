@@ -12,7 +12,7 @@ const OPEN_ROLES = [
     location: 'Remote',
     salary: '$80K–$120K',
     color: '#D97757',
-    desc: 'Lead the development of CyberCli\'s React/Vite frontend. Expertise in Framer Motion, TailwindCSS, and SSE streaming required.',
+    desc: 'Lead the development of Codeva\'s React/Vite frontend. Expertise in Framer Motion, TailwindCSS, and SSE streaming required.',
     skills: ['React', 'TypeScript', 'Framer Motion', 'TailwindCSS'],
   },
   {
@@ -71,7 +71,7 @@ export default function CareersPage() {
           </ScrollReveal>
           <ScrollReveal delay={0.15}>
             <p className="text-lg text-foreground-muted max-w-2xl leading-relaxed">
-              CyberMindCLI is a small, remote-first team building tools that matter. We move fast,
+              Codeva is a small, remote-first team building tools that matter. We move fast,
               care deeply about security and privacy, and believe that the best products come from people
               who are also users of what they build.
             </p>

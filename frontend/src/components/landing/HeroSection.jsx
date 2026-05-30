@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, Terminal, Search, Zap, Check } from 'lucide-react'
-import { CyberCliMark } from '../../components/ui/CyberCliLogo'
+import { CodevaMark } from '../../components/ui/CodevaLogo'
 import { useAuthStore } from '@stores/authStore.js'
 const TYPING_SPEED = 40
 
 const HERO_COMMANDS = [
-  { cmd: 'cybercli "design a highly resilient microservices architecture"', time: 2000 },
-  { cmd: 'cybercli --council "audit this smart contract for reentrancy"', time: 2500 },
-  { cmd: 'cybercli "build a fullstack dashboard using React and Node"', time: 3000 },
+  { cmd: 'codeva "design a highly resilient microservices architecture"', time: 2000 },
+  { cmd: 'codeva --council "audit this smart contract for reentrancy"', time: 2500 },
+  { cmd: 'codeva "build a fullstack dashboard using React and Node"', time: 3000 },
 ]
 
 export default function HeroSection() {
@@ -54,21 +54,22 @@ export default function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             className="flex justify-center mb-8"
           >
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#D97757]/30 bg-[#D97757]/10 text-[#D97757] text-sm font-medium">
+            <Link to="/changelog" className="group flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D97757]/30 bg-[#D97757]/10 text-[#D97757] text-sm font-medium hover:bg-[#D97757]/20 transition-colors">
               <SparkleIcon />
-              <span>CyberCli Council Mode is live</span>
-            </div>
+              <span>Council Mode + CyberCoder CLI are live</span>
+              <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-[clamp(3.5rem,8vw,7rem)] leading-[0.95] tracking-tight mb-8 font-serif"
+            className="text-[clamp(3rem,7.5vw,6.5rem)] leading-[0.95] tracking-tight mb-8 font-serif"
             style={{ fontFamily: "'Instrument Serif', serif" }}
           >
-            The premium multi-model<br/>
-            <span className="text-[#D97757] italic">AI workspace</span>
+            Every AI model.<br/>
+            <span className="text-[#D97757] italic">One workspace.</span>
           </motion.h1>
 
           <motion.p
@@ -77,7 +78,8 @@ export default function HeroSection() {
             transition={{ delay: 0.2 }}
             className="text-lg md:text-xl text-[#A1A1AA] max-w-2xl mx-auto mb-10 font-medium leading-relaxed"
           >
-            CyberCli combines the world's most capable AI models into a unified, lightning-fast chat interface and command-line assistant.
+            Codeva unifies 50+ frontier models into one fast chat and an agentic CLI.
+            Council Mode debates. Voice built in. Your code stays yours.
           </motion.p>
 
           <motion.div
@@ -90,7 +92,7 @@ export default function HeroSection() {
               to={useAuthStore().user ? "/chat" : "/auth/signup"}
               className="px-8 py-4 bg-[#D97757] hover:bg-[#c26549] text-white rounded-xl font-bold transition-all shadow-[0_0_30px_rgba(217,119,87,0.3)] w-full sm:w-auto"
             >
-              Get Started for Free
+              Start for Free
             </Link>
             <Link
               to="/product"
@@ -98,6 +100,19 @@ export default function HeroSection() {
             >
               Explore CyberCoder CLI
             </Link>
+          </motion.div>
+
+          {/* Trust strip */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.45 }}
+            className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[#71717A]"
+          >
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#D97757]" /> No credit card</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#D97757]" /> 50+ free models</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#D97757]" /> Voice &amp; image built in</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#D97757]" /> Open CLI</span>
           </motion.div>
         </div>
 
@@ -116,8 +131,8 @@ export default function HeroSection() {
               <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
             </div>
             <div className="mx-auto flex items-center gap-2">
-              <CyberCliMark size={14} />
-              <span className="text-xs font-mono text-[#888888]">cybercli-agent</span>
+              <CodevaMark size={14} />
+              <span className="text-xs font-mono text-[#888888]">codeva-agent</span>
             </div>
           </div>
 
@@ -142,7 +157,7 @@ export default function HeroSection() {
                   className="space-y-4"
                 >
                   <div className="text-[#888888]">
-                    [CyberCli Council is assembling 3 models...]
+                    [Codeva Council is assembling 3 models...]
                   </div>
                   <div className="bg-white/5 border border-[#D97757]/30 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
@@ -174,7 +189,7 @@ export default function HeroSection() {
             </div>
             <h3 className="text-xl font-bold mb-3 text-white">Agentic Code</h3>
             <p className="text-[#A1A1AA] leading-relaxed">
-              CyberCli Code lives in your terminal. It writes files, runs tests, and fixes bugs autonomously.
+              Codeva Code lives in your terminal. It writes files, runs tests, and fixes bugs autonomously.
             </p>
           </div>
 

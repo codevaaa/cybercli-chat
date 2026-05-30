@@ -140,7 +140,7 @@ export default function ModelsPreviewSection() {
             <span className="text-gradient-accent">best models</span>
           </h2>
           <p className="text-base sm:text-lg text-[#9CA3AF] max-w-xl mx-auto leading-relaxed">
-            No more switching tabs. CyberCli connects to 8+ providers and routes each
+            No more switching tabs. Codeva connects to 8+ providers and routes each
             query to the fastest free model with intelligent failover.
           </p>
         </ScrollReveal>

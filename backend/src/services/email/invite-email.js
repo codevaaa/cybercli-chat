@@ -39,7 +39,7 @@ export const sendInviteEmail = async (inviterName, inviteeEmail, inviteCode) => 
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>You're Invited to CyberMindCLI</title>
+        <title>You're Invited to Codeva</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; background-color: #0A0A0F; color: #ECECEC; margin: 0; padding: 40px 20px; }
           .container { max-width: 560px; margin: 0 auto; background-color: #14141A; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
@@ -62,12 +62,12 @@ export const sendInviteEmail = async (inviterName, inviteeEmail, inviteCode) => 
       <body>
         <div class="container">
           <div class="header">
-            <div class="logo">CyberMindCLI</div>
+            <div class="logo">Codeva</div>
           </div>
           <div class="content">
             <h1>You've been invited!</h1>
             <p>Hello,</p>
-            <p>Your friend <strong>${inviterName}</strong> has invited you to join them on <strong>CyberMindCLI</strong> — the premium multi-model AI chat platform.</p>
+            <p>Your friend <strong>${inviterName}</strong> has invited you to join them on <strong>Codeva</strong> — the premium multi-model AI chat platform.</p>
             <p>Access 50+ free AI models (GPT-4o, Gemini 2.5, Llama 3, DeepSeek, and more) with features like Council Mode, interactive voice chat, and a local developer CLI daemon.</p>
             
             <div class="code-box">
@@ -86,7 +86,7 @@ export const sendInviteEmail = async (inviterName, inviteeEmail, inviteCode) => 
             </p>
           </div>
           <div class="footer">
-            &copy; 2026 CyberMindCLI. All rights reserved.<br>
+            &copy; 2026 Codeva. All rights reserved.<br>
             This invitation was sent on behalf of ${inviterName}.
           </div>
         </div>
@@ -101,10 +101,10 @@ export const sendInviteEmail = async (inviterName, inviteeEmail, inviteCode) => 
 
   try {
     await transporter.sendMail({
-      from: `"${inviterName} via CyberMindCLI" <${senderEmail}>`,
+      from: `"${inviterName} via Codeva" <${senderEmail}>`,
       to: inviteeEmail,
-      subject: `${inviterName} invited you to join CyberMindCLI`,
-      text: `Hello,\n\n${inviterName} has invited you to join CyberMindCLI.\n\nAccess 50+ free AI models. Sign up here:\n${inviteLink}\n\nYour Invite Code: ${inviteCode}`,
+      subject: `${inviterName} invited you to join Codeva`,
+      text: `Hello,\n\n${inviterName} has invited you to join Codeva.\n\nAccess 50+ free AI models. Sign up here:\n${inviteLink}\n\nYour Invite Code: ${inviteCode}`,
       html: htmlContent
     })
     return { success: true }

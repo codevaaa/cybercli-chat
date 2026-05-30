@@ -13,11 +13,11 @@ import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 export const MODEL_CARDS = [
   {
     id: 'huggingface/thecnical/cybermindcli',
-    name: 'CyberMind',
-    provider: 'CyberMind Private Compute Node',
+    name: 'Codeva',
+    provider: 'Codeva Private Compute Node',
     providerKey: 'huggingface',
     themeColor: '#7C3AED',
-    description: 'Proprietary flagship model of CyberMindCLI. Fine-tuned specifically for deep reasoning, ethical hacking analysis, security research, and advanced software development.',
+    description: 'Proprietary flagship model of Codeva. Fine-tuned specifically for deep reasoning, ethical hacking analysis, security research, and advanced software development.',
     capabilities: ['Reasoning', 'Security', 'Flagship'],
     contextWindow: '128K tokens',
     latency: '~0.8s',
@@ -29,7 +29,7 @@ export const MODEL_CARDS = [
   {
     id: 'opencode/deepseek-v4-pro',
     name: 'Madhav',
-    provider: 'CyberCli Compute Core',
+    provider: 'Codeva Compute Core',
     providerKey: 'opencode',
     themeColor: '#F59E0B',
     description: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.',
@@ -44,7 +44,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',
     name: 'Chanakya',
-    provider: 'CyberCli Reasoning Cluster',
+    provider: 'Codeva Reasoning Cluster',
     providerKey: 'huggingface',
     themeColor: '#E05E36',
     description: 'The grand strategist. Supreme reasoning depth for complex logic and planning.',
@@ -59,7 +59,7 @@ export const MODEL_CARDS = [
   {
     id: 'apifreellm/gpt-4o',
     name: 'Bheem',
-    provider: 'CyberCli Compute Node Standard',
+    provider: 'Codeva Compute Node Standard',
     providerKey: 'apifreellm',
     themeColor: '#3B82F6',
     description: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.',
@@ -74,7 +74,7 @@ export const MODEL_CARDS = [
   {
     id: 'opencode/deepseek-v4-flash',
     name: 'Vyas',
-    provider: 'CyberCli Research Core',
+    provider: 'Codeva Research Core',
     providerKey: 'opencode',
     themeColor: '#0D9488',
     description: 'The omniscient researcher. Deeply searches the web to compile definitive answers with citations.',
@@ -89,7 +89,7 @@ export const MODEL_CARDS = [
   {
     id: 'opencode/qwen3.7-max',
     name: 'Sanjaya',
-    provider: 'CyberCli Web Observer Node',
+    provider: 'Codeva Web Observer Node',
     providerKey: 'opencode',
     themeColor: '#059669',
     description: 'The visionary observer. Combines real-time web knowledge with deep reasoning loops.',
@@ -104,7 +104,7 @@ export const MODEL_CARDS = [
   {
     id: 'image-gen',
     name: 'Chitrakar',
-    provider: 'CyberCli Painting Core',
+    provider: 'Codeva Painting Core',
     providerKey: 'nvidia',
     themeColor: '#E11D48',
     description: 'The divine painter. Generates stunning, high-quality images directly in your chat.',
@@ -119,7 +119,7 @@ export const MODEL_CARDS = [
   {
     id: 'groq/llama-3.1-70b',
     name: 'Yudhishthira',
-    provider: 'CyberCli OpenWeights High Core',
+    provider: 'Codeva OpenWeights High Core',
     providerKey: 'groq',
     themeColor: '#FFD21E',
     description: 'The righteous elder. Open-weights flagship model built for balanced output.',
@@ -134,7 +134,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',
     name: 'Vikrama',
-    provider: 'CyberCli Multilingual Core',
+    provider: 'Codeva Multilingual Core',
     providerKey: 'huggingface',
     themeColor: '#FF6B35',
     description: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.',
@@ -149,7 +149,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',
     name: 'Vishwakarma',
-    provider: 'CyberCli Developer Core',
+    provider: 'Codeva Developer Core',
     providerKey: 'huggingface',
     themeColor: '#ED8936',
     description: 'The divine architect. Trained on millions of code repositories for optimal software development.',
@@ -164,7 +164,7 @@ export const MODEL_CARDS = [
   {
     id: 'gemini/gemini-2.5-pro',
     name: 'Madhav',
-    provider: 'CyberCli Compute Node Pro',
+    provider: 'Codeva Compute Node Pro',
     providerKey: 'gemini',
     themeColor: '#F59E0B',
     description: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery. Use for your most ambitious challenges.',
@@ -179,7 +179,7 @@ export const MODEL_CARDS = [
   {
     id: 'groq/llama-3.1-70b',
     name: 'Nakul',
-    provider: 'CyberCli Compute Node High',
+    provider: 'Codeva Compute Node High',
     providerKey: 'groq',
     themeColor: '#E05E36',
     description: 'The skilled strategist. Supreme reasoning depth for complex logic, technical writing, and thorough analysis.',
@@ -194,7 +194,7 @@ export const MODEL_CARDS = [
   {
     id: 'openrouter/gpt-4o-mini',
     name: 'Bheem',
-    provider: 'CyberCli Compute Node Standard',
+    provider: 'Codeva Compute Node Standard',
     providerKey: 'openrouter',
     themeColor: '#3B82F6',
     description: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.',
@@ -209,7 +209,7 @@ export const MODEL_CARDS = [
   {
     id: 'groq/llama-3.1-8b',
     name: 'Arjun',
-    provider: 'CyberCli Compute Node Light',
+    provider: 'Codeva Compute Node Light',
     providerKey: 'groq',
     themeColor: '#10B981',
     description: 'The swift warrior. Blazing fast responses, lightweight and razor-precise for rapid fire conversations.',
@@ -224,7 +224,7 @@ export const MODEL_CARDS = [
   {
     id: 'gemini/gemini-2.5-flash',
     name: 'Sahadeva',
-    provider: 'CyberCli Compute Node Multimodal',
+    provider: 'Codeva Compute Node Multimodal',
     providerKey: 'gemini',
     themeColor: '#4285F4',
     description: 'The wise seer. High-speed multimodal intelligence with enormous context window for documents and media.',
@@ -239,7 +239,7 @@ export const MODEL_CARDS = [
   {
     id: 'nvidia/llama-3.1-nemotron-70b',
     name: 'Dronacharya',
-    provider: 'CyberCli Compute Node Master',
+    provider: 'Codeva Compute Node Master',
     providerKey: 'nvidia',
     themeColor: '#76B900',
     description: 'The grand master. Research-grade academic reasoning for deep technical tasks and complex instruction.',
@@ -254,7 +254,7 @@ export const MODEL_CARDS = [
   {
     id: 'cerebras/llama-3.1-8b',
     name: 'Abhimanyu',
-    provider: 'CyberCli Wafer Cluster',
+    provider: 'Codeva Wafer Cluster',
     providerKey: 'cerebras',
     themeColor: '#EC4899',
     description: 'The lightning striker. Powered by wafer-scale silicon delivering unmatched sub-100ms response speed.',
@@ -269,7 +269,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/meta-llama/Llama-3.3-70B-Instruct',
     name: 'Yudhishthira',
-    provider: 'CyberCli OpenWeights Flagship',
+    provider: 'Codeva OpenWeights Flagship',
     providerKey: 'huggingface',
     themeColor: '#FFD21E',
     description: 'The righteous elder. High-parameter open-weights flagship model built for balanced, ethical, quality output.',
@@ -284,7 +284,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',
     name: 'Vikrama',
-    provider: 'CyberCli Multilingual Cluster',
+    provider: 'Codeva Multilingual Cluster',
     providerKey: 'huggingface',
     themeColor: '#FF6B35',
     description: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence with 72B parameter depth.',
@@ -299,7 +299,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',
     name: 'Chanakya',
-    provider: 'CyberCli Reasoning Cluster',
+    provider: 'Codeva Reasoning Cluster',
     providerKey: 'huggingface',
     themeColor: '#00A3FF',
     description: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving and planning.',
@@ -314,7 +314,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1',
     name: 'Saptarishi',
-    provider: 'CyberCli MoE Cluster',
+    provider: 'Codeva MoE Cluster',
     providerKey: 'huggingface',
     themeColor: '#FF4D88',
     description: 'The seven sages. Mixture-of-experts architecture combining the wisdom of seven specialized expert models.',
@@ -329,7 +329,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-70B',
     name: 'Parashurama',
-    provider: 'CyberCli Agentic Cluster',
+    provider: 'Codeva Agentic Cluster',
     providerKey: 'huggingface',
     themeColor: '#C58A59',
     description: 'The agentic warrior. Specialized for tool use, function calling, and autonomous agentic orchestration.',
@@ -344,7 +344,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',
     name: 'Vishwakarma',
-    provider: 'CyberCli Developer Cluster',
+    provider: 'Codeva Developer Cluster',
     providerKey: 'huggingface',
     themeColor: '#ED8936',
     description: 'The divine architect. Trained on millions of code repositories across every major programming language.',
@@ -359,7 +359,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b',
     name: 'Ashwatthama',
-    provider: 'CyberCli Uncensored Node',
+    provider: 'Codeva Uncensored Node',
     providerKey: 'huggingface',
     themeColor: '#38B2AC',
     description: 'The free warrior. Uncensored high-parameter intelligence for unrestricted debate and creative thinking.',
@@ -374,7 +374,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b',
     name: 'Kali',
-    provider: 'CyberCli Uncensored Flagship',
+    provider: 'Codeva Uncensored Flagship',
     providerKey: 'huggingface',
     themeColor: '#FF0055',
     description: 'The destroyer of limits. Fully uncensored 72B flagship ΓÇö maximum freedom of thought, unfiltered intelligence.',
@@ -389,7 +389,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b',
     name: 'Rudra',
-    provider: 'CyberCli Uncensored Edge',
+    provider: 'Codeva Uncensored Edge',
     providerKey: 'huggingface',
     themeColor: '#EF4444',
     description: 'The fierce one. Uncensored edge model built for raw unconstrained intelligence at high speed.',
@@ -404,7 +404,7 @@ export const MODEL_CARDS = [
   {
     id: 'huggingface/defog/sqlcoder-70b-v1.5',
     name: 'Agastya',
-    provider: 'CyberCli Database Specialist',
+    provider: 'Codeva Database Specialist',
     providerKey: 'huggingface',
     themeColor: '#D69E2E',
     description: 'The sage of data. Specialized in translating natural language into precise, optimized SQL queries.',
@@ -883,7 +883,7 @@ const BENCHMARK_CATEGORIES = [
     data: [
       { name: 'Madhav (DeepSeek V4 Pro)', score: 92.1, color: '#F59E0B' },
       { name: 'Chanakya (R1 Distill Llama)', score: 90.5, color: '#E05E36' },
-      { name: 'CyberMind Flagship', score: 88.4, color: '#7C3AED' },
+      { name: 'Codeva Flagship', score: 88.4, color: '#7C3AED' },
       { name: 'Yudhishthira (Llama 3.3)', score: 84.2, color: '#FFD21E' },
       { name: 'Bheem (GPT-4o)', score: 79.5, color: '#3B82F6' },
       { name: 'Vyas (DeepSeek Flash)', score: 74.0, color: '#0D9488' }
@@ -895,7 +895,7 @@ const BENCHMARK_CATEGORIES = [
     metric: 'HumanEval / MBPP pass rate (%)',
     data: [
       { name: 'Vishwakarma (Qwen Coder)', score: 91.2, color: '#ED8936' },
-      { name: 'CyberMind Flagship', score: 89.6, color: '#7C3AED' },
+      { name: 'Codeva Flagship', score: 89.6, color: '#7C3AED' },
       { name: 'Madhav (DeepSeek V4 Pro)', score: 87.8, color: '#F59E0B' },
       { name: 'Chanakya (R1 Distill Llama)', score: 85.5, color: '#E05E36' },
       { name: 'Yudhishthira (Llama 3.3)', score: 81.0, color: '#FFD21E' },
@@ -910,7 +910,7 @@ const BENCHMARK_CATEGORIES = [
       { name: 'Abhimanyu (Cerebras Wafer)', score: 850, color: '#EC4899', isTps: true },
       { name: 'Arjun (Groq Llama 8B)', score: 240, color: '#10B981', isTps: true },
       { name: 'Bheem (GPT-4o Mini)', score: 120, color: '#3B82F6', isTps: true },
-      { name: 'CyberMind Flagship', score: 95, color: '#7C3AED', isTps: true },
+      { name: 'Codeva Flagship', score: 95, color: '#7C3AED', isTps: true },
       { name: 'Yudhishthira (Llama 3.3)', score: 85, color: '#FFD21E', isTps: true },
       { name: 'Madhav (DeepSeek V4 Pro)', score: 65, color: '#F59E0B', isTps: true }
     ]
@@ -922,7 +922,7 @@ const BENCHMARK_CATEGORIES = [
     data: [
       { name: 'Sahadeva (Gemini Flash - 1M)', score: 100, color: '#4285F4' },
       { name: 'Madhav (Gemini Pro - 1M)', score: 99.8, color: '#F59E0B' },
-      { name: 'CyberMind Flagship (128K)', score: 99.7, color: '#7C3AED' },
+      { name: 'Codeva Flagship (128K)', score: 99.7, color: '#7C3AED' },
       { name: 'Chanakya (Llama 70B - 128K)', score: 98.5, color: '#E05E36' },
       { name: 'Yudhishthira (Llama 3.3 - 128K)', score: 97.8, color: '#FFD21E' },
       { name: 'Bheem (GPT-4o Mini - 128K)', score: 96.2, color: '#3B82F6' }

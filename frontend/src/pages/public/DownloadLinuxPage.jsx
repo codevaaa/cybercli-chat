@@ -19,9 +19,9 @@ const FEATURES = [
 
 const STEPS = [
   { num: '1', text: 'Download the AppImage or .deb package' },
-  { num: '2', text: 'Make the AppImage executable: chmod +x CyberCli.AppImage' },
-  { num: '3', text: 'Run: ./CyberCli.AppImage (or install .deb with dpkg -i)' },
-  { num: '4', text: 'Sign in with your CyberCli account' },
+  { num: '2', text: 'Make the AppImage executable: chmod +x Codeva.AppImage' },
+  { num: '3', text: 'Run: ./Codeva.AppImage (or install .deb with dpkg -i)' },
+  { num: '4', text: 'Sign in with your Codeva account' },
 ]
 
 export default function DownloadLinuxPage() {
@@ -35,11 +35,11 @@ export default function DownloadLinuxPage() {
     setter(true)
     const link = document.createElement('a')
     if (type === 'appimage') {
-      link.href = `${API_BASE}/api/v1/downloads/CyberCli-linux-x64.AppImage`
-      link.download = 'CyberCli-linux-x86_64.AppImage'
+      link.href = `${API_BASE}/api/v1/downloads/Codeva-linux-x64.AppImage`
+      link.download = 'Codeva-linux-x86_64.AppImage'
     } else {
-      link.href = `${API_BASE}/api/v1/downloads/CyberCli-linux-x64.deb`
-      link.download = 'CyberCli-linux-amd64.deb'
+      link.href = `${API_BASE}/api/v1/downloads/Codeva-linux-x64.deb`
+      link.download = 'Codeva-linux-amd64.deb'
     }
     document.body.appendChild(link)
     link.click()
@@ -49,7 +49,7 @@ export default function DownloadLinuxPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] pt-32 pb-24 overflow-hidden relative">
-      <SEOHead title="Download CyberCli for Linux" />
+      <SEOHead title="Download Codeva for Linux" />
 
       <div className="absolute top-0 right-0 w-3/4 h-[500px] bg-[#D97757]/5 blur-[150px] rounded-bl-full pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-1/2 h-[400px] bg-blue-500/5 blur-[150px] rounded-tr-full pointer-events-none" />
@@ -69,10 +69,10 @@ export default function DownloadLinuxPage() {
               <span className="text-sm text-[#A0A0A0] font-medium">Linux</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-normal tracking-tight text-[#ECECEC] mb-4 leading-[1.1] font-serif">
-              Download CyberCli for Linux
+              Download Codeva for Linux
             </h1>
             <p className="text-[17px] text-[#A0A0A0] max-w-xl leading-relaxed font-light">
-              All of CyberCli, in one app for Linux. Works with your files and apps to get things done.
+              All of Codeva, in one app for Linux. Works with your files and apps to get things done.
             </p>
           </ScrollReveal>
         </div>

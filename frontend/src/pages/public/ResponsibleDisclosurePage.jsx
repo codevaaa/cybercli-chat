@@ -9,9 +9,9 @@ const SECTIONS = [
   {
     id: 'principles',
     title: '1. Security Principles',
-    content: `At CyberMindCLI, security is fundamental to our products and operations. We recognize that external security researchers play a crucial role in protecting our users and systems.
+    content: `At Codeva, security is fundamental to our products and operations. We recognize that external security researchers play a crucial role in protecting our users and systems.
 
-We encourage responsible security testing of our public assets and applications, including CyberCli Chat and the AI compute gateway.
+We encourage responsible security testing of our public assets and applications, including Codeva and the AI compute gateway.
 
 This policy outlines how you can safely discover and report vulnerabilities to our engineering team, and our commitment to resolving confirmed reports transparently.`,
   },
@@ -32,7 +32,7 @@ This safe harbor applies strictly as long as your activities remain within the b
     content: `The following testing methodologies are strictly prohibited and fall outside the scope of our Safe Harbor commitment:
 
 • Denial of Service (DoS or DDoS) attacks against our gateway clusters or database systems.
-• Social engineering, phishing, or physical security testing of CyberMindCLI staff or offices.
+• Social engineering, phishing, or physical security testing of Codeva staff or offices.
 • Accessing, modifying, or deleting other users' private conversation histories, API keys, or billing records. (If you identify a data leakage bug, stop testing immediately and report it).
 • Exploiting vulnerabilities to cause server instability, system degradation, or persistent access.`,
   },
@@ -124,9 +124,9 @@ export default function ResponsibleDisclosurePage() {
     <div className="pt-28 pb-20 bg-[#FBF9F6] text-[#191919]">
       <SEOHead
         title="Responsible Disclosure Policy"
-        description="CyberMindCLI responsible vulnerability disclosure guidelines. Security principles, safe harbor protections, and bug report submission steps."
+        description="Codeva responsible vulnerability disclosure guidelines. Security principles, safe harbor protections, and bug report submission steps."
         path="/responsible-disclosure-policy"
-        keywords={['responsible disclosure', 'security policy', 'bug bounty', 'vulnerability disclosure', 'CyberMindCLI security']}
+        keywords={['responsible disclosure', 'security policy', 'bug bounty', 'vulnerability disclosure', 'Codeva security']}
       />
       <div className="section-padding">
         <div className="container-custom">
@@ -144,7 +144,7 @@ export default function ResponsibleDisclosurePage() {
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-8 mb-8">
                 <p className="text-[#444444] text-sm leading-relaxed">
-                  CyberMindCLI welcomes ethical security researchers. If you identify vulnerabilities in our web apps, CLI interfaces, or gateways, please coordinate patches with us under these safe harbor provisions. Reach us directly at <a href="mailto:cybermindcli@cybermindcli.com" className="text-[#D97757] hover:underline font-semibold">cybermindcli@cybermindcli.com</a>.
+                  Codeva welcomes ethical security researchers. If you identify vulnerabilities in our web apps, CLI interfaces, or gateways, please coordinate patches with us under these safe harbor provisions. Reach us directly at <a href="mailto:cybermindcli@cybermindcli.com" className="text-[#D97757] hover:underline font-semibold">cybermindcli@cybermindcli.com</a>.
                 </p>
               </div>
 

@@ -174,8 +174,8 @@ export default function ChangelogPage() {
     <div className="min-h-screen bg-[#07070a] pt-32 pb-24 relative overflow-x-hidden">
       <SEOHead
         title="Changelog — Platform Updates"
-        description="Stay up to date with new features, model integrations, improvements, and bug fixes delivered continuously to the CyberMindCLI platform."
-        keywords="changelog, platform updates, AI updates, CyberMindCLI updates"
+        description="Stay up to date with new features, model integrations, improvements, and bug fixes delivered continuously to the Codeva platform."
+        keywords="changelog, platform updates, AI updates, Codeva updates"
         path="/changelog"
         structuredData={StructuredData.breadcrumb([
           { name: 'Home', path: '/' },
@@ -208,7 +208,7 @@ export default function ChangelogPage() {
             Changelog
           </h1>
           <p className="text-gray-400 max-w-xl mx-auto text-sm md:text-base leading-relaxed">
-            Everything new in CyberCli — new features, improvements, and bug fixes delivered continuously.
+            Everything new in Codeva — new features, improvements, and bug fixes delivered continuously.
           </p>
           <div className="flex items-center justify-center gap-5 mt-6 text-sm">
             <Link to="/docs" className="inline-flex items-center gap-1 text-orange-400 hover:text-orange-350 transition-colors font-medium">

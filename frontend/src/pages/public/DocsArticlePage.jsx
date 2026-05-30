@@ -52,7 +52,7 @@ const ARTICLE_CONTENT = {
     categoryId: 'getting-started',
     lastUpdated: 'May 18, 2026',
     readTime: '3 min',
-    intro: 'Get up and running with CyberCli Chat in under 5 minutes.',
+    intro: 'Get up and running with Codeva in under 5 minutes.',
     sections: [
       {
         id: 'create-account',
@@ -82,7 +82,7 @@ const ARTICLE_CONTENT = {
     categoryId: 'getting-started',
     lastUpdated: 'May 21, 2026',
     readTime: '3 min',
-    intro: 'Keep up with the latest features, improvements, and updates to the CyberCli Chat platform.',
+    intro: 'Keep up with the latest features, improvements, and updates to the Codeva platform.',
     sections: [
       {
         id: 'v1-3-0',
@@ -251,7 +251,7 @@ const ARTICLE_CONTENT = {
     categoryId: 'advanced-features',
     lastUpdated: 'May 15, 2026',
     readTime: '7 min',
-    intro: 'Council Mode is CyberCli\'s flagship feature — it sends your question to three AI models simultaneously and synthesizes the best answer.',
+    intro: 'Council Mode is Codeva\'s flagship feature — it sends your question to three AI models simultaneously and synthesizes the best answer.',
     sections: [
       {
         id: 'how-it-works',
@@ -261,7 +261,7 @@ const ARTICLE_CONTENT = {
       {
         id: 'choosing-models',
         heading: 'Choosing Your Council',
-        content: `By default, CyberCli auto-selects the best three models for your query. You can manually pick models from the Council Configuration panel. We recommend combining a reasoning model (Cyber-Smart), a creative model (Cyber-Pro), and a fast model (Cyber-Fast) for general use.`,
+        content: `By default, Codeva auto-selects the best three models for your query. You can manually pick models from the Council Configuration panel. We recommend combining a reasoning model (Cyber-Smart), a creative model (Cyber-Pro), and a fast model (Cyber-Fast) for general use.`,
       },
       {
         id: 'when-to-use',
@@ -281,7 +281,7 @@ const ARTICLE_CONTENT = {
     categoryId: 'api-reference',
     lastUpdated: 'May 21, 2026',
     readTime: '5 min',
-    intro: 'Learn how to authenticate with the CyberCli API using JWT tokens and long-lived API keys.',
+    intro: 'Learn how to authenticate with the Codeva API using JWT tokens and long-lived API keys.',
     sections: [
       {
         id: 'jwt-auth',
@@ -368,7 +368,7 @@ const ARTICLE_CONTENT = {
             <ol className="list-decimal list-inside space-y-2 pl-1 text-sm text-foreground-secondary">
               <li>Navigate to <strong>Authentication → URL Configuration</strong> in the sidebar.</li>
               <li>Under <strong>Redirect URLs</strong>, click the <strong>Add URL</strong> button.</li>
-              <li>Enter your production domain (e.g. <code>https://cybercli-chat.vercel.app</code> or <code>https://cybermindcli.com</code>).</li>
+              <li>Enter your production domain (e.g. <code>https://codeva-chat.vercel.app</code> or <code>https://cybermindcli.com</code>).</li>
               <li>Set the base <strong>Site URL</strong> to your staging or production domain as needed.</li>
               <li>Save changes and retry verification.</li>
             </ol>
@@ -464,7 +464,7 @@ Content-Type: application/json`}</code>
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "Hello! I am CyberCli. How can I assist you with your project today?"
+        "content": "Hello! I am Codeva. How can I assist you with your project today?"
       },
       "finish_reason": "stop"
     }
@@ -537,9 +537,9 @@ node daemon.js --key=sk_cyber_live_YOUR_API_KEY`}</code>
             </div>
             <p>When the assistant requests to read a directory, check code file contents, or execute a script, the CLI daemon prompts you directly in your terminal:</p>
             <pre className="bg-[#1C1917] text-[#F5F5F4] p-4 rounded-xl font-mono text-xs overflow-x-auto border border-stone-850 my-3">
-              <code>{`[CyberCli Daemon] Incoming Action: command
-[CyberCli Daemon] Command: npm run test
-[CyberCli Daemon] Allow this action? (y/n): _`}</code>
+              <code>{`[Codeva Daemon] Incoming Action: command
+[Codeva Daemon] Command: npm run test
+[Codeva Daemon] Allow this action? (y/n): _`}</code>
             </pre>
             <p>You can reject the action by pressing <code>n</code>, preventing any malicious execution or unapproved access to your files.</p>
           </div>
@@ -602,7 +602,7 @@ node daemon.js --key=sk_cyber_live_YOUR_API_KEY`}</code>
         heading: 'API Rate Limit Response Headers',
         content: (
           <div className="space-y-3">
-            <p>Every response returned from the CyberCli API includes custom HTTP headers that communicate your current usage quota and window remaining metrics:</p>
+            <p>Every response returned from the Codeva API includes custom HTTP headers that communicate your current usage quota and window remaining metrics:</p>
             <div className="overflow-x-auto my-4 rounded-xl border border-border-subtle">
               <table className="w-full border-collapse text-left text-xs text-foreground-secondary">
                 <thead>
@@ -657,12 +657,12 @@ node daemon.js --key=sk_cyber_live_YOUR_API_KEY`}</code>
     categoryId: 'voice-tts',
     lastUpdated: 'May 14, 2026',
     readTime: '4 min',
-    intro: 'Enable walkie-talkie style voice conversations with CyberCli\'s AI voices.',
+    intro: 'Enable walkie-talkie style voice conversations with Codeva\'s AI voices.',
     sections: [
       {
         id: 'browser-permissions',
         heading: 'Browser Microphone Permissions',
-        content: `Voice Chat requires microphone access. On first use, your browser will ask for permission — click Allow. If you accidentally denied access, go to your browser settings and reset microphone permissions for cybercli.chat.`,
+        content: `Voice Chat requires microphone access. On first use, your browser will ask for permission — click Allow. If you accidentally denied access, go to your browser settings and reset microphone permissions for codeva.chat.`,
       },
       {
         id: 'using-voice',
@@ -678,6 +678,297 @@ node daemon.js --key=sk_cyber_live_YOUR_API_KEY`}</code>
         id: 'troubleshooting',
         heading: 'Common Issues',
         content: `If voice isn't working: ensure your browser supports Web Speech API (Chrome and Edge are recommended). Check that your microphone is not being used by another application. Try refreshing the page if the session appears stuck.`,
+      },
+    ],
+  },
+
+  'creating-your-account': {
+    title: 'Creating Your Account',
+    category: 'Getting Started',
+    categoryId: 'getting-started',
+    lastUpdated: 'May 28, 2026',
+    readTime: '2 min',
+    intro: 'Create a free Codeva account in under a minute — no credit card required.',
+    sections: [
+      {
+        id: 'sign-up',
+        heading: 'Signing Up',
+        content: `Go to the Sign Up page and register with your email and a password, or use Google / GitHub single sign-on. Email signups receive a verification link — click it to activate your account. Free accounts unlock every free-tier model instantly.`,
+      },
+      {
+        id: 'verify-email',
+        heading: 'Verifying Your Email',
+        content: `Check your inbox for a message from Codeva and click the verification link. If it doesn't arrive within a minute, check spam or use "Resend verification" on the verify page. Magic-link sign-in is also available if you prefer passwordless login.`,
+      },
+      {
+        id: 'plan-tiers',
+        heading: 'Choosing a Plan',
+        content: `Free covers 50 messages/hour across all free models. Pro raises this to 500/hour and unlocks reasoning-tier models, Council Mode, and parallel agents. You can start free and upgrade anytime from Settings → Billing.`,
+      },
+    ],
+  },
+
+  'choosing-your-first-model': {
+    title: 'Choosing Your First Model',
+    category: 'Getting Started',
+    categoryId: 'getting-started',
+    lastUpdated: 'May 28, 2026',
+    readTime: '4 min',
+    intro: 'Codeva routes across 30+ models. Here is how to pick the right one — or let auto-routing decide.',
+    sections: [
+      {
+        id: 'auto-routing',
+        heading: 'Auto-Routing (Recommended)',
+        content: `Leave the model set to "Auto" and Codeva classifies each message — fast models for simple asks, stronger reasoning models for complex tasks — within the limits of your plan. This gives the best balance of speed, quality, and cost without you thinking about it.`,
+      },
+      {
+        id: 'fast-models',
+        heading: 'Fast Models',
+        content: `For quick questions and iteration, fast models (Groq Llama 3.1 8B, Gemini 2.5 Flash, Cerebras) respond in well under a second. Great for chatting, short edits, and brainstorming.`,
+      },
+      {
+        id: 'reasoning-models',
+        heading: 'Reasoning Models',
+        content: `For architecture, debugging, and multi-step problems, reasoning-tier models (Gemini 2.5 Pro, DeepSeek R1, Qwen3-Next 80B, Kimi) think more deeply. These are available on Pro and above.`,
+      },
+      {
+        id: 'council',
+        heading: 'When to Use Council Mode',
+        content: `For high-stakes decisions (security reviews, critical refactors), Council Mode asks three models and synthesizes a consensus — catching mistakes a single model would miss.`,
+      },
+    ],
+  },
+
+  'understanding-the-chat-interface': {
+    title: 'Understanding the Chat Interface',
+    category: 'Getting Started',
+    categoryId: 'getting-started',
+    lastUpdated: 'May 28, 2026',
+    readTime: '5 min',
+    intro: 'A tour of the Codeva chat workspace and its power features.',
+    sections: [
+      {
+        id: 'sidebar',
+        heading: 'The Sidebar',
+        content: `The left sidebar holds New Chat, Search, your conversation history, Projects, Artifacts, Code (CLI/API keys), and Voice. Collapse it with the chevron for a focused, full-width chat.`,
+      },
+      {
+        id: 'composer',
+        heading: 'The Composer',
+        content: `Type your message in the composer at the bottom. Attach files, switch the model, toggle web Research, and start Voice — all from the input bar. Press Enter to send, Shift+Enter for a new line.`,
+      },
+      {
+        id: 'messages',
+        heading: 'Working with Messages',
+        content: `Hover any message to copy, regenerate, edit, or branch it into a new thread. Code blocks have one-click copy and syntax highlighting. Artifacts (long code or documents) open in a side panel for easy reading.`,
+      },
+      {
+        id: 'quick-actions',
+        heading: 'Quick Actions',
+        content: `On a new chat, quick-action chips (Write, Learn, Code, Life stuff) pre-fill useful prompts to get you started fast.`,
+      },
+    ],
+  },
+
+  'streaming-sse-responses': {
+    title: 'Streaming SSE Responses',
+    category: 'API Reference',
+    categoryId: 'api-reference',
+    lastUpdated: 'May 26, 2026',
+    readTime: '5 min',
+    intro: 'Consume token-by-token streaming responses over Server-Sent Events.',
+    sections: [
+      {
+        id: 'enable-stream',
+        heading: 'Enabling Streaming',
+        content: `Send "stream": true in your POST body to /api/v1/completions (or /v1/messages for the Anthropic-compatible endpoint). The server responds with Content-Type: text/event-stream and emits events as the model generates.`,
+      },
+      {
+        id: 'event-shape',
+        heading: 'Event Shape',
+        content: `Each line is "data: <json>". Token events look like {"type":"token","content":"..."}. An {"type":"info"} event signals a provider switch. The stream ends with "data: [DONE]". Parse line-by-line and append token content to your UI.`,
+      },
+      {
+        id: 'example',
+        heading: 'Example (fetch + ReadableStream)',
+        content: `Use fetch() with a reader on response.body, decode each chunk, split on newlines, and JSON.parse lines beginning with "data: ". Stop when you receive [DONE]. The Codeva web client uses exactly this pattern.`,
+      },
+    ],
+  },
+
+  'vs-code-extension': {
+    title: 'VS Code Extension',
+    category: 'Integrations',
+    categoryId: 'integrations',
+    lastUpdated: 'May 25, 2026',
+    readTime: '5 min',
+    intro: 'Bring Codeva into VS Code for inline chat and agentic edits.',
+    sections: [
+      {
+        id: 'install',
+        heading: 'Installing',
+        content: `Search "Codeva" in the VS Code Marketplace and click Install, or run the CLI (npm install -g @codeva_chat/cli) which the extension can drive. Sign in with your Codeva account when prompted.`,
+      },
+      {
+        id: 'usage',
+        heading: 'Using It',
+        content: `Open the Codeva panel from the activity bar. Ask questions about the open file or whole workspace, request edits, and review proposed diffs before applying. The extension shares your account, plan, and model access with the web and CLI.`,
+      },
+      {
+        id: 'cli-bridge',
+        heading: 'CLI Bridge',
+        content: `For full agentic workflows (multi-file edits, run commands, tests), the extension hands off to the CyberCoder CLI daemon so edits happen locally with your approval.`,
+      },
+    ],
+  },
+
+  'chrome-extension-setup': {
+    title: 'Chrome Extension Setup',
+    category: 'Integrations',
+    categoryId: 'integrations',
+    lastUpdated: 'May 25, 2026',
+    readTime: '3 min',
+    intro: 'Use Codeva on any web page to summarize, rewrite, and answer.',
+    sections: [
+      {
+        id: 'install',
+        heading: 'Installing',
+        content: `Install the Codeva extension from the Chrome Web Store and pin it to your toolbar. Click the icon and sign in with your Codeva account.`,
+      },
+      {
+        id: 'features',
+        heading: 'What You Can Do',
+        content: `Select text on any page and ask Codeva to summarize, explain, or rewrite it. Open the side panel to chat with full page context. Everything respects your plan's model access.`,
+      },
+    ],
+  },
+
+  'zapier-make-automation': {
+    title: 'Zapier & Make Automation',
+    category: 'Integrations',
+    categoryId: 'integrations',
+    lastUpdated: 'May 24, 2026',
+    readTime: '6 min',
+    intro: 'Wire Codeva into no-code automations using your API key.',
+    sections: [
+      {
+        id: 'api-key',
+        heading: 'Get an API Key',
+        content: `Create a key in the app under Code → API Access Keys (or Settings → API Keys). Keys start with sk_cyber_ and are shown once — store them securely in your automation tool's credential vault.`,
+      },
+      {
+        id: 'webhook-step',
+        heading: 'Calling the API',
+        content: `Add an HTTP/Webhook step that POSTs to https://<your-api>/api/v1/completions with header Authorization: Bearer sk_cyber_... and a JSON body {"messages":[...],"model":"auto"}. Use the returned content in downstream steps.`,
+      },
+      {
+        id: 'use-cases',
+        heading: 'Example Automations',
+        content: `Summarize new emails, draft replies to form submissions, classify support tickets, or generate content on a schedule. Because the API is OpenAI-compatible, most "OpenAI" automation templates work by just swapping the base URL and key.`,
+      },
+    ],
+  },
+
+  'slack-bot-integration': {
+    title: 'Slack Bot Integration',
+    category: 'Integrations',
+    categoryId: 'integrations',
+    lastUpdated: 'May 24, 2026',
+    readTime: '7 min',
+    intro: 'Add a Codeva assistant to your Slack workspace.',
+    sections: [
+      {
+        id: 'create-app',
+        heading: 'Create a Slack App',
+        content: `In the Slack API dashboard, create a new app, add the chat:write and app_mentions:read scopes, and install it to your workspace. Copy the Bot User OAuth token.`,
+      },
+      {
+        id: 'wire-codeva',
+        heading: 'Wire It to Codeva',
+        content: `Run a small server (or a serverless function) that listens for Slack events, forwards the message text to /api/v1/completions with your Codeva API key, and posts the response back to the channel. A reference implementation is available in the docs repo.`,
+      },
+      {
+        id: 'tips',
+        heading: 'Tips',
+        content: `Respond in a thread to keep channels tidy, and pass recent thread messages as context. Use a fast model for snappy replies and switch to a reasoning model for complex requests.`,
+      },
+    ],
+  },
+
+  'conversation-branching': {
+    title: 'Conversation Branching',
+    category: 'Advanced Features',
+    categoryId: 'advanced-features',
+    lastUpdated: 'May 22, 2026',
+    readTime: '5 min',
+    intro: 'Fork any message into a new thread to explore alternatives without losing context.',
+    sections: [
+      {
+        id: 'what',
+        heading: 'What Branching Does',
+        content: `Branching copies the conversation up to a chosen message into a brand-new thread. You can then take the discussion in a different direction while the original thread stays intact — perfect for comparing two approaches.`,
+      },
+      {
+        id: 'how',
+        heading: 'How to Branch',
+        content: `Hover (or right-click) any message and choose "Branch from here". A new thread opens pre-loaded with the history up to that point. Switch between branches from your conversation list.`,
+      },
+      {
+        id: 'use-cases',
+        heading: 'When to Use It',
+        content: `Try two refactor strategies, explore a "what if" without derailing the main thread, or test how different models answer the same setup. Branches keep your exploration organized.`,
+      },
+    ],
+  },
+
+  'custom-personas-system-prompts': {
+    title: 'Custom Personas & System Prompts',
+    category: 'Advanced Features',
+    categoryId: 'advanced-features',
+    lastUpdated: 'May 22, 2026',
+    readTime: '6 min',
+    intro: 'Shape how Codeva responds with reusable personas and system prompts.',
+    sections: [
+      {
+        id: 'personas',
+        heading: 'Creating a Persona',
+        content: `Go to Settings → Personas (or the Agents page) and create a persona with a name, system prompt, and default model. Personas let you switch the assistant's tone, expertise, and rules in one click.`,
+      },
+      {
+        id: 'system-prompts',
+        heading: 'Writing Good System Prompts',
+        content: `Be specific about role, constraints, and output format. Example: "You are a senior Rust reviewer. Point out memory-safety issues first, cite line numbers, and prefer minimal diffs." Clear instructions produce consistent results.`,
+      },
+      {
+        id: 'memories',
+        heading: 'Memories & Custom Instructions',
+        content: `Add long-lived facts (your stack, preferences) under Customize → Memory so every chat starts with the right context, without re-typing it each time.`,
+      },
+    ],
+  },
+
+  'slash-commands-reference': {
+    title: 'Slash Commands Reference',
+    category: 'Advanced Features',
+    categoryId: 'advanced-features',
+    lastUpdated: 'May 22, 2026',
+    readTime: '4 min',
+    intro: 'Slash commands available in the CyberCoder CLI and chat.',
+    sections: [
+      {
+        id: 'core',
+        heading: 'Core Commands',
+        content: `/help lists everything. /model and /provider switch the active model. /clear resets the thread. /compact compresses history to free context. /theme changes the color theme live.`,
+      },
+      {
+        id: 'agents',
+        heading: 'Agent & Skill Commands',
+        content: `/research, /plan, /code-review, /debug, /security, /commit, /web, and /fix each spawn a specialized sub-agent. /goal <objective> runs autonomously across rounds until done. /consensus asks multiple models.`,
+      },
+      {
+        id: 'workspace',
+        heading: 'Workspace & Safety',
+        content: `/rewind undoes file edits (filesystem time-travel). /hooks manages event automation. /mcp connects external Model Context Protocol servers. /trust grants persistent approval for tools.`,
       },
     ],
   },
@@ -776,8 +1067,8 @@ export default function DocsArticlePage() {
     <div className="min-h-screen bg-background-primary pt-16">
       <SEOHead
         title={`${article.title} — Documentation`}
-        description={typeof article.intro === 'string' ? article.intro.slice(0, 155) : 'Documentation article for CyberMindCLI.'}
-        keywords={`AI documentation, CyberMindCLI docs, ${article.title}, ${article.category}`}
+        description={typeof article.intro === 'string' ? article.intro.slice(0, 155) : 'Documentation article for Codeva.'}
+        keywords={`AI documentation, Codeva docs, ${article.title}, ${article.category}`}
         path={`/docs/${slug}`}
         structuredData={StructuredData.breadcrumb([
           { name: 'Home', path: '/' },

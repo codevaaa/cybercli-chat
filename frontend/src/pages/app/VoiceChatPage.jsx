@@ -642,7 +642,7 @@ export default function VoiceChatPage() {
       {/* Footer */}
       <footer className="pb-8 relative z-10 flex-shrink-0 text-center">
         <p className="text-[10px] text-white/10 uppercase tracking-widest font-bold">
-          CyberCli Secure Voice Channel
+          Codeva Secure Voice Channel
         </p>
       </footer>
     </div>

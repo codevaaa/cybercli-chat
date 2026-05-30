@@ -18,7 +18,7 @@ function getComparisonData(modelName) {
     { metric: 'GSM8K (Multi-step Math)', privateScore: 92.1, baselineName: 'Claude 3 Haiku', baselineScore: 88.9, gain: 3.2 }
   ];
 
-  if (modelName.includes('CyberMind')) {
+  if (modelName.includes('Codeva')) {
     return [
       { metric: 'MMLU (Security-Oriented)', privateScore: 92.4, baselineName: 'Base Llama 3', baselineScore: 82.1, gain: 10.3 },
       { metric: 'HumanEval (Security Scripting)', privateScore: 93.8, baselineName: 'Claude 3.5 Sonnet', baselineScore: 92.0, gain: 1.8 },
@@ -99,7 +99,7 @@ export default function ModelDetailPage() {
     HellaSwag: model.tier === 'Enterprise' ? 93.8 : model.tier === 'Pro' ? 88.2 : 79.5
   }
 
-  if (model.name.includes('CyberMind')) {
+  if (model.name.includes('Codeva')) {
     benchmarks = { MMLU: 89.4, HumanEval: 88.2, MATH: 69.5, GSM8K: 94.2, 'ARC-Challenge': 91.5, HellaSwag: 90.8 }
   } else if (model.name.includes('Madhav')) {
     benchmarks = { MMLU: 90.2, HumanEval: 88.5, MATH: 70.8, GSM8K: 94.6, 'ARC-Challenge': 91.8, HellaSwag: 92.4 }
@@ -145,7 +145,7 @@ export default function ModelDetailPage() {
       <SEOHead
         title={`${model.name} — AI Model`}
         description={model.description.slice(0, 155)}
-        keywords={`AI models, ${model.name}, free AI models, CyberMindCLI models`}
+        keywords={`AI models, ${model.name}, free AI models, Codeva models`}
         path={`/models/${encodeURIComponent(model.id)}`}
         structuredData={StructuredData.softwareApplication({
           name: model.name,
@@ -232,7 +232,7 @@ export default function ModelDetailPage() {
                 {model.description}
               </p>
               <p className="text-sm text-gray-400 leading-relaxed font-medium">
-                CyberCli orchestrates this model using high-throughput pipeline proxies to guarantee low latency. It is automatically integrated with failover fallbacks to prevent session interruptions during high cluster loads.
+                Codeva orchestrates this model using high-throughput pipeline proxies to guarantee low latency. It is automatically integrated with failover fallbacks to prevent session interruptions during high cluster loads.
               </p>
             </div>
 
@@ -388,7 +388,7 @@ export default function ModelDetailPage() {
                 <thead>
                   <tr className="border-b border-white/[0.05] text-gray-500 uppercase tracking-wider text-[9px] font-bold">
                     <th className="pb-3 pr-4 font-semibold">Evaluation Metric / Dataset</th>
-                    <th className="pb-3 px-4 font-bold text-accent">CyberCli Private Core ({model.name})</th>
+                    <th className="pb-3 px-4 font-bold text-accent">Codeva Private Core ({model.name})</th>
                     <th className="pb-3 px-4 font-semibold">Industry Equivalent Baseline</th>
                     <th className="pb-3 pl-4 font-semibold text-right">Relative Performance Gain</th>
                   </tr>

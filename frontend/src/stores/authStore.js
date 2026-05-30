@@ -209,6 +209,22 @@ export const useAuthStore = create(
         }
       },
 
+      updateName: async (name) => {
+        set({ error: null })
+        try {
+          const { data, error } = await supabase.auth.updateUser({ data: { name } })
+          if (error) throw error
+          if (data?.user) {
+            localStorage.setItem('user_name', name)
+            set({ user: data.user })
+          }
+          return { success: true }
+        } catch (error) {
+          set({ error: error.message })
+          return { success: false, error: error.message }
+        }
+      },
+
       clearError: () => set({ error: null }),
     }),
     {

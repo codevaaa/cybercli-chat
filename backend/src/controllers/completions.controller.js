@@ -2,6 +2,7 @@ import { llmGateway } from '../services/llm/gateway.js'
 
 export const complete = async (req, res) => {
   const { messages, model, temperature = 0.7, stream = true } = req.body
+  const plan = req.user?.plan || 'free'
 
   if (stream) {
     res.setHeader('Content-Type', 'text/event-stream')
@@ -9,7 +10,7 @@ export const complete = async (req, res) => {
     res.setHeader('Connection', 'keep-alive')
 
     try {
-      const generator = await llmGateway.complete({ messages, model, temperature })
+      const generator = await llmGateway.complete({ messages, model, temperature, plan })
       for await (const chunk of generator) {
         res.write(`data: ${JSON.stringify(chunk)}\n\n`)
       }
@@ -20,7 +21,7 @@ export const complete = async (req, res) => {
     res.end()
   } else {
     try {
-      const result = await llmGateway.completeNonStream({ messages, model, temperature })
+      const result = await llmGateway.completeNonStream({ messages, model, temperature, plan })
       res.json(result)
     } catch (error) {
       res.status(500).json({ error: error.message })

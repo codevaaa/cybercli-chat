@@ -10,10 +10,10 @@ const getApiBase = () => {
     const hostname = window.location.hostname
     if (
       hostname.includes('vercel.app') || 
-      hostname.includes('cybercli.app') || 
+      hostname.includes('codeva.app') || 
       hostname.includes('cybermindcli.info')
     ) {
-      return 'https://cybercli-api.onrender.com/api/v1'
+      return 'https://codeva-api.onrender.com/api/v1'
     }
   }
   return 'http://localhost:3000/api/v1'

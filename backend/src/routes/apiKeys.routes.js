@@ -1,36 +1,33 @@
 import { Router } from 'express'
-import crypto from 'crypto'
 import ApiKey from '../models/ApiKey.js'
 import { requireAuth } from '../middleware/auth.js'
 
 const router = Router()
 
+// Maximum API keys a single user may hold at once.
+const MAX_KEYS_PER_USER = 25
+
 // Apply requireAuth to all endpoints in this router
 router.use(requireAuth)
+
+/** Shape an ApiKey document into a display-safe JSON payload. */
+function toClientShape(doc) {
+  return {
+    _id: doc._id,
+    name: doc.name,
+    key: doc.masked(),
+    created_at: doc.created_at,
+    last_used_at: doc.last_used_at,
+    usage_count: doc.usage_count,
+    is_active: doc.is_active,
+  }
+}
 
 // GET /api/v1/api-keys
 router.get('/', async (req, res, next) => {
   try {
-    const keys = await ApiKey.find({ user_id: req.user.id })
-    
-    // Redact the middle part of the keys for security
-    const redactedKeys = keys.map(k => {
-      const keyStr = k.key
-      // sk_cyber_ + 48 hex chars
-      const prefix = 'sk_cyber_'
-      const visibleStart = keyStr.substring(0, 14) // sk_cyber_ + 5 chars
-      const visibleEnd = keyStr.substring(keyStr.length - 4)
-      return {
-        _id: k._id,
-        name: k.name,
-        key: `${visibleStart}...${visibleEnd}`,
-        created_at: k.created_at,
-        last_used_at: k.last_used_at,
-        is_active: k.is_active,
-      }
-    })
-    
-    res.json(redactedKeys)
+    const keys = await ApiKey.find({ user_id: req.user.id }).sort({ created_at: -1 })
+    res.json(keys.map(toClientShape))
   } catch (err) {
     next(err)
   }
@@ -43,26 +40,35 @@ router.post('/', async (req, res, next) => {
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({ error: 'Name is required' })
     }
+    if (name.trim().length > 80) {
+      return res.status(400).json({ error: 'Name must be 80 characters or fewer' })
+    }
 
-    // Generate cryptographically secure API key
-    // Prefix: sk_cyber_ followed by 24 random bytes (48 hex characters)
-    const randomHex = crypto.randomBytes(24).toString('hex')
-    const fullKey = `sk_cyber_${randomHex}`
+    const count = await ApiKey.countDocuments({ user_id: req.user.id })
+    if (count >= MAX_KEYS_PER_USER) {
+      return res.status(409).json({
+        error: `You have reached the maximum of ${MAX_KEYS_PER_USER} API keys. Revoke one before creating another.`,
+      })
+    }
 
-    const newKey = new ApiKey({
+    const { rawKey, key_hash, key_prefix, last4 } = ApiKey.generate()
+
+    const newKey = await ApiKey.create({
       user_id: req.user.id,
       name: name.trim(),
-      key: fullKey,
-      is_active: true
+      key_hash,
+      key_prefix,
+      last4,
+      is_active: true,
     })
 
-    await newKey.save()
-
-    // Return the full key only once
+    // Return the full plaintext key exactly once.
     res.status(201).json({
       _id: newKey._id,
       name: newKey.name,
-      key: fullKey, // Return the full key
+      key: rawKey,
+      key_prefix: newKey.key_prefix,
+      last4: newKey.last4,
       created_at: newKey.created_at,
       is_active: newKey.is_active,
     })
@@ -76,11 +82,11 @@ router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params
     const deleted = await ApiKey.findOneAndDelete({ _id: id, user_id: req.user.id })
-    
+
     if (!deleted) {
       return res.status(404).json({ error: 'API key not found' })
     }
-    
+
     res.json({ message: 'API key revoked successfully' })
   } catch (err) {
     next(err)

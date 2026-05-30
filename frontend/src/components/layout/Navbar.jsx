@@ -10,7 +10,7 @@ import {
 import { useAuthStore } from '@stores/authStore.js'
 import { motion, AnimatePresence } from 'framer-motion'
 import SubNavbar from './SubNavbar'
-import { CyberCliWordmark, CyberCliMark } from '@components/ui/CyberCliLogo'
+import { CodevaWordmark, CodevaMark } from '@components/ui/CodevaLogo'
 import { MessageSquare } from 'lucide-react'
 
 const ICON_MAP = {
@@ -32,7 +32,7 @@ const MENU_GROUPS = [
     },
     items: [
       { label: 'CyberCoder CLI', href: '/product', desc: 'Terminal AI coding assistant - Better than Claude Code', icon: 'Terminal' },
-      { label: 'CyberCli Chat', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
+      { label: 'Codeva', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
       { label: 'Council Mode', href: '/council-mode', desc: '4-model ensemble intelligence — One best answer', icon: 'Brain' },
       { label: 'Models', href: '/models', desc: 'Browse 200K+ AI models from 8+ providers', icon: 'Cpu' },
       { label: 'Workflows', href: '/chat', desc: 'Automate multi-agent tasks', icon: 'Layers' },
@@ -58,7 +58,7 @@ const MENU_GROUPS = [
     label: 'Developers',
     columns: 2,
     featured: {
-      title: 'Build with CyberCli API',
+      title: 'Build with Codeva API',
       desc: 'Integrate advanced multi-agent intelligence directly into your apps.',
       href: '/api-reference',
       img: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=400&h=300'
@@ -73,7 +73,7 @@ const MENU_GROUPS = [
     label: 'Resources',
     columns: 2,
     featured: {
-      title: 'CyberCli Masterclass',
+      title: 'Codeva Masterclass',
       desc: 'Learn how to maximize your productivity with agentic AI.',
       href: '/blog',
       img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=400&h=300'
@@ -201,9 +201,9 @@ export default function Navbar() {
             <Link
               to="/"
               className="flex items-center group transition-opacity hover:opacity-90"
-              aria-label="CyberCli – go to homepage"
+              aria-label="Codeva – go to homepage"
             >
-              <CyberCliWordmark size={32} />
+              <CodevaWordmark size={32} />
             </Link>
 
           {/* ── Desktop nav links ── */}
@@ -457,7 +457,7 @@ export default function Navbar() {
               {/* Panel Header */}
               <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.06] flex-shrink-0">
                 <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center">
-                  <CyberCliWordmark size={30} />
+                  <CodevaWordmark size={30} />
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}

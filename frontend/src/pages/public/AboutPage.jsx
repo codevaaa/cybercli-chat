@@ -38,7 +38,7 @@ const TEAM = [
     name: 'Chandan Pandey',
     role: 'Founder & CEO',
     image: '/chandan.jpeg',
-    bio: 'Cybersecurity researcher and AI pioneer. Founder of CyberMindCLI, driving the vision of secure, private, and open artificial intelligence.',
+    bio: 'Cybersecurity researcher and AI pioneer. Founder of Codeva, driving the vision of secure, private, and open artificial intelligence.',
     socials: {
       globe: 'https://cybermindcli.com',
       github: 'https://github.com/thecnical',
@@ -66,7 +66,7 @@ const TIMELINE_MILESTONES = [
   {
     year: 'Early 2024',
     title: 'The Genesis',
-    desc: 'Founder Chandan Pandey starts building CyberMindCLI as a local Python-based CLI framework to automate threat intelligence gathering and local vulnerability analysis.',
+    desc: 'Founder Chandan Pandey starts building Codeva as a local Python-based CLI framework to automate threat intelligence gathering and local vulnerability analysis.',
     tags: ['CLI Core', 'Local Dev', 'Security Automation'],
   },
   {
@@ -78,7 +78,7 @@ const TIMELINE_MILESTONES = [
   {
     year: 'Early 2025',
     title: 'Web Interface & Beta Launch',
-    desc: 'Launch of the CyberCli Chat web app, introducing unique features like Council Mode, conversation branching, and interactive tsParticles backgrounds. The platform scales to 15,000+ developers.',
+    desc: 'Launch of the Codeva web app, introducing unique features like Council Mode, conversation branching, and interactive tsParticles backgrounds. The platform scales to 15,000+ developers.',
     tags: ['Vite + React', 'Council Mode', 'UI Overhaul'],
   },
   {
@@ -90,7 +90,7 @@ const TIMELINE_MILESTONES = [
   {
     year: '2026 & Beyond',
     title: 'Support AI Hub & Public Release',
-    desc: 'Rollout of the full-stack real-user feedback engine, Claude-style preview drawer for artifacts, and an automated support desk agent. Global expansion of CyberMindCLI across security teams.',
+    desc: 'Rollout of the full-stack real-user feedback engine, Claude-style preview drawer for artifacts, and an automated support desk agent. Global expansion of Codeva across security teams.',
     tags: ['Feedback Loop', 'Help Desk Agent', 'Artifacts Drawer'],
   }
 ]
@@ -104,7 +104,7 @@ export default function AboutPage() {
     jobTitle: 'Founder & CEO',
     worksFor: {
       '@type': 'Organization',
-      name: 'CyberMindCLI',
+      name: 'Codeva',
       url: 'https://cybermindcli.com'
     },
     image: 'https://cybermindcli.info/chandan.jpeg',
@@ -121,7 +121,7 @@ export default function AboutPage() {
     jobTitle: 'Co-Founder & CTO',
     worksFor: {
       '@type': 'Organization',
-      name: 'CyberMindCLI',
+      name: 'Codeva',
       url: 'https://cybermindcli.com'
     },
     image: 'https://cybermindcli.info/Rishab_thakur.jpeg',
@@ -144,8 +144,8 @@ export default function AboutPage() {
     <div className="pt-28 pb-20">
       <SEOHead
         title="About Us — Our Team & Mission"
-        description="Learn about CyberMindCLI — the team building the next generation of AI chat. Meet our Founder & CEO Chandan Pandey and CTO Rishab Thakur."
-        keywords="about CyberMindCLI, AI team, mission, Chandan Pandey, Rishab Thakur, tech startup"
+        description="Learn about Codeva — the team building the next generation of AI chat. Meet our Founder & CEO Chandan Pandey and CTO Rishab Thakur."
+        keywords="about Codeva, AI team, mission, Chandan Pandey, Rishab Thakur, tech startup"
         path="/about"
         structuredData={structuredData}
       />
@@ -154,7 +154,7 @@ export default function AboutPage() {
       <div className="section-padding mb-20">
         <div className="container-custom">
           <ScrollReveal>
-            <span className="text-sm font-medium text-accent tracking-widest uppercase mb-4 block">About CyberCli</span>
+            <span className="text-sm font-medium text-accent tracking-widest uppercase mb-4 block">About Codeva</span>
           </ScrollReveal>
           <ScrollReveal delay={0.08}>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-serif font-light text-foreground-primary leading-tight mb-6">
@@ -164,7 +164,7 @@ export default function AboutPage() {
           </ScrollReveal>
           <ScrollReveal delay={0.16}>
             <p className="text-lg text-foreground-muted max-w-2xl leading-relaxed">
-              CyberCli was born from a simple belief: AI should be powerful, accessible, and honest.
+              Codeva was born from a simple belief: AI should be powerful, accessible, and honest.
               We are building the platform we wished existed — combining every major AI provider,
               respecting your privacy, and giving you tools that the big platforms still refuse to build.
             </p>
@@ -200,7 +200,7 @@ export default function AboutPage() {
         <div className="container-custom">
           <ScrollReveal>
             <span className="text-xs font-semibold tracking-widest uppercase text-accent mb-3 block">Founder Spotlight</span>
-            <h2 className="text-4xl font-serif font-light text-foreground-primary mb-16">The mind behind CyberCli</h2>
+            <h2 className="text-4xl font-serif font-light text-foreground-primary mb-16">The mind behind Codeva</h2>
           </ScrollReveal>
 
           <div className="grid lg:grid-cols-5 gap-12 items-start">
@@ -217,7 +217,7 @@ export default function AboutPage() {
                   />
                 </div>
                 <h3 className="text-2xl font-semibold text-foreground-primary mb-1">Chandan Pandey</h3>
-                <p className="text-accent text-sm font-medium mb-4">Founder & CEO · CyberMindCLI</p>
+                <p className="text-accent text-sm font-medium mb-4">Founder & CEO · Codeva</p>
                 <div className="flex flex-wrap gap-2 justify-center mb-6">
                   {['Ethical Hacker', 'Tool Creator', 'AI Researcher', 'Security Engineer'].map(tag => (
                     <span key={tag} className="text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">{tag}</span>
@@ -252,14 +252,14 @@ export default function AboutPage() {
                   automation tools that help blue teams respond faster and with greater precision.
                 </p>
                 <p>
-                  As the <strong className="text-foreground-primary">Founder of CyberMindCLI</strong> (cybermindcli.com),
+                  As the <strong className="text-foreground-primary">Founder of Codeva</strong> (cybermindcli.com),
                   Chandan's central vision is to democratize access to advanced AI and security intelligence tools —
                   making enterprise-grade capabilities available to every researcher, analyst, student, and developer,
                   regardless of budget or institutional affiliation.
                 </p>
                 <p>
-                  <strong className="text-foreground-primary">CyberCli Chat</strong> is the flagship AI product of
-                  CyberMindCLI — combining 8+ AI providers, a unified intelligent routing gateway, voice conversation
+                  <strong className="text-foreground-primary">Codeva</strong> is the flagship AI product of
+                  Codeva — combining 8+ AI providers, a unified intelligent routing gateway, voice conversation
                   powered by ElevenLabs and Gemini Flash TTS, multi-model Council Mode debate synthesis, and advanced
                   conversation management into one cohesive, privacy-first platform.
                 </p>
@@ -269,7 +269,7 @@ export default function AboutPage() {
                   {[
                     { icon: Code2, label: '15+ Security Tools', sub: 'Built & maintained' },
                     { icon: Shield, label: 'Offensive + Defensive', sub: 'Full-spectrum security' },
-                    { icon: Award, label: 'CyberMindCLI', sub: 'Founder & Visionary' },
+                    { icon: Award, label: 'Codeva', sub: 'Founder & Visionary' },
                   ].map(({ icon: Icon, label, sub }) => (
                     <div key={label} className="flex items-start gap-3 p-4 rounded-xl bg-background-secondary border border-border-subtle">
                       <Icon className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
@@ -329,19 +329,19 @@ export default function AboutPage() {
               <div className="space-y-5 text-foreground-secondary leading-relaxed">
                 <p className="text-lg">
                   <strong className="text-foreground-primary">Rishab Thakur</strong> is the Co-Founder, STO (Chief Strategy & Technology Officer),
-                  CFO (Chief Financial Officer), and CMO (Chief Marketing Officer) of CyberCli. He is a multi-disciplinary leader combining deep
+                  CFO (Chief Financial Officer), and CMO (Chief Marketing Officer) of Codeva. He is a multi-disciplinary leader combining deep
                   cybersecurity testing skills with digital marketing mastery and high-performance product management.
                 </p>
                 <p>
                   As a seasoned <strong className="text-foreground-primary">cybersecurity tester</strong> and distributed systems architect,
-                  Rishab drives the core orchestration layout of the CyberCli platform. He is also a highly prominent 
+                  Rishab drives the core orchestration layout of the Codeva platform. He is also a highly prominent 
                   <strong className="text-foreground-primary">production product manager</strong>, coordinating cross-functional efforts to ensure
                   sub-second latency across 8+ AI models and the native desktop Electron app execution nodes.
                 </p>
                 <p>
                   Beyond technical engineering, Rishab is a powerful <strong className="text-foreground-primary">media powerhouse and website influencer</strong>
                   across social channels. His expertise as a <strong className="text-foreground-primary">digital marketing mastermind</strong> has fueled
-                  viral growth, positioning CyberMindCLI as a leading open-weights AI hub. As CFO and CMO, he handles the financial structuring,
+                  viral growth, positioning Codeva as a leading open-weights AI hub. As CFO and CMO, he handles the financial structuring,
                   Stripe billing loops, and marketing campaigns that scale the platform to thousands of global developers.
                 </p>
                 <div className="grid sm:grid-cols-3 gap-4 pt-4">
@@ -398,7 +398,7 @@ export default function AboutPage() {
         <div className="container-custom">
           <ScrollReveal>
             <span className="text-xs font-semibold tracking-widest uppercase text-accent mb-3 block">Our Evolution</span>
-            <h2 className="text-4xl font-serif font-light text-foreground-primary mb-16">The Journey of CyberCli</h2>
+            <h2 className="text-4xl font-serif font-light text-foreground-primary mb-16">The Journey of Codeva</h2>
           </ScrollReveal>
 
           <div className="relative max-w-4xl mx-auto py-8">
@@ -450,7 +450,7 @@ export default function AboutPage() {
               <h2 className="text-3xl font-serif font-light text-foreground-primary mb-4">
                 Ready to experience the future of AI?
               </h2>
-              <p className="text-foreground-muted mb-8">Join thousands of researchers, developers, and creators already using CyberCli.</p>
+              <p className="text-foreground-muted mb-8">Join thousands of researchers, developers, and creators already using Codeva.</p>
               <Link to={user ? "/chat" : "/auth/signup"} className="btn-primary inline-flex">
                 Get started for free <ArrowRight className="w-4 h-4" />
               </Link>

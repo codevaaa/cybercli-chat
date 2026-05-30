@@ -101,7 +101,7 @@ export default function TestimonialsSection() {
             <span className="text-gradient-accent">developers & researchers</span>
           </h2>
           <p className="text-base sm:text-lg text-[#9CA3AF] max-w-2xl mx-auto leading-relaxed">
-            Real feedback from verified users, security researchers, and builders who run their workflows on CyberCli.
+            Real feedback from verified users, security researchers, and builders who run their workflows on Codeva.
           </p>
 
           {/* Feedback Toggle Button (Authenticated Only) */}
@@ -131,7 +131,7 @@ export default function TestimonialsSection() {
               <form onSubmit={handleSubmit} className="card-glass p-8 border border-white/[0.08] relative">
                 <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                   <Star className="w-5 h-5 text-accent fill-accent" />
-                  Share your CyberCli experience
+                  Share your Codeva experience
                 </h3>
 
                 {error && (
@@ -150,7 +150,7 @@ export default function TestimonialsSection() {
                       <Check className="w-6 h-6" />
                     </div>
                     <h4 className="text-base font-bold text-white mb-1">Feedback Submitted!</h4>
-                    <p className="text-xs text-foreground-muted">Thank you for helping us improve CyberCli.</p>
+                    <p className="text-xs text-foreground-muted">Thank you for helping us improve Codeva.</p>
                   </motion.div>
                 ) : (
                   <div className="space-y-4">
@@ -186,7 +186,7 @@ export default function TestimonialsSection() {
                         required
                         value={quote}
                         onChange={(e) => setQuote(e.target.value)}
-                        placeholder="What do you love about CyberCli? How has it improved your workflow?"
+                        placeholder="What do you love about Codeva? How has it improved your workflow?"
                         rows={3}
                         className="w-full px-4 py-3 rounded-xl bg-background-tertiary border border-white/[0.08] focus:border-accent/40 focus:ring-1 focus:ring-accent/20 outline-none text-sm text-white placeholder-white/20 transition-all resize-none"
                       />
@@ -210,7 +210,7 @@ export default function TestimonialsSection() {
                           type="text"
                           value={company}
                           onChange={(e) => setCompany(e.target.value)}
-                          placeholder="e.g. CyberMindCLI"
+                          placeholder="e.g. Codeva"
                           className="w-full px-4 py-2.5 rounded-xl bg-background-tertiary border border-white/[0.08] focus:border-accent/40 outline-none text-sm text-white placeholder-white/20 transition-all"
                         />
                       </div>

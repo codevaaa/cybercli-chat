@@ -107,9 +107,9 @@ export default function ResearchPage() {
     <div className="pt-28 pb-20 bg-[#FBF9F6] text-[#191919]">
       <SEOHead
         title="AI Routing & Synthesis Research"
-        description="CyberMindCLI Research portal. Learn about our dynamic AI routing systems, ensemble reasoning algorithms, and latency reduction experiments."
+        description="Codeva Research portal. Learn about our dynamic AI routing systems, ensemble reasoning algorithms, and latency reduction experiments."
         path="/research"
-        keywords={['AI research', 'ensemble reasoning', 'intelligent gateway', 'hallucination reduction', 'CyberMindCLI research']}
+        keywords={['AI research', 'ensemble reasoning', 'intelligent gateway', 'hallucination reduction', 'Codeva research']}
       />
       <div className="section-padding">
         <div className="container-custom">
@@ -127,7 +127,7 @@ export default function ResearchPage() {
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-8 mb-8">
                 <p className="text-[#444444] text-sm leading-relaxed">
-                  CyberMindCLI conducts research in distributed inference, ensemble learning, and multi-model synthesis. Our mission is to make advanced reasoning architectures faster, more reliable, and universally accessible. Explore our ongoing research topics below.
+                  Codeva conducts research in distributed inference, ensemble learning, and multi-model synthesis. Our mission is to make advanced reasoning architectures faster, more reliable, and universally accessible. Explore our ongoing research topics below.
                 </p>
               </div>
 
