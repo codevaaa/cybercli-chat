@@ -50,6 +50,7 @@ import { registerDaemon, removeDaemon, handleDaemonResponse } from './utils/daem
 import { errorHandler } from './middleware/errorHandler.js'
 import { requestLogger } from './middleware/requestLogger.js'
 import { optionalAuth } from './middleware/auth.js'
+import { PLANS } from './config/plans.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -97,13 +98,22 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
 }))
 
-// Rate limiting
+// Rate limiting — per-plan throughput from the single source of truth (plans.js).
+// The window is 15 min, so we scale the plan's hourly budget to the window and
+// add headroom for guests. Authenticated users resolve their real plan upstream.
+const RATE_WINDOW_MS = 15 * 60 * 1000
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: (req) => req.user?.plan === 'pro' ? 500 : req.user ? 100 : 20,
+  windowMs: RATE_WINDOW_MS,
+  max: (req) => {
+    const planId = req.user?.plan || 'free'
+    const plan = PLANS[planId] || PLANS.free
+    if (!req.user) return 20 // guests
+    // hourly budget → per-15-min window (¼), min 25 so paid users never starve
+    return Math.max(25, Math.ceil((plan.requestsPerHour || 50) / 4))
+  },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip,
+  keyGenerator: (req) => req.user?.id || req.ip,
   handler: (req, res) => {
     res.status(429).json({
       error: 'Too many requests',
