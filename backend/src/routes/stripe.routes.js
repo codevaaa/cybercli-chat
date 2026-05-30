@@ -7,11 +7,26 @@ const router = Router()
 
 /**
  * Map a plan id to its Stripe Price id (from env). Add MAX/ENTERPRISE prices as
- * you create them in the Stripe dashboard.
+ * you create them in the Stripe dashboard. Each plan can have a monthly and an
+ * (optional) yearly price; we fall back to the base/monthly price if no yearly
+ * price is configured.
  */
 const PRICE_IDS = {
-  pro: process.env.STRIPE_PRO_PRICE_ID,
-  max: process.env.STRIPE_MAX_PRICE_ID,
+  pro: {
+    monthly: process.env.STRIPE_PRO_PRICE_ID,
+    yearly: process.env.STRIPE_PRO_YEARLY_PRICE_ID || process.env.STRIPE_PRO_PRICE_ID,
+  },
+  max: {
+    monthly: process.env.STRIPE_MAX_PRICE_ID,
+    yearly: process.env.STRIPE_MAX_YEARLY_PRICE_ID || process.env.STRIPE_MAX_PRICE_ID,
+  },
+}
+
+function resolvePriceId(plan, billing) {
+  const entry = PRICE_IDS[plan]
+  if (!entry) return null
+  const period = billing === 'yearly' ? 'yearly' : 'monthly'
+  return entry[period] || entry.monthly
 }
 
 /** Look up (or lazily create) the Stripe customer id for a user. */
@@ -34,12 +49,13 @@ async function getOrCreateCustomer(userId, email) {
   }
 }
 
-// POST /api/v1/stripe/checkout  { plan: 'pro' | 'max' }
+// POST /api/v1/stripe/checkout  { plan: 'pro' | 'max', billing?: 'monthly' | 'yearly' }
 router.post('/checkout', requireAuth, async (req, res) => {
   if (!stripe) return res.status(503).json({ error: 'Stripe not configured' })
 
   const plan = String(req.body?.plan || 'pro').toLowerCase()
-  const priceId = PRICE_IDS[plan]
+  const billing = String(req.body?.billing || 'monthly').toLowerCase()
+  const priceId = resolvePriceId(plan, billing)
   if (!priceId) return res.status(400).json({ error: `No Stripe price configured for plan '${plan}'` })
 
   try {
@@ -51,8 +67,8 @@ router.post('/checkout', requireAuth, async (req, res) => {
       success_url: `${process.env.FRONTEND_URL?.split(',')[0]}/settings/billing?success=true`,
       cancel_url: `${process.env.FRONTEND_URL?.split(',')[0]}/settings/billing?canceled=true`,
       client_reference_id: req.user.id,
-      metadata: { user_id: req.user.id, plan },
-      subscription_data: { metadata: { user_id: req.user.id, plan } },
+      metadata: { user_id: req.user.id, plan, billing },
+      subscription_data: { metadata: { user_id: req.user.id, plan, billing } },
       allow_promotion_codes: true,
     })
     res.json({ url: session.url })

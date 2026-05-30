@@ -146,7 +146,7 @@ function FaqItem({ q, a }) {
 
 export default function PricingPage() {
   const isAuth = isLoggedIn()
-  const planHref = (p) => isAuth ? (p.id === 'free' ? '/chat' : '/settings/billing') : p.href
+  const planHref = (p) => p.id === 'free' ? (isAuth ? '/chat' : '/auth/signup') : '/upgrade'
 
   return (
     <div className="pt-32 pb-20 bg-[#0a0a0c] relative overflow-hidden">

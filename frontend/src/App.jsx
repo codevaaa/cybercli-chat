@@ -42,6 +42,7 @@ import DownloadWindowsPage from '@pages/public/DownloadWindowsPage'
 import DownloadMacPage from '@pages/public/DownloadMacPage'
 import DownloadLinuxPage from '@pages/public/DownloadLinuxPage'
 import CouncilModePage from '@pages/public/CouncilModePage'
+import UpgradePage from '@pages/public/UpgradePage'
 import CliLoginPage from '@pages/public/CliLoginPage'
 import CliSubscribePage from '@pages/public/CliSubscribePage'
 
@@ -143,6 +144,7 @@ function App() {
           <Route path="/downloads/mac" element={<PublicLayout><DownloadMacPage /></PublicLayout>} />
           <Route path="/downloads/linux" element={<PublicLayout><DownloadLinuxPage /></PublicLayout>} />
           <Route path="/council-mode" element={<PublicLayout><CouncilModePage /></PublicLayout>} />
+          <Route path="/upgrade" element={<UpgradePage />} />
           <Route path="/login" element={<CliLoginPage />} />
           <Route path="/subscribe" element={<CliSubscribePage />} />
 

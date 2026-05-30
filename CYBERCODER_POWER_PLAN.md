@@ -84,3 +84,56 @@ Recommended next (universal SKILL.md format, work across agents):
 - Desktop (Electron) reuses the web renderer + same backend gateway.
 - Web chat + CLI + desktop all hit the SAME plan-gated gateway → one identity,
   one billing, one model policy. (Gateway unified this session.)
+
+
+---
+
+# WEBSITE + ELECTRON + VOICE WORKSTREAM (current session)
+
+Deploy fix: GitHub account renamed `stilcybermindcli` → `codevaaa`. Origin remote
+URL was still the old path, so Vercel webhook never fired (commits landed but site
+never rebuilt). Fixed by `git remote set-url origin` → codevaaa. Commit cc35dc5
+confirmed deployed. Future pushes auto-deploy.
+
+## Website tasks (match claude.com exactly, fully wired)
+- [ ] /upgrade page — clone claude.ai/upgrade (Individual + Team/Enterprise toggle,
+      Free/Pro/Max + Team/Enterprise cards, monthly/yearly). Real Stripe checkout.
+- [ ] /product (Claude Code) page — match claude.com/product/claude-code exactly:
+      hero, "everywhere you work" modal grid, sections, toggles, animations, SVGs.
+- [ ] Downloads page — match claude.ai/downloads exactly.
+- [ ] Navbar upgrade — Claude-style, same nav items, images.
+- [ ] Footer upgrade — Claude-style.
+- [ ] Chat: remove the redirect-to-/product when clicking "Code" tab (keep in-app
+      CodeView). Wire chat "Upgrade" → /upgrade.
+- [ ] Audit all chat sub-pages; ensure parity + all linked.
+- [ ] Voice-to-voice: fix latency, interrupt (barge-in must stop all 3 models),
+      Edge TTS fallback gender bug (2F/1M), memory of prior turns, deep-research
+      before reply (Pro + Max). Make powerful like Claude/GPT realtime.
+
+## Electron desktop (match Claude desktop, fullstack, no fake)
+- [ ] All chat sub-pages working in Electron (Chat/Cowork/bug_auto instead of Code).
+- [ ] Installer: full setup flow, EULA/terms/privacy/location accept pages, logs.
+- [ ] Auto-updater: profile shows update available → user confirms → updates;
+      changelog published to web after each update.
+- [ ] Cowork tab in Electron too (research what Cowork does, make powerful).
+- [ ] bug_auto toggle (replaces "Code") — to be discussed; just add the toggle now.
+- [ ] Branded logs like Claude.
+
+## CyberCoder
+- [ ] `.cyber/` folder + project JSON: self-learning project memory so any AI or a
+      fresh CyberCoder account understands the project from `.cyber` only.
+- [ ] Verify many real sub-agents working.
+- [ ] HuggingFace uncensored agentic models for cyber-security project work.
+- [ ] Final: download installer to THIS pc, test setup works end-to-end.
+
+## Comparison artifact
+- [ ] Full scrape of our website (frontend routes + backend) → compare vs Claude
+      Code → cart/table of what's missing, what sub-pages missing, what to add to
+      surpass Claude Code on free providers.
+
+## Order of execution (this session)
+1. Website /upgrade (real Stripe)  2. /product clone  3. Downloads  4. Navbar+Footer
+5. Chat Code-tab redirect fix  6. Voice upgrade  7. Electron parity + installer +
+auto-update + changelog  8. CyberCoder .cyber memory  9. comparison doc  10. push.
+</text>
+</invoke>

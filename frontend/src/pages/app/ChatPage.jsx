@@ -290,7 +290,7 @@ function ImageGeneratorWidget({ src, alt }) {
             : error}
         </p>
         <div className="flex gap-2.5 mt-1">
-          <Link to="/pricing" className="px-3 py-1.5 rounded-lg bg-[#D97757] hover:bg-[#D97757]/80 text-[10px] uppercase tracking-wider font-bold text-white transition-all">
+          <Link to="/upgrade" className="px-3 py-1.5 rounded-lg bg-[#D97757] hover:bg-[#D97757]/80 text-[10px] uppercase tracking-wider font-bold text-white transition-all">
             Upgrade to Pro
           </Link>
           <button 
@@ -4716,7 +4716,7 @@ export default function ChatPage() {
                     </button>
 
                     <button 
-                      onClick={() => openSettings('billing')}
+                      onClick={() => navigate('/upgrade')}
                       onMouseEnter={() => setHoveredSubmenu(null)}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left group"
                     >
@@ -4956,7 +4956,7 @@ export default function ChatPage() {
           {/* Top-Center Billing Badge */}
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center pointer-events-auto z-10">
             <Link
-              to="/pricing"
+              to="/upgrade"
               className="text-[11px] font-sans px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.1] hover:bg-white/[0.06] text-foreground-secondary hover:text-foreground-primary transition-all flex items-center gap-1.5 select-none"
             >
               <span className="text-white/60">Free plan</span>
