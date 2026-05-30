@@ -15,11 +15,11 @@ export const FOOTER_SECTIONS = [
   {
     title: 'Product',
     links: [
+      { label: 'CyberCoder CLI', href: '/product' },
+      { label: 'Download Apps', href: '/downloads' },
       { label: 'Features', href: '/features' },
       { label: 'Models', href: '/models' },
       { label: 'Council Mode', href: '/council-mode' },
-      { label: 'AI Agents', href: '/agents' },
-      { label: 'Developers', href: '/developers' },
       { label: 'Pricing', href: '/pricing' },
       { label: 'Changelog', href: '/changelog' },
     ],

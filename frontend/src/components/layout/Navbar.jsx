@@ -35,8 +35,8 @@ const MENU_GROUPS = [
       { label: 'Codeva', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
       { label: 'Council Mode', href: '/council-mode', desc: '4-model ensemble intelligence — One best answer', icon: 'Brain' },
       { label: 'Models', href: '/models', desc: 'Browse 200K+ AI models from 8+ providers', icon: 'Cpu' },
-      { label: 'Workflows', href: '/chat', desc: 'Automate multi-agent tasks', icon: 'Layers' },
-      { label: 'Discover', href: '/models', desc: 'Find custom agents', icon: 'Globe' },
+      { label: 'Workflows', href: '/workflows', desc: 'Automate multi-agent tasks', icon: 'Layers' },
+      { label: 'Discover', href: '/discover', desc: 'Find custom agents', icon: 'Globe' },
     ]
   },
   {
@@ -110,18 +110,41 @@ export default function Navbar() {
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
   const [scrolled, setScrolled] = useState(false)
+  const [hidden, setHidden] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState(null) // 'Product' | 'Resources' | 'Company' | null
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
   const [mobileAccordions, setMobileAccordions] = useState({ Product: false, Resources: false, Company: false })
   const location = useLocation()
   const userDropdownRef = useRef(null)
+  const lastScrollY = useRef(0)
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20)
+    const handleScroll = () => {
+      const y = window.scrollY
+      setScrolled(y > 20)
+
+      // Auto-hide on scroll down, reveal on scroll up (Claude-style).
+      // Stay visible near the top and while a dropdown/mobile menu is open.
+      const goingDown = y > lastScrollY.current
+      const delta = Math.abs(y - lastScrollY.current)
+      if (delta > 6) {
+        if (goingDown && y > 120 && !activeDropdown && !mobileOpen) {
+          setHidden(true)
+        } else if (!goingDown) {
+          setHidden(false)
+        }
+        lastScrollY.current = y
+      }
+    }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [activeDropdown, mobileOpen])
+
+  // Never stay hidden while a dropdown or the mobile menu is open.
+  useEffect(() => {
+    if (activeDropdown || mobileOpen) setHidden(false)
+  }, [activeDropdown, mobileOpen])
 
   useEffect(() => {
     setMobileOpen(false)
@@ -185,7 +208,9 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 will-change-transform ${
+          hidden ? '-translate-y-full' : 'translate-y-0'
+        } ${
           isLightTheme
             ? scrolled
               ? 'bg-[#FBF9F6]/95 backdrop-blur-md border-b border-black/[0.06] text-[#191919]'
@@ -425,7 +450,7 @@ export default function Navbar() {
 
       {/* ── Sub Navbar (Claude Code style) ── */}
       {!isLightTheme && (
-        <div className="fixed top-14 left-0 right-0 z-40 hidden lg:block">
+        <div className={`fixed left-0 right-0 z-40 hidden lg:block transition-all duration-300 ${hidden ? 'top-0 -translate-y-full' : 'top-14 translate-y-0'}`}>
           <SubNavbar items={subNavItems} />
         </div>
       )}
