@@ -44,27 +44,62 @@ let tray: ReturnType<typeof createTray> | null = null
 
 // ─── Auto Updater ─────────────────────────────────────────────
 
+let updateInfoCache: { version?: string; releaseNotes?: string } | null = null
+
+function sendToMain(channel: string, payload?: unknown) {
+  try { mainWindow?.webContents.send(channel, payload) } catch { /* window gone */ }
+}
+
 function setupAutoUpdater() {
   if (isDev) return
 
-  autoUpdater.checkForUpdatesAndNotify()
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
 
-  autoUpdater.on('update-available', () => {
+  autoUpdater.on('checking-for-update', () => {
+    sendToMain('update:checking')
+  })
+
+  autoUpdater.on('update-available', (info: { version?: string; releaseNotes?: string | unknown }) => {
+    updateInfoCache = {
+      version: info?.version,
+      releaseNotes: typeof info?.releaseNotes === 'string' ? info.releaseNotes : undefined,
+    }
+    sendToMain('update:available', updateInfoCache)
     new (require('electron').Notification)({
       title: 'Codeva Update Available',
-      body: 'A new version is being downloaded.',
+      body: `Version ${info?.version || ''} is downloading in the background.`,
     }).show()
   })
 
-  autoUpdater.on('update-downloaded', () => {
+  autoUpdater.on('update-not-available', () => {
+    sendToMain('update:none')
+  })
+
+  autoUpdater.on('download-progress', (p: { percent?: number; transferred?: number; total?: number; bytesPerSecond?: number }) => {
+    sendToMain('update:progress', {
+      percent: Math.round(p?.percent || 0),
+      transferred: p?.transferred,
+      total: p?.total,
+      bytesPerSecond: p?.bytesPerSecond,
+    })
+  })
+
+  autoUpdater.on('error', (err: Error) => {
+    sendToMain('update:error', err?.message || 'Update failed')
+  })
+
+  autoUpdater.on('update-downloaded', (info: { version?: string }) => {
+    sendToMain('update:downloaded', { version: info?.version, ...updateInfoCache })
     new (require('electron').Notification)({
       title: 'Codeva Update Ready',
       body: 'Restart to install the latest version.',
     }).show()
-
-    // Notify renderer that update is ready
-    mainWindow?.webContents.send('update:available')
   })
+
+  // Initial silent check shortly after launch, then every 3 hours.
+  autoUpdater.checkForUpdates().catch(() => {})
+  setInterval(() => { autoUpdater.checkForUpdates().catch(() => {}) }, 3 * 60 * 60 * 1000)
 }
 
 // ─── Window Factories ───────────────────────────────────────
@@ -412,6 +447,28 @@ ipcMain.handle('dragdrop:read-files', async (_event, filePaths: string[]) => {
 // Auto-updater: restart and install
 ipcMain.handle('update:restart', () => {
   autoUpdater.quitAndInstall()
+})
+
+// Auto-updater: manual check (from Settings/Profile "Check for updates")
+ipcMain.handle('update:check', async () => {
+  if (isDev) return { success: false, dev: true, message: 'Updates are disabled in development.' }
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    return { success: true, version: result?.updateInfo?.version }
+  } catch (err) {
+    return { success: false, error: (err as Error).message }
+  }
+})
+
+// Auto-updater: download now (when autoDownload is off or user opts in)
+ipcMain.handle('update:download', async () => {
+  if (isDev) return { success: false, dev: true }
+  try {
+    await autoUpdater.downloadUpdate()
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: (err as Error).message }
+  }
 })
 
 // File system (via MCP-like local access)

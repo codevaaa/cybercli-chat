@@ -44,6 +44,8 @@ const electronAPI = {
 
   // Auto-updater
   restartToUpdate: () => ipcRenderer.invoke('update:restart'),
+  checkForUpdates: () => ipcRenderer.invoke('update:check'),
+  downloadUpdate: () => ipcRenderer.invoke('update:download'),
 
   // Event listeners (from main → renderer)
   onAuthToken: (callback: (token: string) => void) => {
@@ -76,10 +78,35 @@ const electronAPI = {
     ipcRenderer.on('deeplink', handler)
     return () => ipcRenderer.removeListener('deeplink', handler)
   },
-  onUpdateAvailable: (callback: () => void) => {
-    const handler = () => callback()
+  onUpdateAvailable: (callback: (info?: { version?: string; releaseNotes?: string }) => void) => {
+    const handler = (_event: any, info?: { version?: string; releaseNotes?: string }) => callback(info)
     ipcRenderer.on('update:available', handler)
     return () => ipcRenderer.removeListener('update:available', handler)
+  },
+  onUpdateChecking: (callback: () => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('update:checking', handler)
+    return () => ipcRenderer.removeListener('update:checking', handler)
+  },
+  onUpdateNone: (callback: () => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('update:none', handler)
+    return () => ipcRenderer.removeListener('update:none', handler)
+  },
+  onUpdateProgress: (callback: (p: { percent: number; transferred?: number; total?: number; bytesPerSecond?: number }) => void) => {
+    const handler = (_event: any, p: any) => callback(p)
+    ipcRenderer.on('update:progress', handler)
+    return () => ipcRenderer.removeListener('update:progress', handler)
+  },
+  onUpdateDownloaded: (callback: (info?: { version?: string; releaseNotes?: string }) => void) => {
+    const handler = (_event: any, info?: any) => callback(info)
+    ipcRenderer.on('update:downloaded', handler)
+    return () => ipcRenderer.removeListener('update:downloaded', handler)
+  },
+  onUpdateError: (callback: (message: string) => void) => {
+    const handler = (_event: any, message: string) => callback(message)
+    ipcRenderer.on('update:error', handler)
+    return () => ipcRenderer.removeListener('update:error', handler)
   },
 
   // Remove listeners (cleanup)
