@@ -19,6 +19,7 @@ const TYPE_ICONS = {
 }
 
 const VERSION_BADGE_COLORS = {
+  '1.4.0': 'bg-accent/10 text-accent border-accent/20',
   '1.3.0': 'bg-accent/10 text-accent border-accent/20',
   '1.2.0': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
   '1.1.0': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -27,6 +28,19 @@ const VERSION_BADGE_COLORS = {
 }
 
 const ENTRIES = [
+  {
+    version: '1.4.0',
+    date: 'May 30, 2026',
+    headline: 'Cowork, Claude-style plans, faster voice, and desktop auto-updates',
+    changes: [
+      { type: 'New', text: 'Cowork: delegate autonomous tasks that run in the background while you keep chatting — live-streamed, stoppable, retryable' },
+      { type: 'New', text: 'Upgrade page with Individual + Team/Enterprise plans, monthly/yearly billing, and real checkout' },
+      { type: 'New', text: 'Desktop auto-update flow: in-app download progress, “restart to update”, and a manual check' },
+      { type: 'New', text: 'CyberCoder .cyber/ project memory — the CLI now learns and remembers your project across sessions' },
+      { type: 'Improved', text: 'Rebuilt product and downloads pages with the new Codeva look' },
+      { type: 'Fixed', text: 'Voice: interrupt now instantly stops the assistant (aborts in-flight speech), correct voice gender on fallback' },
+    ],
+  },
   {
     version: '1.3.0',
     date: 'May 21, 2026',
