@@ -160,11 +160,10 @@ function App() {
           {/* ── Protected App Routes (no Lenis — native scroll for chat) ── */}
           <Route path="/chat/:threadId?" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/settings/billing" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/settings/api-keys" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/settings/personas" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/settings/security" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/settings/invite" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          {/* Catch-all for every settings sub-tab (account, connectors, usage,
+              capabilities, billing, api-keys, personas, security, invite…) so no
+              tab ever renders a blank screen. SettingsPage maps the path → tab. */}
+          <Route path="/settings/*" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/library" element={<ProtectedRoute><LibraryPage /></ProtectedRoute>} />
           <Route path="/agents" element={<ProtectedRoute><AgentsPage /></ProtectedRoute>} />

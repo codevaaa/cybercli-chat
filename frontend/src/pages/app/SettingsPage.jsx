@@ -824,18 +824,17 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const path = location.pathname
-    if (path.endsWith('/api-keys')) {
-      setActiveTab('api-keys')
-    } else if (path.endsWith('/billing')) {
-      setActiveTab('billing')
-    } else if (path.endsWith('/security') || path.endsWith('/privacy')) {
-      setActiveTab('privacy')
-    } else if (path.endsWith('/personas')) {
-      setActiveTab('capabilities')
-    } else if (path.endsWith('/usage')) {
-      setActiveTab('usage')
-    } else if (path.endsWith('/invite')) {
-      setActiveTab('invite')
+    // Map the URL's last segment → tab id. Handles every tab (account,
+    // connectors, usage, capabilities, …) so none render a blank screen.
+    const seg = path.replace(/\/+$/, '').split('/').pop() || ''
+    const aliases = { security: 'privacy', privacy: 'privacy', personas: 'capabilities' }
+    const known = new Set(TABS.map(t => t.id))
+    if (path === '/settings' || seg === 'settings' || seg === '') {
+      setActiveTab('general')
+    } else if (aliases[seg]) {
+      setActiveTab(aliases[seg])
+    } else if (known.has(seg)) {
+      setActiveTab(seg)
     } else {
       setActiveTab('general')
     }
@@ -843,12 +842,8 @@ export default function SettingsPage() {
 
   const handleTabChange = (tabId) => {
     if (tabId === 'general') navigate('/settings')
-    else if (tabId === 'api-keys') navigate('/settings/api-keys')
-    else if (tabId === 'billing') navigate('/settings/billing')
     else if (tabId === 'privacy') navigate('/settings/security')
     else if (tabId === 'capabilities') navigate('/settings/personas')
-    else if (tabId === 'usage') navigate('/settings/usage')
-    else if (tabId === 'invite') navigate('/settings/invite')
     else navigate(`/settings/${tabId}`)
   }
 
