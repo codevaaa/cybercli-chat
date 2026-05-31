@@ -12,10 +12,13 @@ router.use(requireAuth)
 
 /** Shape an ApiKey document into a display-safe JSON payload. */
 function toClientShape(doc) {
+  const maskedKey = typeof doc.masked === 'function'
+    ? doc.masked()
+    : `${doc.key_prefix}…${doc.last4}`
   return {
     _id: doc._id,
     name: doc.name,
-    key: doc.masked(),
+    key: maskedKey,
     created_at: doc.created_at,
     last_used_at: doc.last_used_at,
     usage_count: doc.usage_count,

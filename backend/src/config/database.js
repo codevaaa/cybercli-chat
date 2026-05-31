@@ -35,7 +35,7 @@ const connectMongoDB = async () => {
 
 // Add dynamic connection listeners for failover
 mongoose.connection.on('error', (err) => {
-  console.error('Mongoose connection error event. Activating fallback:', err.message)
+  console.error('Mongoose connection error event. Activating fallback:', err?.message || err)
   setFallbackMode(true)
 })
 

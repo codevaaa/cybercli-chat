@@ -147,15 +147,7 @@ app.post('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }), (r
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
-// Response time header
-app.use((req, res, next) => {
-  const start = process.hrtime.bigint()
-  res.on('finish', () => {
-    const ns = process.hrtime.bigint() - start
-    res.setHeader('X-Response-Time', `${Number(ns / 1_000_000n)}ms`)
-  })
-  next()
-})
+
 
 // Request logging
 app.use(requestLogger)
