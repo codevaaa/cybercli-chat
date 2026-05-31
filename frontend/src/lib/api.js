@@ -13,7 +13,7 @@ const getApiBase = () => {
       hostname.includes('codeva.app') || 
       hostname.includes('cybermindcli.info')
     ) {
-      return 'https://codeva-api.onrender.com/api/v1'
+      return 'https://cybercli-api.onrender.com/api/v1'
     }
   }
   return 'http://localhost:3000/api/v1'

@@ -13,7 +13,7 @@ const API_BASE = (() => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname
     if (hostname.includes('vercel.app') || hostname.includes('codeva.app') || hostname.includes('cybermindcli.info')) {
-      return 'https://codeva-api.onrender.com/api/v1'
+      return 'https://cybercli-api.onrender.com/api/v1'
     }
   }
   return import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
