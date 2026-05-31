@@ -1064,7 +1064,7 @@ export default function DocsArticlePage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background-primary pt-16">
+    <div className="min-h-screen bg-background-primary pt-28">
       <SEOHead
         title={`${article.title} — Documentation`}
         description={typeof article.intro === 'string' ? article.intro.slice(0, 155) : 'Documentation article for Codeva.'}
@@ -1079,7 +1079,7 @@ export default function DocsArticlePage() {
       <div className="flex relative" style={{ minHeight: 'calc(100vh - 64px)' }}>
 
         {/* Desktop Sidebar */}
-        <div className="hidden lg:flex flex-col sticky top-16 h-[calc(100vh-64px)]">
+        <div className="hidden lg:flex flex-col sticky top-28 h-[calc(100vh-112px)] z-10">
           <DocsSidebar activeSlug={slug} />
         </div>
 
@@ -1106,7 +1106,7 @@ export default function DocsArticlePage() {
         {/* Main content */}
         <div className="flex-1 min-w-0 flex flex-col">
           {/* Top bar */}
-          <div className="flex items-center justify-between px-5 lg:px-8 py-3 border-b border-border-subtle bg-background-primary/80 backdrop-blur-md sticky top-16 z-20">
+          <div className="flex items-center justify-between px-5 lg:px-8 py-3 border-b border-border-subtle bg-background-primary/80 backdrop-blur-md sticky top-28 z-20">
             <div className="flex items-center gap-3">
               <button
                 className="lg:hidden p-1.5 rounded-lg hover:bg-background-tertiary text-foreground-muted transition-colors"

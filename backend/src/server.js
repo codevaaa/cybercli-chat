@@ -40,6 +40,7 @@ import supportRoutes from './routes/support.routes.js'
 import cliRoutes from './routes/cli.routes.js'
 import downloadsRoutes from './routes/downloads.routes.js'
 import v1Routes from './routes/v1.routes.js'
+import agentRoutes from './routes/agent.routes.js'
 import http from 'http'
 import { WebSocketServer } from 'ws'
 import ApiKey from './models/ApiKey.js'
@@ -62,18 +63,29 @@ console.log('MongoDB URI:', process.env.MONGODB_URI ? 'SET' : 'NOT SET')
 const app = express()
 const PORT = process.env.PORT || 3000
 
-// Security middleware
+// Security middleware — hardened CSP + additional headers
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://api.openai.com", "https://api.groq.com", "https://generativelanguage.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'", "https://api.openai.com", "https://api.groq.com", "https://generativelanguage.googleapis.com", "https://api.anthropic.com", "https://*.supabase.co"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
     },
   },
   crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  noSniff: true,
+  xssFilter: true,
+  frameguard: { action: 'deny' },
 }))
 
 app.use(cors({
@@ -180,6 +192,7 @@ app.use('/api/v1/feedback', feedbackRoutes)
 app.use('/api/v1/support', supportRoutes)
 app.use('/api/v1/cli', cliRoutes)
 app.use('/api/v1/downloads', downloadsRoutes)
+app.use('/api/v1/agent', agentRoutes)
 app.use('/v1', v1Routes)
 
 

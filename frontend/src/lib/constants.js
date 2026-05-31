@@ -38,6 +38,8 @@ export const FOOTER_SECTIONS = [
     links: [
       { label: 'Documentation', href: '/docs' },
       { label: 'API Reference', href: '/api-reference' },
+      { label: 'Help Center', href: '/help' },
+      { label: 'Provider Setup', href: '/providers' },
       { label: 'Blog', href: '/blog' },
       { label: 'AI Research', href: '/research' },
       { label: 'About Us', href: '/about' },

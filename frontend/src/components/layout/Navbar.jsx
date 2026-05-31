@@ -17,7 +17,7 @@ const ICON_MAP = {
   Sparkles, Cpu, CreditCard, History,
   BookOpen, Terminal, Rss, Gift,
   Building2, Briefcase, Mail, Bot, Code2,
-  FolderOpen, Layers, Globe, Brain
+  FolderOpen, Layers, Globe, Brain, MessageSquare
 }
 
 const MENU_GROUPS = [
@@ -65,8 +65,11 @@ const MENU_GROUPS = [
     },
     items: [
       { label: 'API Reference', href: '/api-reference', desc: 'Integrate into your app', icon: 'Terminal' },
-      { label: 'SDKs', href: '/downloads', desc: 'Official libraries', icon: 'FolderOpen' },
+      { label: 'SDKs & Downloads', href: '/downloads', desc: 'CLI, VS Code, Chrome extension', icon: 'FolderOpen' },
       { label: 'Documentation', href: '/docs', desc: 'Guides and tutorials', icon: 'BookOpen' },
+      { label: 'VS Code Extension', href: '/docs/vscode-extension', desc: 'AI coding agent in your editor', icon: 'Code2' },
+      { label: 'Chrome Extension', href: '/chrome-extension', desc: 'AI assistant in your browser', icon: 'Globe' },
+      { label: 'Providers', href: '/providers', desc: 'Connect Anthropic, OpenAI, Groq, Ollama', icon: 'Layers' },
     ]
   },
   {
@@ -80,8 +83,9 @@ const MENU_GROUPS = [
     },
     items: [
       { label: 'Blog', href: '/blog', desc: 'Latest updates', icon: 'Rss' },
+      { label: 'Help Center', href: '/help', desc: 'Support & FAQs', icon: 'Sparkles' },
       { label: 'Community', href: '/contact', desc: 'Join the discussion', icon: 'Globe' },
-      { label: 'Help Center', href: '/docs', desc: 'Support & FAQs', icon: 'Sparkles' },
+      { label: 'System Status', href: '/status', desc: 'Service health', icon: 'Cpu' },
     ]
   },
   {

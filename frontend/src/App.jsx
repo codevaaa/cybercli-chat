@@ -43,6 +43,11 @@ import DownloadMacPage from '@pages/public/DownloadMacPage'
 import DownloadLinuxPage from '@pages/public/DownloadLinuxPage'
 import CouncilModePage from '@pages/public/CouncilModePage'
 import UpgradePage from '@pages/public/UpgradePage'
+import ApiKeysPage from '@pages/public/ApiKeysPage'
+import HelpPage from '@pages/public/HelpPage'
+import ProvidersPage from '@pages/public/ProvidersPage'
+import ChromeExtensionPage from '@pages/public/ChromeExtensionPage'
+import ExtensionDocsPage from '@pages/public/ExtensionDocsPage'
 import CliLoginPage from '@pages/public/CliLoginPage'
 import CliSubscribePage from '@pages/public/CliSubscribePage'
 
@@ -145,6 +150,11 @@ function App() {
           <Route path="/downloads/linux" element={<PublicLayout><DownloadLinuxPage /></PublicLayout>} />
           <Route path="/council-mode" element={<PublicLayout><CouncilModePage /></PublicLayout>} />
           <Route path="/upgrade" element={<UpgradePage />} />
+          <Route path="/api-keys" element={<ApiKeysPage />} />
+          <Route path="/help" element={<PublicLayout><HelpPage /></PublicLayout>} />
+          <Route path="/providers" element={<PublicLayout><ProvidersPage /></PublicLayout>} />
+          <Route path="/chrome-extension" element={<PublicLayout><ChromeExtensionPage /></PublicLayout>} />
+          <Route path="/docs/vscode-extension" element={<PublicLayout><ExtensionDocsPage /></PublicLayout>} />
           <Route path="/login" element={<CliLoginPage />} />
           <Route path="/subscribe" element={<CliSubscribePage />} />
 
