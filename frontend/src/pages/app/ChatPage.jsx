@@ -4293,25 +4293,103 @@ export default function ChatPage() {
 
     // Use the ref as fallback so rapid consecutive sends don't create duplicate threads
     let currentId = activeThreadId || activeThreadIdRef.current || creatingThreadRef.current
+    let useGuestFallback = false
     if (!currentId) {
       if (isCreatingThreadRef.current) return
       isCreatingThreadRef.current = true
-      try {
-        const { data } = await api.post('/chat', { title: userText.substring(0, 50), model_id: activeModel })
-        setThreads(prev => [data, ...prev])
-        currentId = data._id
-        activeThreadIdRef.current = currentId
-        creatingThreadRef.current = currentId
-        navigate(`/chat/${currentId}`, { replace: true })
-      } catch (err) {
-        console.error('Failed to create thread silently:', err)
-        setError('Failed to start conversation. Server may be unreachable.')
-        setLoading(false)
-        isCreatingThreadRef.current = false
-        return
-      } finally {
-        isCreatingThreadRef.current = false
+      
+      // Retry with exponential backoff (3 attempts)
+      let retries = 3
+      let lastErr = null
+      while (retries > 0) {
+        try {
+          const { data } = await api.post('/chat', { title: userText.substring(0, 50), model_id: activeModel })
+          setThreads(prev => [data, ...prev])
+          currentId = data._id
+          activeThreadIdRef.current = currentId
+          creatingThreadRef.current = currentId
+          navigate(`/chat/${currentId}`, { replace: true })
+          lastErr = null
+          break
+        } catch (err) {
+          lastErr = err
+          retries--
+          if (retries > 0) {
+            console.warn(`Thread creation attempt failed (${retries} retries left):`, err.message)
+            await new Promise(r => setTimeout(r, (3 - retries) * 1500))
+          }
+        }
       }
+      isCreatingThreadRef.current = false
+      
+      if (lastErr) {
+        console.warn('Thread creation failed after 3 retries. Falling back to guest mode.')
+        // Graceful fallback: use completions endpoint (no thread persistence)
+        useGuestFallback = true
+      }
+    }
+    
+    // Guest fallback path: send via /completions (no thread saving, but chat works)
+    if (useGuestFallback) {
+      const userMsg = { role: 'user', content: userText }
+      const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg, ...extraSystemMessages]
+      setMessages(prev => [...prev, userMsg])
+      const assistantMsg = { role: 'assistant', content: '', model: activeModel }
+      setMessages(prev => [...prev, assistantMsg])
+      const assistantIdx = messages.length + 1
+      setStreamingIndex(assistantIdx)
+      let fullReply = ''
+      try {
+        const token = await getFreshToken()
+        const res = await fetch(`${API_BASE}/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ messages: history, model: activeModel, webSearchEnabled, deepResearchEnabled })
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let streamBuffer = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          streamBuffer += decoder.decode(value, { stream: true })
+          const lines = streamBuffer.split('\n')
+          streamBuffer = lines.pop() || ''
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed.startsWith('data: ')) continue
+            const raw = trimmed.slice(6)
+            if (raw === '[DONE]') break
+            try {
+              const parsed = JSON.parse(raw)
+              if (parsed.type === 'token') {
+                fullReply += parsed.content
+                setMessages(prev => {
+                  const next = [...prev]
+                  if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
+                  return next
+                })
+              }
+            } catch {}
+          }
+        }
+      } catch (err) {
+        console.error('Guest fallback stream error:', err)
+        setMessages(prev => {
+          const next = [...prev]
+          if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${err.message}` }
+          return next
+        })
+        setError('Server is warming up. Your message was sent without saving. Try again shortly.')
+      } finally {
+        setStreamingIndex(null)
+        setLoading(false)
+      }
+      return
     }
     const userMsg = { role: 'user', content: userText }
     const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg, ...extraSystemMessages]

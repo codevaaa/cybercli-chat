@@ -206,5 +206,29 @@ export const truncateThread = async (threadId, messageId) => {
   return data
 }
 
+// ── Backend health pre-warm (wake Render cold-start) ──────────────────────────
+let healthCheckDone = false
+export async function checkBackendHealth() {
+  if (healthCheckDone) return true
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 10000)
+    const res = await fetch(`${API_BASE.replace('/api/v1', '')}/health`, {
+      signal: controller.signal,
+    })
+    clearTimeout(timeout)
+    healthCheckDone = res.ok
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+// Pre-warm on module load (non-blocking)
+if (typeof window !== 'undefined') {
+  setTimeout(() => checkBackendHealth(), 500)
+}
+
 export { isLoggedIn }
 export default api
+

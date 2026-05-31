@@ -41,6 +41,7 @@ import cliRoutes from './routes/cli.routes.js'
 import downloadsRoutes from './routes/downloads.routes.js'
 import v1Routes from './routes/v1.routes.js'
 import agentRoutes from './routes/agent.routes.js'
+import statusRoutes from './routes/status.routes.js'
 import http from 'http'
 import { WebSocketServer } from 'ws'
 import ApiKey from './models/ApiKey.js'
@@ -146,12 +147,28 @@ app.post('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }), (r
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
+// Response time header
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint()
+  res.on('finish', () => {
+    const ns = process.hrtime.bigint() - start
+    res.setHeader('X-Response-Time', `${Number(ns / 1_000_000n)}ms`)
+  })
+  next()
+})
+
 // Request logging
 app.use(requestLogger)
 
 // Health check and root endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage().rss,
+    node: process.version,
+  })
 })
 
 app.get('/', (req, res) => {
@@ -193,6 +210,7 @@ app.use('/api/v1/support', supportRoutes)
 app.use('/api/v1/cli', cliRoutes)
 app.use('/api/v1/downloads', downloadsRoutes)
 app.use('/api/v1/agent', agentRoutes)
+app.use('/api/v1/status', statusRoutes)
 app.use('/v1', v1Routes)
 
 
