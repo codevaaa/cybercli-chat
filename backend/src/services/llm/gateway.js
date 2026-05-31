@@ -36,6 +36,7 @@ const BASE_URLS = {
   mistral: 'https://api.mistral.ai/v1',
   opencode: 'https://opencode.ai/zen/v1',
   apifreellm: 'https://apifreellm.com/api/v1',
+  cerebras: 'https://api.cerebras.ai/v1',
 }
 
 const MODEL_MAP = {
@@ -140,7 +141,24 @@ const OPENROUTER_FALLBACK_MAP = {
   'huggingface/thecnical/cybermindcli': 'deepseek/deepseek-r1-distill-llama-70b',
   'nvidia/llama-3.1-nemotron-70b': 'nvidia/llama-3.1-nemotron-70b-instruct',
   'gemini/gemini-2.5-flash': 'google/gemini-2.5-flash',
-  'gemini/gemini-2.5-pro': 'google/gemini-2.5-pro'
+  'gemini/gemini-2.5-pro': 'google/gemini-2.5-pro',
+  
+  // OpenCode Fallbacks
+  'opencode/deepseek-v4-pro': 'deepseek/deepseek-chat',
+  'opencode/deepseek-v4-flash': 'deepseek/deepseek-chat',
+  'opencode/kimi-k2.5': 'moonshotai/kimi-k2.6:free',
+  'opencode/qwen3.7-max': 'qwen/qwen-2.5-72b-instruct',
+  'opencode/minimax-m2.5': 'minimax/minimax-m2.5:free',
+
+  // ApiFree Fallbacks
+  'apifreellm/gpt-4o': 'openai/gpt-4o-mini',
+  'apifreellm/claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
+  'apifreellm/llama-3-70b': 'meta-llama/llama-3.3-70b-instruct',
+
+  // Cerebras Fallbacks
+  'cerebras/llama-3.1-8b': 'meta-llama/llama-3.1-8b-instruct',
+  'cerebras/llama-3.3-70b': 'meta-llama/llama-3.3-70b-instruct',
+  'cerebras/qwen-3-32b': 'qwen/qwen-2.5-coder-32b-instruct'
 }
 
 const FALLBACK_CHAIN = [
@@ -210,7 +228,7 @@ function getClient(provider) {
     })
   }
 
-  if (provider === 'openrouter' || provider === 'groq' || provider === 'mistral' || provider === 'opencode' || provider === 'apifreellm') {
+  if (provider === 'openrouter' || provider === 'groq' || provider === 'mistral' || provider === 'opencode' || provider === 'apifreellm' || provider === 'cerebras') {
     return new OpenAI({
       apiKey: key,
       baseURL: BASE_URLS[provider],
@@ -347,13 +365,14 @@ export const llmGateway = {
     let activeModelName = targetModel.model
     let activeProvider = targetModel.provider
 
-    if (activeProvider === 'gemini' && (directGeminiFailed || !PROVIDER_KEYS.gemini)) {
-      client = getClient('openrouter')
-      activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || 'google/gemini-2.5-flash'
-      activeProvider = 'openrouter'
-    } else if (!client && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
-      client = getClient('openrouter')
-      if (client) {
+    const needsOpenRouterFallback = 
+      (activeProvider === 'gemini' && (directGeminiFailed || !PROVIDER_KEYS.gemini)) ||
+      (!client && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral'].includes(targetModel.provider))
+
+    if (needsOpenRouterFallback) {
+      const orClient = getClient('openrouter')
+      if (orClient) {
+        client = orClient
         activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
         activeProvider = 'openrouter'
       }
@@ -384,7 +403,7 @@ export const llmGateway = {
     } catch (error) {
       console.error(`Provider ${activeProvider} failed:`, error.message)
 
-      if (activeProvider !== 'openrouter' && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
+      if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini'].includes(targetModel.provider)) {
         try {
           const fallbackClient = getClient('openrouter')
           if (fallbackClient) {
@@ -534,13 +553,14 @@ export const llmGateway = {
     let activeModelName = targetModel.model
     let activeProvider = targetModel.provider
 
-    if (activeProvider === 'gemini' && (directGeminiFailed || !PROVIDER_KEYS.gemini)) {
-      client = getClient('openrouter')
-      activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || 'google/gemini-2.5-flash'
-      activeProvider = 'openrouter'
-    } else if (!client && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
-      client = getClient('openrouter')
-      if (client) {
+    const needsOpenRouterFallback = 
+      (activeProvider === 'gemini' && (directGeminiFailed || !PROVIDER_KEYS.gemini)) ||
+      (!client && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral'].includes(targetModel.provider))
+
+    if (needsOpenRouterFallback) {
+      const orClient = getClient('openrouter')
+      if (orClient) {
+        client = orClient
         activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
         activeProvider = 'openrouter'
       }
@@ -568,7 +588,7 @@ export const llmGateway = {
     } catch (error) {
       console.error(`Provider ${activeProvider} failed:`, error.message)
 
-      if (activeProvider !== 'openrouter' && (targetModel.provider === 'huggingface' || targetModel.provider === 'nvidia')) {
+      if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini'].includes(targetModel.provider)) {
         try {
           const fallbackClient = getClient('openrouter')
           if (fallbackClient) {

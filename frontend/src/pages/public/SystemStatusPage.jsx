@@ -166,14 +166,14 @@ function UptimeBars({ uptime, status }) {
 
 // ── Network Topology SVG ────────────────────────────────────────────────────
 function NetworkTopology({ clusters }) {
-  const operationalCount = clusters.filter(c => c.status === 'operational').length
+  const displayClusters = clusters.filter(c => c.provider !== 'council' && c.provider !== 'gemini-tts')
   const nodes = [
     { id: 'user', x: 50, y: 120, label: 'Users', icon: '👤' },
     { id: 'api', x: 250, y: 120, label: 'Codeva API', icon: '⚡' },
-    ...clusters.slice(0, 6).map((c, i) => ({
+    ...displayClusters.map((c, i) => ({
       id: c.name,
       x: 420 + (i % 2) * 140,
-      y: 30 + Math.floor(i / 2) * 90,
+      y: 20 + Math.floor(i / 2) * 75,
       label: c.name,
       status: c.status,
       icon: '🔮',
@@ -202,9 +202,9 @@ function NetworkTopology({ clusters }) {
       </line>
 
       {/* Connection lines: API → Providers */}
-      {clusters.slice(0, 6).map((c, i) => {
+      {displayClusters.map((c, i) => {
         const tx = 420 + (i % 2) * 140
-        const ty = 30 + Math.floor(i / 2) * 90
+        const ty = 20 + Math.floor(i / 2) * 75
         const color = c.status === 'operational' ? '#10B981' : c.status === 'degraded' ? '#F59E0B' : '#EF4444'
         return (
           <g key={c.name}>
@@ -232,9 +232,9 @@ function NetworkTopology({ clusters }) {
       </g>
 
       {/* Provider nodes */}
-      {clusters.slice(0, 6).map((c, i) => {
+      {displayClusters.map((c, i) => {
         const tx = 420 + (i % 2) * 140
-        const ty = 30 + Math.floor(i / 2) * 90
+        const ty = 20 + Math.floor(i / 2) * 75
         const sc = getStatusConfig(c.status)
         return (
           <g key={c.name}>

@@ -8,28 +8,27 @@ let cachedResult = null
 let cacheTimestamp = 0
 const CACHE_TTL_MS = 60_000
 
-// ── Provider ping configs ──────────────────────────────────────────────────────
 const PROVIDER_CONFIGS = [
   {
     name: 'Madhav',
-    type: 'Gemini 2.5 Pro Core',
-    provider: 'gemini',
-    pingUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
-    keyEnv: 'GEMINI_API_KEY',
-    buildUrl: (key) => `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
-    method: 'GET',
-  },
-  {
-    name: 'Nakul',
-    type: 'Groq Llama-3.1-70B',
-    provider: 'groq',
-    pingUrl: 'https://api.groq.com/openai/v1/models',
-    keyEnv: 'GROQ_API_KEY',
+    type: 'OpenCode DeepSeek-v4-Pro',
+    provider: 'opencode',
+    pingUrl: 'https://opencode.ai/zen/v1/models',
+    keyEnv: 'OPENCODE_API_KEY',
     method: 'GET',
     headers: (key) => ({ Authorization: `Bearer ${key}` }),
   },
   {
     name: 'Bheem',
+    type: 'ApiFree GPT-4o Core',
+    provider: 'apifreellm',
+    pingUrl: 'https://apifreellm.com/api/v1/models',
+    keyEnv: 'APIFREELLM_API_KEY',
+    method: 'GET',
+    headers: (key) => ({ Authorization: `Bearer ${key}` }),
+  },
+  {
+    name: 'Nakul',
     type: 'OpenRouter GPT-4o Mini',
     provider: 'openrouter',
     pingUrl: 'https://openrouter.ai/api/v1/models',
@@ -65,8 +64,8 @@ const PROVIDER_CONFIGS = [
     headers: (key) => ({ Authorization: `Bearer ${key}` }),
   },
   {
-    name: 'Kali',
-    type: 'Cerebras Llama-3.3-70B',
+    name: 'Abhimanyu',
+    type: 'Cerebras Llama-3.1-8B',
     provider: 'cerebras',
     pingUrl: 'https://api.cerebras.ai/v1/models',
     keyEnv: 'CEREBRAS_API_KEY',
