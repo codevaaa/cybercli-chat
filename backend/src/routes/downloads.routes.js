@@ -100,4 +100,16 @@ router.get('/', (req, res) => {
   })
 })
 
+/**
+ * GET /api/v1/downloads/extension/version
+ * Returns the latest extension version and update download URL.
+ */
+router.get('/extension/version', (req, res) => {
+  res.json({
+    version: '0.2.0',
+    minCompatibleVersion: '0.1.0',
+    downloadUrl: 'https://github.com/codevaaa/cybercoder/archive/refs/heads/master.zip'
+  })
+})
+
 export default router
