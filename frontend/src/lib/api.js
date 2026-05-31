@@ -19,7 +19,7 @@ const getApiBase = () => {
   return 'http://localhost:3000/api/v1'
 }
 
-export const API_BASE = getApiBase()
+export let API_BASE = getApiBase()
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -224,9 +224,26 @@ export async function checkBackendHealth() {
   }
 }
 
-// Pre-warm on module load (non-blocking)
+// Pre-warm and dynamic local -> production fallback on module load
 if (typeof window !== 'undefined') {
-  setTimeout(() => checkBackendHealth(), 500)
+  const initApiFallback = async () => {
+    if (API_BASE.includes('localhost')) {
+      try {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 2000)
+        const res = await fetch('http://localhost:3000/health', { signal: controller.signal })
+        clearTimeout(timeout)
+        if (!res.ok) throw new Error('Local dead')
+      } catch (e) {
+        console.warn('[API] Local backend is unreachable on port 3000. Redirecting API requests to production Render backend.')
+        API_BASE = 'https://cybercli-api.onrender.com/api/v1'
+        api.defaults.baseURL = API_BASE
+      }
+    }
+    // Now trigger health check
+    checkBackendHealth().catch(console.error)
+  }
+  setTimeout(initApiFallback, 100)
 }
 
 export { isLoggedIn }
