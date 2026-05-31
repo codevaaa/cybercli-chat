@@ -6,6 +6,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import App from './App.jsx'
 import './index.css'
 import { useAuthStore } from './stores/authStore.js'
+import { Analytics } from '@vercel/analytics/react'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,7 +29,12 @@ function AppWrapper() {
     initialize()
   }, [initialize])
 
-  return <App />
+  return (
+    <>
+      <App />
+      <Analytics />
+    </>
+  )
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
