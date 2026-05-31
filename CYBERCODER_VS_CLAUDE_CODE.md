@@ -44,7 +44,7 @@ The win condition for free providers is process, not parameters:
 | Skills ecosystem | ✅ | ✅ 26 bundled skills | bundled into the package |
 | Multi-provider routing | ❌ (Anthropic only) | ✅ 8+ providers | **edge** — free-provider power |
 | Council / consensus | ❌ | ✅ `core/consensus.ts` | multi-model consensus |
-| IDE extensions (VS Code/JetBrains) | ✅ | ⚠️ planned | **gap** |
+| IDE extensions (VS Code/JetBrains) | ✅ | 🟡 VS Code ✅ / JetBrains planned | VS Code extension built (`packages/vscode-extension`, real .vsix) |
 | GitHub Action / CI SDK | ✅ | ⚠️ partial | **gap** |
 | Packaged binary footprint | ~200–300 MB | ~1 MB CLI | small is good, but missing bundled runtimes/models |
 | Desktop app | ✅ | ✅ Electron (Codeva) | parity in progress |
@@ -91,13 +91,16 @@ mostly **bundled runtime + native dependencies**, not smarter code:
 
 ## Gaps to close to decisively surpass (prioritized)
 
-1. **IDE integrations**: VS Code + JetBrains extensions that drive the CLI (LSP).
-2. **CI/SDK**: a `cybercoder` GitHub Action and a programmatic SDK for pipelines.
-3. **Accurate code intelligence**: tree-sitter symbol graph + repo map.
-4. **Packaged binary**: compiled, Node-optional, with vendored ripgrep.
-5. **Speculative drafting**: draft with a fast free model, validate with a stronger
+1. **IDE integrations**: ✅ VS Code extension shipped (`packages/vscode-extension`
+   — chat sidebar, apply-to-editor, right-click actions, secure auth, model
+   picker; builds to a 13 KB .vsix). JetBrains next.
+2. **Chrome extension**: powerful in-browser assistant (planned next).
+3. **CI/SDK**: a `cybercoder` GitHub Action and a programmatic SDK for pipelines.
+4. **Accurate code intelligence**: tree-sitter symbol graph + repo map.
+5. **Packaged binary**: compiled, Node-optional, with vendored ripgrep.
+6. **Speculative drafting**: draft with a fast free model, validate with a stronger
    one only when confidence is low (extra token savings + speed).
-6. **Eval harness**: a small suite of real coding tasks to measure pass-rate per
+7. **Eval harness**: a small suite of real coding tasks to measure pass-rate per
    provider so routing decisions are data-driven.
 
 ---

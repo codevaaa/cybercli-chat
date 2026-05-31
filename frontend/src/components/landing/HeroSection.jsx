@@ -41,22 +41,23 @@ export default function HeroSection() {
   }, [cmdIndex])
 
   return (
-    <div className="bg-[#0C0A09] text-white min-h-screen relative flex flex-col items-center pt-32 pb-24 overflow-hidden selection:bg-[#D97757]/30">
-      
-      {/* ── Background Glow ── */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[500px] bg-[#D97757]/10 blur-[140px] rounded-full pointer-events-none" />
+    <div className="bg-[#1a1a18] text-white min-h-screen relative flex flex-col items-center pt-32 pb-24 overflow-hidden selection:bg-[#C96442]/30">
+
+      {/* ── Background Glow + subtle grid ── */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[520px] bg-[#C96442]/12 blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)', backgroundSize: '56px 56px' }} />
 
       <div className="container-custom max-w-6xl mx-auto relative z-10 px-6">
-        
+
         <div className="text-center mb-16 max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex justify-center mb-8"
           >
-            <Link to="/changelog" className="group flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D97757]/30 bg-[#D97757]/10 text-[#D97757] text-sm font-medium hover:bg-[#D97757]/20 transition-colors">
+            <Link to="/changelog" className="group flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#C96442]/30 bg-[#C96442]/10 text-[#C96442] text-sm font-medium hover:bg-[#C96442]/20 transition-colors">
               <SparkleIcon />
-              <span>Council Mode + CyberCoder CLI are live</span>
+              <span>Cowork + CyberCoder for VS Code are live</span>
               <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </motion.div>
@@ -65,21 +66,21 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-[clamp(3rem,7.5vw,6.5rem)] leading-[0.95] tracking-tight mb-8 font-serif"
+            className="text-[clamp(3rem,7.5vw,6.5rem)] leading-[0.95] tracking-tight mb-8 font-serif text-[#f5f4ef]"
             style={{ fontFamily: "'Instrument Serif', serif" }}
           >
             Every AI model.<br/>
-            <span className="text-[#D97757] italic">One workspace.</span>
+            <span className="text-[#C96442] italic">One workspace.</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-lg md:text-xl text-[#A1A1AA] max-w-2xl mx-auto mb-10 font-medium leading-relaxed"
+            className="text-lg md:text-xl text-[#a8a5a0] max-w-2xl mx-auto mb-10 font-medium leading-relaxed"
           >
-            Codeva unifies 50+ frontier models into one fast chat and an agentic CLI.
-            Council Mode debates. Voice built in. Your code stays yours.
+            Codeva unifies 50+ frontier models into one fast chat, an agentic CLI, and
+            a VS Code extension. Council Mode debates. Cowork runs tasks. Your code stays yours.
           </motion.p>
 
           <motion.div
@@ -90,7 +91,7 @@ export default function HeroSection() {
           >
             <Link
               to={useAuthStore().user ? "/chat" : "/auth/signup"}
-              className="px-8 py-4 bg-[#D97757] hover:bg-[#c26549] text-white rounded-xl font-bold transition-all shadow-[0_0_30px_rgba(217,119,87,0.3)] w-full sm:w-auto"
+              className="px-8 py-4 bg-[#C96442] hover:bg-[#b9573a] text-white rounded-xl font-bold transition-all shadow-[0_0_30px_rgba(201,100,66,0.3)] w-full sm:w-auto"
             >
               Start for Free
             </Link>
@@ -107,12 +108,12 @@ export default function HeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.45 }}
-            className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[#71717A]"
+            className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[#82807a]"
           >
-            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#D97757]" /> No credit card</span>
-            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#D97757]" /> 50+ free models</span>
-            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#D97757]" /> Voice &amp; image built in</span>
-            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#D97757]" /> Open CLI</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#C96442]" /> No credit card</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#C96442]" /> 50+ free models</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#C96442]" /> Voice &amp; image built in</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-[#C96442]" /> Open CLI &amp; VS Code</span>
           </motion.div>
         </div>
 
@@ -121,10 +122,10 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.8 }}
-          className="relative max-w-4xl mx-auto rounded-2xl overflow-hidden border border-white/10 bg-[#121212] shadow-2xl"
+          className="relative max-w-4xl mx-auto rounded-2xl overflow-hidden border border-white/10 bg-[#16140f] shadow-2xl"
         >
           {/* Header */}
-          <div className="flex items-center px-4 py-3 bg-[#1A1A1A] border-b border-white/5">
+          <div className="flex items-center px-4 py-3 bg-[#1d1b16] border-b border-white/5">
             <div className="flex gap-2">
               <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
               <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
@@ -159,10 +160,10 @@ export default function HeroSection() {
                   <div className="text-[#888888]">
                     [Codeva Council is assembling 3 models...]
                   </div>
-                  <div className="bg-white/5 border border-[#D97757]/30 rounded-lg p-4">
+                  <div className="bg-white/5 border border-[#C96442]/30 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[#D97757] font-bold">Consensus Reached</span>
-                      <span className="text-[10px] bg-[#D97757]/20 text-[#D97757] px-2 py-0.5 rounded">GPT-4o + Claude 3.5 + DeepSeek</span>
+                      <span className="text-[#C96442] font-bold">Consensus Reached</span>
+                      <span className="text-[10px] bg-[#C96442]/20 text-[#C96442] px-2 py-0.5 rounded">GPT-4o + Claude 3.5 + DeepSeek</span>
                     </div>
                     <div className="text-gray-300">
                       Executing multi-step reasoning plan...<br/>
@@ -182,33 +183,33 @@ export default function HeroSection() {
       {/* ── Feature Highlights under Hero ── */}
       <div className="container-custom max-w-5xl mx-auto px-6 mt-32">
         <div className="grid md:grid-cols-3 gap-8 border-t border-white/5 pt-16">
-          
+
           <div className="text-center md:text-left">
-            <div className="w-12 h-12 rounded-xl bg-[#D97757]/10 flex items-center justify-center mx-auto md:mx-0 mb-6">
-              <Terminal className="w-6 h-6 text-[#D97757]" />
+            <div className="w-12 h-12 rounded-xl bg-[#C96442]/10 flex items-center justify-center mx-auto md:mx-0 mb-6">
+              <Terminal className="w-6 h-6 text-[#C96442]" />
             </div>
             <h3 className="text-xl font-bold mb-3 text-white">Agentic Code</h3>
-            <p className="text-[#A1A1AA] leading-relaxed">
-              Codeva Code lives in your terminal. It writes files, runs tests, and fixes bugs autonomously.
+            <p className="text-[#a8a5a0] leading-relaxed">
+              CyberCoder lives in your terminal and VS Code. It writes files, runs tests, and fixes bugs autonomously.
             </p>
           </div>
 
           <div className="text-center md:text-left">
-            <div className="w-12 h-12 rounded-xl bg-[#D97757]/10 flex items-center justify-center mx-auto md:mx-0 mb-6">
-              <Search className="w-6 h-6 text-[#D97757]" />
+            <div className="w-12 h-12 rounded-xl bg-[#C96442]/10 flex items-center justify-center mx-auto md:mx-0 mb-6">
+              <Search className="w-6 h-6 text-[#C96442]" />
             </div>
             <h3 className="text-xl font-bold mb-3 text-white">Deep Research</h3>
-            <p className="text-[#A1A1AA] leading-relaxed">
-              Search your entire codebase or the open web instantly with advanced RAG.
+            <p className="text-[#a8a5a0] leading-relaxed">
+              Search your entire codebase or the open web instantly with advanced RAG and live web tools.
             </p>
           </div>
 
           <div className="text-center md:text-left">
-            <div className="w-12 h-12 rounded-xl bg-[#D97757]/10 flex items-center justify-center mx-auto md:mx-0 mb-6">
-              <Zap className="w-6 h-6 text-[#D97757]" />
+            <div className="w-12 h-12 rounded-xl bg-[#C96442]/10 flex items-center justify-center mx-auto md:mx-0 mb-6">
+              <Zap className="w-6 h-6 text-[#C96442]" />
             </div>
             <h3 className="text-xl font-bold mb-3 text-white">Council Mode</h3>
-            <p className="text-[#A1A1AA] leading-relaxed">
+            <p className="text-[#a8a5a0] leading-relaxed">
               Force multiple AI models to debate and reach a consensus before generating complex code.
             </p>
           </div>
