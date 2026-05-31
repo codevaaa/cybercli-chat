@@ -29,7 +29,8 @@ router.get('/', async (req, res, next) => {
     const keys = await ApiKey.find({ user_id: req.user.id }).sort({ created_at: -1 })
     res.json(keys.map(toClientShape))
   } catch (err) {
-    next(err)
+    console.error('[API Keys Route GET Error]:', err)
+    res.status(500).json({ error: err.message || 'Failed to fetch API keys' })
   }
 })
 
@@ -73,7 +74,8 @@ router.post('/', async (req, res, next) => {
       is_active: newKey.is_active,
     })
   } catch (err) {
-    next(err)
+    console.error('[API Keys Route Create Error]:', err)
+    res.status(500).json({ error: err.message || 'Failed to create API key due to database error' })
   }
 })
 
@@ -89,7 +91,8 @@ router.delete('/:id', async (req, res, next) => {
 
     res.json({ message: 'API key revoked successfully' })
   } catch (err) {
-    next(err)
+    console.error('[API Keys Route DELETE Error]:', err)
+    res.status(500).json({ error: err.message || 'Failed to revoke API key' })
   }
 })
 

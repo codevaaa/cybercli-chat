@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import api, { smartStream, createThread, getThreads, getMessages, isLoggedIn, API_BASE, getFreshToken, truncateThread } from '../../lib/api.js'
+import api, { smartStream, createThread, getThreads, getMessages, isLoggedIn, API_BASE, getFreshToken, truncateThread, checkBackendHealth } from '../../lib/api.js'
 import { useTTS } from '../../hooks/useTTS.js'
 import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
 import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
@@ -3229,6 +3229,35 @@ export default function ChatPage() {
   const [settingsTab, setSettingsTab] = useState('general')
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [daemonConnected, setDaemonConnected] = useState(false)
+  const [isWarmingUp, setIsWarmingUp] = useState(false)
+  const [backendReady, setBackendReady] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    const check = async () => {
+      const ok = await checkBackendHealth()
+      if (!ok) {
+        if (!active) return
+        setIsWarmingUp(true)
+        setBackendReady(false)
+        while (active) {
+          await new Promise(r => setTimeout(r, 3000))
+          if (!active) return
+          const retryOk = await checkBackendHealth()
+          if (retryOk) {
+            setIsWarmingUp(false)
+            setBackendReady(true)
+            break
+          }
+        }
+      } else {
+        setIsWarmingUp(false)
+        setBackendReady(true)
+      }
+    }
+    check()
+    return () => { active = false }
+  }, [])
 
   // Claude & Cyber Mode Upgrades
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
@@ -5151,6 +5180,14 @@ export default function ChatPage() {
           
           {/* Chat Content Panel (Left/Main side) */}
           <div className={`flex-1 flex flex-col min-w-0 h-full relative ${workspaceOpen && !isMobile ? 'w-[55%]' : 'w-full'}`}>
+            {/* Server Warming Up Banner */}
+            {isWarmingUp && (
+              <div className="bg-[#7C3AED]/10 border-b border-[#7C3AED]/20 px-4 py-2.5 text-center text-xs text-[#ECECEC] flex items-center justify-center gap-2 animate-pulse z-50 flex-shrink-0">
+                <span className="inline-block w-2 h-2 rounded-full bg-[#7C3AED] animate-ping" />
+                <span>⚡ Waking up the secure Codeva server from standby (takes ~20s)... Chat is temporarily locked.</span>
+              </div>
+            )}
+            
             {/* Desktop Drag Overlay */}
             {isDraggingFiles && (
               <div className="absolute inset-0 z-[100] bg-[#7C3AED]/15 border-[3px] border-dashed border-[#7C3AED] flex items-center justify-center pointer-events-none animate-fade-in">
@@ -5171,7 +5208,7 @@ export default function ChatPage() {
                         input={input}
                         setInput={setInput}
                         onSend={handleSend}
-                        loading={loading}
+                        loading={loading || isWarmingUp}
                         selectedModel={selectedModel}
                         onModelChange={setSelectedModel}
                         onMicClick={toggleInlineSpeech}
@@ -5199,7 +5236,7 @@ export default function ChatPage() {
                       {loading && messages.length === 0 ? (
                         <div className="flex items-center justify-center py-12">
                           <motion.div
-                            className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin"
+                             className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin"
                           />
                         </div>
                       ) : (
@@ -5236,7 +5273,7 @@ export default function ChatPage() {
                         input={input}
                         setInput={setInput}
                         onSend={handleSend}
-                        loading={loading}
+                        loading={loading || isWarmingUp}
                         selectedModel={selectedModel}
                         onModelChange={setSelectedModel}
                         onMicClick={toggleInlineSpeech}

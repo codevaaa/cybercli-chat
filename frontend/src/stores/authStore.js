@@ -2,6 +2,22 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../lib/supabase.js'
 
+const dispatchAuthSync = (session) => {
+  if (typeof window !== 'undefined') {
+    const payload = {
+      type: 'CYBERCLI_AUTH_SYNC',
+      token: session?.access_token || null,
+      user: session?.user ? {
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.user_metadata?.name || ''
+      } : null
+    }
+    window.postMessage(payload, '*')
+    window.dispatchEvent(new CustomEvent('cybercli-auth-change', { detail: payload }))
+  }
+}
+
 export const useAuthStore = create(
   persist(
     (set, get) => ({
@@ -38,6 +54,7 @@ export const useAuthStore = create(
             localStorage.removeItem('sb-access-token')
           }
           set({ session, user: session?.user || null, loading: false })
+          dispatchAuthSync(session)
 
           supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.access_token) {
@@ -50,6 +67,7 @@ export const useAuthStore = create(
               localStorage.removeItem('user_email')
             }
             set({ session, user: session?.user || null })
+            dispatchAuthSync(session)
           })
         } catch (error) {
           set({ error: error.message, loading: false })
@@ -69,6 +87,7 @@ export const useAuthStore = create(
             localStorage.setItem('user_email', data.user?.email || '')
           }
           set({ session: data.session, user: data.user, loading: false })
+          dispatchAuthSync(data.session)
           return { success: true }
         } catch (error) {
           set({ error: error.message, loading: false })
@@ -96,6 +115,7 @@ export const useAuthStore = create(
             localStorage.setItem('user_email', data.user?.email || '')
           }
           set({ session: data.session, user: data.user, loading: false })
+          dispatchAuthSync(data.session)
           return { success: true, needsVerification: !data.session }
         } catch (error) {
           set({ error: error.message, loading: false })
@@ -162,6 +182,7 @@ export const useAuthStore = create(
             }
           })
           set({ user: null, session: null, loading: false })
+          dispatchAuthSync(null)
         }
         return { success: true }
       },
