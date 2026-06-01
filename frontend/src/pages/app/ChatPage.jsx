@@ -1020,7 +1020,7 @@ function InputArea({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="How can Codeva help you today?"
+          placeholder="Type / for skills"
           rows={1}
           disabled={loading}
           className="flex-1 bg-transparent text-[15px] text-foreground-primary placeholder:text-foreground-muted/70 resize-none focus:outline-none leading-relaxed py-2.5 min-h-[44px]"
@@ -1799,60 +1799,29 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
 
 // ─── Hero State ───────────────────────────────────────────────────────────────
 
-function HeroState({ userName, onSuggestionClick }) {
+export const chatSuggestions = [
+  { icon: <Code2 className="w-4 h-4" />, label: 'Code', query: 'I need help writing some code for ' },
+  { icon: <GraduationCap className="w-4 h-4" />, label: 'Learn', query: 'I want to learn about ' },
+  { icon: <LineChart className="w-4 h-4" />, label: 'Strategize', query: 'Help me create a strategy for ' },
+  { icon: <Pencil className="w-4 h-4" />, label: 'Write', query: 'Help me write a ' },
+  { icon: <Coffee className="w-4 h-4" />, label: 'Life stuff', query: 'I need some advice on ' }
+]
+
+function HeroState({ userName }) {
   const firstName = userName ? userName.split(' ')[0] : 'User'
-  
-  const suggestions = [
-    { icon: <Code2 className="w-3.5 h-3.5" />, label: 'Code', query: 'I need help writing some code for ' },
-    { icon: <GraduationCap className="w-3.5 h-3.5" />, label: 'Learn', query: 'I want to learn about ' },
-    { icon: <LineChart className="w-3.5 h-3.5" />, label: 'Strategize', query: 'Help me create a strategy for ' },
-    { icon: <Pencil className="w-3.5 h-3.5" />, label: 'Write', query: 'Help me write a ' },
-    { icon: <Coffee className="w-3.5 h-3.5" />, label: 'Life stuff', query: 'I need some advice on ' }
-  ]
 
   return (
     <div className="flex flex-col items-center justify-center text-center px-4 w-full mt-[18vh] mb-8">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-6 flex items-center justify-center"
-      >
-        <div className="w-11 h-11 rounded-2xl bg-[#E8E6E1] dark:bg-[#37312c] flex items-center justify-center shadow-sm">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-[#D97757]">
-            <path d="M12 2l1.2 6.8L20 10l-6.8 1.2L12 18l-1.2-6.8L4 10l6.8-1.2L12 2z" fill="currentColor" />
-          </svg>
-        </div>
-      </motion.div>
-      <motion.h1
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
-        className="text-[32px] md:text-[40px] font-serif font-medium tracking-tight text-foreground-primary mb-3"
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="flex items-center justify-center gap-3"
       >
-        Back at it, {firstName}
-      </motion.h1>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="flex flex-col items-center gap-6 mt-1"
-      >
-        <p className="text-foreground-muted text-base hidden">
-          How can I help you today?
-        </p>
-        <div className="flex flex-wrap justify-center gap-2">
-          {suggestions.map((item, idx) => (
-            <button
-              key={idx}
-              onClick={() => onSuggestionClick?.(item.query)}
-              className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-[#2b2b2b] hover:bg-[#333333] border border-white/5 text-[#d4d4d4] hover:text-white transition-colors text-[13px] font-medium shadow-sm"
-            >
-              <span className="text-[#a3a3a3]">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </div>
+        <CodevaMark size={36} />
+        <h1 className="text-[32px] md:text-[40px] font-serif font-medium tracking-tight text-foreground-primary">
+          Back at it, {firstName}
+        </h1>
       </motion.div>
     </div>
   )
@@ -5312,8 +5281,8 @@ export default function ChatPage() {
               {activeNav === 'chats' ? (
                 messages.length === 0 && !loading ? (
                   <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full px-4 pb-20">
-                    <HeroState userName={userName} onSuggestionClick={(q) => { setInput(q); textareaRef.current?.focus(); }} />
-                    <div className="w-full mt-8">
+                    <HeroState userName={userName} />
+                    <div className="w-full mt-4">
                       <InputArea
                         input={input}
                         setInput={setInput}
@@ -5339,6 +5308,23 @@ export default function ChatPage() {
                         showQuickActions={messages.length === 0}
                       />
                     </div>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4, delay: 0.1 }}
+                      className="flex flex-wrap justify-center gap-2 mt-4"
+                    >
+                      {chatSuggestions.map((item, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => { setInput(item.query); textareaRef.current?.focus(); }}
+                          className="flex items-center gap-2 px-3.5 py-2.5 rounded-[12px] bg-[#32302D] hover:bg-[#3A3835] border border-white/5 text-[#d4d4d4] hover:text-white transition-colors text-[13px] font-medium shadow-sm"
+                        >
+                          <span className="text-[#a3a3a3]">{item.icon}</span>
+                          {item.label}
+                        </button>
+                      ))}
+                    </motion.div>
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col min-h-0">
