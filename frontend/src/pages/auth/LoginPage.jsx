@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -16,6 +16,14 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [focusedField, setFocusedField] = useState(null)
+
+  const method = searchParams.get('method') || ''
+
+  useEffect(() => {
+    if (method === 'google' && !loading) {
+      handleGoogleSignIn()
+    }
+  }, [method]) // Trigger once on mount if method is google
 
   const handleGoogleSignIn = async () => {
     clearError()
