@@ -419,6 +419,8 @@ function DaemonActionWidget({ action, payload, daemonConnected, onExecuteSuccess
         </div>
       </div>
 
+      <VoiceChatModal />
+
       {renderPayload()}
 
       {status === 'idle' && (
@@ -2981,26 +2983,27 @@ function CoworkView({ tasks, models, selectedModel, onStart, onStop, onRetry, on
   )
 }
 
-// ─── Search Sub-View Component ────────────────────────────────────────────────
+// ─── Search Modal Component ───────────────────────────────────────────────────
 
-function SearchView({ navigate, setActiveNav }) {
+function SearchModal({ isOpen, onClose, navigate }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [searched, setSearched] = useState(false)
   const debounceRef = useRef(null)
 
+  useEffect(() => {
+    if (!isOpen) {
+      setQuery('')
+      setResults([])
+    }
+  }, [isOpen])
+
   const doSearch = async (q) => {
-    if (!q.trim()) { setResults([]); setSearched(false); return }
-    setLoading(true)
+    if (!q.trim()) { setResults([]); return }
     try {
       const { data } = await api.get(`/search?q=${encodeURIComponent(q)}`)
       setResults(data.results || [])
-      setSearched(true)
     } catch (err) {
       console.error(err)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -3011,45 +3014,42 @@ function SearchView({ navigate, setActiveNav }) {
     debounceRef.current = setTimeout(() => doSearch(v), 400)
   }
 
+  if (!isOpen) return null
+
   return (
-    <div className="p-6 max-w-3xl mx-auto w-full">
-      <div className="mb-6">
-        <h2 className="text-2xl font-serif font-bold text-foreground-primary">Search Conversations</h2>
-        <p className="text-xs text-foreground-muted">Find messages and threads across all your chats.</p>
-      </div>
-
-      <div className="relative mb-6">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
-        <input
-          type="text"
-          value={query}
-          onChange={handleChange}
-          placeholder="Search your conversations…"
-          autoFocus
-          className="w-full bg-background-secondary border border-border-subtle rounded-2xl pl-11 pr-4 py-3.5 text-sm text-foreground-primary placeholder:text-foreground-muted focus:outline-none focus:border-accent transition-all"
-        />
-        {loading && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-        )}
-      </div>
-
-      <div className="space-y-2">
-        {results.map(r => (
-          <button
-            key={r._id || r.thread_id}
-            onClick={() => { navigate(`/chat/${r._id || r.thread_id}`); setActiveNav('chats') }}
-            className="w-full text-left p-4 rounded-2xl border border-border-subtle bg-background-secondary hover:bg-background-tertiary hover:border-accent/30 transition-all group"
-          >
-            <div className="flex items-start justify-between gap-3 mb-1">
-              <h3 className="text-sm font-medium text-foreground-primary group-hover:text-accent transition-colors truncate">{r.title || 'Untitled'}</h3>
-              <span className="text-[10px] text-foreground-muted flex-shrink-0">{r.last_message_at ? new Date(r.last_message_at).toLocaleDateString() : ''}</span>
-            </div>
-            {r.excerpt && <p className="text-xs text-foreground-muted leading-relaxed line-clamp-2">{r.excerpt}</p>}
+    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] bg-black/60 backdrop-blur-sm px-4">
+      <div className="w-full max-w-[640px] bg-[#252422] border border-white/5 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh]">
+        <div className="relative border-b border-white/5 flex items-center">
+          <Search className="absolute left-5 w-5 h-5 text-[#888888]" />
+          <input
+            type="text"
+            value={query}
+            onChange={handleChange}
+            placeholder="Search chats and projects"
+            autoFocus
+            className="w-full bg-transparent pl-14 pr-14 py-4 text-[15px] text-[#e8e6e1] placeholder-[#888888] focus:outline-none"
+          />
+          <button onClick={onClose} className="absolute right-4 p-1 rounded-md text-[#888888] hover:text-[#d4d4d4] transition-colors">
+            <X className="w-5 h-5" />
           </button>
-        ))}
-        {searched && results.length === 0 && (
-          <div className="text-center py-12 text-foreground-muted text-sm border border-dashed border-border-subtle rounded-2xl">
-            No results found for "{query}"
+        </div>
+        {results.length > 0 && (
+          <div className="overflow-y-auto p-2">
+            {results.map((r, i) => (
+              <div 
+                key={i} 
+                onClick={() => { onClose(); navigate(`/chat/${r._id || r.thread_id}`) }}
+                className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-white/5 rounded-xl group transition-colors"
+              >
+                <div className="flex items-center gap-3.5 overflow-hidden">
+                  <div className="p-1.5 rounded-full bg-white/5 border border-white/5 flex-shrink-0">
+                    <MessageSquare className="w-4 h-4 text-[#888888]" />
+                  </div>
+                  <span className="text-[14.5px] font-medium text-[#d4d4d4] truncate">{r.title || 'Untitled'}</span>
+                </div>
+                <span className="text-[13px] text-[#888888] opacity-0 group-hover:opacity-100 transition-opacity pl-4">Enter</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -3066,6 +3066,7 @@ export default function ChatPage() {
   // State
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [activeNav, setActiveNav] = useState('chats')
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([])
   const [threads, setThreads] = useState([])
@@ -4069,8 +4070,8 @@ export default function ChatPage() {
       return
     }
 
-    // Guest mode: no token → use completions endpoint directly (same as incognito)
-    if (!token) {
+    // Guest mode / Incognito: no token or incognito → use completions endpoint directly
+    if (!token || incognitoMode) {
       const userMsg = { role: 'user', content: userText }
       const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg, ...extraSystemMessages]
       setMessages(prev => [...prev, userMsg])
@@ -4949,7 +4950,7 @@ export default function ChatPage() {
               >
                 <PanelLeft className="w-[18px] h-[18px]" />
               </button>
-              <button className="p-1.5 rounded-lg text-[#888888] hover:text-[#d4d4d4] hover:bg-white/5 transition-colors" title="Search">
+              <button onClick={() => setIsSearchModalOpen(true)} className="p-1.5 rounded-lg text-[#888888] hover:text-[#d4d4d4] hover:bg-white/5 transition-colors" title="Search">
                 <Search className="w-[18px] h-[18px]" />
               </button>
               <button onClick={() => window.history.back()} className="p-1.5 rounded-lg text-[#888888] hover:text-[#d4d4d4] hover:bg-white/5 transition-colors ml-1" title="Back">
@@ -5224,7 +5225,7 @@ export default function ChatPage() {
                   </div>
                 )
               ) : activeNav === 'search' ? (
-                <SearchView navigate={navigate} setActiveNav={setActiveNav} />
+                null
               ) : activeNav === 'projects' ? (
                 <ProjectsView
                   threads={threads}
@@ -5557,6 +5558,12 @@ codeva link --key YOUR_API_KEY</pre>
           </AnimatePresence>
         </div>
       </main>
+
+      <SearchModal 
+        isOpen={isSearchModalOpen} 
+        onClose={() => setIsSearchModalOpen(false)} 
+        navigate={navigate} 
+      />
 
       {/* Voice Chat overlay modal */}
       <VoiceChatModal
