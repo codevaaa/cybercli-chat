@@ -188,7 +188,7 @@ function createLandingWindow(): BrowserWindow {
     show: false,
     backgroundColor: '#0A0A0F',
     titleBarStyle: isMac ? 'hidden' : 'default',
-    frame: !isWin,
+    frame: isWin,
     icon: path.join(__dirname, '../../../resources/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.mjs'),
@@ -197,7 +197,7 @@ function createLandingWindow(): BrowserWindow {
     },
   })
 
-  win.loadFile(path.join(RENDERER_DIR, 'landing.html'))
+  win.loadFile(path.join(RENDERER_DIR, 'landing.html')).catch(() => {})
   win.once('ready-to-show', () => win.show())
   return win
 }
@@ -211,7 +211,7 @@ function createLoginWindow(): BrowserWindow {
     show: false,
     backgroundColor: '#0A0A0F',
     titleBarStyle: isMac ? 'hidden' : 'default',
-    frame: !isWin,
+    frame: isWin,
     icon: path.join(__dirname, '../../../resources/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.mjs'),
@@ -220,7 +220,7 @@ function createLoginWindow(): BrowserWindow {
     },
   })
 
-  win.loadFile(path.join(RENDERER_DIR, 'login.html'))
+  win.loadFile(path.join(RENDERER_DIR, 'login.html')).catch(() => {})
   win.once('ready-to-show', () => win.show())
   return win
 }
