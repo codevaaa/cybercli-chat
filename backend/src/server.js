@@ -120,9 +120,9 @@ const limiter = rateLimit({
   max: (req) => {
     const planId = req.user?.plan || 'free'
     const plan = PLANS[planId] || PLANS.free
-    if (!req.user) return 20 // guests
-    // hourly budget → per-15-min window (¼), min 25 so paid users never starve
-    return Math.max(25, Math.ceil((plan.requestsPerHour || 50) / 4))
+    if (!req.user) return 500 // increased from 20 for testing
+    // hourly budget -> per-15-min window, dramatically increased for testing
+    return Math.max(1000, Math.ceil((plan.requestsPerHour || 50) * 10))
   },
   standardHeaders: true,
   legacyHeaders: false,
