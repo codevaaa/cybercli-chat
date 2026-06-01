@@ -19,7 +19,7 @@ artifactName: ${productName}-${os}-${arch}.${ext}
 publish:
   provider: github
   owner: codevaaa
-  repo: codeva
+  repo: cybercli-chat
   releaseType: release
 
 # macOS
