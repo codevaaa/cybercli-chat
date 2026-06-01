@@ -52,7 +52,7 @@ export default function SignupPage() {
       let callbackQuery = `?next=${encodeURIComponent(nextPath)}`
       
       if (redirect === 'cli') {
-        nextPath = `/login?redirect=cli&port=${port}`
+        nextPath = `/auth/login?redirect=cli&port=${port}`
         callbackQuery = `?next=${encodeURIComponent(nextPath)}`
       } else if (redirect === 'desktop') {
         callbackQuery = `?redirect=desktop`
