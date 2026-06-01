@@ -881,9 +881,116 @@ function InputArea({
       <div
         className="rounded-2xl transition-all relative flex flex-row items-end p-1.5 gap-2 bg-[#f4f4f0] dark:bg-[#2a2a2a] border border-[#e5e5e0] dark:border-[#3E3E3E] focus-within:border-[#D0D0D0] dark:focus-within:border-[#4E4E4E] shadow-sm"
       >
-        <button className="p-2.5 rounded-xl text-foreground-muted hover:text-foreground-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all flex-shrink-0" title="Add attachment">
-          <Paperclip className="w-5 h-5" />
-        </button>
+        <div className="relative" ref={attachmentMenuRef}>
+          <button 
+            ref={attachmentButtonRef}
+            onClick={() => setIsAttachmentMenuOpen(!isAttachmentMenuOpen)}
+            className="p-2.5 rounded-xl text-foreground-muted hover:text-foreground-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all flex-shrink-0" 
+            title="Add attachment"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+          
+          <AnimatePresence>
+            {isAttachmentMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="absolute bottom-full left-0 mb-2 w-64 bg-[#2a2a2a] border border-[#3E3E3E] rounded-xl shadow-2xl overflow-visible py-1.5 z-50 text-[14px]"
+              >
+                <div className="flex flex-col relative">
+                  <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
+                    <Paperclip className="w-[18px] h-[18px] text-[#A3A097]" />
+                    <span>Add files or photos</span>
+                    <span className="ml-auto text-[12px] text-[#A3A097]">Ctrl+U</span>
+                  </button>
+                  <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
+                    <Folder className="w-[18px] h-[18px] text-[#A3A097]" />
+                    <span>Add to project</span>
+                    <ChevronRight className="w-4 h-4 ml-auto text-[#A3A097] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                  <div className="h-px bg-white/5 my-1.5 mx-3" />
+                  <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
+                    <Layers className="w-[18px] h-[18px] text-[#A3A097]" />
+                    <span>Skills</span>
+                    <ChevronRight className="w-4 h-4 ml-auto text-[#A3A097] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                  <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
+                    <Code2 className="w-[18px] h-[18px] text-[#A3A097]" />
+                    <span>Add connectors</span>
+                  </button>
+                  <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
+                    <Zap className="w-[18px] h-[18px] text-[#A3A097]" />
+                    <span>Add plugins...</span>
+                  </button>
+                  <div className="h-px bg-white/5 my-1.5 mx-3" />
+                  <button 
+                    onClick={() => { setWebSearchEnabled(!webSearchEnabled); setIsAttachmentMenuOpen(false) }}
+                    className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group"
+                  >
+                    <Globe className={`w-[18px] h-[18px] ${webSearchEnabled ? 'text-blue-400' : 'text-[#A3A097]'}`} />
+                    <span>Web search</span>
+                    {webSearchEnabled && <Check className="w-4 h-4 ml-auto text-blue-400" />}
+                  </button>
+                  
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setIsStyleMenuOpen(true)}
+                    onMouseLeave={() => setIsStyleMenuOpen(false)}
+                  >
+                    <button 
+                      className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group"
+                    >
+                      <Pencil className="w-[18px] h-[18px] text-[#A3A097]" />
+                      <span>Use style</span>
+                      <ChevronRight className="w-4 h-4 ml-auto text-[#A3A097] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                    
+                    {isStyleMenuOpen && (
+                      <div className="absolute left-full bottom-0 ml-1 w-56 bg-[#2a2a2a] border border-[#3E3E3E] rounded-xl shadow-2xl overflow-hidden py-1.5 text-[14px]">
+                        <div className="px-3.5 py-2 flex gap-2 items-start border-b border-[#3E3E3E] mb-1.5 pb-2.5">
+                          <Info className="w-4 h-4 text-[#D97757] mt-0.5 flex-shrink-0" />
+                          <div className="flex flex-col">
+                            <span className="font-medium text-[#E8E6E1]">Styles are migrating to Skills</span>
+                            <span className="text-[12px] text-[#A3A097]">Starting May 20 — Learn more</span>
+                          </div>
+                        </div>
+                        <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
+                          <Pencil className="w-[18px] h-[18px] text-[#A3A097]" />
+                          <span>Normal</span>
+                          <Check className="w-4 h-4 ml-auto text-blue-400" />
+                        </button>
+                        <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
+                          <GraduationCap className="w-[18px] h-[18px] text-[#A3A097]" />
+                          <span>Learning</span>
+                        </button>
+                        <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
+                          <Minus className="w-[18px] h-[18px] text-[#A3A097]" />
+                          <span>Concise</span>
+                        </button>
+                        <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
+                          <BookOpen className="w-[18px] h-[18px] text-[#A3A097]" />
+                          <span>Explanatory</span>
+                        </button>
+                        <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
+                          <Briefcase className="w-[18px] h-[18px] text-[#A3A097]" />
+                          <span>Formal</span>
+                        </button>
+                        <div className="h-px bg-white/5 my-1.5 mx-3" />
+                        <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
+                          <Plus className="w-[18px] h-[18px] text-[#A3A097]" />
+                          <span>Create & edit styles</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         <textarea
           ref={textareaRef}
@@ -1688,8 +1795,10 @@ function HeroState({ userName, onSuggestionClick }) {
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         className="mb-6 flex items-center justify-center"
       >
-        <div className="w-12 h-12 rounded-2xl bg-[#E8E6E1] dark:bg-[#2A2A2A] flex items-center justify-center text-[#D97757] shadow-sm">
-          <Sparkles className="w-6 h-6" />
+        <div className="w-11 h-11 rounded-2xl bg-[#E8E6E1] dark:bg-[#37312c] flex items-center justify-center shadow-sm">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-[#D97757]">
+            <path d="M12 2l1.2 6.8L20 10l-6.8 1.2L12 18l-1.2-6.8L4 10l6.8-1.2L12 2z" fill="currentColor" />
+          </svg>
         </div>
       </motion.div>
       <motion.h1
@@ -3081,6 +3190,56 @@ export default function ChatPage() {
   const [isWarmingUp, setIsWarmingUp] = useState(false)
   const [backendReady, setBackendReady] = useState(true)
 
+  // Attachment Menu State
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
+  const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false)
+  const attachmentMenuRef = useRef(null)
+  const attachmentButtonRef = useRef(null)
+
+  // Auto Updater State
+  const [updateAvailable, setUpdateAvailable] = useState(false)
+  const [updateInfo, setUpdateInfo] = useState(null)
+  const [updateProgress, setUpdateProgress] = useState(null)
+  const [updateDownloaded, setUpdateDownloaded] = useState(false)
+  const [showUpdateModal, setShowUpdateModal] = useState(false)
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        attachmentMenuRef.current && 
+        !attachmentMenuRef.current.contains(e.target) &&
+        attachmentButtonRef.current &&
+        !attachmentButtonRef.current.contains(e.target)
+      ) {
+        setIsAttachmentMenuOpen(false)
+        setIsStyleMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    if (window.electronAPI) {
+      const cleanupAvailable = window.electronAPI.onUpdateAvailable((info) => {
+        setUpdateInfo(info)
+        setUpdateAvailable(true)
+        setShowUpdateModal(true)
+      })
+      const cleanupProgress = window.electronAPI.onUpdateProgress((p) => {
+        setUpdateProgress(p)
+      })
+      const cleanupDownloaded = window.electronAPI.onUpdateDownloaded((info) => {
+        setUpdateDownloaded(true)
+        setUpdateProgress(null)
+      })
+      return () => {
+        cleanupAvailable()
+        cleanupProgress()
+        cleanupDownloaded()
+      }
+    }
+  }, [])
   useEffect(() => {
     let active = true
     const check = async () => {
@@ -5632,6 +5791,87 @@ codeva link --key YOUR_API_KEY</pre>
 
       {/* Help Center panel */}
       <HelpCenterPanel isOpen={helpPanelOpen} onClose={() => setHelpPanelOpen(false)} />
+
+      {/* Update Modal */}
+      <AnimatePresence>
+        {showUpdateModal && (
+          <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-md bg-[#2a2a2a] border border-[#3E3E3E] rounded-2xl shadow-2xl p-6"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#37312c] flex items-center justify-center shadow-sm">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-[#D97757]">
+                    <path d="M12 2l1.2 6.8L20 10l-6.8 1.2L12 18l-1.2-6.8L4 10l6.8-1.2L12 2z" fill="currentColor" />
+                  </svg>
+                </div>
+                <button onClick={() => setShowUpdateModal(false)} className="text-[#A3A097] hover:text-[#E8E6E1] transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <h3 className="text-xl font-serif text-[#E8E6E1] mb-2">
+                {updateDownloaded ? 'Update Ready to Install' : 'Update Available'}
+              </h3>
+              
+              <p className="text-[15px] text-[#A3A097] mb-6 leading-relaxed">
+                {updateDownloaded 
+                  ? 'The latest version of Codeva has been downloaded. Restart the app to apply the update.' 
+                  : updateInfo?.version 
+                    ? `A new version of Codeva (${updateInfo.version}) is available. Do you want to download it now?` 
+                    : 'A new version of Codeva is available. Do you want to download it now?'}
+              </p>
+              
+              {updateProgress && !updateDownloaded && (
+                <div className="mb-6">
+                  <div className="flex justify-between text-[12px] text-[#A3A097] mb-2">
+                    <span>Downloading update...</span>
+                    <span>{Math.round(updateProgress.percent)}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-[#D97757]"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${updateProgress.percent}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex gap-3 justify-end">
+                {!updateProgress && !updateDownloaded && (
+                  <>
+                    <button 
+                      onClick={() => setShowUpdateModal(false)}
+                      className="px-4 py-2 rounded-xl text-[#E8E6E1] hover:bg-white/5 transition-colors text-[14px] font-medium"
+                    >
+                      Later
+                    </button>
+                    <button 
+                      onClick={() => window.electronAPI.downloadUpdate()}
+                      className="px-4 py-2 rounded-xl bg-[#E8E6E1] text-[#1a1917] hover:bg-white transition-colors text-[14px] font-medium"
+                    >
+                      Download Now
+                    </button>
+                  </>
+                )}
+                
+                {updateDownloaded && (
+                  <button 
+                    onClick={() => window.electronAPI.restartToUpdate()}
+                    className="px-4 py-2 rounded-xl bg-[#D97757] text-white hover:bg-[#D97757]/90 transition-colors text-[14px] font-medium"
+                  >
+                    Restart App
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

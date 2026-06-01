@@ -196,8 +196,29 @@ app.whenReady().then(() => {
 
   // Auto-updater
   if (!isDev) {
-    autoUpdater.autoDownload = true
+    autoUpdater.autoDownload = false // Let user choose to download
     autoUpdater.autoInstallOnAppQuit = true
+
+    autoUpdater.on('update-available', (info) => {
+      mainWindow?.webContents.send('update:available', info)
+    })
+    
+    autoUpdater.on('update-not-available', () => {
+      mainWindow?.webContents.send('update:none')
+    })
+    
+    autoUpdater.on('download-progress', (progressObj) => {
+      mainWindow?.webContents.send('update:progress', progressObj)
+    })
+    
+    autoUpdater.on('update-downloaded', (info) => {
+      mainWindow?.webContents.send('update:downloaded', info)
+    })
+    
+    autoUpdater.on('error', (err) => {
+      mainWindow?.webContents.send('update:error', err.message)
+    })
+
     autoUpdater.checkForUpdates().catch(() => {})
   }
 
@@ -517,6 +538,14 @@ ipcMain.handle('update:check', async () => {
   try {
     const result = await autoUpdater.checkForUpdates()
     return { success: true, version: result?.updateInfo?.version }
+  } catch (err) {
+    return { success: false, error: (err as Error).message }
+  }
+})
+ipcMain.handle('update:download', async () => {
+  try {
+    await autoUpdater.downloadUpdate()
+    return { success: true }
   } catch (err) {
     return { success: false, error: (err as Error).message }
   }
