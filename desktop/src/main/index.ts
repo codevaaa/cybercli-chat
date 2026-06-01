@@ -1,145 +1,125 @@
 /**
- * Codeva Desktop — Main Process (v0.3.0)
+ * Codeva Desktop — Main Process (v0.4.0)
  *
- * Simplified: Single window loads the deployed web app.
- * No separate landing/login windows — the React app handles auth.
+ * Claude-style native desktop app:
+ * Landing → Sign In → Browser Auth → Deep Link → Desktop Chat
  */
 
-import { app, BrowserWindow, ipcMain, shell, dialog, Menu } from 'electron'
-import { fileURLToPath } from 'node:url'
+import { app, BrowserWindow, ipcMain, shell, dialog, Menu, Tray, nativeImage } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import pkg from 'electron-updater'
 const { autoUpdater } = pkg
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
 // ─── Constants ──────────────────────────────────────────────
 
-const isDev = process.env.NODE_ENV === 'development' || (!app.isPackaged && process.env.NODE_ENV !== 'production')
+const isDev = !app.isPackaged
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
 
-// The deployed web app URL — this is the REAL frontend
+// Paths — use app.getAppPath() for reliable resolution in asar
+const APP_ROOT = app.getAppPath()
+const DIST_DIR = path.join(APP_ROOT, 'dist')
+const PRELOAD_PATH = path.join(DIST_DIR, 'preload', 'index.mjs')
+const RENDERER_DIR = path.join(DIST_DIR, 'renderer')
+const RESOURCES_DIR = path.join(APP_ROOT, 'resources')
+
+// Web app URL for main chat window
 const WEB_APP_URL = 'https://cybermindcli.info'
+const WEB_AUTH_URL = 'https://cybermindcli.info/auth/login'
 const FRONTEND_DEV_URL = 'http://localhost:5173'
 
 // ─── State ────────────────────────────────────────────────────
 
 let mainWindow: BrowserWindow | null = null
+let landingWindow: BrowserWindow | null = null
+let loginWindow: BrowserWindow | null = null
 
-// ─── Auto Updater ─────────────────────────────────────────────
+// ─── Prevent multiple instances ─────────────────────────────
 
-function sendToMain(channel: string, payload?: unknown) {
-  try { mainWindow?.webContents.send(channel, payload) } catch { /* window gone */ }
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
 }
 
-function setupAutoUpdater() {
-  if (isDev) return
+// ─── Window controls (custom titlebar buttons) ──────────────
 
-  autoUpdater.autoDownload = true
-  autoUpdater.autoInstallOnAppQuit = true
-
-  autoUpdater.on('checking-for-update', () => sendToMain('update:checking'))
-  autoUpdater.on('update-available', (info: { version?: string; releaseNotes?: string | unknown }) => {
-    sendToMain('update:available', { version: info?.version })
-  })
-  autoUpdater.on('update-not-available', () => sendToMain('update:none'))
-  autoUpdater.on('download-progress', (p: { percent?: number }) => {
-    sendToMain('update:progress', { percent: Math.round(p?.percent || 0) })
-  })
-  autoUpdater.on('error', (err: Error) => sendToMain('update:error', err?.message || 'Update failed'))
-  autoUpdater.on('update-downloaded', (info: { version?: string }) => {
-    sendToMain('update:downloaded', { version: info?.version })
-  })
-
-  autoUpdater.checkForUpdates().catch(() => {})
-  setInterval(() => { autoUpdater.checkForUpdates().catch(() => {}) }, 3 * 60 * 60 * 1000)
+function getWindowControlsForWindow(win: BrowserWindow | null) {
+  return {
+    minimize: () => win?.minimize(),
+    maximize: () => {
+      if (win?.isMaximized()) win.unmaximize()
+      else win?.maximize()
+    },
+    close: () => win?.close(),
+  }
 }
 
-// ─── Application Menu ───────────────────────────────────────
+// ─── Window Factories ───────────────────────────────────────
 
-function buildMenu() {
-  const template: Electron.MenuItemConstructorOptions[] = [
-    {
-      label: 'File',
-      submenu: [
-        { label: 'New Chat', accelerator: 'CmdOrCtrl+N', click: () => mainWindow?.webContents.send('shortcut:new-chat') },
-        { type: 'separator' },
-        { label: 'Settings', accelerator: 'CmdOrCtrl+,', click: () => {
-          if (mainWindow) {
-            mainWindow.show()
-            mainWindow.loadURL(`${WEB_APP_URL}/app/settings`).catch(() => {})
-          }
-        }},
-        { type: 'separator' },
-        isMac ? { role: 'close' } : { role: 'quit' },
-      ],
+function createLandingWindow(): BrowserWindow {
+  const win = new BrowserWindow({
+    width: 520,
+    height: 640,
+    resizable: false,
+    maximizable: false,
+    minimizable: true,
+    show: false,
+    frame: false,
+    backgroundColor: '#1f1e1d',
+    icon: path.join(RESOURCES_DIR, 'icon.png'),
+    webPreferences: {
+      preload: PRELOAD_PATH,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
     },
-    {
-      label: 'Edit',
-      submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'selectAll' },
-      ],
-    },
-    {
-      label: 'View',
-      submenu: [
-        { role: 'reload' },
-        { role: 'forceReload' },
-        { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' },
-        ...(isDev ? [{ role: 'toggleDevTools' as const }] : []),
-      ],
-    },
-    {
-      label: 'Window',
-      submenu: [
-        { role: 'minimize' },
-        { role: 'zoom' },
-        ...(isMac ? [
-          { type: 'separator' as const },
-          { role: 'front' as const },
-        ] : [
-          { role: 'close' as const },
-        ]),
-      ],
-    },
-    {
-      label: 'Help',
-      submenu: [
-        { label: 'About Codeva', click: () => {
-          dialog.showMessageBox({
-            type: 'info',
-            title: 'Codeva Desktop',
-            message: `Codeva Desktop v${app.getVersion()}`,
-            detail: 'AI-powered chat & coding assistant.\nhttps://cybermindcli.info',
-          })
-        }},
-        { label: 'Check for Updates', click: () => {
-          autoUpdater.checkForUpdates().catch(() => {
-            dialog.showMessageBox({ type: 'info', title: 'Updates', message: 'Could not check for updates.' })
-          })
-        }},
-      ],
-    },
-  ]
+  })
 
-  const menu = Menu.buildFromTemplate(template)
-  Menu.setApplicationMenu(menu)
+  const landingPath = path.join(RENDERER_DIR, 'landing.html')
+  console.log('[Codeva] Loading landing from:', landingPath)
+  console.log('[Codeva] Preload path:', PRELOAD_PATH)
+  console.log('[Codeva] File exists:', fs.existsSync(landingPath))
+  
+  win.loadFile(landingPath).catch((err) => {
+    console.error('[Codeva] Failed to load landing:', err)
+  })
+
+  win.once('ready-to-show', () => win.show())
+
+  win.webContents.on('did-finish-load', () => {
+    console.log('[Codeva] Landing page loaded successfully')
+  })
+
+  return win
 }
 
-// ─── Window Factory ───────────────────────────────────────
+function createLoginWindow(): BrowserWindow {
+  const win = new BrowserWindow({
+    width: 480,
+    height: 600,
+    resizable: false,
+    maximizable: false,
+    show: false,
+    frame: false,
+    backgroundColor: '#1f1e1d',
+    icon: path.join(RESOURCES_DIR, 'icon.png'),
+    webPreferences: {
+      preload: PRELOAD_PATH,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  })
+
+  const loginPath = path.join(RENDERER_DIR, 'login.html')
+  win.loadFile(loginPath).catch((err) => {
+    console.error('[Codeva] Failed to load login:', err)
+  })
+
+  win.once('ready-to-show', () => win.show())
+  return win
+}
 
 function createMainWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -148,21 +128,21 @@ function createMainWindow(): BrowserWindow {
     minWidth: 900,
     minHeight: 600,
     show: false,
-    frame: true, // Always show native window controls
+    frame: false,
     backgroundColor: '#0A0A0F',
-    icon: path.join(__dirname, '../../../resources/icon.png'),
+    icon: path.join(RESOURCES_DIR, 'icon.png'),
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.mjs'),
+      preload: PRELOAD_PATH,
       contextIsolation: true,
       nodeIntegration: false,
-      allowRunningInsecureContent: false,
+      sandbox: false,
     },
   })
 
-  // Load the web app
+  // Load the web app for the chat interface
   const url = isDev ? FRONTEND_DEV_URL : WEB_APP_URL
   win.loadURL(url).catch(() => {
-    // If web app fails (offline), show a simple error page
+    // Offline fallback
     win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(`
       <!DOCTYPE html>
       <html><head><style>
@@ -172,17 +152,16 @@ function createMainWindow(): BrowserWindow {
         h2 { color: #d97757; margin-bottom: 16px; }
         p { color: #a3a097; margin-bottom: 24px; max-width: 400px; }
         button { background: #f5f4f2; color: #1a1a1a; border: none; padding: 12px 32px;
-                 border-radius: 10px; font-size: 15px; cursor: pointer; font-family: inherit; }
+                 border-radius: 10px; font-size: 15px; cursor: pointer; }
         button:hover { background: #fff; }
       </style></head><body>
         <h2>Unable to Connect</h2>
-        <p>Could not reach the Codeva servers. Please check your internet connection and try again.</p>
+        <p>Could not reach the Codeva servers. Please check your internet connection.</p>
         <button onclick="location.reload()">Retry</button>
       </body></html>
     `)}`)
   })
 
-  // Show when ready
   win.once('ready-to-show', () => {
     win.show()
     win.focus()
@@ -197,99 +176,201 @@ function createMainWindow(): BrowserWindow {
     return { action: 'allow' }
   })
 
-  // Inject desktop-specific CSS
-  win.webContents.on('dom-ready', () => {
-    win.webContents.insertCSS(`
-      .desktop-drag-overlay {
-        position: fixed; inset: 0; z-index: 9999;
-        background: rgba(124, 58, 237, 0.15);
-        border: 3px dashed #7C3AED;
-        display: none;
-        align-items: center; justify-content: center;
-        pointer-events: none;
-      }
-      .desktop-drag-overlay.active { display: flex; }
-      .desktop-drag-overlay span {
-        color: #ECECEC; font-size: 18px; font-weight: 600;
-        background: rgba(10,10,15,0.8); padding: 16px 32px; border-radius: 12px;
-      }
-    `)
-  })
-
   return win
 }
 
 // ─── App Lifecycle ──────────────────────────────────────────
 
-// Prevent multiple instances
-const gotTheLock = app.requestSingleInstanceLock()
-if (!gotTheLock) {
-  app.quit()
-} else {
-  app.on('second-instance', () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore()
-      mainWindow.show()
-      mainWindow.focus()
-    }
-  })
-}
-
 app.whenReady().then(() => {
-  buildMenu()
-  setupAutoUpdater()
+  console.log('[Codeva] App ready. isDev:', isDev, 'isPackaged:', app.isPackaged)
+  console.log('[Codeva] APP_ROOT:', APP_ROOT)
+  console.log('[Codeva] PRELOAD_PATH:', PRELOAD_PATH)
+  
+  // Set up protocol for deep links
+  if (!isDev) {
+    app.setAsDefaultProtocolClient('codeva')
+  }
 
-  // Create the one and only window
-  mainWindow = createMainWindow()
+  // Show landing window first (Claude-style)
+  landingWindow = createLandingWindow()
 
-  // On macOS, re-create window when dock icon clicked
+  // Auto-updater
+  if (!isDev) {
+    autoUpdater.autoDownload = true
+    autoUpdater.autoInstallOnAppQuit = true
+    autoUpdater.checkForUpdates().catch(() => {})
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = createMainWindow()
-    } else if (mainWindow) {
-      mainWindow.show()
+      landingWindow = createLandingWindow()
     }
   })
 })
 
 app.on('window-all-closed', () => {
-  if (!isMac) {
-    app.quit()
-  }
+  if (!isMac) app.quit()
 })
+
+// Second instance handling (for deep links)
+if (gotTheLock) {
+  app.on('second-instance', (_event, argv) => {
+    // Check for deep link
+    const url = argv.find((arg) => arg.startsWith('codeva://'))
+    if (url) {
+      handleDeepLink(url)
+    }
+    // Focus existing window
+    const focusWin = mainWindow || landingWindow || loginWindow
+    if (focusWin) {
+      if (focusWin.isMinimized()) focusWin.restore()
+      focusWin.show()
+      focusWin.focus()
+    }
+  })
+}
+
+// Deep link on macOS
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  handleDeepLink(url)
+})
+
+// Deep link handler
+function handleDeepLink(url: string) {
+  console.log('[Codeva] Deep link received:', url)
+  try {
+    const parsed = new URL(url)
+    if (parsed.pathname === '//auth' || parsed.pathname === '/auth') {
+      const token = parsed.searchParams.get('token')
+      if (token) {
+        completeAuth(token)
+      }
+    }
+  } catch (err) {
+    console.error('[Codeva] Failed to parse deep link:', err)
+  }
+}
+
+function completeAuth(token: string) {
+  console.log('[Codeva] Auth complete, token received')
+  
+  // Close landing and login windows
+  if (landingWindow && !landingWindow.isDestroyed()) {
+    landingWindow.close()
+    landingWindow = null
+  }
+  if (loginWindow && !loginWindow.isDestroyed()) {
+    loginWindow.close()
+    loginWindow = null
+  }
+
+  // Create main window if not exists
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    mainWindow = createMainWindow()
+  }
+
+  // Send token to main window once loaded
+  mainWindow.webContents.once('did-finish-load', () => {
+    mainWindow?.webContents.send('auth:token', token)
+  })
+  
+  mainWindow.show()
+  mainWindow.focus()
+}
 
 // ─── IPC Handlers ───────────────────────────────────────────
 
-// Window controls
-ipcMain.handle('window:minimize', () => mainWindow?.minimize())
-ipcMain.handle('window:maximize', () => {
-  if (mainWindow?.isMaximized()) mainWindow.unmaximize()
-  else mainWindow?.maximize()
+// Window controls — detect which window sent the message
+ipcMain.handle('window:minimize', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  win?.minimize()
 })
-ipcMain.handle('window:close', () => mainWindow?.close())
-ipcMain.handle('window:hide', () => mainWindow?.hide())
-ipcMain.handle('window:show', () => { mainWindow?.show(); mainWindow?.focus() })
 
-// Auto-updater IPC
-ipcMain.handle('update:restart', () => autoUpdater.quitAndInstall())
-ipcMain.handle('update:check', async () => {
-  if (isDev) return { success: false, dev: true, message: 'Updates are disabled in development.' }
-  try {
-    const result = await autoUpdater.checkForUpdates()
-    return { success: true, version: result?.updateInfo?.version }
-  } catch (err) {
-    return { success: false, error: (err as Error).message }
+ipcMain.handle('window:maximize', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (win?.isMaximized()) win.unmaximize()
+  else win?.maximize()
+})
+
+ipcMain.handle('window:close', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  win?.close()
+})
+
+// Auth flow: Landing → Sign In
+ipcMain.handle('auth:open-signin', () => {
+  console.log('[Codeva] IPC: auth:open-signin received')
+  
+  if (!loginWindow || loginWindow.isDestroyed()) {
+    loginWindow = createLoginWindow()
+  } else {
+    loginWindow.show()
+    loginWindow.focus()
+  }
+
+  // Close landing
+  if (landingWindow && !landingWindow.isDestroyed()) {
+    landingWindow.close()
+    landingWindow = null
   }
 })
-ipcMain.handle('update:download', async () => {
-  if (isDev) return { success: false, dev: true }
-  try {
-    await autoUpdater.downloadUpdate()
-    return { success: true }
-  } catch (err) {
-    return { success: false, error: (err as Error).message }
+
+// Auth flow: Sign In → Back to Landing
+ipcMain.handle('auth:back-to-landing', () => {
+  console.log('[Codeva] IPC: auth:back-to-landing received')
+  
+  if (!landingWindow || landingWindow.isDestroyed()) {
+    landingWindow = createLandingWindow()
+  } else {
+    landingWindow.show()
+    landingWindow.focus()
+  }
+
+  if (loginWindow && !loginWindow.isDestroyed()) {
+    loginWindow.close()
+    loginWindow = null
   }
 })
+
+// Auth flow: Open browser for auth
+ipcMain.handle('auth:open-login', (_event, opts?: { method?: string; email?: string }) => {
+  console.log('[Codeva] IPC: auth:open-login, method:', opts?.method)
+  
+  const base = WEB_AUTH_URL
+  const params = new URLSearchParams({ redirect: 'desktop' })
+  if (opts?.method) params.set('method', opts.method)
+  if (opts?.email) params.set('email', opts.email)
+  shell.openExternal(`${base}?${params.toString()}`)
+})
+
+// Auth flow: Complete (from deep link)
+ipcMain.handle('auth:complete', (_event, token: string) => {
+  completeAuth(token)
+})
+
+// Landing → skip auth, go directly to main
+ipcMain.handle('landing:open-main', () => {
+  console.log('[Codeva] IPC: landing:open-main received')
+  
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    mainWindow = createMainWindow()
+  }
+  mainWindow.show()
+  mainWindow.focus()
+
+  if (landingWindow && !landingWindow.isDestroyed()) {
+    landingWindow.close()
+    landingWindow = null
+  }
+})
+
+// App info
+ipcMain.handle('app:get-info', () => ({
+  version: app.getVersion(),
+  platform: process.platform,
+  isPackaged: app.isPackaged,
+}))
 
 // File system
 ipcMain.handle('fs:read-file', async (_event, filePath: string) => {
@@ -311,53 +392,51 @@ ipcMain.handle('fs:write-file', async (_event, filePath: string, content: string
 })
 
 ipcMain.handle('fs:select-file', async () => {
-  if (!mainWindow) return { success: false, error: 'No window' }
-  const result = await dialog.showOpenDialog(mainWindow, {
+  const win = mainWindow || landingWindow
+  if (!win) return { success: false, error: 'No window' }
+  const result = await dialog.showOpenDialog(win, {
     properties: ['openFile'],
-    filters: [
-      { name: 'All Files', extensions: ['*'] },
-      { name: 'Code', extensions: ['js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'go', 'rs'] },
-    ],
   })
-  if (result.canceled || result.filePaths.length === 0) {
-    return { success: false, canceled: true }
-  }
+  if (result.canceled) return { success: false, canceled: true }
   const content = await fs.promises.readFile(result.filePaths[0], 'utf-8')
   return { success: true, path: result.filePaths[0], content }
 })
 
-// Drag & Drop file handling
+// Drag & drop
 ipcMain.handle('dragdrop:read-files', async (_event, filePaths: string[]) => {
   const results = []
-  for (const filePath of filePaths) {
+  for (const fp of filePaths) {
     try {
-      const stats = await fs.promises.stat(filePath)
+      const stats = await fs.promises.stat(fp)
       if (stats.isDirectory()) {
-        const files = await fs.promises.readdir(filePath)
-        results.push({ type: 'directory', path: filePath, files })
+        const files = await fs.promises.readdir(fp)
+        results.push({ type: 'directory', path: fp, files })
       } else {
-        const content = await fs.promises.readFile(filePath, 'utf-8')
-        const name = path.basename(filePath)
-        results.push({ type: 'file', path: filePath, name, content, size: stats.size })
+        const content = await fs.promises.readFile(fp, 'utf-8')
+        results.push({ type: 'file', path: fp, name: path.basename(fp), content, size: stats.size })
       }
     } catch (err) {
-      results.push({ type: 'error', path: filePath, error: (err as Error).message })
+      results.push({ type: 'error', path: fp, error: (err as Error).message })
     }
   }
   return { success: true, files: results }
 })
 
-// App info
-ipcMain.handle('app:get-info', () => ({
-  version: app.getVersion(),
-  platform: process.platform,
-  isPackaged: app.isPackaged,
-}))
-
 // Notifications
-ipcMain.handle('notify:show', async (_event, title: string, body: string) => {
-  const { Notification } = await import('electron')
-  new Notification({ title, body, icon: path.join(__dirname, '../../../resources/icon.png') }).show()
+ipcMain.handle('notify:show', (_event, title: string, body: string) => {
+  const { Notification } = require('electron')
+  new Notification({ title, body }).show()
+})
+
+// Auto-updater
+ipcMain.handle('update:restart', () => autoUpdater.quitAndInstall())
+ipcMain.handle('update:check', async () => {
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    return { success: true, version: result?.updateInfo?.version }
+  } catch (err) {
+    return { success: false, error: (err as Error).message }
+  }
 })
 
 export { mainWindow }

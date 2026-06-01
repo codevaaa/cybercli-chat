@@ -20,11 +20,44 @@
       display: flex;
       flex-direction: column;
       user-select: none;
-      -webkit-app-region: drag;
       overflow: hidden;
     }
-    /* Top drag bar with traffic-light spacing */
-    .titlebar { height: 40px; flex-shrink: 0; }
+    /* Custom titlebar (draggable) */
+    .titlebar {
+      height: 40px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      -webkit-app-region: drag;
+      padding: 0 8px;
+    }
+    .titlebar-left {
+      -webkit-app-region: no-drag;
+    }
+    .titlebar-right {
+      display: flex;
+      gap: 2px;
+      -webkit-app-region: no-drag;
+    }
+    .win-btn {
+      width: 32px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; color: var(--muted);
+      cursor: pointer; border-radius: 4px;
+      transition: background 0.1s, color 0.1s;
+    }
+    .win-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+    .win-btn.close:hover { background: #e81123; color: #fff; }
+    /* Hamburger menu */
+    .menu-btn {
+      -webkit-app-region: no-drag;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; color: var(--muted); cursor: pointer; border-radius: 6px;
+    }
+    .menu-btn:hover { background: rgba(255,255,255,0.06); }
+    /* Main content */
     .center {
       flex: 1;
       display: flex;
@@ -49,7 +82,6 @@
       flex-shrink: 0;
     }
     .btn {
-      -webkit-app-region: no-drag;
       width: 100%;
       padding: 14px;
       border-radius: 12px;
@@ -63,29 +95,36 @@
       font-family: inherit;
     }
     .btn:hover { background: #ffffff; }
-    .menu-btn {
-      -webkit-app-region: no-drag;
-      position: absolute; top: 10px; left: 12px;
-      width: 28px; height: 28px;
-      display: flex; align-items: center; justify-content: center;
-      background: transparent; border: none; color: var(--muted); cursor: pointer; border-radius: 6px;
+    .btn:active { transform: scale(0.98); }
+    .version {
+      position: absolute; bottom: 76px; left: 0; right: 0;
+      text-align: center; font-size: 11px; color: #6b6862;
     }
-    .menu-btn:hover { background: rgba(255,255,255,0.06); }
-    .version { position: absolute; bottom: 76px; left: 0; right: 0; text-align: center; font-size: 11px; color: #6b6862; }
   </style>
 </head>
 <body>
-  <button class="menu-btn" title="Menu">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-  </button>
-  <div class="titlebar"></div>
+  <div class="titlebar">
+    <div class="titlebar-left">
+      <button class="menu-btn" id="menuBtn" title="Menu">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="titlebar-right">
+      <button class="win-btn" id="minBtn" title="Minimize">
+        <svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="5.5" width="8" height="1" fill="currentColor"/></svg>
+      </button>
+      <button class="win-btn" id="maxBtn" title="Maximize">
+        <svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+      </button>
+      <button class="win-btn close" id="closeBtn" title="Close">
+        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 3L9 9M9 3L3 9" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+    </div>
+  </div>
+
   <div class="center">
     <div class="logo">
       <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Codeva">
-        <g id="burst" fill="#d97757">
-          <!-- 12-ray asterisk burst, Claude-style -->
-          <script type="application/x-ignore"></script>
-        </g>
         <g fill="#d97757">
           <rect x="47" y="6" width="6" height="28" rx="3"/>
           <rect x="47" y="66" width="6" height="28" rx="3"/>
@@ -115,31 +154,57 @@
     <div class="title">Codeva <em>for</em> <span id="platform">Windows</span></div>
     <div class="tagline">The fastest way to talk with Codeva</div>
   </div>
-  <div class="version" id="version">v0.1.0</div>
+  <div class="version" id="version"></div>
   <div class="footer">
-    <button class="btn" id="btn-start">Get started</button>
+    <button class="btn" id="btnStart">Get started</button>
   </div>
 
   <script>
+    // Debug: check if electronAPI is available
+    console.log('[Landing] window.electronAPI:', window.electronAPI);
+    console.log('[Landing] typeof electronAPI:', typeof window.electronAPI);
+
+    // Platform
     const platformMap = { win32: 'Windows', darwin: 'Mac', linux: 'Linux' };
-    const p = window.electronAPI?.platform || 'win32';
-    document.getElementById('platform').textContent = platformMap[p] || 'Desktop';
-
-    document.getElementById('btn-start').addEventListener('click', () => {
-      window.electronAPI?.openSignIn?.();
-    });
-
-    const menuBtn = document.querySelector('.menu-btn');
-    if (menuBtn) {
-      menuBtn.addEventListener('click', () => {
-        // Just close the app for now if hamburger is clicked on landing
-        window.electronAPI?.closeWindow?.();
-      });
+    if (window.electronAPI) {
+      document.getElementById('platform').textContent = platformMap[window.electronAPI.platform] || 'Desktop';
     }
 
-    window.electronAPI?.getAppInfo?.().then(info => {
-      if (info?.version) document.getElementById('version').textContent = 'v' + info.version;
-    }).catch(() => {});
+    // Version
+    if (window.electronAPI && window.electronAPI.getAppInfo) {
+      window.electronAPI.getAppInfo().then(function(info) {
+        if (info && info.version) {
+          document.getElementById('version').textContent = 'v' + info.version;
+        }
+      }).catch(function() {});
+    }
+
+    // Get started button → opens sign in
+    document.getElementById('btnStart').addEventListener('click', function() {
+      console.log('[Landing] Get started clicked');
+      if (window.electronAPI && window.electronAPI.openSignIn) {
+        window.electronAPI.openSignIn();
+      } else {
+        console.error('[Landing] electronAPI.openSignIn not available!');
+        alert('Error: Desktop bridge not loaded. Please restart the app.');
+      }
+    });
+
+    // Window control buttons
+    document.getElementById('minBtn').addEventListener('click', function() {
+      if (window.electronAPI) window.electronAPI.minimizeWindow();
+    });
+    document.getElementById('maxBtn').addEventListener('click', function() {
+      if (window.electronAPI) window.electronAPI.maximizeWindow();
+    });
+    document.getElementById('closeBtn').addEventListener('click', function() {
+      if (window.electronAPI) window.electronAPI.closeWindow();
+    });
+
+    // Hamburger menu (placeholder — shows about)
+    document.getElementById('menuBtn').addEventListener('click', function() {
+      console.log('[Landing] Menu clicked');
+    });
   </script>
 </body>
 </html>
