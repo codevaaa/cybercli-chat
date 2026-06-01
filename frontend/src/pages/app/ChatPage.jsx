@@ -6,7 +6,7 @@ import {
   Copy, Check, GitBranch, Volume2, VolumeX, Trash2, Pin, X, RotateCcw,
   Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder, Camera,
   Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen, Menu,
-  Pencil, GraduationCap, Coffee, Lightbulb, Skull, FileCode, GitBranch as GitIcon, FolderTree, ArrowRight,
+  Pencil, GraduationCap, Coffee, Lightbulb, Skull, FileCode, GitBranch as GitIcon, FolderTree, ArrowRight, ArrowUp,
   Gift, Briefcase, Sparkles, Loader2, CheckCircle2, XCircle, Clock, Square, Send
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -548,14 +548,14 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
   const isAssistant = msg.role === 'assistant'
 
   return (
-    <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} mb-6 group`}>
+    <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} mb-8 group`}>
       <div className={`flex max-w-[85%] md:max-w-[75%] ${isUser ? 'flex-row-reverse gap-3' : 'gap-4'} relative`}>
         
         {/* Assistant Avatar */}
         {isAssistant && (
-          <div className="flex-shrink-0 mt-1">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-background-tertiary border border-border-subtle text-accent shadow-sm">
-              <CodevaMark size={18} className="text-accent" />
+          <div className="flex-shrink-0 mt-0.5">
+            <div className="w-8 h-8 rounded-[0.4rem] flex items-center justify-center bg-[#D97757] text-white shadow-sm border border-black/5 dark:border-white/5">
+              <CodevaMark size={16} className="text-white" />
             </div>
           </div>
         )}
@@ -566,12 +566,12 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
             <div className="flex items-center gap-2 group/user relative">
               <button
                 onClick={() => onRevert && onRevert(index)}
-                className="opacity-0 group-hover/user:opacity-100 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all absolute right-[102%] top-1/2 -translate-y-1/2"
+                className="opacity-0 group-hover/user:opacity-100 p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-foreground-muted hover:text-foreground-primary transition-all absolute right-[102%] top-1/2 -translate-y-1/2"
                 title="Rewind & Edit"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
-              <div className="px-5 py-3.5 rounded-3xl bg-background-secondary border border-border-subtle/50 text-foreground-primary text-[15px] leading-relaxed whitespace-pre-wrap shadow-sm">
+              <div className="px-5 py-3.5 rounded-3xl rounded-tr-md bg-[#f3f2eb] dark:bg-[#2C2C2C] text-foreground-primary text-[15px] leading-relaxed whitespace-pre-wrap shadow-sm border border-black/5 dark:border-[#3E3E3E]">
                 {msg.content}
               </div>
             </div>
@@ -723,12 +723,6 @@ function ModelSelector({ selectedModel, onSelect }) {
   const [showMore, setShowMore] = useState(false)
   const ref = useRef(null)
 
-  // 3D carousel: only the non-council models rotate in the orbit
-  const baseModels = MODELS.filter(m => m.id !== 'council')
-  const isAdaptive = selectedModel === 'council'
-  const initIdx = baseModels.findIndex(m => m.id === (isAdaptive ? 'openrouter/gpt-4o-mini' : selectedModel))
-  const [currentIndex, setCurrentIndex] = useState(initIdx >= 0 ? initIdx : 1)
-
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
@@ -740,54 +734,17 @@ function ModelSelector({ selectedModel, onSelect }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  useEffect(() => {
-    const idx = baseModels.findIndex(m => m.id === (isAdaptive ? 'openrouter/gpt-4o-mini' : selectedModel))
-    if (idx >= 0) setCurrentIndex(idx)
-  }, [selectedModel])
-
-  const total = baseModels.length
-
-  const handleSelectModel = (idx) => {
-    setCurrentIndex(idx)
-    onSelect(baseModels[idx].id)
-  }
-
-  const rotate = (dir) => {
-    const next = (currentIndex + dir + total) % total
-    handleSelectModel(next)
-  }
-
-  const handleToggleAdaptiveThinking = () => {
-    isAdaptive ? onSelect(baseModels[currentIndex].id) : onSelect('council')
-    setOpen(false)
-  }
-
-  const getCardProps = (idx) => {
-    let rel = ((idx - currentIndex) % total + total) % total
-    if (rel > total / 2) rel = rel - total
-    const isCurrent = rel === 0
-    return {
-      xOffset: rel * 130,
-      scale: isCurrent ? 1 : 0.70,
-      opacity: isCurrent ? 1 : 0.45,
-      rotY: rel * -22,
-      zIndex: isCurrent ? 10 : 5,
-      visible: Math.abs(rel) <= 1,
-      isCurrent,
-    }
-  }
-
-  const isAdaptiveThinking = isAdaptive
   const allAvailableModels = [...MODELS, ...EXTRA_MODELS]
   const selected = allAvailableModels.find(m => m.id === selectedModel) || MODELS[1]
+  const baseModels = MODELS.filter(m => m.id !== 'council')
+  const isAdaptive = selectedModel === 'council'
 
   return (
-    <div className="relative border-r border-white/[0.06] pr-2 mr-1" ref={ref}>
+    <div className="relative" ref={ref}>
       <button
         onClick={() => { setOpen(!open); setShowMore(false) }}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all"
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[13px] font-medium text-foreground-secondary hover:text-foreground-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all"
       >
-        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: selected.color }} />
         <span>{isAdaptive ? 'Council' : selected.tag}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-foreground-muted transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -795,30 +752,28 @@ function ModelSelector({ selectedModel, onSelect }) {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            initial={{ opacity: 0, y: 4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.96 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute bottom-full mb-3 right-0 z-50 rounded-2xl border border-border-subtle w-[330px] overflow-hidden"
+            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute bottom-full mb-2 left-0 z-50 rounded-xl border border-border-subtle w-[260px] overflow-hidden shadow-lg"
             style={{
               background: 'var(--bg-elevated)',
               backdropFilter: 'blur(24px)',
-              boxShadow: '0 28px 64px rgba(0,0,0,0.15), inset 0 0 0 1px var(--border-subtle)',
             }}
           >
             {showMore ? (
-              /* Extra Models Sub-Menu */
-              <div className="flex flex-col max-h-[350px] overflow-y-auto">
-                <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border-subtle bg-background-secondary/30">
+              <div className="flex flex-col max-h-[300px] overflow-y-auto">
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-border-subtle bg-background-secondary/30">
                   <button
                     onClick={() => setShowMore(false)}
-                    className="text-xs font-semibold text-accent hover:text-accent-light"
+                    className="text-xs font-semibold text-foreground-muted hover:text-foreground-primary"
                   >
                     ← Back
                   </button>
-                  <span className="text-xs font-bold text-foreground-secondary uppercase tracking-wider">More Models</span>
+                  <span className="text-xs font-medium text-foreground-secondary">More Models</span>
                 </div>
-                <div className="divide-y divide-border-subtle/50 p-1.5">
+                <div className="p-1">
                   {EXTRA_MODELS.map((model) => {
                     const isSelected = selectedModel === model.id
                     return (
@@ -829,147 +784,53 @@ function ModelSelector({ selectedModel, onSelect }) {
                           setOpen(false)
                           setShowMore(false)
                         }}
-                        className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-foreground-primary/[0.04] transition-all flex items-start gap-2.5"
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between"
                       >
-                        <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: model.color }} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[13px] font-bold text-foreground-primary truncate">{model.name}</span>
-                            {isSelected && <Check className="w-3.5 h-3.5 text-accent shrink-0" />}
-                          </div>
-                          <p className="text-[10px] text-foreground-muted mt-0.5 leading-relaxed">{model.desc}</p>
-                        </div>
+                        <span className="text-[13px] text-foreground-primary">{model.name}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-foreground-primary shrink-0" />}
                       </button>
                     )
                   })}
                 </div>
               </div>
             ) : (
-              /* Base Models & Carousel */
-              <>
-                {/* 3D Carousel Stage */}
-                <div
-                  className="relative overflow-hidden flex items-center justify-center"
-                  style={{ perspective: '700px', height: 175 }}
-                >
-                  {/* Ambient glow */}
-                  <motion.div
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-28 h-8 rounded-full blur-2xl pointer-events-none"
-                    style={{ background: selected.color }}
-                    animate={{ opacity: [0.18, 0.38, 0.18] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                  />
-
-                  {/* Left nav */}
-                  <button
-                    onClick={() => rotate(-1)}
-                    className="absolute left-3 z-20 p-1.5 rounded-full bg-background-secondary hover:bg-background-tertiary text-foreground-muted hover:text-foreground-primary transition-all border border-border-subtle"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-
-                  {/* Cards ring */}
-                  <div className="relative flex items-center justify-center w-full h-full" style={{ transformStyle: 'preserve-3d' }}>
-                    {baseModels.map((model, idx) => {
-                      const { xOffset, scale, opacity, rotY, zIndex, visible, isCurrent } = getCardProps(idx)
-                      if (!visible) return null
-                      return (
-                        <motion.div
-                          key={model.id}
-                          className="absolute cursor-pointer select-none"
-                          style={{ zIndex }}
-                          animate={{ x: xOffset, scale, opacity, rotateY: rotY }}
-                          transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-                          onClick={() => { if (!isCurrent) handleSelectModel(idx) }}
-                        >
-                          <div
-                            className="w-[136px] rounded-2xl p-3.5 border border-border-subtle bg-background-secondary/80 backdrop-blur-sm"
-                            style={{
-                              borderColor: isCurrent ? `${model.color}45` : 'var(--border-subtle)',
-                              boxShadow: isCurrent
-                                ? `0 0 24px ${model.color}22, inset 0 1px 0 var(--border-subtle)`
-                                : 'none',
-                            }}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: model.color }} />
-                                <span className="text-[13px] font-bold text-foreground-primary">{model.tag}</span>
-                              </div>
-                              {idx === 0 ? (
-                                <span
-                                  className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide"
-                                  style={{ background: 'rgba(217,119,87,0.18)', color: '#D97757' }}
-                                >
-                                  PRO
-                                </span>
-                              ) : isCurrent ? (
-                                <Check className="w-3.5 h-3.5" style={{ color: model.color }} />
-                              ) : null}
-                            </div>
-                            <p className="text-[10px] leading-relaxed text-foreground-muted">
-                              {model.desc}
-                            </p>
-                          </div>
-                        </motion.div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Right nav */}
-                  <button
-                    onClick={() => rotate(1)}
-                    className="absolute right-3 z-20 p-1.5 rounded-full bg-background-secondary hover:bg-background-tertiary text-foreground-muted hover:text-foreground-primary transition-all border border-border-subtle"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Dot indicators */}
-                <div className="flex items-center justify-center gap-2 py-2.5">
-                  {baseModels.map((m, i) => (
+              <div className="p-1">
+                {baseModels.map((model) => {
+                  const isSelected = selectedModel === model.id && !isAdaptive
+                  return (
                     <button
-                      key={i}
-                      onClick={() => handleSelectModel(i)}
-                      className="rounded-full transition-all duration-300"
-                      style={{
-                        width: i === currentIndex ? 18 : 6,
-                        height: 6,
-                        background: i === currentIndex ? m.color : 'var(--border-medium)',
+                      key={model.id}
+                      onClick={() => {
+                        onSelect(model.id)
+                        setOpen(false)
                       }}
-                    />
-                  ))}
-                </div>
-
-                <div className="h-px bg-border-subtle" />
-
-                {/* Adaptive thinking */}
-                <div className="flex items-center justify-between px-4 py-3">
-                  <div>
-                    <p className="text-[13px] font-semibold text-foreground-primary">Adaptive thinking</p>
-                    <p className="text-[11px] text-foreground-muted mt-0.5">Thinks for more complex tasks</p>
-                  </div>
-                  <button
-                    onClick={handleToggleAdaptiveThinking}
-                    className={`w-9 h-5 rounded-full transition-all relative flex items-center p-0.5 ${
-                      isAdaptiveThinking ? 'bg-accent' : 'bg-border-medium'
-                    }`}
-                  >
-                    <div className="w-4 h-4 bg-white rounded-full transition-all shadow-sm" style={{ transform: isAdaptiveThinking ? 'translateX(16px)' : 'translateX(0)' }} />
-                  </button>
-                </div>
-
-                <div className="h-px bg-border-subtle" />
-
-                {/* More models */}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between"
+                    >
+                      <span className="text-[13px] text-foreground-primary">{model.tag}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-foreground-primary shrink-0" />}
+                    </button>
+                  )
+                })}
+                <div className="h-px bg-border-subtle my-1" />
+                <button
+                  onClick={() => {
+                    onSelect('council')
+                    setOpen(false)
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between"
+                >
+                  <span className="text-[13px] text-foreground-primary">Council (Adaptive)</span>
+                  {isAdaptive && <Check className="w-3.5 h-3.5 text-foreground-primary shrink-0" />}
+                </button>
+                <div className="h-px bg-border-subtle my-1" />
                 <button
                   onClick={() => setShowMore(true)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-foreground-primary/[0.04] transition-all text-left"
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between text-foreground-secondary"
                 >
-                  <span className="text-[12px] font-medium text-foreground-secondary">More models</span>
-                  <ChevronRight className="w-3.5 h-3.5 text-foreground-muted" />
+                  <span className="text-[13px]">More models</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
-              </>
+              </div>
             )}
           </motion.div>
         )}
@@ -1013,126 +874,63 @@ function InputArea({
   }
 
   return (
-    <div className="w-full max-w-[800px] mx-auto flex flex-col gap-4 px-4 sm:px-0">
+    <div className="w-full max-w-[768px] mx-auto flex flex-col gap-4 px-4 sm:px-0">
       {/* Input container card */}
       <div
-        className="rounded-2xl transition-all relative flex flex-col p-3.5 gap-2 bg-background-secondary border border-border-subtle shadow-md hover:border-border-medium focus-within:border-border-medium"
-        style={{
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-        }}
+        className="rounded-2xl transition-all relative flex flex-row items-end p-1.5 gap-2 bg-[#f4f4f0] dark:bg-[#2a2a2a] border border-[#e5e5e0] dark:border-[#3E3E3E] focus-within:border-[#D0D0D0] dark:focus-within:border-[#4E4E4E] shadow-sm"
       >
-        {/* Top Row: Textarea */}
-        <div className="flex items-start justify-between gap-4">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="How can I help you today?"
-            rows={1}
-            disabled={loading}
-            className="flex-1 bg-transparent text-[15px] text-foreground-primary placeholder:text-foreground-muted resize-none focus:outline-none leading-relaxed py-1 min-h-[40px]"
-            style={{ maxHeight: '200px' }}
-          />
-        </div>
+        <button className="p-2.5 rounded-xl text-foreground-muted hover:text-foreground-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all flex-shrink-0" title="Add attachment">
+          <Paperclip className="w-5 h-5" />
+        </button>
 
-        {/* Bottom Row: Controls */}
-        <div className="flex items-center justify-between mt-1 gap-2 flex-shrink-0 flex-wrap">
-          {/* Left: Attachment & Model dropdown */}
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <button className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all" title="Add attachment">
-              <Plus className="w-5 h-5" />
-            </button>
-            <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} />
-          </div>
+        <textarea
+          ref={textareaRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="How can Codeva help you today?"
+          rows={1}
+          disabled={loading}
+          className="flex-1 bg-transparent text-[15px] text-foreground-primary placeholder:text-foreground-muted/70 resize-none focus:outline-none leading-relaxed py-2.5 min-h-[44px]"
+          style={{ maxHeight: '400px' }}
+        />
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-1 justify-end">
-            {/* Deep Research toggle */}
-            <button
-              onClick={onToggleDeepResearch}
-              title="Deep Research"
-              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
-                deepResearchEnabled
-                  ? 'bg-blue-500/15 text-blue-400'
-                  : 'text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5'
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">Research</span>
-            </button>
+        <div className="flex items-center gap-1.5 flex-shrink-0 mb-0.5 pr-0.5">
+          <button
+            onClick={onToggleDeepResearch}
+            title="Deep Research"
+            className={`p-2 rounded-xl transition-all ${
+              deepResearchEnabled
+                ? 'text-[#D97757] bg-[#D97757]/10'
+                : 'text-foreground-muted hover:text-foreground-primary hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+          </button>
+          
+          <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} />
 
-            {/* Incognito / Ghost mode */}
-            <button
-              onClick={onToggleIncognito}
-              title="Incognito Mode"
-              className={`p-1.5 rounded-lg transition-all ${
-                incognitoMode
-                  ? 'text-yellow-400 bg-yellow-400/10'
-                  : 'text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5'
-              }`}
-            >
-              <Ghost className="w-4 h-4" />
-            </button>
-
-            {/* Mic */}
-            <button
-              onClick={onMicClick}
-              className={`p-1.5 rounded-lg transition-all relative ${
-                inlineSpeechListening
-                  ? 'text-[#D97757] bg-[#D97757]/10'
-                  : 'text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5'
-              }`}
-              title="Voice input"
-            >
-              <Mic className={`w-4 h-4 ${inlineSpeechListening ? 'animate-pulse' : ''}`} />
-            </button>
-
-            {/* Send */}
-            <button
-              onClick={onSend}
-              disabled={!input.trim() || loading}
-              className={`ml-1 p-2 rounded-xl transition-all ${
-                input.trim() && !loading
-                  ? 'bg-accent text-white hover:bg-accent-light hover:shadow-md'
-                  : 'bg-background-tertiary text-foreground-muted/40 cursor-not-allowed border border-border-subtle/30'
-              }`}
-            >
-              {loading ? (
-                <motion.div
-                  className="w-4 h-4 rounded-full border-2 border-current border-t-transparent"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-                />
-              ) : (
-                <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
-              )}
-            </button>
-          </div>
+          <button
+            onClick={onSend}
+            disabled={!input.trim() || loading}
+            className={`p-2 rounded-xl transition-all flex items-center justify-center ${
+              input.trim() && !loading
+                ? 'bg-[#D97757] text-white hover:bg-[#c66849]'
+                : 'bg-transparent text-foreground-muted/40 cursor-not-allowed'
+            }`}
+          >
+            {loading ? (
+              <motion.div
+                className="w-4 h-4 rounded-full border-2 border-current border-t-transparent"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+              />
+            ) : (
+              <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+            )}
+          </button>
         </div>
       </div>
-
-      {/* Quick Action Pills (below input card) */}
-      {showQuickActions && (
-        <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
-          {QUICK_ACTIONS.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.id}
-                onClick={() => {
-                  setInput(action.value)
-                  textareaRef.current?.focus()
-                }}
-                className="px-3.5 py-2 rounded-xl text-[13px] transition-all flex items-center gap-2 cursor-pointer bg-background-secondary border border-border-subtle text-foreground-secondary hover:bg-background-tertiary hover:text-foreground-primary"
-              >
-                <Icon className="w-4 h-4 opacity-80" />
-                <span>{action.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
     </div>
   )
 }
@@ -1855,24 +1653,24 @@ function HeroState({ userName }) {
   else if (hour < 17) greeting = 'Good afternoon'
 
   return (
-    <motion.div
-      className="flex flex-col items-center justify-center text-center px-4 w-full mt-10 md:mt-20"
-      initial="hidden"
-      animate="visible"
-      variants={{
-        hidden: {},
-        visible: { transition: { staggerChildren: 0.1 } }
-      }}
-    >
+    <div className="flex flex-col items-center justify-center text-center px-4 w-full mt-[18vh] mb-8">
       <motion.h1
-        variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="font-serif text-3xl md:text-[40px] mb-8 font-normal"
-        style={{ color: '#E5E5E5', letterSpacing: '-0.01em', lineHeight: 1.2 }}
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="text-[32px] md:text-[40px] font-serif font-medium tracking-tight text-foreground-primary mb-3"
       >
         {greeting}, {firstName}
       </motion.h1>
-    </motion.div>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="text-foreground-muted text-base"
+      >
+        How can I help you today?
+      </motion.p>
+    </div>
   )
 }
 
@@ -4680,20 +4478,38 @@ export default function ChatPage() {
             className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 shadow-2xl' : 'flex-shrink-0'} flex flex-col overflow-hidden border-r border-border-subtle`}
             style={{ background: 'var(--bg-secondary)' }}
           >
-            {/* Brand + collapse */}
+            {/* Brand / Desktop Toggle + collapse */}
             <div className="flex items-center justify-between px-4 py-4 flex-shrink-0">
-              <Link to="/" className="flex items-center gap-2.5">
-                <motion.div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(217,119,87,0.15)' }}
-                >
-                  <CodevaMark size={24} />
-                </motion.div>
-                <div className="flex flex-col">
-                  <span className="font-semibold text-sm leading-tight text-foreground-primary">Codeva</span>
-                  <span className="text-[9px] text-foreground-muted leading-none tracking-wide">by Codeva</span>
+              {!!window.electronAPI ? (
+                <div className="flex items-center bg-white/[0.04] rounded-lg p-0.5 border border-white/[0.02]">
+                  {['chats', 'cowork', 'code'].map(m => (
+                    <button
+                      key={m}
+                      onClick={() => setActiveNav(m)}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                        activeNav === m
+                          ? 'bg-white/10 text-white shadow-sm'
+                          : 'text-gray-500 hover:text-gray-300'
+                      }`}
+                    >
+                      {m === 'code' ? '</> Code' : m === 'chats' ? 'Chat' : m.charAt(0).toUpperCase() + m.slice(1)}
+                    </button>
+                  ))}
                 </div>
-              </Link>
+              ) : (
+                <Link to="/" className="flex items-center gap-2.5">
+                  <motion.div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(217,119,87,0.15)' }}
+                  >
+                    <CodevaMark size={24} />
+                  </motion.div>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-sm leading-tight text-foreground-primary">Codeva</span>
+                    <span className="text-[9px] text-foreground-muted leading-none tracking-wide">by Codeva</span>
+                  </div>
+                </Link>
+              )}
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5 transition-colors"
@@ -4703,19 +4519,21 @@ export default function ChatPage() {
             </div>
 
             {/* New Chat */}
-            <div className="px-3 pb-2 flex-shrink-0">
+            <div className="px-3 pb-4 pt-1 flex-shrink-0">
               <button
                 onClick={() => { navigate('/chat'); setMessages([]); setActiveNav('chats') }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5"
+                className="w-full flex items-center justify-between px-4 py-2 rounded-full text-[13px] font-medium transition-colors bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.02] text-foreground-primary shadow-sm"
               >
-                <Plus className="w-4 h-4" />
-                New Chat
+                <div className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  <span>New chat</span>
+                </div>
               </button>
             </div>
 
             {/* Nav items */}
-            <div className="px-3 pb-3 flex-shrink-0">
-              {NAV_ITEMS.map(item => (
+            <div className="px-2 pb-3 flex-shrink-0">
+              {NAV_ITEMS.filter(item => !!window.electronAPI ? ['search', 'projects', 'artifacts', 'customize'].includes(item.id) : true).map(item => (
                 <button
                   key={item.id}
                   onClick={() => {
@@ -4725,16 +4543,16 @@ export default function ChatPage() {
                       setActiveNav(item.id)
                     }
                   }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors mb-0.5 ${
+                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
                     activeNav === item.id
-                      ? 'text-foreground-primary bg-accent/15 font-semibold animate-pulse-soft'
-                      : 'text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5'
+                      ? 'text-foreground-primary font-semibold'
+                      : 'text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5'
                   }`}
                 >
-                  <item.icon className="w-4 h-4 flex-shrink-0" />
+                  <item.icon className="w-4 h-4 flex-shrink-0 opacity-70" />
                   <span className="flex-1 text-left">{item.label}</span>
                   {item.badge && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(217,119,87,0.2)', color: '#D97757' }}>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider" style={{ background: 'rgba(217,119,87,0.15)', color: '#D97757' }}>
                       {item.badge}
                     </span>
                   )}
@@ -5003,42 +4821,29 @@ export default function ChatPage() {
                 )}
               </AnimatePresence>
 
-              <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-foreground-primary/[0.04] transition-all cursor-pointer">
-                {/* Avatar */}
-                {userAvatar ? (
-                  <img
-                    src={userAvatar}
-                    alt={userName}
-                    className="w-7 h-7 rounded-full object-cover border border-border-subtle flex-shrink-0"
-                  />
-                ) : (
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 font-sans"
-                    style={{ background: 'rgba(217,119,87,0.2)', color: '#D97757' }}
-                  >
-                    {userInitials}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-medium text-foreground-primary truncate">{userName}</div>
-                  <div className="text-[10px] text-foreground-muted truncate">{userEmail || 'Free Plan'}</div>
-                </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <span
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-md border border-border-subtle text-foreground-secondary uppercase tracking-wide bg-background-tertiary"
-                  >
-                    {userLanguage}
-                  </span>
-                  {!localStorage.getItem('sb-access-token') ? (
-                    <span
-                      className="text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5"
-                      style={{ background: 'rgba(251,191,36,0.15)', color: '#FCD34D' }}
-                    >
-                      <Ghost className="w-2.5 h-2.5" />GUEST
-                    </span>
+              <div className="flex items-center justify-between px-2 py-1.5 rounded-full bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] transition-all cursor-pointer group">
+                <div className="flex items-center gap-2">
+                  {userAvatar ? (
+                    <img
+                      src={userAvatar}
+                      alt={userName}
+                      className="w-5 h-5 rounded-full object-cover flex-shrink-0 opacity-90"
+                    />
                   ) : (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(217,119,87,0.2)', color: '#D97757' }}>FREE</span>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 font-sans bg-white/10 text-white/80">
+                      {userInitials || 'c'}
+                    </div>
                   )}
+                  <div className="text-[12px] font-medium text-foreground-secondary group-hover:text-foreground-primary truncate max-w-[120px]">
+                    {userName || 'User'}
+                  </div>
+                  <div className="w-1 h-1 rounded-full bg-white/20" />
+                  <div className="text-[11px] text-foreground-muted group-hover:text-foreground-secondary">
+                    {!localStorage.getItem('sb-access-token') ? 'Guest' : 'Free'}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ChevronDown className="w-3.5 h-3.5 text-foreground-muted" />
                 </div>
               </div>
             </div>
@@ -5050,9 +4855,12 @@ export default function ChatPage() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* Header strip */}
-        <header className="relative flex items-center gap-3 px-4 py-3 flex-shrink-0 border-b border-border-subtle bg-background-secondary/85 backdrop-blur-md">
-          {!sidebarOpen && (
-            <div className="flex items-center gap-3">
+        <header 
+          className="relative flex items-center gap-3 px-4 py-3 flex-shrink-0 border-b border-border-subtle bg-background-secondary/85 backdrop-blur-md"
+          style={{ WebkitAppRegion: !!window.electronAPI ? 'drag' : 'auto' }}
+        >
+          {(!sidebarOpen && !window.electronAPI) && (
+            <div className="flex items-center gap-3" style={{ WebkitAppRegion: 'no-drag' }}>
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5 transition-colors"
@@ -5065,8 +4873,19 @@ export default function ChatPage() {
             </div>
           )}
 
+          {(!sidebarOpen && !!window.electronAPI) && (
+            <div className="flex items-center gap-3" style={{ WebkitAppRegion: 'no-drag' }}>
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5 transition-colors"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {activeThreadId && activeNav === 'chats' && (
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm" style={{ WebkitAppRegion: 'no-drag' }}>
               <span className="truncate max-w-[200px] font-medium text-foreground-secondary">
                 {threads.find(t => t._id === activeThreadId)?.title || 'Chat'}
               </span>
@@ -5074,26 +4893,28 @@ export default function ChatPage() {
           )}
 
           {activeNav !== 'chats' && (
-            <span className="text-sm font-semibold capitalize text-foreground-secondary">
+            <span className="text-sm font-semibold capitalize text-foreground-secondary" style={{ WebkitAppRegion: 'no-drag' }}>
               {activeNav}
             </span>
           )}
 
-          {/* Top-Center Billing Badge */}
-          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center pointer-events-auto z-10">
-            <Link
-              to="/upgrade"
-              className="text-[11px] font-sans px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.1] hover:bg-white/[0.06] text-foreground-secondary hover:text-foreground-primary transition-all flex items-center gap-1.5 select-none"
-            >
-              <span className="text-white/60">Free plan</span>
-              <span className="w-1 h-1 rounded-full bg-white/20" />
-              <span className="text-[#D97757] font-semibold underline underline-offset-2">Upgrade</span>
-            </Link>
-          </div>
+          {/* Top-Center Billing Badge - Hide on Desktop for Claude aesthetic */}
+          {!window.electronAPI && (
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center pointer-events-auto z-10" style={{ WebkitAppRegion: 'no-drag' }}>
+              <Link
+                to="/upgrade"
+                className="text-[11px] font-sans px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.1] hover:bg-white/[0.06] text-foreground-secondary hover:text-foreground-primary transition-all flex items-center gap-1.5 select-none"
+              >
+                <span className="text-white/60">Free plan</span>
+                <span className="w-1 h-1 rounded-full bg-white/20" />
+                <span className="text-[#D97757] font-semibold underline underline-offset-2">Upgrade</span>
+              </Link>
+            </div>
+          )}
 
           <div className="flex-1" />
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' }}>
             {/* Active mode badges */}
             <AnimatePresence>
               {cyberMode && (
@@ -5181,7 +5002,7 @@ export default function ChatPage() {
           {/* Chat Content Panel (Left/Main side) */}
           <div className={`flex-1 flex flex-col min-w-0 h-full relative ${workspaceOpen && !isMobile ? 'w-[55%]' : 'w-full'}`}>
             {/* Server Warming Up Banner */}
-            {isWarmingUp && (
+            {isWarmingUp && !window.electronAPI && (
               <div className="bg-[#7C3AED]/10 border-b border-[#7C3AED]/20 px-4 py-2.5 text-center text-xs text-[#ECECEC] flex items-center justify-center gap-2 animate-pulse z-50 flex-shrink-0">
                 <span className="inline-block w-2 h-2 rounded-full bg-[#7C3AED] animate-ping" />
                 <span>⚡ Waking up the secure Codeva server from standby (takes ~20s)... Chat is temporarily locked.</span>
