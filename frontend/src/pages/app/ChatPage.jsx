@@ -910,10 +910,34 @@ function InputArea({
           
           <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} />
 
+          <div className="h-6 w-px bg-border-subtle mx-1" />
+
+          <button
+            onClick={onMicClick}
+            title="Voice Typing"
+            className={`p-2 rounded-xl transition-all ${
+              inlineSpeechListening
+                ? 'text-red-500 bg-red-500/10'
+                : 'text-foreground-muted hover:text-foreground-primary hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <Mic className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={onWaveformClick}
+            title="Start Voice Chat"
+            className="p-2 rounded-xl transition-all text-foreground-muted hover:text-foreground-primary hover:bg-black/5 dark:hover:bg-white/5"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2v20M17 7v10M22 10v4M7 7v10M2 10v4"/>
+            </svg>
+          </button>
+
           <button
             onClick={onSend}
             disabled={!input.trim() || loading}
-            className={`p-2 rounded-xl transition-all flex items-center justify-center ${
+            className={`p-2 rounded-xl transition-all flex items-center justify-center ml-1 ${
               input.trim() && !loading
                 ? 'bg-[#D97757] text-white hover:bg-[#c66849]'
                 : 'bg-transparent text-foreground-muted/40 cursor-not-allowed'
@@ -1646,21 +1670,25 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
 function HeroState({ userName }) {
   const firstName = userName ? userName.split(' ')[0] : 'User'
   
-  // Greeting based on time of day (Claude style)
-  const hour = new Date().getHours()
-  let greeting = 'Good evening'
-  if (hour < 12) greeting = 'Good morning'
-  else if (hour < 17) greeting = 'Good afternoon'
-
   return (
     <div className="flex flex-col items-center justify-center text-center px-4 w-full mt-[18vh] mb-8">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="mb-6 flex items-center justify-center"
+      >
+        <div className="w-12 h-12 rounded-2xl bg-[#E8E6E1] dark:bg-[#2A2A2A] flex items-center justify-center text-[#D97757] shadow-sm">
+          <Sparkles className="w-6 h-6" />
+        </div>
+      </motion.div>
       <motion.h1
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
         className="text-[32px] md:text-[40px] font-serif font-medium tracking-tight text-foreground-primary mb-3"
       >
-        {greeting}, {firstName}
+        Back at it, {firstName}
       </motion.h1>
       <motion.p
         initial={{ opacity: 0 }}
@@ -3774,6 +3802,10 @@ export default function ChatPage() {
     let activeModel = selectedModel
     const extraSystemMessages = []
 
+    if (userLanguage && userLanguage.toUpperCase() !== 'EN') {
+      extraSystemMessages.push({ role: 'system', content: `Please reply in ${userLanguage} language.`, _skip_inject: true })
+    }
+
     if (customInstructions && customInstructions.trim() !== '') {
       extraSystemMessages.push({ role: 'system', content: `Custom User Instructions: ${customInstructions}`, _skip_inject: true })
     }
@@ -4211,7 +4243,11 @@ export default function ChatPage() {
           if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${err.message}` }
           return next
         })
-        setError('Server is warming up. Your message was sent without saving. Try again shortly.')
+        if (err.message.includes('429')) {
+          setError('Rate limit exceeded. Please wait a moment and try again.')
+        } else {
+          setError(`Server error: ${err.message}. Your message was not saved.`)
+        }
       } finally {
         setStreamingIndex(null)
         setLoading(false)
@@ -4930,31 +4966,36 @@ export default function ChatPage() {
               )}
             </AnimatePresence>
 
-            {/* Cyber Mode Toggle */}
-            <button
-              onClick={() => setCyberMode(prev => !prev)}
-              className={`p-2 rounded-xl border transition-all duration-200 ${
-                cyberMode 
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                  : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
-              }`}
-              title="Toggle Cyber Mode"
-            >
-              <Zap className="w-4 h-4" />
-            </button>
+            {/* Top Bar Toggles - Hide on Desktop for minimalist aesthetic */}
+            {!window.electronAPI && (
+              <>
+                {/* Cyber Mode Toggle */}
+                <button
+                  onClick={() => setCyberMode(prev => !prev)}
+                  className={`p-2 rounded-xl border transition-all duration-200 ${
+                    cyberMode 
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                  }`}
+                  title="Toggle Cyber Mode"
+                >
+                  <Zap className="w-4 h-4" />
+                </button>
 
-            {/* Workspace split toggle */}
-            <button
-              onClick={() => setWorkspaceOpen(prev => !prev)}
-              className={`p-2 rounded-xl border transition-all duration-200 ${
-                workspaceOpen 
-                  ? 'bg-[#D97757]/20 border-[#D97757]/40 text-[#D97757]' 
-                  : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
-              }`}
-              title="Toggle Workspace Panel"
-            >
-              <Terminal className="w-4 h-4" />
-            </button>
+                {/* Workspace split toggle */}
+                <button
+                  onClick={() => setWorkspaceOpen(prev => !prev)}
+                  className={`p-2 rounded-xl border transition-all duration-200 ${
+                    workspaceOpen 
+                      ? 'bg-[#D97757]/20 border-[#D97757]/40 text-[#D97757]' 
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                  }`}
+                  title="Toggle Workspace Panel"
+                >
+                  <Terminal className="w-4 h-4" />
+                </button>
+              </>
+            )}
           </div>
         </header>
 
