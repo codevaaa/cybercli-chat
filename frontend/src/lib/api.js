@@ -3,20 +3,7 @@ import { supabase } from './supabase.js'
 import { useAuthStore } from '../stores/authStore.js'
 
 const getApiBase = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL
-  }
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname
-    if (
-      hostname.includes('vercel.app') || 
-      hostname.includes('codeva.app') || 
-      hostname.includes('cybermindcli.info')
-    ) {
-      return 'https://cybercli-api.onrender.com/api/v1'
-    }
-  }
-  return 'http://localhost:3000/api/v1'
+  return 'https://cybercli-api.onrender.com/api/v1'
 }
 
 export let API_BASE = getApiBase()
@@ -222,28 +209,6 @@ export async function checkBackendHealth() {
   } catch {
     return false
   }
-}
-
-// Pre-warm and dynamic local -> production fallback on module load
-if (typeof window !== 'undefined') {
-  const initApiFallback = async () => {
-    if (API_BASE.includes('localhost')) {
-      try {
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 2000)
-        const res = await fetch('http://localhost:3000/health', { signal: controller.signal })
-        clearTimeout(timeout)
-        if (!res.ok) throw new Error('Local dead')
-      } catch (e) {
-        console.warn('[API] Local backend is unreachable on port 3000. Redirecting API requests to production Render backend.')
-        API_BASE = 'https://cybercli-api.onrender.com/api/v1'
-        api.defaults.baseURL = API_BASE
-      }
-    }
-    // Now trigger health check
-    checkBackendHealth().catch(console.error)
-  }
-  setTimeout(initApiFallback, 100)
 }
 
 export { isLoggedIn }

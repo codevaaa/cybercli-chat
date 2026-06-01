@@ -36,5 +36,9 @@ export function registerShortcuts(mainWindow: BrowserWindow | null): void {
 }
 
 export function unregisterShortcuts(): void {
-  globalShortcut.unregisterAll()
+  import('electron').then(({ app }) => {
+    if (app.isReady()) {
+      globalShortcut.unregisterAll()
+    }
+  })
 }

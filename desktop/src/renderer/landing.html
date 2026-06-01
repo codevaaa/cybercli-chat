@@ -129,6 +129,14 @@
       window.electronAPI?.openSignIn?.();
     });
 
+    const menuBtn = document.querySelector('.menu-btn');
+    if (menuBtn) {
+      menuBtn.addEventListener('click', () => {
+        // Just close the app for now if hamburger is clicked on landing
+        window.electronAPI?.closeWindow?.();
+      });
+    }
+
     window.electronAPI?.getAppInfo?.().then(info => {
       if (info?.version) document.getElementById('version').textContent = 'v' + info.version;
     }).catch(() => {});

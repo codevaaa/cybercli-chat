@@ -1,0 +1,15 @@
+[
+  {
+    "created_at": 1780215403530,
+    "usage_count": 0,
+    "is_active": true,
+    "_id": "6a1bee6be279b6c6eff7057e",
+    "user_id": "test-user-id",
+    "name": "Test Key 2026-05-31T08:16:43.523Z",
+    "key_hash": "e035af2a0d6801e157dc93d074d44e403519cc684a24b2d1a3730458d6c0b640",
+    "key_prefix": "sk_cyber_f116a",
+    "last4": "cf0e",
+    "createdAt": "2026-05-31T08:16:43.530Z",
+    "updatedAt": "2026-05-31T08:16:43.531Z"
+  }
+]

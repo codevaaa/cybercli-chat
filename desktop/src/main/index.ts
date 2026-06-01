@@ -187,8 +187,8 @@ function createLandingWindow(): BrowserWindow {
     minimizable: false,
     show: false,
     backgroundColor: '#0A0A0F',
-    titleBarStyle: 'hidden',
-    frame: false,
+    titleBarStyle: isMac ? 'hidden' : 'default',
+    frame: !isWin,
     icon: path.join(__dirname, '../../../resources/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.mjs'),
@@ -210,8 +210,8 @@ function createLoginWindow(): BrowserWindow {
     maximizable: false,
     show: false,
     backgroundColor: '#0A0A0F',
-    titleBarStyle: 'hidden',
-    frame: false,
+    titleBarStyle: isMac ? 'hidden' : 'default',
+    frame: !isWin,
     icon: path.join(__dirname, '../../../resources/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.mjs'),
