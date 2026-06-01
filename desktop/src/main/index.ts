@@ -188,11 +188,29 @@ app.whenReady().then(() => {
     app.setAsDefaultProtocolClient('codeva')
   }
 
-  // Show landing window first (Claude-style)
-  landingWindow = createLandingWindow()
-  
-  // Also create main window hidden in the background so it can check for existing sessions
-  mainWindow = createMainWindow()
+  // Check for saved session state to avoid flashing the landing window
+  const sessionFile = path.join(app.getPath('userData'), 'session_state.json')
+  let hasSession = false
+  try {
+    if (fs.existsSync(sessionFile)) {
+      hasSession = JSON.parse(fs.readFileSync(sessionFile, 'utf8')).hasSession
+    }
+  } catch (e) {
+    console.error('[Codeva] Failed to read session state:', e)
+  }
+
+  if (hasSession) {
+    // If logged in, skip landing window entirely and show main window immediately
+    mainWindow = createMainWindow()
+    mainWindow.once('ready-to-show', () => {
+      mainWindow?.show()
+      mainWindow?.focus()
+    })
+  } else {
+    // If not logged in, show landing window and load main window in the background
+    landingWindow = createLandingWindow()
+    mainWindow = createMainWindow()
+  }
 
   // Auto-updater
   if (!isDev) {
@@ -224,7 +242,12 @@ app.whenReady().then(() => {
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      landingWindow = createLandingWindow()
+      if (hasSession) {
+        mainWindow = createMainWindow()
+        mainWindow.once('ready-to-show', () => mainWindow?.show())
+      } else {
+        landingWindow = createLandingWindow()
+      }
     }
   })
 })
@@ -466,6 +489,22 @@ ipcMain.handle('landing:open-main', () => {
   if (landingWindow && !landingWindow.isDestroyed()) {
     landingWindow.close()
     landingWindow = null
+  }
+  
+  if (loginWindow && !loginWindow.isDestroyed()) {
+    loginWindow.close()
+    loginWindow = null
+  }
+})
+
+// Set session state
+ipcMain.handle('auth:set-session', (_event, hasSession: boolean) => {
+  console.log('[Codeva] IPC: auth:set-session', hasSession)
+  try {
+    const sessionFile = path.join(app.getPath('userData'), 'session_state.json')
+    fs.writeFileSync(sessionFile, JSON.stringify({ hasSession }))
+  } catch (err) {
+    console.error('[Codeva] Failed to save session state:', err)
   }
 })
 

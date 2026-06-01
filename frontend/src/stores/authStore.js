@@ -15,6 +15,11 @@ const dispatchAuthSync = (session) => {
     }
     window.postMessage(payload, '*')
     window.dispatchEvent(new CustomEvent('cybercli-auth-change', { detail: payload }))
+    
+    // Sync session state directly with desktop main process to skip landing on next boot
+    if (window.electronAPI?.setSessionState) {
+      window.electronAPI.setSessionState(!!session?.access_token)
+    }
   }
 }
 
