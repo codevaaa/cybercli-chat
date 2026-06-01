@@ -32,16 +32,31 @@ export const useAuthStore = create(
         try {
           // Check for desktop auth token (Electron IPC)
           if (typeof window !== 'undefined' && window.electronAPI?.onAuthToken) {
-            window.electronAPI.onAuthToken((token) => {
+            window.electronAPI.onAuthToken((payload) => {
+              const token = typeof payload === 'string' ? payload : payload.token;
+              const refresh = typeof payload === 'string' ? '' : payload.refresh || '';
+              
               localStorage.setItem('sb-access-token', token)
-              // Trigger a session refresh to validate token
-              supabase.auth.getUser(token).then(({ data }) => {
-                if (data.user) {
-                  localStorage.setItem('user_name', data.user.user_metadata?.name || data.user.email || '')
-                  localStorage.setItem('user_email', data.user.email || '')
-                  set({ user: data.user, session: { access_token: token, user: data.user }, loading: false })
-                }
-              })
+              
+              if (refresh) {
+                // Properly inject session into Supabase SDK so it persists across reloads
+                supabase.auth.setSession({ access_token: token, refresh_token: refresh }).then(({ data }) => {
+                  if (data.user) {
+                    localStorage.setItem('user_name', data.user.user_metadata?.name || data.user.email || '')
+                    localStorage.setItem('user_email', data.user.email || '')
+                    set({ user: data.user, session: data.session, loading: false })
+                  }
+                })
+              } else {
+                // Fallback if no refresh token
+                supabase.auth.getUser(token).then(({ data }) => {
+                  if (data.user) {
+                    localStorage.setItem('user_name', data.user.user_metadata?.name || data.user.email || '')
+                    localStorage.setItem('user_email', data.user.email || '')
+                    set({ user: data.user, session: { access_token: token, user: data.user }, loading: false })
+                  }
+                })
+              }
             })
           }
 

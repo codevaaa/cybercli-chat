@@ -90,11 +90,12 @@ export default function AuthCallbackPage() {
           // Desktop app redirect: send token via deep link protocol or localhost server
           if (redirectParam || isCliRedirect) {
             const token = session.access_token
+            const refresh = session.refresh_token || ''
             if (isCliRedirect && cliPort) {
-              window.location.href = `http://127.0.0.1:${cliPort}/callback?token=${encodeURIComponent(token)}`
+              window.location.href = `http://127.0.0.1:${cliPort}/callback?token=${encodeURIComponent(token)}&refresh=${encodeURIComponent(refresh)}`
             } else {
               // Fallback to codeva:// deep link with token
-              window.location.href = `codeva://auth?token=${encodeURIComponent(token)}`
+              window.location.href = `codeva://auth?token=${encodeURIComponent(token)}&refresh=${encodeURIComponent(refresh)}`
             }
             setStatus('success')
             return

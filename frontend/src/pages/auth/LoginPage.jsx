@@ -23,10 +23,10 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && session) {
       if (redirect === 'cli' && port) {
-        window.location.href = `http://127.0.0.1:${port}/callback?token=${encodeURIComponent(session.access_token)}`
+        window.location.href = `http://127.0.0.1:${port}/callback?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token)}`
         return
       } else if (redirect === 'desktop') {
-        window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
+        window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token)}`
         return
       } else {
         navigate('/chat')

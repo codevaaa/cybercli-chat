@@ -162,10 +162,7 @@ function createMainWindow(): BrowserWindow {
     `)}`)
   })
 
-  win.once('ready-to-show', () => {
-    win.show()
-    win.focus()
-  })
+  // Removed ready-to-show auto-show so the window stays hidden in the background until the session is verified
 
   // External links open in system browser
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -258,6 +255,7 @@ function startAuthServer(): Promise<number> {
         const parsedUrl = parse(req.url || '', true)
         if (parsedUrl.pathname === '/callback') {
           const token = parsedUrl.query.token as string
+          const refresh = (parsedUrl.query.refresh as string) || ''
           if (token) {
             // Send a success response that closes the window
             res.writeHead(200, { 'Content-Type': 'text/html' })
@@ -275,7 +273,7 @@ function startAuthServer(): Promise<number> {
             `)
             
             // Complete the auth flow
-            completeAuth(token)
+            completeAuth(token, refresh)
             
             // Close server after successful auth
             setTimeout(() => {
@@ -310,14 +308,15 @@ function startAuthServer(): Promise<number> {
   })
 }
 
-function handleDeepLink(url: string) {
-  console.log('[Codeva] Deep link received:', url)
+function handleDeepLink(urlStr: string) {
+  console.log('[Codeva] Deep link received:', urlStr)
   try {
-    const parsed = new URL(url)
-    if (parsed.pathname === '//auth' || parsed.pathname === '/auth') {
-      const token = parsed.searchParams.get('token')
+    const url = new URL(urlStr)
+    if (url.hostname === 'auth' || url.pathname === '//auth' || url.pathname === '/auth') {
+      const token = url.searchParams.get('token')
+      const refresh = url.searchParams.get('refresh')
       if (token) {
-        completeAuth(token)
+        completeAuth(token, refresh || '')
       }
     }
   } catch (err) {
@@ -325,38 +324,31 @@ function handleDeepLink(url: string) {
   }
 }
 
-function completeAuth(token: string) {
-  console.log('[Codeva] Auth complete, token received')
-  
-  // Close landing and login windows
-  if (landingWindow && !landingWindow.isDestroyed()) {
-    landingWindow.close()
-    landingWindow = null
-  }
-  if (loginWindow && !loginWindow.isDestroyed()) {
-    loginWindow.close()
-    loginWindow = null
-  }
-
-  // Create main window if not exists
-  let isNewWindow = false
+function completeAuth(token: string, refresh: string = '') {
+  console.log('[Codeva] completeAuth called with token length:', token?.length)
+  const payload = { token, refresh }
   if (!mainWindow || mainWindow.isDestroyed()) {
     mainWindow = createMainWindow()
-    isNewWindow = true
-  }
-
-  // Send token to main window
-  if (isNewWindow) {
     mainWindow.webContents.once('did-finish-load', () => {
-      mainWindow?.webContents.send('auth:token', token)
+      mainWindow?.webContents.send('auth:token', payload)
     })
   } else {
     // If window already exists, it's already loaded, send immediately
-    mainWindow.webContents.send('auth:token', token)
+    mainWindow.webContents.send('auth:token', payload)
   }
   
   mainWindow.show()
   mainWindow.focus()
+
+  // Close login windows
+  if (loginWindow && !loginWindow.isDestroyed()) {
+    loginWindow.close()
+    loginWindow = null
+  }
+  if (landingWindow && !landingWindow.isDestroyed()) {
+    landingWindow.close()
+    landingWindow = null
+  }
 }
 
 // ─── IPC Handlers ───────────────────────────────────────────
@@ -432,8 +424,12 @@ ipcMain.handle('auth:open-login', async (_event, opts?: { method?: string; email
 })
 
 // Auth flow: Complete (from deep link)
-ipcMain.handle('auth:complete', (_event, token: string) => {
-  completeAuth(token)
+ipcMain.handle('auth:complete', (_event, payload: any) => {
+  if (typeof payload === 'string') {
+    completeAuth(payload, '')
+  } else {
+    completeAuth(payload.token, payload.refresh || '')
+  }
 })
 
 // Landing → skip auth, go directly to main
