@@ -25,7 +25,7 @@ const RENDERER_DIR = path.join(DIST_DIR, 'renderer')
 const RESOURCES_DIR = path.join(APP_ROOT, 'resources')
 
 // Web app URL for main chat window
-const WEB_APP_URL = 'https://cybermindcli.info'
+const WEB_APP_URL = 'https://cybermindcli.info/chat'
 const WEB_AUTH_URL = 'https://cybermindcli.info/auth/login'
 const FRONTEND_DEV_URL = 'http://localhost:5173'
 
@@ -193,6 +193,9 @@ app.whenReady().then(() => {
 
   // Show landing window first (Claude-style)
   landingWindow = createLandingWindow()
+  
+  // Also create main window hidden in the background so it can check for existing sessions
+  mainWindow = createMainWindow()
 
   // Auto-updater
   if (!isDev) {
@@ -237,6 +240,76 @@ app.on('open-url', (event, url) => {
 })
 
 // Deep link handler
+import http from 'node:http'
+import { parse } from 'node:url'
+
+let authServer: http.Server | null = null
+let authPort = 0
+
+function startAuthServer(): Promise<number> {
+  return new Promise((resolve) => {
+    if (authServer) {
+      resolve(authPort)
+      return
+    }
+
+    authServer = http.createServer((req, res) => {
+      try {
+        const parsedUrl = parse(req.url || '', true)
+        if (parsedUrl.pathname === '/callback') {
+          const token = parsedUrl.query.token as string
+          if (token) {
+            // Send a success response that closes the window
+            res.writeHead(200, { 'Content-Type': 'text/html' })
+            res.end(`
+              <html>
+                <head><title>Auth Successful</title></head>
+                <body style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #0A0A0F; color: #fff;">
+                  <h2>Authentication Successful!</h2>
+                  <p>You can close this window and return to Codeva.</p>
+                  <script>
+                    setTimeout(() => { window.close() }, 1500)
+                  </script>
+                </body>
+              </html>
+            `)
+            
+            // Complete the auth flow
+            completeAuth(token)
+            
+            // Close server after successful auth
+            setTimeout(() => {
+              authServer?.close()
+              authServer = null
+            }, 1000)
+          } else {
+            res.writeHead(400)
+            res.end('Missing token')
+          }
+        } else {
+          res.writeHead(404)
+          res.end('Not found')
+        }
+      } catch (err) {
+        console.error('[Codeva] Auth server error:', err)
+        res.writeHead(500)
+        res.end('Internal Server Error')
+      }
+    })
+
+    authServer.listen(0, '127.0.0.1', () => {
+      const address = authServer?.address()
+      if (address && typeof address === 'object') {
+        authPort = address.port
+        console.log('[Codeva] Local auth server listening on port', authPort)
+        resolve(authPort)
+      } else {
+        resolve(0)
+      }
+    })
+  })
+}
+
 function handleDeepLink(url: string) {
   console.log('[Codeva] Deep link received:', url)
   try {
@@ -266,14 +339,21 @@ function completeAuth(token: string) {
   }
 
   // Create main window if not exists
+  let isNewWindow = false
   if (!mainWindow || mainWindow.isDestroyed()) {
     mainWindow = createMainWindow()
+    isNewWindow = true
   }
 
-  // Send token to main window once loaded
-  mainWindow.webContents.once('did-finish-load', () => {
-    mainWindow?.webContents.send('auth:token', token)
-  })
+  // Send token to main window
+  if (isNewWindow) {
+    mainWindow.webContents.once('did-finish-load', () => {
+      mainWindow?.webContents.send('auth:token', token)
+    })
+  } else {
+    // If window already exists, it's already loaded, send immediately
+    mainWindow.webContents.send('auth:token', token)
+  }
   
   mainWindow.show()
   mainWindow.focus()
@@ -334,13 +414,20 @@ ipcMain.handle('auth:back-to-landing', () => {
 })
 
 // Auth flow: Open browser for auth
-ipcMain.handle('auth:open-login', (_event, opts?: { method?: string; email?: string }) => {
+ipcMain.handle('auth:open-login', async (_event, opts?: { method?: string; email?: string }) => {
   console.log('[Codeva] IPC: auth:open-login, method:', opts?.method)
   
+  // Start local auth server for robust callback handling
+  const port = await startAuthServer()
+  
   const base = WEB_AUTH_URL
-  const params = new URLSearchParams({ redirect: 'desktop' })
+  // Pass both cli (for localhost callback) and desktop (for deep link fallback) signals
+  // We use redirect=cli so that the web app redirects to localhost:port/callback
+  const params = new URLSearchParams({ redirect: port ? 'cli' : 'desktop' })
+  if (port) params.set('port', port.toString())
   if (opts?.method) params.set('method', opts.method)
   if (opts?.email) params.set('email', opts.email)
+  
   shell.openExternal(`${base}?${params.toString()}`)
 })
 

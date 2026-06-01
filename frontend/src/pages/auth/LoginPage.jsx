@@ -28,6 +28,9 @@ export default function LoginPage() {
       } else if (redirect === 'desktop') {
         window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
         return
+      } else {
+        navigate('/chat')
+        return
       }
     }
 

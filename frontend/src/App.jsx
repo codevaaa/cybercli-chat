@@ -6,6 +6,7 @@ import PublicLayout from '@components/layout/PublicLayout'
 import CookieConsent from '@components/legal/CookieConsent'
 import ProtectedRoute from '@components/auth/ProtectedRoute.jsx'
 import DesktopUpdateNotification from '@components/desktop/DesktopUpdateNotification.jsx'
+import { useAuthStore } from '@stores/authStore.js'
 
 import HomePage from '@pages/public/HomePage'
 import FeaturesPage from '@pages/public/FeaturesPage'
@@ -92,6 +93,16 @@ function App() {
   useEffect(() => {
     document.documentElement.classList.add('dark')
   }, [])
+
+  const { session } = useAuthStore()
+
+  // Desktop App auto-login: If the web app is loaded inside the desktop wrapper and a session exists,
+  // tell the desktop app to show the main window (skipping the landing screen).
+  useEffect(() => {
+    if (session && window.electronAPI?.openMainWindow) {
+      window.electronAPI.openMainWindow()
+    }
+  }, [session])
 
   const isPublicRoute = () => {
     return PUBLIC_PATHS.includes(location.pathname)

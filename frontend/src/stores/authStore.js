@@ -183,6 +183,10 @@ export const useAuthStore = create(
           })
           set({ user: null, session: null, loading: false })
           dispatchAuthSync(null)
+
+          if (typeof window !== 'undefined' && window.electronAPI?.backToLanding) {
+            window.electronAPI.backToLanding()
+          }
         }
         return { success: true }
       },

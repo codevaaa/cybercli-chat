@@ -42,6 +42,20 @@ export default function SignupPage() {
     }
   }, [])
 
+  const { session } = useAuthStore()
+  
+  useEffect(() => {
+    if (!loading && session) {
+      if (redirect === 'cli' && port) {
+        window.location.href = `http://127.0.0.1:${port}/callback?token=${encodeURIComponent(session.access_token)}`
+      } else if (redirect === 'desktop') {
+        window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
+      } else {
+        navigate('/chat')
+      }
+    }
+  }, [session, loading, redirect, port, navigate])
+
   const passwordStrength = getStrength(form.password)
 
   const handleGoogleSignUp = async () => {
