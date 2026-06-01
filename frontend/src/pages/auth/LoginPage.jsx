@@ -12,18 +12,29 @@ export default function LoginPage() {
   const redirect = searchParams.get('redirect') || ''
   const port = searchParams.get('port') || ''
 
-  const { signInWithEmail, signInWithOAuth, loading, error, clearError } = useAuthStore()
+  const { session, signInWithEmail, signInWithOAuth, loading, error, clearError } = useAuthStore()
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [focusedField, setFocusedField] = useState(null)
 
   const method = searchParams.get('method') || ''
 
+  // Handle instant redirect if already logged in
   useEffect(() => {
-    if (method === 'google' && !loading) {
+    if (!loading && session) {
+      if (redirect === 'cli' && port) {
+        window.location.href = `http://127.0.0.1:${port}/callback?token=${encodeURIComponent(session.access_token)}`
+        return
+      } else if (redirect === 'desktop') {
+        window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
+        return
+      }
+    }
+
+    if (method === 'google' && !loading && !session) {
       handleGoogleSignIn()
     }
-  }, [method, loading]) // Trigger once on mount if method is google
+  }, [method, loading, session, redirect, port])
 
   const handleGoogleSignIn = async () => {
     clearError()
@@ -31,7 +42,10 @@ export default function LoginPage() {
       let nextPath = '/chat'
       let callbackQuery = `?next=${encodeURIComponent(nextPath)}`
       
-      if (redirect === 'cli' || redirect === 'desktop') {
+      if (redirect === 'cli' && port) {
+        // Pass redirect and port directly to AuthCallbackPage so it intercepts it
+        callbackQuery = `?redirect=cli&port=${port}`
+      } else if (redirect === 'desktop') {
         callbackQuery = `?redirect=desktop`
       }
 
@@ -54,8 +68,8 @@ export default function LoginPage() {
     clearError()
     const result = await signInWithEmail(form.email, form.password)
     if (result.success) {
-      if (redirect === 'cli') {
-        navigate(`/login?redirect=cli&port=${port}`)
+      if (redirect === 'cli' && port) {
+        window.location.href = `http://127.0.0.1:${port}/callback?token=${encodeURIComponent(result.session?.access_token)}`
       } else if (redirect === 'desktop') {
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {

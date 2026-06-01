@@ -51,7 +51,9 @@ export default function SignupPage() {
       let nextPath = '/chat'
       let callbackQuery = `?next=${encodeURIComponent(nextPath)}`
       
-      if (redirect === 'cli' || redirect === 'desktop') {
+      if (redirect === 'cli' && port) {
+        callbackQuery = `?redirect=cli&port=${port}`
+      } else if (redirect === 'desktop') {
         callbackQuery = `?redirect=desktop`
       }
 
