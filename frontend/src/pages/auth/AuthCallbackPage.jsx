@@ -27,7 +27,10 @@ export default function AuthCallbackPage() {
 
         // Check if this is a desktop app redirect flow
         const redirectParam = params.get('redirect') === 'desktop'
-        if (redirectParam) setIsDesktopRedirect(true)
+        const isCliRedirect = params.get('redirect') === 'cli'
+        const cliPort = params.get('port')
+        
+        if (redirectParam || isCliRedirect) setIsDesktopRedirect(true)
 
         // Check for error parameters in hash or search
         const errorDescription = params.get('error_description') || hashParams.get('error_description')
@@ -84,11 +87,15 @@ export default function AuthCallbackPage() {
         const { data: { session } } = await supabase.auth.getSession()
 
         if (session) {
-          // Desktop app redirect: send token via deep link protocol
-          if (redirectParam) {
+          // Desktop app redirect: send token via deep link protocol or localhost server
+          if (redirectParam || isCliRedirect) {
             const token = session.access_token
-            // Redirect to codeva:// deep link with token
-            window.location.href = `codeva://auth?token=${encodeURIComponent(token)}`
+            if (isCliRedirect && cliPort) {
+              window.location.href = `http://127.0.0.1:${cliPort}/callback?token=${encodeURIComponent(token)}`
+            } else {
+              // Fallback to codeva:// deep link with token
+              window.location.href = `codeva://auth?token=${encodeURIComponent(token)}`
+            }
             setStatus('success')
             return
           }

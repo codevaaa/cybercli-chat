@@ -19,7 +19,7 @@ const queryClient = new QueryClient({
 })
 
 // Use HashRouter in desktop (file:// protocol) — BrowserRouter needs a server
-const isDesktop = typeof window !== 'undefined' && !!window.electronAPI
+const isDesktop = typeof window !== 'undefined' && window.electronAPI && window.electronAPI.isDesktop === true
 const Router = isDesktop ? HashRouter : BrowserRouter
 
 function AppWrapper() {
