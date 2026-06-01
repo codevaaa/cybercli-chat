@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
+import { Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import Navbar from '@components/layout/Navbar'
 import Footer from '@components/layout/Footer'
@@ -103,6 +103,18 @@ function App() {
       window.electronAPI.openMainWindow()
     }
   }, [session])
+
+  const navigate = useNavigate()
+
+  // Prevent desktop app from showing marketing pages (like the Home page)
+  useEffect(() => {
+    if (window.electronAPI) {
+      const isMarketingPath = PUBLIC_PATHS.includes(location.pathname) && !location.pathname.startsWith('/auth')
+      if (isMarketingPath) {
+        navigate(session ? '/chat' : '/auth/login', { replace: true })
+      }
+    }
+  }, [location.pathname, session, navigate])
 
   const isPublicRoute = () => {
     return PUBLIC_PATHS.includes(location.pathname)
