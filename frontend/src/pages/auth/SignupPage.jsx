@@ -48,8 +48,17 @@ export default function SignupPage() {
     clearError()
     setLocalError(null)
     try {
-      const nextPath = redirect === 'cli' ? `/login?redirect=cli&port=${port}` : '/chat'
-      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+      let nextPath = '/chat'
+      let callbackQuery = `?next=${encodeURIComponent(nextPath)}`
+      
+      if (redirect === 'cli') {
+        nextPath = `/login?redirect=cli&port=${port}`
+        callbackQuery = `?next=${encodeURIComponent(nextPath)}`
+      } else if (redirect === 'desktop') {
+        callbackQuery = `?redirect=desktop`
+      }
+
+      const redirectTo = `${window.location.origin}/auth/callback${callbackQuery}`
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo }
@@ -99,6 +108,8 @@ export default function SignupPage() {
       }
       if (redirect === 'cli') {
         navigate(`/auth/verify-email?redirect=cli&port=${port}`)
+      } else if (redirect === 'desktop') {
+        navigate('/auth/verify-email?redirect=desktop')
       } else {
         navigate('/auth/verify-email')
       }

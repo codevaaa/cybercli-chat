@@ -20,8 +20,17 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     clearError()
     try {
-      const nextPath = redirect === 'cli' ? `/login?redirect=cli&port=${port}` : '/chat'
-      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+      let nextPath = '/chat'
+      let callbackQuery = `?next=${encodeURIComponent(nextPath)}`
+      
+      if (redirect === 'cli') {
+        nextPath = `/login?redirect=cli&port=${port}`
+        callbackQuery = `?next=${encodeURIComponent(nextPath)}`
+      } else if (redirect === 'desktop') {
+        callbackQuery = `?redirect=desktop`
+      }
+
+      const redirectTo = `${window.location.origin}/auth/callback${callbackQuery}`
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo }
@@ -42,6 +51,11 @@ export default function LoginPage() {
     if (result.success) {
       if (redirect === 'cli') {
         navigate(`/login?redirect=cli&port=${port}`)
+      } else if (redirect === 'desktop') {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
+        }
       } else {
         navigate('/chat')
       }
