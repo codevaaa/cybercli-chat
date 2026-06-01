@@ -4,6 +4,7 @@ const projectSchema = new mongoose.Schema({
   user_id: { type: String, required: true, index: true },
   name: { type: String, required: true },
   description: { type: String, default: '' },
+  custom_instructions: { type: String, default: '' },
   model: { type: String, default: 'Madhav' },
 }, { timestamps: true })
 

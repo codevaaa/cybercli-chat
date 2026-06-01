@@ -15,12 +15,24 @@ const router = Router()
 // Create a new chat thread
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const { title, model_id, folder_id } = req.body
+    const schema = z.object({
+      title: z.string().optional(),
+      model_id: z.string().optional(),
+      folder_id: z.string().nullable().optional(),
+      project_id: z.string().nullable().optional(),
+      style_id: z.string().nullable().optional(),
+      is_pinned: z.boolean().optional(),
+      is_archived: z.boolean().optional(),
+      tags: z.array(z.string()).optional(),
+    })
+    const data = schema.parse(req.body)
     const thread = new Thread({
       user_id: req.user.id,
-      title: title || 'New Chat',
-      model_id: model_id || 'auto',
-      folder_id: folder_id || null,
+      title: data.title || 'New Chat',
+      model_id: data.model_id || 'auto',
+      folder_id: data.folder_id || null,
+      project_id: data.project_id || null,
+      style_id: data.style_id || null
     })
     await thread.save()
     res.json(thread)
@@ -145,6 +157,8 @@ router.post('/:id/fork', requireAuth, async (req, res) => {
       title: `${originalThread.title} (Branched)`,
       model_id: originalThread.model_id,
       folder_id: originalThread.folder_id,
+      project_id: originalThread.project_id,
+      style_id: originalThread.style_id
     })
     await branchedThread.save()
 
@@ -324,6 +338,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     // 2. Fetch UserSettings and construct system prompt additions
     let extraSystemContent = ""
     try {
+      // Fetch User Settings
       const UserSettings = (await import('../models/UserSettings.js')).default
       const settings = await UserSettings.findOne({ user_id: req.user.id })
       if (settings) {
@@ -334,8 +349,26 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
           extraSystemContent += `\n\n[USER PROFILE & MEMORIES]\nYou must remember these facts about the user:\n` + settings.memories.map(m => `- ${m}`).join('\n')
         }
       }
+
+      // Fetch Project Instructions
+      if (thread.project_id) {
+        const Project = (await import('../models/Project.js')).default
+        const project = await Project.findById(thread.project_id)
+        if (project && project.custom_instructions) {
+          extraSystemContent += `\n\n[PROJECT CONTEXT: ${project.name}]\n${project.custom_instructions}`
+        }
+      }
+
+      // Fetch Style Instructions
+      if (thread.style_id) {
+        const Style = (await import('../models/Style.js')).default
+        const style = await Style.findById(thread.style_id)
+        if (style && style.instructions) {
+          extraSystemContent += `\n\n[WRITING STYLE: ${style.name}]\n${style.instructions}`
+        }
+      }
     } catch (settingsErr) {
-      console.error('Error fetching settings for chat system prompt:', settingsErr)
+      console.error('Error fetching context for chat system prompt:', settingsErr)
     }
 
     // 3. Handle Deep Research (multi-angle web search like Perplexity)

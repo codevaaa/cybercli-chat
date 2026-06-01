@@ -5,6 +5,8 @@ const threadSchema = new mongoose.Schema({
   title: { type: String, default: 'New Chat' },
   model_id: { type: String, default: 'auto' },
   folder_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder', default: null },
+  project_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', default: null },
+  style_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Style', default: null },
   is_pinned: { type: Boolean, default: false },
   is_archived: { type: Boolean, default: false },
   tags: [{ type: String }],

@@ -33,6 +33,7 @@ import executeRoutes from './routes/execute.routes.js'
 import imagesRoutes from './routes/images.routes.js'
 import contactRoutes from './routes/contact.routes.js'
 import projectsRoutes from './routes/projects.routes.js'
+import stylesRoutes from './routes/styles.routes.js'
 import workflowsRoutes from './routes/workflows.routes.js'
 import inviteRoutes from './routes/invite.routes.js'
 import feedbackRoutes from './routes/feedback.routes.js'
@@ -195,6 +196,7 @@ app.use('/api/v1/execute', executeRoutes)
 app.use('/api/v1/images', imagesRoutes)
 app.use('/api/v1/contact', contactRoutes)
 app.use('/api/v1/projects', projectsRoutes)
+app.use('/api/v1/styles', stylesRoutes)
 app.use('/api/v1/workflows', workflowsRoutes)
 app.use('/api/v1/invite', inviteRoutes)
 app.use('/api/v1/feedback', feedbackRoutes)

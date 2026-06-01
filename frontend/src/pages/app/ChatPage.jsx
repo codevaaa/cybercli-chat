@@ -18,6 +18,8 @@ import { useTTS } from '../../hooks/useTTS.js'
 import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
 import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
 import { useAuthStore } from '@stores/authStore.js'
+import { useProjectStore } from '@stores/projectStore.js'
+import { useStyleStore } from '@stores/styleStore.js'
 import CodevaMark, { CodevaWordmark } from '../../components/ui/CodevaLogo.jsx'
 import InviteFriendsModal from '../../components/invite/InviteFriendsModal.jsx'
 import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
@@ -861,12 +863,25 @@ function InputArea({
   webSearchEnabled = false,
   setWebSearchEnabled = () => {},
   onToggleWebSearch,
+  activeProject,
+  setActiveProject,
+  activeStyle,
+  setActiveStyle,
 }) {
   const textareaRef = useRef(null)
   const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
   const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false)
+  const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false)
   const attachmentMenuRef = useRef(null)
   const attachmentButtonRef = useRef(null)
+
+  const { projects, fetchProjects } = useProjectStore()
+  const { styles, fetchStyles } = useStyleStore()
+
+  useEffect(() => {
+    fetchProjects()
+    fetchStyles()
+  }, [])
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -878,6 +893,7 @@ function InputArea({
       ) {
         setIsAttachmentMenuOpen(false)
         setIsStyleMenuOpen(false)
+        setIsProjectMenuOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -929,11 +945,37 @@ function InputArea({
                     <span>Add files or photos</span>
                     <span className="ml-auto text-[12px] text-[#A3A097]">Ctrl+U</span>
                   </button>
-                  <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
-                    <Folder className="w-[18px] h-[18px] text-[#A3A097]" />
-                    <span>Add to project</span>
-                    <ChevronRight className="w-4 h-4 ml-auto text-[#A3A097] opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setIsProjectMenuOpen(true)}
+                    onMouseLeave={() => setIsProjectMenuOpen(false)}
+                  >
+                    <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
+                      <Folder className="w-[18px] h-[18px] text-[#A3A097]" />
+                      <span>Add to project</span>
+                      <ChevronRight className="w-4 h-4 ml-auto text-[#A3A097] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                    {isProjectMenuOpen && (
+                      <div className="absolute left-full top-0 ml-1 w-56 bg-[#2a2a2a] border border-[#3E3E3E] rounded-xl shadow-2xl overflow-hidden py-1.5 text-[14px]">
+                        {projects.length === 0 ? (
+                          <div className="px-3.5 py-2 text-[#A3A097] text-[12px]">No projects found</div>
+                        ) : (
+                          projects.map(p => (
+                            <button key={p._id} onClick={() => { setActiveProject(p); setIsAttachmentMenuOpen(false); setIsProjectMenuOpen(false) }} className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
+                              <Folder className="w-[18px] h-[18px] text-[#A3A097]" />
+                              <span className="truncate">{p.name}</span>
+                              {activeProject?._id === p._id && <Check className="w-4 h-4 ml-auto text-blue-400" />}
+                            </button>
+                          ))
+                        )}
+                        <div className="h-px bg-white/5 my-1.5 mx-3" />
+                        <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-blue-400 transition-colors text-left w-full">
+                          <Plus className="w-[18px] h-[18px]" />
+                          <span>New project</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <div className="h-px bg-white/5 my-1.5 mx-3" />
                   <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
                     <Layers className="w-[18px] h-[18px] text-[#A3A097]" />
@@ -980,18 +1022,6 @@ function InputArea({
                             <span className="text-[12px] text-[#A3A097]">Starting May 20 — Learn more</span>
                           </div>
                         </div>
-                        <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
-                          <Pencil className="w-[18px] h-[18px] text-[#A3A097]" />
-                          <span>Normal</span>
-                          <Check className="w-4 h-4 ml-auto text-blue-400" />
-                        </button>
-                        <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
-                          <GraduationCap className="w-[18px] h-[18px] text-[#A3A097]" />
-                          <span>Learning</span>
-                        </button>
-                        <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
-                          <Minus className="w-[18px] h-[18px] text-[#A3A097]" />
-                          <span>Concise</span>
                         </button>
                         <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
                           <BookOpen className="w-[18px] h-[18px] text-[#A3A097]" />
@@ -3172,6 +3202,10 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([])
   const [threads, setThreads] = useState([])
   const [loading, setLoading] = useState(false)
+  
+  // Project & Style State
+  const [activeProject, setActiveProject] = useState(null)
+  const [activeStyle, setActiveStyle] = useState(null)
   const [selectedModel, setSelectedModel] = useState('groq/llama-3.1-8b')
   const [copied, setCopied] = useState(null)
   const [streamingIndex, setStreamingIndex] = useState(null)
@@ -4336,7 +4370,12 @@ export default function ChatPage() {
       let lastErr = null
       while (retries > 0) {
         try {
-          const { data } = await api.post('/chat', { title: userText.substring(0, 50), model_id: activeModel })
+          const { data } = await api.post('/chat', { 
+            title: userText.substring(0, 50), 
+            model_id: activeModel,
+            project_id: activeProject?._id || null,
+            style_id: activeStyle?._id || null
+          })
           setThreads(prev => [data, ...prev])
           currentId = data._id
           activeThreadIdRef.current = currentId
@@ -4455,7 +4494,9 @@ export default function ChatPage() {
           deepResearchEnabled,
           codeExecutionEnabled,
           imageGenerationEnabled,
-          memoryEnabled
+          memoryEnabled,
+          project_id: activeProject?._id || null,
+          style_id: activeStyle?._id || null
         })
       })
       if (!res.ok) {
@@ -5284,6 +5325,10 @@ export default function ChatPage() {
                     <HeroState userName={userName} />
                     <div className="w-full mt-4">
                       <InputArea
+                        activeProject={activeProject}
+                        setActiveProject={setActiveProject}
+                        activeStyle={activeStyle}
+                        setActiveStyle={setActiveStyle}
                         input={input}
                         setInput={setInput}
                         onSend={handleSend}
@@ -5366,6 +5411,10 @@ export default function ChatPage() {
                     {/* Input pinned at bottom */}
                     <div className="px-4 py-4 border-t border-border-subtle bg-background-primary flex-shrink-0">
                       <InputArea
+                        activeProject={activeProject}
+                        setActiveProject={setActiveProject}
+                        activeStyle={activeStyle}
+                        setActiveStyle={setActiveStyle}
                         input={input}
                         setInput={setInput}
                         onSend={handleSend}
