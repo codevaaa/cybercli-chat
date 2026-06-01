@@ -858,8 +858,31 @@ function InputArea({
   incognitoMode = false,
   onToggleIncognito,
   showQuickActions = true,
+  webSearchEnabled = false,
+  setWebSearchEnabled = () => {},
+  onToggleWebSearch,
 }) {
   const textareaRef = useRef(null)
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
+  const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false)
+  const attachmentMenuRef = useRef(null)
+  const attachmentButtonRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        attachmentMenuRef.current &&
+        !attachmentMenuRef.current.contains(event.target) &&
+        attachmentButtonRef.current &&
+        !attachmentButtonRef.current.contains(event.target)
+      ) {
+        setIsAttachmentMenuOpen(false)
+        setIsStyleMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -927,7 +950,7 @@ function InputArea({
                   </button>
                   <div className="h-px bg-white/5 my-1.5 mx-3" />
                   <button 
-                    onClick={() => { setWebSearchEnabled(!webSearchEnabled); setIsAttachmentMenuOpen(false) }}
+                    onClick={() => { if(onToggleWebSearch) onToggleWebSearch(); else setWebSearchEnabled(!webSearchEnabled); setIsAttachmentMenuOpen(false) }}
                     className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group"
                   >
                     <Globe className={`w-[18px] h-[18px] ${webSearchEnabled ? 'text-blue-400' : 'text-[#A3A097]'}`} />
