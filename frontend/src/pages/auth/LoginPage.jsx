@@ -12,29 +12,18 @@ export default function LoginPage() {
   const redirect = searchParams.get('redirect') || ''
   const port = searchParams.get('port') || ''
 
-  const { session, signInWithEmail, signInWithOAuth, loading, error, clearError } = useAuthStore()
+  const { signInWithEmail, signInWithOAuth, loading, error, clearError } = useAuthStore()
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [focusedField, setFocusedField] = useState(null)
 
   const method = searchParams.get('method') || ''
 
-  // Handle instant redirect if already logged in
   useEffect(() => {
-    if (!loading && session) {
-      if (redirect === 'cli' && port) {
-        window.location.href = `http://127.0.0.1:${port}/callback?token=${encodeURIComponent(session.access_token)}`
-        return
-      } else if (redirect === 'desktop') {
-        window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
-        return
-      }
-    }
-
-    if (method === 'google' && !loading && !session) {
+    if (method === 'google' && !loading) {
       handleGoogleSignIn()
     }
-  }, [method, loading, session, redirect, port])
+  }, [method]) // Trigger once on mount if method is google
 
   const handleGoogleSignIn = async () => {
     clearError()
@@ -43,7 +32,7 @@ export default function LoginPage() {
       let callbackQuery = `?next=${encodeURIComponent(nextPath)}`
       
       if (redirect === 'cli') {
-        nextPath = `/auth/login?redirect=cli&port=${port}`
+        nextPath = `/login?redirect=cli&port=${port}`
         callbackQuery = `?next=${encodeURIComponent(nextPath)}`
       } else if (redirect === 'desktop') {
         callbackQuery = `?redirect=desktop`
