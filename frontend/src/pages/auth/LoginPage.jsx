@@ -23,7 +23,7 @@ export default function LoginPage() {
     if (method === 'google' && !loading) {
       handleGoogleSignIn()
     }
-  }, [method]) // Trigger once on mount if method is google
+  }, [method, loading]) // Trigger once on mount if method is google
 
   const handleGoogleSignIn = async () => {
     clearError()
@@ -31,10 +31,7 @@ export default function LoginPage() {
       let nextPath = '/chat'
       let callbackQuery = `?next=${encodeURIComponent(nextPath)}`
       
-      if (redirect === 'cli') {
-        nextPath = `/login?redirect=cli&port=${port}`
-        callbackQuery = `?next=${encodeURIComponent(nextPath)}`
-      } else if (redirect === 'desktop') {
+      if (redirect === 'cli' || redirect === 'desktop') {
         callbackQuery = `?redirect=desktop`
       }
 
