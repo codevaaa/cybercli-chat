@@ -7,7 +7,7 @@ import {
   Download, Zap, Settings, AlertCircle, Globe, Terminal, Image as ImageIcon, Brain, Folder, Camera,
   Play, Key, RefreshCw, Ghost, LogOut, HelpCircle, ArrowUpCircle, Info, BookOpen, Menu,
   Pencil, GraduationCap, Coffee, Lightbulb, Skull, FileCode, GitBranch as GitIcon, FolderTree, ArrowRight, ArrowUp,
-  Gift, Briefcase, Sparkles, Loader2, CheckCircle2, XCircle, Clock, Square, Send
+  Gift, Briefcase, Sparkles, Loader2, CheckCircle2, XCircle, Clock, Square, Send, PanelLeft, ArrowLeft, Minus, LineChart
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
@@ -1667,9 +1667,17 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
 
 // ─── Hero State ───────────────────────────────────────────────────────────────
 
-function HeroState({ userName }) {
+function HeroState({ userName, onSuggestionClick }) {
   const firstName = userName ? userName.split(' ')[0] : 'User'
   
+  const suggestions = [
+    { icon: <Code2 className="w-3.5 h-3.5" />, label: 'Code', query: 'I need help writing some code for ' },
+    { icon: <GraduationCap className="w-3.5 h-3.5" />, label: 'Learn', query: 'I want to learn about ' },
+    { icon: <LineChart className="w-3.5 h-3.5" />, label: 'Strategize', query: 'Help me create a strategy for ' },
+    { icon: <Pencil className="w-3.5 h-3.5" />, label: 'Write', query: 'Help me write a ' },
+    { icon: <Coffee className="w-3.5 h-3.5" />, label: 'Life stuff', query: 'I need some advice on ' }
+  ]
+
   return (
     <div className="flex flex-col items-center justify-center text-center px-4 w-full mt-[18vh] mb-8">
       <motion.div
@@ -1690,14 +1698,28 @@ function HeroState({ userName }) {
       >
         Back at it, {firstName}
       </motion.h1>
-      <motion.p
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
-        className="text-foreground-muted text-base"
+        className="flex flex-col items-center gap-6 mt-1"
       >
-        How can I help you today?
-      </motion.p>
+        <p className="text-foreground-muted text-base hidden">
+          How can I help you today?
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {suggestions.map((item, idx) => (
+            <button
+              key={idx}
+              onClick={() => onSuggestionClick?.(item.query)}
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-[#2b2b2b] hover:bg-[#333333] border border-white/5 text-[#d4d4d4] hover:text-white transition-colors text-[13px] font-medium shadow-sm"
+            >
+              <span className="text-[#a3a3a3]">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </motion.div>
     </div>
   )
 }
@@ -4909,13 +4931,32 @@ export default function ChatPage() {
             </div>
           )}
 
-          {(!sidebarOpen && !!window.electronAPI) && (
-            <div className="flex items-center gap-3" style={{ WebkitAppRegion: 'no-drag' }}>
+          {!!window.electronAPI && (
+            <div className="flex items-center gap-1.5" style={{ WebkitAppRegion: 'no-drag' }}>
+              {!sidebarOpen && (
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="p-1.5 rounded-lg text-[#888888] hover:text-[#d4d4d4] hover:bg-white/5 transition-colors"
+                  title="Toggle Sidebar"
+                >
+                  <Menu className="w-[18px] h-[18px]" />
+                </button>
+              )}
               <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground-primary hover:bg-foreground-primary/5 transition-colors"
+                onClick={() => setSidebarOpen(prev => !prev)}
+                className="p-1.5 rounded-lg text-[#888888] hover:text-[#d4d4d4] hover:bg-white/5 transition-colors"
+                title="Toggle Sidebar Panel"
               >
-                <Menu className="w-4 h-4" />
+                <PanelLeft className="w-[18px] h-[18px]" />
+              </button>
+              <button className="p-1.5 rounded-lg text-[#888888] hover:text-[#d4d4d4] hover:bg-white/5 transition-colors" title="Search">
+                <Search className="w-[18px] h-[18px]" />
+              </button>
+              <button onClick={() => window.history.back()} className="p-1.5 rounded-lg text-[#888888] hover:text-[#d4d4d4] hover:bg-white/5 transition-colors ml-1" title="Back">
+                <ArrowLeft className="w-[18px] h-[18px]" />
+              </button>
+              <button onClick={() => window.history.forward()} className="p-1.5 rounded-lg text-[#888888] hover:text-[#d4d4d4] hover:bg-white/5 transition-colors" title="Forward">
+                <ArrowRight className="w-[18px] h-[18px]" />
               </button>
             </div>
           )}
@@ -4934,19 +4975,17 @@ export default function ChatPage() {
             </span>
           )}
 
-          {/* Top-Center Billing Badge - Hide on Desktop for Claude aesthetic */}
-          {!window.electronAPI && (
-            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center pointer-events-auto z-10" style={{ WebkitAppRegion: 'no-drag' }}>
-              <Link
-                to="/upgrade"
-                className="text-[11px] font-sans px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.1] hover:bg-white/[0.06] text-foreground-secondary hover:text-foreground-primary transition-all flex items-center gap-1.5 select-none"
-              >
-                <span className="text-white/60">Free plan</span>
-                <span className="w-1 h-1 rounded-full bg-white/20" />
-                <span className="text-[#D97757] font-semibold underline underline-offset-2">Upgrade</span>
-              </Link>
-            </div>
-          )}
+          {/* Top-Center Billing Badge - Now perfectly styled for Claude desktop aesthetic */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center pointer-events-auto z-10" style={{ WebkitAppRegion: 'no-drag' }}>
+            <Link
+              to="/upgrade"
+              className="text-[12px] font-sans px-3.5 py-1.5 rounded-full bg-[#1e1e1e] border border-white/5 hover:bg-[#252525] text-[#d4d4d4] transition-all flex items-center gap-2 select-none shadow-sm"
+            >
+              <span>Free plan</span>
+              <span className="w-[3px] h-[3px] rounded-full bg-[#666666]" />
+              <span className="text-[#a3a3a3] hover:text-[#d4d4d4] underline decoration-white/20 underline-offset-4">Upgrade</span>
+            </Link>
+          </div>
 
           <div className="flex-1" />
           
@@ -4995,6 +5034,32 @@ export default function ChatPage() {
                   <Terminal className="w-4 h-4" />
                 </button>
               </>
+            )}
+
+            {/* Custom Window Controls (Desktop Only) */}
+            {!!window.electronAPI && (
+              <div className="flex items-center gap-1 ml-2" style={{ WebkitAppRegion: 'no-drag' }}>
+                <button
+                  onClick={() => setIncognitoMode(!incognitoMode)}
+                  className={`p-1.5 rounded-lg transition-colors mr-2 ${
+                    incognitoMode 
+                      ? 'text-white bg-white/10' 
+                      : 'text-[#888888] hover:text-[#d4d4d4] hover:bg-white/5'
+                  }`}
+                  title="Incognito Mode"
+                >
+                  <Ghost className="w-[18px] h-[18px]" />
+                </button>
+                <button onClick={() => window.electronAPI.minimizeWindow()} className="p-1.5 rounded-lg text-[#888888] hover:text-[#d4d4d4] hover:bg-white/5 transition-colors">
+                  <Minus className="w-[18px] h-[18px]" />
+                </button>
+                <button onClick={() => window.electronAPI.maximizeWindow()} className="p-1.5 rounded-lg text-[#888888] hover:text-[#d4d4d4] hover:bg-white/5 transition-colors">
+                  <Square className="w-[14px] h-[14px]" />
+                </button>
+                <button onClick={() => window.electronAPI.closeWindow()} className="p-1.5 rounded-lg text-[#888888] hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                  <X className="w-[18px] h-[18px]" />
+                </button>
+              </div>
             )}
           </div>
         </header>
@@ -5064,7 +5129,7 @@ export default function ChatPage() {
               {activeNav === 'chats' ? (
                 messages.length === 0 && !loading ? (
                   <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full px-4 pb-20">
-                    <HeroState userName={userName} />
+                    <HeroState userName={userName} onSuggestionClick={(q) => { setInput(q); textareaRef.current?.focus(); }} />
                     <div className="w-full mt-8">
                       <InputArea
                         input={input}
