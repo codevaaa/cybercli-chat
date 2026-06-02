@@ -181,6 +181,37 @@ router.post('/council', optionalAuth, async (req, res) => {
   }
 })
 
+// Deep Research Mode: Multi-agent (Jay, Vijay, Deva, Abhay, Kushi, Arjun, Meera, Veer + Codic Manager)
+router.post('/research', optionalAuth, async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+
+  const { messages, withCouncil = false } = req.body
+  if (!messages || !Array.isArray(messages)) {
+    res.write(`data: ${JSON.stringify({ type: 'error', content: 'messages is required' })}\n\n`)
+    res.end()
+    return
+  }
+
+  try {
+    const { runDeepResearch } = await import('../services/llm/researchEngine.js')
+    const plan = req.user?.plan || 'free'
+    for await (const chunk of runDeepResearch({ messages, plan, withCouncil })) {
+      if (chunk.type === 'research_done') {
+        res.write(`data: ${JSON.stringify(chunk)}\n\n`)
+        res.write('data: [DONE]\n\n')
+      } else {
+        res.write(`data: ${JSON.stringify(chunk)}\n\n`)
+      }
+    }
+  } catch (error) {
+    res.write(`data: ${JSON.stringify({ type: 'error', content: error.message })}\n\n`)
+  } finally {
+    res.end()
+  }
+})
+
 // Compare Mode: return non-stream responses from 3 models with real latencies
 router.post('/compare', optionalAuth, async (req, res) => {
   const { messages } = req.body

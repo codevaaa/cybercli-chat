@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import mongoose from 'mongoose'
+import { getPoolStats, getKey } from '../services/llm/keyPool.js'
 
 const router = Router()
 
@@ -94,7 +95,8 @@ const PROVIDER_CONFIGS = [
 
 // ── Ping a single provider ─────────────────────────────────────────────────────
 async function pingProvider(config) {
-  const key = config.keyEnv ? process.env[config.keyEnv] : null
+  // Use the key pool to get the current active key for this provider
+  const key = config.keyEnv ? getKey(config.provider === 'gemini-tts' ? 'gemini' : config.provider) : null
 
   // Council is a virtual layer
   if (config.provider === 'council') {
@@ -296,6 +298,11 @@ router.get('/', async (req, res) => {
       timestamp: new Date().toISOString(),
     })
   }
+})
+
+// Key pool health — shows how many keys per provider, availability, success/failure counts
+router.get('/keys', (req, res) => {
+  res.json({ pool: getPoolStats(), timestamp: new Date().toISOString() })
 })
 
 export default router

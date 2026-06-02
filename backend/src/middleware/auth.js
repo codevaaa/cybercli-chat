@@ -2,12 +2,18 @@ import { verifyJWT } from '../config/supabase.js'
 import supabase from '../config/supabase.js'
 import ApiKey from '../models/ApiKey.js'
 import CLISession from '../models/CLISession.js'
+import User from '../models/User.js'
 
 // Short-lived in-memory cache of user_id -> plan to avoid a Supabase lookup on
 // every API-key request. Entries expire after 60s so plan upgrades take effect
 // quickly without hammering the auth DB under load.
 const planCache = new Map()
 const PLAN_TTL_MS = 60_000
+
+// Short-lived cache of user_id -> ban status, so the global ban gate doesn't
+// hit MongoDB on every request. A freshly banned user is locked out within 30s.
+const banCache = new Map()
+const BAN_TTL_MS = 30_000
 
 async function resolveUserPlan(userId) {
   if (!userId) return 'free'
@@ -22,6 +28,26 @@ async function resolveUserPlan(userId) {
   }
   planCache.set(userId, { plan, at: Date.now() })
   return plan
+}
+
+/**
+ * Returns true if the user is banned/suspended in our registry.
+ * Fails OPEN (returns false) on DB errors so an outage never locks everyone out,
+ * but a definitive banned record is always enforced.
+ */
+async function isUserBanned(userId) {
+  if (!userId) return false
+  const cached = banCache.get(userId)
+  if (cached && Date.now() - cached.at < BAN_TTL_MS) return cached.banned
+  let banned = false
+  try {
+    const doc = await User.findOne({ supabase_id: userId }).select('status').lean()
+    banned = doc ? (doc.status === 'banned' || doc.status === 'suspended') : false
+  } catch {
+    banned = false
+  }
+  banCache.set(userId, { banned, at: Date.now() })
+  return banned
 }
 
 export const requireAuth = async (req, res, next) => {
@@ -52,6 +78,12 @@ export const requireAuth = async (req, res, next) => {
       // Resolve the user's REAL plan (cached) so model access is plan-gated,
       // not hardcoded. API-key users get exactly what their subscription allows.
       const plan = await resolveUserPlan(apiKeyDoc.user_id)
+
+      // Global ban gate also applies to API-key access.
+      if (await isUserBanned(apiKeyDoc.user_id)) {
+        return res.status(403).json({ error: 'Account suspended', banned: true })
+      }
+
       req.user = {
         id: apiKeyDoc.user_id,
         email: `api-user-${apiKeyDoc.user_id.substring(0, 8)}@codeva.local`,
@@ -73,6 +105,11 @@ export const requireAuth = async (req, res, next) => {
 
   if (error || !user) {
     return res.status(401).json({ error: 'Invalid or expired token' })
+  }
+
+  // Global ban gate — a suspended account cannot use the API at all.
+  if (await isUserBanned(user.id)) {
+    return res.status(403).json({ error: 'Account suspended', banned: true })
   }
 
   // Prefer the authoritative plan from the users table; fall back to JWT metadata.

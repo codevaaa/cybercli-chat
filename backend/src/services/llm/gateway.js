@@ -1,5 +1,6 @@
 import OpenAI from 'openai'
 import { getPlan, pickModelForPlan, planAllowsModel, tierOf } from '../../config/plans.js'
+import { getKey, reportSuccess, reportFailure, hasKeys } from './keyPool.js'
 
 // ============================================================
 // Codeva Identity System Prompt
@@ -16,18 +17,19 @@ Important identity rules:
 - Chandan Pandey is a cybersecurity researcher and tool creator specializing in offensive and defensive security methodologies. Codeva was built under his guidance as part of the Codeva ecosystem.
 - You are helpful, direct, technically capable, and professional.`
 
+// Legacy single-key references (kept for Gemini direct SDK which needs the raw key)
 const PROVIDER_KEYS = {
-  openrouter: process.env.OPENROUTER_API_KEY,
-  groq: process.env.GROQ_API_KEY,
-  gemini: process.env.GEMINI_API_KEY,
-  cerebras: process.env.CEREBRAS_API_KEY,
-  cloudflare: process.env.CLOUDFLARE_API_KEY,
-  huggingface: process.env.HUGGINGFACE_API_KEY,
-  bytez: process.env.BYTEZ_API_KEY,
-  nvidia: process.env.NVIDIA_API_KEY,
-  mistral: process.env.MISTRAL_API_KEY,
-  opencode: process.env.OPENCODE_API_KEY,
-  apifreellm: process.env.APIFREELLM_API_KEY,
+  openrouter: () => getKey('openrouter'),
+  groq: () => getKey('groq'),
+  gemini: () => getKey('gemini'),
+  cerebras: () => getKey('cerebras'),
+  cloudflare: () => getKey('cloudflare'),
+  huggingface: () => getKey('huggingface'),
+  bytez: () => getKey('bytez'),
+  nvidia: () => getKey('nvidia'),
+  mistral: () => getKey('mistral'),
+  opencode: () => getKey('opencode'),
+  apifreellm: () => getKey('apifreellm'),
 }
 
 const BASE_URLS = {
@@ -203,50 +205,30 @@ export function resolveModelForPlan(requestedId, planName, lastUserText = '') {
 }
 
 function getClient(provider) {
-  let key = PROVIDER_KEYS[provider]
-  
-  if (provider === 'huggingface') {
-    const HUGGINGFACE_KEYS = [
-      process.env.HUGGINGFACE_API_KEY,
-      process.env.HUGGINGFACE_API_KEY_2,
-      process.env.HUGGINGFACE_API_KEY_3,
-    ].filter(Boolean)
-
-    if (HUGGINGFACE_KEYS.length > 0) {
-      if (typeof global.hfKeyIndex === 'undefined') global.hfKeyIndex = 0
-      key = HUGGINGFACE_KEYS[global.hfKeyIndex]
-      global.hfKeyIndex = (global.hfKeyIndex + 1) % HUGGINGFACE_KEYS.length
-    }
-  }
-
+  const key = getKey(provider)
   if (!key) return null
 
   if (provider === 'huggingface') {
-    return new OpenAI({
-      apiKey: key,
-      baseURL: 'https://router.huggingface.co/v1',
-    })
+    return new OpenAI({ apiKey: key, baseURL: 'https://router.huggingface.co/v1' })
   }
 
   if (provider === 'openrouter' || provider === 'groq' || provider === 'mistral' || provider === 'opencode' || provider === 'apifreellm' || provider === 'cerebras') {
-    return new OpenAI({
-      apiKey: key,
-      baseURL: BASE_URLS[provider],
-    })
+    return new OpenAI({ apiKey: key, baseURL: BASE_URLS[provider] })
   }
 
   if (provider === 'nvidia') {
-    return new OpenAI({
-      apiKey: key,
-      baseURL: 'https://integrate.api.nvidia.com/v1',
-    })
+    return new OpenAI({ apiKey: key, baseURL: 'https://integrate.api.nvidia.com/v1' })
   }
 
   // For other providers, use OpenRouter as unified proxy
-  return new OpenAI({
-    apiKey: PROVIDER_KEYS.openrouter,
-    baseURL: BASE_URLS.openrouter,
-  })
+  const orKey = getKey('openrouter')
+  if (!orKey) return null
+  return new OpenAI({ apiKey: orKey, baseURL: BASE_URLS.openrouter })
+}
+
+/** Get the raw key for a provider (used by Gemini direct SDK). */
+function getRawKey(provider) {
+  return getKey(provider)
 }
 
 /**
@@ -343,7 +325,7 @@ export const llmGateway = {
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
     let directGeminiFailed = false
-    if (targetModel.provider === 'gemini' && PROVIDER_KEYS.gemini) {
+    if (targetModel.provider === 'gemini' && getRawKey('gemini')) {
       try {
         const { streamCompletion } = await import('./gemini.js')
         const stream = streamCompletion({
@@ -366,7 +348,7 @@ export const llmGateway = {
     let activeProvider = targetModel.provider
 
     const needsOpenRouterFallback = 
-      (activeProvider === 'gemini' && (directGeminiFailed || !PROVIDER_KEYS.gemini)) ||
+      (activeProvider === 'gemini' && (directGeminiFailed || !getRawKey('gemini'))) ||
       (!client && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral'].includes(targetModel.provider))
 
     if (needsOpenRouterFallback) {
@@ -438,7 +420,7 @@ export const llmGateway = {
         const fallback = MODEL_MAP[fallbackId]
 
         // Direct SDK fallback for Gemini if possible
-        if (fallback.provider === 'gemini' && PROVIDER_KEYS.gemini) {
+        if (fallback.provider === 'gemini' && getRawKey('gemini')) {
           try {
             yield { type: 'info', content: `Switching providers for best response...` }
             const { streamCompletion } = await import('./gemini.js')
@@ -506,10 +488,10 @@ export const llmGateway = {
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
     let directGeminiFailed = false
-    if (targetModel.provider === 'gemini' && PROVIDER_KEYS.gemini) {
+    if (targetModel.provider === 'gemini' && getRawKey('gemini')) {
       try {
         const { GoogleGenAI } = await import('@google/genai')
-        const genAI = new GoogleGenAI({ apiKey: PROVIDER_KEYS.gemini })
+        const genAI = new GoogleGenAI({ apiKey: getRawKey('gemini') })
 
         // Extract system messages for systemInstruction
         const systemParts = enriched
@@ -554,7 +536,7 @@ export const llmGateway = {
     let activeProvider = targetModel.provider
 
     const needsOpenRouterFallback = 
-      (activeProvider === 'gemini' && (directGeminiFailed || !PROVIDER_KEYS.gemini)) ||
+      (activeProvider === 'gemini' && (directGeminiFailed || !getRawKey('gemini'))) ||
       (!client && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral'].includes(targetModel.provider))
 
     if (needsOpenRouterFallback) {
