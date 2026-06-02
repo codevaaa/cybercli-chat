@@ -1022,7 +1022,6 @@ function InputArea({
                             <span className="text-[12px] text-[#A3A097]">Starting May 20 — Learn more</span>
                           </div>
                         </div>
-                        </button>
                         <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
                           <BookOpen className="w-[18px] h-[18px] text-[#A3A097]" />
                           <span>Explanatory</span>
