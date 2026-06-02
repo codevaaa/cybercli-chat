@@ -96,6 +96,9 @@ app.use(cors({
     const defaults = [
       'http://localhost:5173',
       'http://localhost:3000',
+      'http://localhost:8081',
+      'http://localhost:8082',
+      'http://localhost:19006',
       'https://codeva-chat.vercel.app',
       'https://codeva.vercel.app',
       'https://cybermindcli.info',
