@@ -1,6 +1,6 @@
 {
   "name": "codeva-desktop",
-  "version": "0.4.12",
+  "version": "0.4.13",
   "description": "Codeva Desktop — AI chat & coding app for Windows, macOS, and Linux",
   "homepage": "https://github.com/codevaaa/cybercli-chat",
   "main": "./dist/main/index.js",
