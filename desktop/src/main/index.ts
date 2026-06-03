@@ -214,8 +214,8 @@ app.whenReady().then(() => {
 
   // Auto-updater
   if (!isDev) {
-    autoUpdater.autoDownload = true // Download in background
-    autoUpdater.autoInstallOnAppQuit = true
+    autoUpdater.autoDownload = false // Let user click download
+    autoUpdater.autoInstallOnAppQuit = false
 
     autoUpdater.on('update-available', (info) => {
       mainWindow?.webContents.send('update:available', info)
