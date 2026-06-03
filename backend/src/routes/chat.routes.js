@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import mongoose from 'mongoose'
+import { z } from 'zod'
 import { requireAuth } from '../middleware/auth.js'
 import { llmGateway } from '../services/llm/gateway.js'
 import Thread from '../models/Thread.js'

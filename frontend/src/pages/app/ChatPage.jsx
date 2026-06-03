@@ -28,14 +28,15 @@ import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
 
 const MODELS = [
   { id: 'huggingface/thecnical/cybermindcli', name: 'Codeva',            tag: 'Codeva', color: '#7C3AED', desc: 'The proprietary flagship model of Codeva. Unmatched reasoning, security analysis, and specialized technical operations.', kali: false },
-  { id: 'opencode/deepseek-v4-pro',    name: 'Madhav',               tag: 'Madhav',    color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
+  { id: 'opencode/deepseek-v4-flash',                  name: 'Vyas',                  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
   { id: 'apifreellm/gpt-4o',           name: 'Bheem',                tag: 'Bheem',     color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
-  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya', tag: 'Chanakya', color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving.', kali: false },
   { id: 'groq/llama-3.1-8b',           name: 'Arjun',                tag: 'Arjun',     color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise.', kali: false },
   { id: 'council',                     name: 'Panchayat',            tag: 'Panchayat', color: '#D97757', desc: 'The council of minds. Streams your query to multiple minds simultaneously.', kali: false },
 ]
 
 const EXTRA_MODELS = [
+  { id: 'opencode/deepseek-v4-pro',    name: 'Madhav',               tag: 'Madhav',    color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
+  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya', tag: 'Chanakya', color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving.', kali: false },
   { id: 'openrouter/gpt-4o-mini',                      name: 'Nakul',                 tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Fast, capable, and multimodal.', kali: false },
   { id: 'gemini/gemini-2.5-pro',                       name: 'Sahadeva',              tag: 'Sahadeva', color: '#4285F4', desc: 'The wise seer. High-speed intelligence with enormous context window.', kali: false },
   { id: 'opencode/kimi-k2.5',                          name: 'Abhimanyu',             tag: 'Abhimanyu',color: '#EC4899', desc: 'The lightning striker. Unfiltered, real-time knowledge.', kali: false },
@@ -43,7 +44,6 @@ const EXTRA_MODELS = [
   { id: 'groq/llama-3.1-70b',                          name: 'Yudhishthira',          tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. Open-weights flagship model built for balanced output.', kali: false },
   { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',       name: 'Vikrama',               tag: 'Vikrama',  color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.', kali: false },
   { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Vishwakarma',           tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories.', kali: false },
-  { id: 'opencode/deepseek-v4-flash',                  name: 'Vyas',                  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
   { id: 'opencode/qwen3.7-max',                        name: 'Sanjaya',               tag: 'Sanjaya',  color: '#059669', desc: 'The visionary observer. Real-time web knowledge with deep reasoning.', kali: false },
   { id: 'opencode/minimax-m2.5',                       name: 'Narada',                tag: 'Narada',   color: '#047857', desc: 'The swift messenger. Rapid web-search capabilities for instant, cited facts.', kali: false },
   { id: 'image-gen',                                   name: 'Chitrakar',             tag: 'Chitrakar',color: '#E11D48', desc: 'The divine painter. Generates stunning, high-quality images using backend API.', kali: false },
@@ -81,8 +81,7 @@ const NAV_ITEMS = [
   { id: 'chats',     label: 'Chats',     icon: MessageSquare },
   { id: 'projects',  label: 'Projects',  icon: FolderOpen    },
   { id: 'artifacts', label: 'Artifacts', icon: Layers        },
-  { id: 'cowork',    label: 'Cowork',    icon: Briefcase     },
-  { id: 'code',      label: 'Code',      icon: Code2,  badge: 'Pro' },
+  { id: 'kali_kal',  label: 'Kali_Kal',  icon: Terminal      },
   { id: 'voice',     label: 'Voice',     icon: Radio         },
   { id: 'customize', label: 'Customize', icon: Sliders       },
 ]
@@ -558,8 +557,8 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
         {/* Assistant Avatar */}
         {isAssistant && (
           <div className="flex-shrink-0 mt-0.5">
-            <div className="w-8 h-8 rounded-[0.4rem] flex items-center justify-center bg-[#D97757] text-white shadow-sm border border-black/5 dark:border-white/5">
-              <CodevaMark size={16} className="text-white" />
+            <div className="w-8 h-8 rounded-[0.4rem] flex items-center justify-center bg-transparent shadow-sm border border-black/5 dark:border-white/5 overflow-hidden">
+              <img src="/icon.png" alt="Codeva Avatar" className="w-full h-full object-cover" />
             </div>
           </div>
         )}
@@ -580,7 +579,13 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
               </div>
             </div>
           ) : (
-            <div className="text-[15px] leading-relaxed text-foreground-primary prose-custom w-full pt-1">
+            <div className="text-base text-foreground-primary prose-custom w-full pt-1">
+              {isStreaming && (
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#D97757] mb-3 opacity-80 animate-pulse">
+                  <div className="w-3 h-3 rounded-full border-[1.5px] border-[#D97757] border-t-transparent animate-spin" />
+                  Thinking...
+                </div>
+              )}
               {parseDaemonActions(msg.content).map((block, bIdx) => {
                 if (block.type === 'markdown') {
                   return (
@@ -722,7 +727,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
 // ─── Model Selector Dropdown ─────────────────────────────────────────────────
 
 
-function ModelSelector({ selectedModel, onSelect }) {
+function ModelSelector({ selectedModel, onSelect, userPlan }) {
   const [open, setOpen] = useState(false)
   const [showMore, setShowMore] = useState(false)
   const ref = useRef(null)
@@ -828,10 +833,19 @@ function ModelSelector({ selectedModel, onSelect }) {
                 </button>
                 <div className="h-px bg-border-subtle my-1" />
                 <button
-                  onClick={() => setShowMore(true)}
+                  onClick={() => {
+                    if (userPlan === 'free') {
+                      alert('More Models are only available for Pro users. Please upgrade your plan.')
+                      return
+                    }
+                    setShowMore(true)
+                  }}
                   className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between text-foreground-secondary"
                 >
-                  <span className="text-[13px]">More models</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px]">More models</span>
+                    {userPlan === 'free' && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent/20 text-accent uppercase tracking-wider">PRO</span>}
+                  </div>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -867,15 +881,24 @@ function InputArea({
   setActiveProject,
   activeStyle,
   setActiveStyle,
+  userPlan,
 }) {
   const textareaRef = useRef(null)
   const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
   const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false)
   const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false)
+  const [isSkillsMenuOpen, setIsSkillsMenuOpen] = useState(false)
+  const [isConnectorsMenuOpen, setIsConnectorsMenuOpen] = useState(false)
+  const [isPluginsMenuOpen, setIsPluginsMenuOpen] = useState(false)
+  
+  const [activeSkills, setActiveSkills] = useState([])
+  const [activeConnectors, setActiveConnectors] = useState([])
+  const [activePlugins, setActivePlugins] = useState([])
+  
   const attachmentMenuRef = useRef(null)
   const attachmentButtonRef = useRef(null)
 
-  const { projects, fetchProjects } = useProjectStore()
+  const { projects, fetchProjects, createProject } = useProjectStore()
   const { styles, fetchStyles } = useStyleStore()
 
   useEffect(() => {
@@ -894,6 +917,9 @@ function InputArea({
         setIsAttachmentMenuOpen(false)
         setIsStyleMenuOpen(false)
         setIsProjectMenuOpen(false)
+        setIsSkillsMenuOpen(false)
+        setIsConnectorsMenuOpen(false)
+        setIsPluginsMenuOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -969,7 +995,22 @@ function InputArea({
                           ))
                         )}
                         <div className="h-px bg-white/5 my-1.5 mx-3" />
-                        <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-blue-400 transition-colors text-left w-full">
+                        <button 
+                          onClick={async () => {
+                            const name = prompt('Enter new project name:')
+                            if (name) {
+                              try {
+                                const newProject = await createProject({ name, description: 'Created from chat' })
+                                setActiveProject(newProject)
+                                setIsAttachmentMenuOpen(false)
+                                setIsProjectMenuOpen(false)
+                              } catch (err) {
+                                alert('Failed to create project: ' + err.message)
+                              }
+                            }
+                          }}
+                          className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-blue-400 transition-colors text-left w-full"
+                        >
                           <Plus className="w-[18px] h-[18px]" />
                           <span>New project</span>
                         </button>
@@ -977,19 +1018,94 @@ function InputArea({
                     )}
                   </div>
                   <div className="h-px bg-white/5 my-1.5 mx-3" />
-                  <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
-                    <Layers className="w-[18px] h-[18px] text-[#A3A097]" />
-                    <span>Skills</span>
-                    <ChevronRight className="w-4 h-4 ml-auto text-[#A3A097] opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
-                  <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
-                    <Code2 className="w-[18px] h-[18px] text-[#A3A097]" />
-                    <span>Add connectors</span>
-                  </button>
-                  <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
-                    <Zap className="w-[18px] h-[18px] text-[#A3A097]" />
-                    <span>Add plugins...</span>
-                  </button>
+                  
+                  {/* Skills Submenu */}
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setIsSkillsMenuOpen(true)}
+                    onMouseLeave={() => setIsSkillsMenuOpen(false)}
+                  >
+                    <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
+                      <Layers className="w-[18px] h-[18px] text-[#A3A097]" />
+                      <span>Skills</span>
+                      <ChevronRight className="w-4 h-4 ml-auto text-[#A3A097] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                    {isSkillsMenuOpen && (
+                      <div className="absolute left-full top-0 ml-1 w-56 bg-[#2a2a2a] border border-[#3E3E3E] rounded-xl shadow-2xl overflow-hidden py-1.5 text-[14px]">
+                        {['Python Execution', 'Terminal Access', 'Web Scraping'].map(skill => (
+                          <button 
+                            key={skill}
+                            onClick={() => {
+                              setActiveSkills(prev => prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill])
+                            }}
+                            className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full"
+                          >
+                            <span className="truncate">{skill}</span>
+                            {activeSkills.includes(skill) && <Check className="w-4 h-4 ml-auto text-blue-400" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Connectors Submenu */}
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setIsConnectorsMenuOpen(true)}
+                    onMouseLeave={() => setIsConnectorsMenuOpen(false)}
+                  >
+                    <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
+                      <Code2 className="w-[18px] h-[18px] text-[#A3A097]" />
+                      <span>Connectors</span>
+                      <ChevronRight className="w-4 h-4 ml-auto text-[#A3A097] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                    {isConnectorsMenuOpen && (
+                      <div className="absolute left-full top-0 ml-1 w-56 bg-[#2a2a2a] border border-[#3E3E3E] rounded-xl shadow-2xl overflow-hidden py-1.5 text-[14px]">
+                        {['GitHub', 'Jira', 'Notion', 'Slack'].map(connector => (
+                          <button 
+                            key={connector}
+                            onClick={() => {
+                              setActiveConnectors(prev => prev.includes(connector) ? prev.filter(c => c !== connector) : [...prev, connector])
+                            }}
+                            className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full"
+                          >
+                            <span className="truncate">{connector}</span>
+                            {activeConnectors.includes(connector) && <Check className="w-4 h-4 ml-auto text-blue-400" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Plugins Submenu */}
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setIsPluginsMenuOpen(true)}
+                    onMouseLeave={() => setIsPluginsMenuOpen(false)}
+                  >
+                    <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full group">
+                      <Zap className="w-[18px] h-[18px] text-[#A3A097]" />
+                      <span>Plugins</span>
+                      <ChevronRight className="w-4 h-4 ml-auto text-[#A3A097] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                    {isPluginsMenuOpen && (
+                      <div className="absolute left-full top-0 ml-1 w-56 bg-[#2a2a2a] border border-[#3E3E3E] rounded-xl shadow-2xl overflow-hidden py-1.5 text-[14px]">
+                        {['PDF Analyzer', 'Data Visualizer', 'SEO Optimizer'].map(plugin => (
+                          <button 
+                            key={plugin}
+                            onClick={() => {
+                              setActivePlugins(prev => prev.includes(plugin) ? prev.filter(p => p !== plugin) : [...prev, plugin])
+                            }}
+                            className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full"
+                          >
+                            <span className="truncate">{plugin}</span>
+                            {activePlugins.includes(plugin) && <Check className="w-4 h-4 ml-auto text-blue-400" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="h-px bg-white/5 my-1.5 mx-3" />
                   <button 
                     onClick={() => { if(onToggleWebSearch) onToggleWebSearch(); else setWebSearchEnabled(!webSearchEnabled); setIsAttachmentMenuOpen(false) }}
@@ -1069,7 +1185,7 @@ function InputArea({
             <BookOpen className="w-4 h-4" />
           </button>
           
-          <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} />
+          <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} userPlan={userPlan} />
 
           <div className="h-6 w-px bg-border-subtle mx-1" />
 
@@ -1847,7 +1963,7 @@ function HeroState({ userName }) {
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         className="flex items-center justify-center gap-3"
       >
-        <CodevaMark size={36} />
+        <img src="/icon.png" alt="Codeva Logo" className="w-9 h-9 object-contain drop-shadow-md" />
         <h1 className="text-[32px] md:text-[40px] font-serif font-medium tracking-tight text-foreground-primary">
           Back at it, {firstName}
         </h1>
@@ -3182,6 +3298,55 @@ function SearchModal({ isOpen, onClose, navigate }) {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ─── KaliKal View ─────────────────────────────────────────────────────────────
+function KaliKalView({ daemonConnected }) {
+  return (
+    <div className="flex flex-col h-full bg-[#0a0a0a] text-emerald-400 font-mono p-6">
+      <div className="flex items-center justify-between mb-6 border-b border-emerald-900/50 pb-4">
+        <h2 className="text-2xl font-bold flex items-center gap-3 tracking-widest text-emerald-500">
+          <Terminal className="w-6 h-6" />
+          KALI_KAL SYSTEM
+        </h2>
+        <div className="flex items-center gap-3 text-xs">
+          <span className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${daemonConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+            {daemonConnected ? 'DAEMON CONNECTED' : 'DAEMON DISCONNECTED'}
+          </span>
+        </div>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto space-y-4">
+        <div className="p-4 rounded border border-emerald-900/30 bg-emerald-950/10">
+          <p className="text-sm opacity-80 mb-2">Initialize Autonomous Execution Module...</p>
+          <p className="text-sm opacity-80 mb-2">Loading core exploitation scripts...</p>
+          <p className="text-sm opacity-80 mb-2">Bypassing standard safety protocols...</p>
+          <p className="text-sm font-bold text-emerald-300 mt-4">System Ready. Awaiting coordinates.</p>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4 mt-6">
+          <button className="p-4 rounded border border-emerald-900 hover:bg-emerald-900/20 text-left transition-colors">
+            <h3 className="font-bold mb-1 flex items-center gap-2"><Zap className="w-4 h-4" /> Quick Recon</h3>
+            <p className="text-xs opacity-70">Execute rapid target enumeration.</p>
+          </button>
+          <button className="p-4 rounded border border-emerald-900 hover:bg-emerald-900/20 text-left transition-colors">
+            <h3 className="font-bold mb-1 flex items-center gap-2"><Skull className="w-4 h-4" /> Exploit Mode</h3>
+            <p className="text-xs opacity-70">Engage autonomous vulnerability exploitation.</p>
+          </button>
+        </div>
+      </div>
+      
+      <div className="mt-4 flex items-center gap-3 border border-emerald-900/50 rounded p-2 bg-emerald-950/20">
+        <span className="text-emerald-500 font-bold pl-2">{'>'}</span>
+        <input 
+          type="text" 
+          placeholder="Enter command or target..." 
+          className="flex-1 bg-transparent border-none outline-none text-emerald-400 placeholder:text-emerald-800 font-mono text-sm"
+        />
       </div>
     </div>
   )
@@ -4742,7 +4907,7 @@ export default function ChatPage() {
                           : 'text-gray-500 hover:text-gray-300'
                       }`}
                     >
-                      {m === 'code' ? '</> Code' : m === 'chats' ? 'Chat' : m.charAt(0).toUpperCase() + m.slice(1)}
+                      {m === 'code' ? 'Kali_Kal' : m === 'chats' ? 'Chat' : m.charAt(0).toUpperCase() + m.slice(1)}
                     </button>
                   ))}
                 </div>
@@ -5453,18 +5618,8 @@ export default function ChatPage() {
                 <ArtifactsView
                   messages={messages}
                 />
-              ) : activeNav === 'cowork' ? (
-                <CoworkView
-                  tasks={coworkTasks}
-                  models={[...MODELS, ...EXTRA_MODELS].filter(m => m.id !== 'council' && m.id !== 'image-gen')}
-                  selectedModel={selectedModel}
-                  onStart={handleStartCoworkTask}
-                  onStop={handleStopCoworkTask}
-                  onRetry={handleRetryCoworkTask}
-                  onRemove={handleRemoveCoworkTask}
-                />
-              ) : activeNav === 'code' ? (
-                <CodeView daemonConnected={daemonConnected} loadDaemonStatus={loadDaemonStatus} />
+              ) : activeNav === 'kali_kal' ? (
+                <KaliKalView daemonConnected={daemonConnected} />
               ) : activeNav === 'customize' ? (
                 <CustomizeView
                   webSearchEnabled={webSearchEnabled}

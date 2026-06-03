@@ -106,8 +106,13 @@ function App() {
 
   const navigate = useNavigate()
 
-  // Prevent desktop app from showing marketing pages (like the Home page)
+  // Redirect logged-in users from root to chat, and prevent desktop app from showing marketing pages
   useEffect(() => {
+    if (session && location.pathname === '/') {
+      navigate('/chat', { replace: true })
+      return
+    }
+
     if (window.electronAPI) {
       const isMarketingPath = PUBLIC_PATHS.includes(location.pathname) && !location.pathname.startsWith('/auth')
       if (isMarketingPath) {

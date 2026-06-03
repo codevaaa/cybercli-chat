@@ -279,6 +279,20 @@
     background: var(--bg-elevated, #1e1e28);
   }
 
+  /* ─── Chat Prose Styling (Classic AI Typography) ─── */
+  .prose-custom p { margin-bottom: 1.2rem; line-height: 1.65; }
+  .prose-custom p:last-child { margin-bottom: 0; }
+  .prose-custom h1, .prose-custom h2, .prose-custom h3, .prose-custom h4 { margin-top: 1.5rem; margin-bottom: 0.75rem; font-weight: 600; color: var(--text-primary); }
+  .prose-custom ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.2rem; }
+  .prose-custom ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.2rem; }
+  .prose-custom li { margin-bottom: 0.5rem; }
+  .prose-custom li p { margin-bottom: 0.5rem; }
+  .prose-custom strong { font-weight: 600; color: var(--text-primary); }
+  .prose-custom a { color: #D97757; text-decoration: underline; text-underline-offset: 4px; }
+  .prose-custom code:not(pre code) { background-color: rgba(255, 255, 255, 0.08); padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+  .prose-custom pre { margin-bottom: 1.2rem; border-radius: 0.5rem; }
+  .prose-custom blockquote { border-left: 3px solid #D97757; padding-left: 1rem; color: #888; font-style: italic; margin-bottom: 1.2rem; }
+
   /* ─── Blog article prose ─── */
   .prose-codeva {
     color: var(--text-secondary);
