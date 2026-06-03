@@ -135,10 +135,10 @@ export default function HelpPage() {
             <h3 className="text-sm font-semibold text-[#f5f4ef] mb-1">Contact Support</h3>
             <p className="text-xs text-gray-400">Email us for help</p>
           </Link>
-          <a href="https://github.com/codevaaa/cybercoder/issues" target="_blank" rel="noopener noreferrer" className="p-5 rounded-2xl border border-white/[0.06] bg-[#211f1c] hover:border-[#C96442]/30 transition-colors group">
+          <a href="mailto:cybermindcli@cybermindcli.com" className="p-5 rounded-2xl border border-white/[0.06] bg-[#211f1c] hover:border-[#C96442]/30 transition-colors group">
             <MessageSquare className="w-5 h-5 text-[#C96442] mb-3" />
-            <h3 className="text-sm font-semibold text-[#f5f4ef] mb-1 flex items-center gap-1">Report a Bug <ExternalLink className="w-3 h-3" /></h3>
-            <p className="text-xs text-gray-400">GitHub Issues</p>
+            <h3 className="text-sm font-semibold text-[#f5f4ef] mb-1 flex items-center gap-1">Report a Bug</h3>
+            <p className="text-xs text-gray-400">Email Support</p>
           </a>
         </div>
       </div>

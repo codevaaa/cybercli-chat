@@ -100,7 +100,6 @@ export const StructuredData = {
     description: 'Premium multi-model AI chat platform with 50+ free AI models, Council Mode, voice chat, and developer API.',
     sameAs: [
       'https://twitter.com/cybermindcli',
-      'https://github.com/codeva',
       'https://discord.gg/codeva',
       'https://linkedin.com/company/codeva',
     ],

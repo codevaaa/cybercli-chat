@@ -41,7 +41,6 @@ const TEAM = [
     bio: 'Cybersecurity researcher and AI pioneer. Founder of Codeva, driving the vision of secure, private, and open artificial intelligence.',
     socials: {
       globe: 'https://cybermindcli.com',
-      github: 'https://github.com/codevaaa',
     }
   },
   {
@@ -49,9 +48,7 @@ const TEAM = [
     role: 'Co-Founder & CTO',
     image: '/Rishab_thakur.jpeg',
     bio: 'Full-stack systems architect and distributed computing expert. Directing the high-performance AI gateway orchestration cluster.',
-    socials: {
-      github: 'https://github.com',
-    }
+    socials: {}
   }
 ]
 
@@ -108,10 +105,7 @@ export default function AboutPage() {
       url: 'https://cybermindcli.com'
     },
     image: 'https://cybermindcli.info/chandan.jpeg',
-    url: 'https://cybermindcli.com',
-    sameAs: [
-      'https://github.com/codevaaa'
-    ]
+    url: 'https://cybermindcli.com'
   }
 
   const personRishab = {
@@ -124,10 +118,7 @@ export default function AboutPage() {
       name: 'Codeva',
       url: 'https://cybermindcli.com'
     },
-    image: 'https://cybermindcli.info/Rishab_thakur.jpeg',
-    sameAs: [
-      'https://github.com'
-    ]
+    image: 'https://cybermindcli.info/Rishab_thakur.jpeg'
   }
 
   const structuredData = [
@@ -315,11 +306,6 @@ export default function AboutPage() {
                   ))}
                 </div>
                 <div className="flex gap-3 justify-center">
-                  <a href="https://github.com" target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-sm text-foreground-muted hover:text-accent transition-colors">
-                    <Github className="w-4 h-4" />
-                    github.com
-                  </a>
                 </div>
               </div>
             </ScrollReveal>

@@ -881,12 +881,12 @@ const BENCHMARK_CATEGORIES = [
     label: 'Reasoning & Math',
     metric: 'MMLU-Pro / MATH score (%)',
     data: [
-      { name: 'Madhav (DeepSeek V4 Pro)', score: 92.1, color: '#F59E0B' },
-      { name: 'Chanakya (R1 Distill Llama)', score: 90.5, color: '#E05E36' },
+      { name: 'DeepSeek V4 Pro', score: 92.1, color: '#F59E0B' },
+      { name: 'DeepSeek R1 Distill Llama', score: 90.5, color: '#E05E36' },
       { name: 'Codeva Flagship', score: 88.4, color: '#7C3AED' },
-      { name: 'Yudhishthira (Llama 3.3)', score: 84.2, color: '#FFD21E' },
-      { name: 'Bheem (GPT-4o)', score: 79.5, color: '#3B82F6' },
-      { name: 'Vyas (DeepSeek Flash)', score: 74.0, color: '#0D9488' }
+      { name: 'Llama 3.3', score: 84.2, color: '#FFD21E' },
+      { name: 'GPT-4o', score: 79.5, color: '#3B82F6' },
+      { name: 'DeepSeek V4 Flash', score: 74.0, color: '#0D9488' }
     ]
   },
   {
@@ -894,12 +894,12 @@ const BENCHMARK_CATEGORIES = [
     label: 'Coding & Development',
     metric: 'HumanEval / MBPP pass rate (%)',
     data: [
-      { name: 'Vishwakarma (Qwen Coder)', score: 91.2, color: '#ED8936' },
+      { name: 'Qwen 2.5 Coder', score: 91.2, color: '#ED8936' },
       { name: 'Codeva Flagship', score: 89.6, color: '#7C3AED' },
-      { name: 'Madhav (DeepSeek V4 Pro)', score: 87.8, color: '#F59E0B' },
-      { name: 'Chanakya (R1 Distill Llama)', score: 85.5, color: '#E05E36' },
-      { name: 'Yudhishthira (Llama 3.3)', score: 81.0, color: '#FFD21E' },
-      { name: 'Bheem (GPT-4o)', score: 76.4, color: '#3B82F6' }
+      { name: 'DeepSeek V4 Pro', score: 87.8, color: '#F59E0B' },
+      { name: 'DeepSeek R1 Distill Llama', score: 85.5, color: '#E05E36' },
+      { name: 'Llama 3.3', score: 81.0, color: '#FFD21E' },
+      { name: 'GPT-4o', score: 76.4, color: '#3B82F6' }
     ]
   },
   {
@@ -907,12 +907,12 @@ const BENCHMARK_CATEGORIES = [
     label: 'Inference Speed',
     metric: 'Average output throughput (Tokens/sec)',
     data: [
-      { name: 'Abhimanyu (Cerebras Wafer)', score: 850, color: '#EC4899', isTps: true },
-      { name: 'Arjun (Groq Llama 8B)', score: 240, color: '#10B981', isTps: true },
-      { name: 'Bheem (GPT-4o Mini)', score: 120, color: '#3B82F6', isTps: true },
+      { name: 'Llama 3.1 8B (Cerebras)', score: 850, color: '#EC4899', isTps: true },
+      { name: 'Llama 3.1 8B (Groq)', score: 240, color: '#10B981', isTps: true },
+      { name: 'GPT-4o Mini', score: 120, color: '#3B82F6', isTps: true },
       { name: 'Codeva Flagship', score: 95, color: '#7C3AED', isTps: true },
-      { name: 'Yudhishthira (Llama 3.3)', score: 85, color: '#FFD21E', isTps: true },
-      { name: 'Madhav (DeepSeek V4 Pro)', score: 65, color: '#F59E0B', isTps: true }
+      { name: 'Llama 3.3', score: 85, color: '#FFD21E', isTps: true },
+      { name: 'DeepSeek V4 Pro', score: 65, color: '#F59E0B', isTps: true }
     ]
   },
   {
@@ -920,12 +920,12 @@ const BENCHMARK_CATEGORIES = [
     label: 'Context Retrieval',
     metric: 'Needle In A Haystack retrieval rate (%)',
     data: [
-      { name: 'Sahadeva (Gemini Flash - 1M)', score: 100, color: '#4285F4' },
-      { name: 'Madhav (Gemini Pro - 1M)', score: 99.8, color: '#F59E0B' },
+      { name: 'Gemini 1.5 Flash (1M)', score: 100, color: '#4285F4' },
+      { name: 'Gemini 1.5 Pro (1M)', score: 99.8, color: '#F59E0B' },
       { name: 'Codeva Flagship (128K)', score: 99.7, color: '#7C3AED' },
-      { name: 'Chanakya (Llama 70B - 128K)', score: 98.5, color: '#E05E36' },
-      { name: 'Yudhishthira (Llama 3.3 - 128K)', score: 97.8, color: '#FFD21E' },
-      { name: 'Bheem (GPT-4o Mini - 128K)', score: 96.2, color: '#3B82F6' }
+      { name: 'Llama 70B (128K)', score: 98.5, color: '#E05E36' },
+      { name: 'Llama 3.3 (128K)', score: 97.8, color: '#FFD21E' },
+      { name: 'GPT-4o Mini (128K)', score: 96.2, color: '#3B82F6' }
     ]
   }
 ]

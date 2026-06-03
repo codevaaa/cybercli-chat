@@ -216,8 +216,7 @@ export default function DevelopersPage() {
             {[
               { title: 'API Documentation', desc: 'Thorough SDK guidelines, headers reference, and completions schema.', link: '/docs', icon: BookOpen },
               { title: 'API Endpoint list', desc: 'Detailed view of the unified auth, chat, model, and settings endpoints.', link: '/api-reference', icon: FileCode },
-              { title: 'Changelog Timeline', desc: 'Detailed release logs of newly deployed model clusters and features.', link: '/changelog', icon: Terminal },
-              { title: 'GitHub Repository', desc: 'Explore the frontend client web app source code and contribute.', link: 'https://github.com', icon: Code2 }
+              { title: 'Changelog Timeline', desc: 'Detailed release logs of newly deployed model clusters and features.', link: '/changelog', icon: Terminal }
             ].map(item => {
               const Icon = item.icon
               return (

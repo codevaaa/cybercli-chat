@@ -28,41 +28,37 @@ import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
 
 const MODELS = [
   { id: 'codeva/abhimanyu',                    name: 'Abhimanyu (Default)',  tag: 'Abhimanyu', color: '#EC4899', desc: 'The All-Rounder Prodigy (Cloudflare 70B + FLUX)', kali: false },
-  { id: 'huggingface/thecnical/cybermindcli', name: 'Codeva',            tag: 'Codeva', color: '#7C3AED', desc: 'The proprietary flagship model of Codeva. Unmatched reasoning, security analysis, and specialized technical operations.', kali: false },
-  { id: 'opencode/deepseek-v4-flash',                  name: 'Vyas',                  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
-  { id: 'apifreellm/gpt-4o',           name: 'Bheem',                tag: 'Bheem',     color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
-  { id: 'groq/llama-3.1-8b',           name: 'Arjun',                tag: 'Arjun',     color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise.', kali: false },
-  { id: 'council',                     name: 'Panchayat',            tag: 'Panchayat', color: '#D97757', desc: 'The council of minds. Streams your query to multiple minds simultaneously.', kali: false },
+  { id: 'opencode/deepseek-v4-pro',            name: 'Madhav',               tag: 'Madhav',    color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
+  { id: 'groq/llama-3.1-8b',                   name: 'Arjun',                tag: 'Arjun',     color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise.', kali: false },
 ]
 
 const EXTRA_MODELS = [
-  { id: 'opencode/deepseek-v4-pro',    name: 'Madhav',               tag: 'Madhav',    color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
+  { id: 'huggingface/thecnical/cybermindcli',  name: 'Codeva',            tag: 'Codeva', color: '#7C3AED', desc: 'The proprietary flagship model of Codeva. Unmatched reasoning, security analysis, and specialized technical operations.', kali: false },
+  { id: 'opencode/deepseek-v4-flash',          name: 'Vyas',                  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
+  { id: 'apifreellm/gpt-4o',                   name: 'Bheem',                tag: 'Bheem',     color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
+  { id: 'council',                             name: 'Panchayat',            tag: 'Panchayat', color: '#D97757', desc: 'The council of minds. Streams your query to multiple minds simultaneously.', kali: false },
   { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya', tag: 'Chanakya', color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving.', kali: false },
-  { id: 'openrouter/gpt-4o-mini',                      name: 'Nakul',                 tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Fast, capable, and multimodal.', kali: false },
-  { id: 'gemini/gemini-2.5-pro',                       name: 'Sahadeva',              tag: 'Sahadeva', color: '#4285F4', desc: 'The wise seer. High-speed intelligence with enormous context window.', kali: false },
-  { id: 'mistral/mistral-large-latest',                name: 'Vayu',                  tag: 'Vayu',     color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities.', kali: false },
-  { id: 'groq/llama-3.1-70b',                          name: 'Yudhishthira',          tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. Open-weights flagship model built for balanced output.', kali: false },
-  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',       name: 'Vikrama',               tag: 'Vikrama',  color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.', kali: false },
-  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Vishwakarma',           tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories.', kali: false },
-  { id: 'opencode/qwen3.7-max',                        name: 'Sanjaya',               tag: 'Sanjaya',  color: '#059669', desc: 'The visionary observer. Real-time web knowledge with deep reasoning.', kali: false },
-  { id: 'opencode/minimax-m2.5',                       name: 'Narada',                tag: 'Narada',   color: '#047857', desc: 'The swift messenger. Rapid web-search capabilities for instant, cited facts.', kali: false },
-  { id: 'image-gen',                                   name: 'Chitrakar',             tag: 'Chitrakar',color: '#E11D48', desc: 'The divine painter. Generates stunning, high-quality images using backend API.', kali: false },
+  { id: 'openrouter/gpt-4o-mini',              name: 'Nakul',                 tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Fast, capable, and multimodal.', kali: false },
+  { id: 'gemini/gemini-2.5-pro',               name: 'Sahadeva',              tag: 'Sahadeva', color: '#4285F4', desc: 'The wise seer. High-speed intelligence with enormous context window.', kali: false },
+  { id: 'mistral/mistral-large-latest',        name: 'Vayu',                  tag: 'Vayu',     color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities.', kali: false },
+  { id: 'groq/llama-3.1-70b',                  name: 'Yudhishthira',          tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. Open-weights flagship model built for balanced output.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct', name: 'Vikrama',             tag: 'Vikrama',  color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.', kali: false },
+  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Vishwakarma',   tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories.', kali: false },
+  { id: 'opencode/qwen3.7-max',                name: 'Sanjaya',               tag: 'Sanjaya',  color: '#059669', desc: 'The visionary observer. Real-time web knowledge with deep reasoning.', kali: false },
+  { id: 'opencode/minimax-m2.5',               name: 'Narada',                tag: 'Narada',   color: '#047857', desc: 'The swift messenger. Rapid web-search capabilities for instant, cited facts.', kali: false },
+  { id: 'image-gen',                           name: 'Chitrakar',             tag: 'Chitrakar',color: '#E11D48', desc: 'The divine painter. Generates stunning, high-quality images using backend API.', kali: false },
   
   // Backing models restored from previous version
   { id: 'gemini/gemini-2.5-flash',                               name: 'Sahadeva',              tag: 'Sahadeva',    color: '#4285F4', desc: 'The wise seer. High-speed multimodal intelligence with enormous context window for documents and media.', kali: false },
   { id: 'nvidia/llama-3.1-nemotron-70b',                         name: 'Dronacharya',           tag: 'Dronacharya', color: '#76B900', desc: 'The grand master. Research-grade academic reasoning for deep technical tasks and complex instruction.', kali: false },
-  { id: 'cerebras/llama-3.1-8b',                                 name: 'Abhimanyu',             tag: 'Abhimanyu',   color: '#EC4899', desc: 'The lightning striker. Powered by wafer-scale silicon delivering unmatched sub-100ms response speed.', kali: false },
-  { id: 'huggingface/meta-llama/Llama-3.3-70B-Instruct',         name: 'Yudhishthira',          tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. High-parameter open-weights flagship model built for balanced, ethical, quality output.', kali: false },
-  { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',                 name: 'Vikrama',               tag: 'Vikrama',     color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence with 72B parameter depth.', kali: false },
-  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya',             tag: 'Chanakya',    color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving and planning.', kali: false },
+  { id: 'cerebras/llama-3.1-8b',                                 name: 'Abhimanyu (Speed)',     tag: 'Abhimanyu',   color: '#EC4899', desc: 'The lightning striker. Powered by wafer-scale silicon delivering unmatched sub-100ms response speed.', kali: false },
+  { id: 'huggingface/meta-llama/Llama-3.3-70B-Instruct',         name: 'Yudhishthira (Llama)',  tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. High-parameter open-weights flagship model built for balanced, ethical, quality output.', kali: false },
   { id: 'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1',      name: 'Saptarishi',            tag: 'Saptarishi',  color: '#FF4D88', desc: 'The seven sages. Mixture-of-experts architecture combining the wisdom of seven specialized expert models.', kali: false },
   { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-70B',       name: 'Parashurama',           tag: 'Parashurama', color: '#9F7AEA', desc: 'The agentic warrior. Specialized for tool use, function calling, and autonomous agentic orchestration.', kali: false },
-  { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',           name: 'Vishwakarma',           tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories across every major programming language.', kali: false },
   { id: 'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b', name: 'Ashwatthama',   tag: 'Ashwatthama', color: '#38B2AC', desc: 'The free warrior. Uncensored high-parameter intelligence for unrestricted debate and creative thinking.', kali: true },
   { id: 'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b', name: 'Kali',         tag: 'Kali',        color: '#FF0055', desc: '🔥 The destroyer of limits. Fully uncensored 72B flagship — maximum freedom of thought, unfiltered intelligence.', kali: true },
   { id: 'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b', name: 'Rudra',    tag: 'Rudra',       color: '#EF4444', desc: 'The fierce one. Uncensored edge model built for raw unconstrained intelligence at high speed.', kali: true },
   { id: 'huggingface/defog/sqlcoder-70b-v1.5',                   name: 'Agastya',               tag: 'Agastya',     color: '#D69E2E', desc: 'The sage of data. Specialized in translating natural language into precise, optimized SQL queries.', kali: false },
-  { id: 'mistral/mistral-large-latest',                          name: 'Vayu',                  tag: 'Vayu',        color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities powered by Mistral Large.', kali: false },
   { id: 'openrouter/moonshotai/moonshot-v1-8k',                  name: 'Karna',                 tag: 'Karna',       color: '#6366F1', desc: 'The focused archer. High-precision model from Moonshot AI, perfect for long-context understanding.', kali: false },
 ]
 
@@ -5034,11 +5030,6 @@ export default function ChatPage() {
       className={`relative h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${isKaliMode ? 'kali-theme' : ''}`}
       style={{
         background: '#0C0C0C',
-        backgroundImage: `url('/logo.png')`,
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center',
-        backgroundSize: '40%',
-        backgroundBlendMode: 'overlay',
       }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}

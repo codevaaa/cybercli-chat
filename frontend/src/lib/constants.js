@@ -64,7 +64,6 @@ export const FOOTER_SECTIONS = [
 
 export const SOCIAL_LINKS = [
   { label: 'Twitter', href: 'https://twitter.com/codeva', icon: 'twitter' },
-  { label: 'GitHub', href: 'https://github.com/codevaaa', icon: 'github' },
   { label: 'Discord', href: 'https://discord.gg/codeva', icon: 'discord' },
   { label: 'LinkedIn', href: 'https://linkedin.com/company/codeva', icon: 'linkedin' },
 ]

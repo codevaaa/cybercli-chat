@@ -5,7 +5,6 @@ import { CodevaWordmark } from '@components/ui/CodevaLogo'
 
 const SOCIAL_LINKS = [
   { label: 'Twitter', href: 'https://twitter.com/codeva' },
-  { label: 'GitHub', href: 'https://github.com/codevaaa' },
   { label: 'Discord', href: 'https://discord.gg/codeva' },
   { label: 'LinkedIn', href: 'https://linkedin.com/company/codeva' },
 ]
