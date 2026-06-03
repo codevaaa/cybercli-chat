@@ -5106,6 +5106,8 @@ export default function ChatPage() {
                   onClick={() => {
                     if (item.id === 'voice') {
                       setVoiceChatOpen(true)
+                    } else if (item.id === 'search') {
+                      setIsSearchModalOpen(true)
                     } else {
                       setActiveNav(item.id)
                     }
