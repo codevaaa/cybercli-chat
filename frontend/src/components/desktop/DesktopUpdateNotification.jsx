@@ -6,8 +6,9 @@
  * Only renders inside the Electron desktop app (window.electronAPI present).
  */
 import { useState, useEffect } from 'react'
-import { Download, X, RefreshCw, Loader2, AlertCircle } from 'lucide-react'
+import { Download, X, RefreshCw, Loader2, AlertCircle, Sparkles, Code2, Shield, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function DesktopUpdateNotification() {
   const [phase, setPhase] = useState(null) // null | 'available' | 'progress' | 'downloaded' | 'error' | 'whatsNew'
@@ -102,6 +103,99 @@ export default function DesktopUpdateNotification() {
       ),
     },
   }[phase]
+
+  if (phase === 'whatsNew') {
+    return (
+      <AnimatePresence>
+        {!dismissed && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setDismissed(true)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl bg-[#08080E] rounded-3xl border border-white/[0.08] shadow-2xl overflow-hidden flex flex-col"
+              style={{ maxHeight: '90vh' }}
+            >
+              {/* Header */}
+              <div className="relative p-8 border-b border-white/[0.04] bg-gradient-to-br from-[#C96442]/10 to-transparent">
+                <div className="absolute top-4 right-4">
+                  <button onClick={() => setDismissed(true)} className="p-2 rounded-full hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#C96442] to-orange-600 flex items-center justify-center mb-6 shadow-lg shadow-[#C96442]/20">
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Codeva Update {version}</h2>
+                <p className="text-gray-400 text-lg">We've just installed the latest updates and improvements.</p>
+              </div>
+
+              {/* Content */}
+              <div className="p-8 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                <div className="space-y-8">
+                  {/* Feature 1 */}
+                  <div className="flex gap-4">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-1">
+                      <Zap className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-white mb-2">Ultra-Fast Voice Agents</h3>
+                      <p className="text-gray-400 leading-relaxed">
+                        Experience lightning-fast conversational AI with Kushi (female), Rudra (JARVIS-like), and Sankalp. Near-instant response times for deep discussions.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Feature 2 */}
+                  <div className="flex gap-4">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0 mt-1">
+                      <Shield className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-white mb-2">Model Access Tiers</h3>
+                      <p className="text-gray-400 leading-relaxed">
+                        We've refined our model selection. Abhimanyu remains your trusty default, while Pro and Max users now have exclusive access to our advanced "More Models" directory.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Feature 3 */}
+                  <div className="flex gap-4">
+                    <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0 mt-1">
+                      <Code2 className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-white mb-2">UI & Stability Fixes</h3>
+                      <p className="text-gray-400 leading-relaxed">
+                        Resolved bugs with the global search view, fixed the apps and extensions page, removed distracting chat backgrounds, and significantly improved the desktop auto-updater stability.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-white/[0.04] bg-white/[0.02] flex items-center justify-end gap-3">
+                <Link to="/changelog" onClick={() => setDismissed(true)} className="px-4 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 font-medium transition-colors">
+                  Read Full Changelog
+                </Link>
+                <button onClick={() => setDismissed(true)} className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#C96442] to-[#b9573a] text-white font-medium hover:opacity-90 transition-opacity shadow-lg shadow-[#C96442]/20">
+                  Got it, thanks!
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    )
+  }
 
   return (
     <div className="fixed bottom-4 right-4 z-[9999] max-w-sm">
