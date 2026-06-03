@@ -1252,13 +1252,13 @@ function InputArea({
           </AnimatePresence>
           <ModelSelector 
             selectedModel={selectedModel} 
-            onSelect={setSelectedModel} 
+            onSelect={onModelChange} 
             userPlan={userPlan} 
             effortLevel={effortLevel}
             setEffortLevel={setEffortLevel}
             thinkingEnabled={thinkingEnabled}
             setThinkingEnabled={setThinkingEnabled}
-            onRequirePro={() => setUpgradeModalOpen(true)}
+            onRequirePro={onRequirePro}
           />
         </div>
 
@@ -1289,13 +1289,13 @@ function InputArea({
           
           <ModelSelector 
             selectedModel={selectedModel} 
-            onSelect={setSelectedModel} 
+            onSelect={onModelChange} 
             userPlan={userPlan} 
             effortLevel={effortLevel}
             setEffortLevel={setEffortLevel}
             thinkingEnabled={thinkingEnabled}
             setThinkingEnabled={setThinkingEnabled}
-            onRequirePro={() => setUpgradeModalOpen(true)}
+            onRequirePro={onRequirePro}
           />
 
           <div className="h-6 w-px bg-border-subtle mx-1" />
