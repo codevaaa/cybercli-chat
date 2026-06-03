@@ -5641,6 +5641,7 @@ export default function ChatPage() {
                     <HeroState userName={userName} />
                     <div className="w-full mt-4">
                       <InputArea
+                        userPlan={userPlan}
                         onRequirePro={() => setShowProModal(true)}
                         activeProject={activeProject}
                         setActiveProject={setActiveProject}
@@ -5732,6 +5733,7 @@ export default function ChatPage() {
                     {/* Input pinned at bottom */}
                     <div className="px-4 py-4 border-t border-border-subtle bg-background-primary flex-shrink-0">
                       <InputArea
+                        userPlan={userPlan}
                         onRequirePro={() => setShowProModal(true)}
                         activeProject={activeProject}
                         setActiveProject={setActiveProject}

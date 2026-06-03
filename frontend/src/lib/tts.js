@@ -5,9 +5,9 @@ const TTS_PROVIDERS = {
     name: 'Google Gemini Flash TTS',
     description: 'Google Gemini Flash Text-to-Speech (Server-side)',
     voices: [
-      { id: 'gemini_female', name: 'Aoede (Gemini Female)', gender: 'female', accent: 'multilingual' },
-      { id: 'gemini_male_1', name: 'Charon (Gemini Male 1)', gender: 'male', accent: 'multilingual' },
-      { id: 'gemini_male_2', name: 'Puck (Gemini Male 2)', gender: 'male', accent: 'multilingual' },
+      { id: 'gemini_female', name: 'Nexus (Ultra-Fast Robotic)', gender: 'female', accent: 'multilingual' },
+      { id: 'gemini_male_1', name: 'Prime (Ultra-Fast Robotic)', gender: 'male', accent: 'multilingual' },
+      { id: 'gemini_male_2', name: 'Cipher (Ultra-Fast Robotic)', gender: 'male', accent: 'multilingual' },
     ],
   },
   browser: {
@@ -21,8 +21,8 @@ class TTSService {
   constructor() {
     this.currentProvider = 'gemini'
     this.currentVoice = 'gemini_female'
-    this.currentSpeed = 1.0
-    this.currentPitch = 1.0
+    this.currentSpeed = 2.0 // Ultra fast
+    this.currentPitch = 0.8 // Slightly lower pitch for robotic feel
     this.browserVoices = []
     this.geminiApiKey = null
 
@@ -111,7 +111,7 @@ class TTSService {
         body: JSON.stringify({
           text,
           voice_id: this.currentVoice || 'gemini_female',
-          speed: this.currentSpeed,
+          speed: 2.0, // Forced ultra-fast for robotic models
         }),
       })
 
@@ -189,8 +189,13 @@ class TTSService {
         utterance.voice = selectedVoice
       }
 
-      utterance.rate = this.currentSpeed
-      utterance.pitch = this.currentPitch
+      if (this.currentProvider === 'gemini') {
+        utterance.rate = 2.0 // Forced ultra-fast for robotic models
+        utterance.pitch = 0.8 // Lower pitch for robotic feel
+      } else {
+        utterance.rate = this.currentSpeed
+        utterance.pitch = this.currentPitch
+      }
 
       // Safety timeout: resolve if onend doesn't fire within expected duration
       const duration = Math.max(6000, text.length * 120)
