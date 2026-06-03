@@ -47,12 +47,16 @@ router.post('/complete', async (req, res, next) => {
 
     // Map Codeva friendly names to gateway model ids
     const MODEL_NAME_MAP = {
-      'madhav': 'opencode/deepseek-v4-pro',
-      'codeva': 'huggingface/thecnical/cybermindcli',
-      'bheem': 'apifreellm/gpt-4o',
-      'chanakya': 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',
-      'arjun': 'groq/llama-3.1-8b',
-      'vishwakarma': 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct',
+      'abhimanyu': 'cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      'madhav': 'llm7/deepseek-v3.1:671b-terminus',
+      'yudhishthir': 'nvidia/llama-3.1-nemotron-70b',
+      'bheem': 'llm7/qwen3-235b',
+      'arjun': 'llm7/codestral-latest',
+      'nakul': 'llm7/GLM-4.6V-Flash',
+      'sahadeva': 'gemini/gemini-2.5-pro',
+      'chanakya': 'groq/deepseek-r1-distill-70b',
+      'shiv': 'llm7/kimi-k2.6',
+      'vishwakarma': 'huggingface/FLUX.1-schnell',
       'panchayat': 'council',
       'auto': 'auto',
     }
@@ -136,18 +140,25 @@ router.get('/models', async (req, res) => {
 
   const models = [
     { id: 'auto', name: 'Auto (recommended)', description: 'Routes to the best model for the task', tier: 'fast' },
-    { id: 'codeva/madhav', name: 'Madhav', description: 'Supreme intelligence — deep reasoning', tier: 'reasoning' },
-    { id: 'codeva/codeva', name: 'Codeva', description: 'Flagship model', tier: 'reasoning' },
-    { id: 'codeva/bheem', name: 'Bheem', description: 'Reliable powerhouse', tier: 'balanced' },
-    { id: 'codeva/chanakya', name: 'Chanakya', description: 'Chain-of-thought reasoning', tier: 'reasoning' },
-    { id: 'codeva/arjun', name: 'Arjun', description: 'Swift & precise', tier: 'fast' },
-    { id: 'codeva/vishwakarma', name: 'Vishwakarma', description: 'Code specialist', tier: 'balanced' },
+    { id: 'codeva/abhimanyu', name: 'Abhimanyu (Default)', description: 'The All-Rounder Prodigy (Cloudflare 70B + FLUX)', tier: 'fast' },
+    { id: 'codeva/madhav', name: 'Madhav', description: 'Supreme intelligence — deep reasoning (Opus tier)', tier: 'reasoning' },
+    { id: 'codeva/yudhishthir', name: 'Yudhishthir', description: 'Rules and alignment (Sonnet tier)', tier: 'reasoning' },
+    { id: 'codeva/bheem', name: 'Bheem', description: 'Bulk Heavy Coder (Haiku tier)', tier: 'fast' },
+    { id: 'codeva/arjun', name: 'Arjun', description: 'Swift & precise (Haiku tier)', tier: 'fast' },
+    { id: 'codeva/nakul', name: 'Nakul', description: 'UI/UX & Frontend Master (Haiku tier)', tier: 'fast' },
+    { id: 'codeva/sahadeva', name: 'Sahadeva', description: 'Data & Log Predictor (Sonnet tier)', tier: 'reasoning' },
+    { id: 'codeva/chanakya', name: 'Chanakya', description: 'Master Strategist (Sonnet tier)', tier: 'reasoning' },
+    { id: 'codeva/shiv', name: 'Shiv', description: 'Cybersecurity Destroyer (Sonnet tier)', tier: 'reasoning' },
     { id: 'codeva/panchayat', name: 'Panchayat (Council)', description: 'Multi-model consensus', tier: 'reasoning' },
   ]
 
-  // Filter by plan's allowed tiers
+  // Filter by plan's allowed tiers, but return all models. 
+  // Mark models as 'locked: true' if the user doesn't have the tier.
   const allowed = new Set(planConfig.allowedTiers || ['fast', 'balanced'])
-  const available = models.filter(m => m.id === 'auto' || allowed.has(m.tier))
+  const available = models.map(m => ({
+    ...m,
+    locked: m.id !== 'auto' && !allowed.has(m.tier)
+  }))
 
   res.json({ models: available, plan, requestsPerHour: planConfig.requestsPerHour })
 })

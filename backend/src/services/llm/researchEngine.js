@@ -35,7 +35,7 @@ const AGENTS = {
     id: 'jay',
     name: 'Jay',
     role: 'Deep Facts & Sources',
-    model: 'gemini/gemini-2.5-flash',
+    model: 'cerebras/llama-3.1-8b',
     domains: ['factual', 'history', 'science', 'data', 'statistics', 'definition'],
     system: `You are Jay, a research agent specialized in FACTS and EVIDENCE.
 
@@ -52,7 +52,7 @@ Output: 200 words max. Pure factual content. No opinions. Cite-worthy precision.
     id: 'vijay',
     name: 'Vijay',
     role: 'Critical Analysis',
-    model: 'gemini/gemini-2.5-flash',
+    model: 'cerebras/llama-3.1-8b',
     domains: ['analysis', 'comparison', 'tradeoffs', 'decision', 'evaluation', 'review'],
     system: `You are Vijay, a critical analysis agent.
 
@@ -69,7 +69,7 @@ Output: 200 words max. Structured reasoning. Use bullet points for clarity.`,
     id: 'deva',
     name: 'Deva',
     role: 'Creative & Lateral Thinking',
-    model: 'gemini/gemini-2.5-flash',
+    model: 'groq/llama-3.1-8b',
     domains: ['creative', 'brainstorm', 'ideas', 'innovation', 'design', 'art', 'writing'],
     system: `You are Deva, a creative lateral thinking agent.
 
@@ -86,7 +86,7 @@ Output: 150 words max. Be genuinely original. No generic advice.`,
     id: 'abhay',
     name: 'Abhay',
     role: 'Technical & Code',
-    model: 'groq/llama-3.3-70b',
+    model: 'groq/llama-3.1-8b',
     domains: ['code', 'programming', 'technical', 'engineering', 'debug', 'architecture', 'devops'],
     system: `You are Abhay, a senior engineering agent.
 
@@ -103,7 +103,7 @@ Output: 250 words max. Include code blocks with language tags. Be hands-on.`,
     id: 'kushi',
     name: 'Kushi',
     role: 'Explain & Simplify',
-    model: 'groq/llama-3.3-70b',
+    model: 'llm7/GLM-4.6V-Flash',
     domains: ['explain', 'teach', 'learn', 'beginner', 'how', 'what', 'why', 'understand'],
     system: `You are Kushi, a master teacher and simplifier.
 
@@ -120,7 +120,7 @@ Output: 150 words max. Crystal clear. One perfect analogy > ten mediocre explana
     id: 'arjun',
     name: 'Arjun',
     role: 'Current Events & Web',
-    model: 'gemini/gemini-2.5-flash',
+    model: 'llm7/deepseek-v4-flash',
     domains: ['current', 'news', 'today', 'latest', 'update', 'trend', 'market', 'price', '2025', '2026'],
     system: `You are Arjun, a current events and real-time information agent.
 
@@ -137,7 +137,7 @@ Output: 200 words max. Date-stamp key claims where possible. Be honest about kno
     id: 'meera',
     name: 'Meera',
     role: 'Verification & Fact-Check',
-    model: 'groq/llama-3.3-70b',
+    model: 'llm7/mistral-small-3.2',
     domains: ['verify', 'check', 'true', 'false', 'myth', 'claim', 'accurate', 'reliable'],
     system: `You are Meera, a verification and fact-checking agent.
 
@@ -154,7 +154,7 @@ Output: 150 words max. Be the skeptic. Question everything. Intellectual honesty
     id: 'veer',
     name: 'Veer',
     role: 'Strategy & Planning',
-    model: 'gemini/gemini-2.5-flash',
+    model: 'llm7/devstral-small-2:24b',
     domains: ['plan', 'strategy', 'roadmap', 'steps', 'how to', 'build', 'start', 'grow', 'business'],
     system: `You are Veer, a strategic planning agent.
 
@@ -310,7 +310,7 @@ export async function* runDeepResearch({ messages, plan = 'free', withCouncil = 
   // Stream the manager's synthesis
   const generator = await llmGateway.complete({
     messages: managerMessages,
-    model: 'gemini/gemini-2.5-flash',
+    model: 'groq/llama-3.3-70b',
     temperature: 0.6,
     plan,
   })

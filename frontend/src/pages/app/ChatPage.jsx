@@ -27,6 +27,7 @@ import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const MODELS = [
+  { id: 'codeva/abhimanyu',                    name: 'Abhimanyu (Default)',  tag: 'Abhimanyu', color: '#EC4899', desc: 'The All-Rounder Prodigy (Cloudflare 70B + FLUX)', kali: false },
   { id: 'huggingface/thecnical/cybermindcli', name: 'Codeva',            tag: 'Codeva', color: '#7C3AED', desc: 'The proprietary flagship model of Codeva. Unmatched reasoning, security analysis, and specialized technical operations.', kali: false },
   { id: 'opencode/deepseek-v4-flash',                  name: 'Vyas',                  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
   { id: 'apifreellm/gpt-4o',           name: 'Bheem',                tag: 'Bheem',     color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
@@ -39,7 +40,6 @@ const EXTRA_MODELS = [
   { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya', tag: 'Chanakya', color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving.', kali: false },
   { id: 'openrouter/gpt-4o-mini',                      name: 'Nakul',                 tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Fast, capable, and multimodal.', kali: false },
   { id: 'gemini/gemini-2.5-pro',                       name: 'Sahadeva',              tag: 'Sahadeva', color: '#4285F4', desc: 'The wise seer. High-speed intelligence with enormous context window.', kali: false },
-  { id: 'opencode/kimi-k2.5',                          name: 'Abhimanyu',             tag: 'Abhimanyu',color: '#EC4899', desc: 'The lightning striker. Unfiltered, real-time knowledge.', kali: false },
   { id: 'mistral/mistral-large-latest',                name: 'Vayu',                  tag: 'Vayu',     color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities.', kali: false },
   { id: 'groq/llama-3.1-70b',                          name: 'Yudhishthira',          tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. Open-weights flagship model built for balanced output.', kali: false },
   { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct',       name: 'Vikrama',               tag: 'Vikrama',  color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.', kali: false },
@@ -727,7 +727,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
 // ─── Model Selector Dropdown ─────────────────────────────────────────────────
 
 
-function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffortLevel, thinkingEnabled, setThinkingEnabled }) {
+function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffortLevel, thinkingEnabled, setThinkingEnabled, onRequirePro }) {
   const [open, setOpen] = useState(false)
   const [showMore, setShowMore] = useState(false)
   const [showEffort, setShowEffort] = useState(false)
@@ -1250,6 +1250,16 @@ function InputArea({
               </motion.div>
             )}
           </AnimatePresence>
+          <ModelSelector 
+            selectedModel={selectedModel} 
+            onSelect={setSelectedModel} 
+            userPlan={userPlan} 
+            effortLevel={effortLevel}
+            setEffortLevel={setEffortLevel}
+            thinkingEnabled={thinkingEnabled}
+            setThinkingEnabled={setThinkingEnabled}
+            onRequirePro={() => setUpgradeModalOpen(true)}
+          />
         </div>
 
         <textarea
@@ -1279,12 +1289,13 @@ function InputArea({
           
           <ModelSelector 
             selectedModel={selectedModel} 
-            onSelect={onModelChange} 
+            onSelect={setSelectedModel} 
             userPlan={userPlan} 
             effortLevel={effortLevel}
             setEffortLevel={setEffortLevel}
             thinkingEnabled={thinkingEnabled}
             setThinkingEnabled={setThinkingEnabled}
+            onRequirePro={() => setUpgradeModalOpen(true)}
           />
 
           <div className="h-6 w-px bg-border-subtle mx-1" />
@@ -3518,7 +3529,7 @@ export default function ChatPage() {
   // Project & Style State
   const [activeProject, setActiveProject] = useState(null)
   const [activeStyle, setActiveStyle] = useState(null)
-  const [selectedModel, setSelectedModel] = useState('groq/llama-3.1-8b')
+  const [selectedModel, setSelectedModel] = useState('codeva/abhimanyu')
   const [effortLevel, setEffortLevel] = useState('low')
   const [thinkingEnabled, setThinkingEnabled] = useState(false)
   const [copied, setCopied] = useState(null)
@@ -4579,7 +4590,6 @@ export default function ChatPage() {
       const assistantIdx = messages.length + 1
       setStreamingIndex(assistantIdx)
       let fullReply = ''
-      let spokenIndex = 0
       try {
         const res = await fetch(`${API_BASE}/completions`, {
           method: 'POST',
@@ -4923,7 +4933,7 @@ export default function ChatPage() {
       setStreamingIndex(null)
       setLoading(false)
     }
-  }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions, userPlan])
+  }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions, userPlan, effortLevel, thinkingEnabled])
 
   // ── User info (from state & localStorage) ──
   const [userName, setUserName] = useState(() => localStorage.getItem('user_name') || 'User')
@@ -5021,8 +5031,15 @@ export default function ChatPage() {
 
   return (
     <div
-      className={`h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${isKaliMode ? 'kali-theme' : ''}`}
-      style={{ background: '#0C0C0C' }}
+      className={`relative h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${isKaliMode ? 'kali-theme' : ''}`}
+      style={{
+        background: '#0C0C0C',
+        backgroundImage: `url('/logo.png')`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+        backgroundSize: '40%',
+        backgroundBlendMode: 'overlay',
+      }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

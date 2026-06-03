@@ -81,6 +81,7 @@ function ensurePool(provider) {
     opencode: 'OPENCODE',
     apifreellm: 'APIFREELLM',
     cloudflare: 'CLOUDFLARE',
+    llm7: 'LLM7',
   }
 
   const prefix = prefixMap[provider]

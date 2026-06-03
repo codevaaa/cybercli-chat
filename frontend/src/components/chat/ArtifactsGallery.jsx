@@ -60,7 +60,7 @@ function CodeCard({ artifact }) {
   }
 
   const download = () => {
-    const ext = { javascript: 'js', python: 'py', typescript: 'ts', html: 'html', css: 'css', json: 'json', bash: 'sh' }[artifact.lang] || 'txt'
+    const ext = { javascript: 'js', python: 'py', typescript: 'ts', html: 'html', css: 'css', json: 'json', bash: 'sh', markdown: 'md', md: 'md' }[artifact.lang] || 'txt'
     const blob = new Blob([artifact.content], { type: 'text/plain' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -89,7 +89,7 @@ function CodeCard({ artifact }) {
   const langColors = {
     javascript: '#F7DF1E', typescript: '#3178C6', python: '#3776AB',
     html: '#E34F26', css: '#1572B6', json: '#292929', bash: '#4EAA25',
-    rust: '#CE422B', go: '#00ADD8', java: '#ED8B00',
+    rust: '#CE422B', go: '#00ADD8', java: '#ED8B00', markdown: '#FFFFFF', md: '#FFFFFF'
   }
   const langColor = langColors[artifact.lang?.toLowerCase()] || '#888'
 

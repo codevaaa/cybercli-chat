@@ -36,6 +36,11 @@ const PROVIDER_CONFIGS = {
     name: 'Ollama (Local)',
     baseURL: process.env.OLLAMA_BASE_URL || 'http://localhost:11434/v1',
     models: ['llama3.2', 'codellama', 'mistral', 'mixtral']
+  },
+  'llm7': {
+    name: 'LLM7',
+    baseURL: 'https://api.llm7.io/v1',
+    models: ['deepseek-v3.1:671b-terminus', 'deepseek-v4-flash', 'kimi-k2.6', 'minimax-m2.7', 'qwen3-235b', 'mistral-small-3.2', 'codestral-latest', 'GLM-4.6V-Flash', 'devstral-small-2:24b']
   }
 }
 
@@ -52,7 +57,16 @@ const MODEL_PRICING = {
   'llama-3.1-8b-instant': { input: 0.05, output: 0.08, quality: 0.82, latency: 0.3 },
   'gemini-2.0-flash-exp': { input: 0.00, output: 0.00, quality: 0.94, latency: 0.7 },
   'gemini-1.5-flash': { input: 0.075, output: 0.30, quality: 0.90, latency: 0.5 },
-  'gemini-1.5-pro': { input: 1.25, output: 5.00, quality: 0.95, latency: 1.2 }
+  'gemini-1.5-pro': { input: 1.25, output: 5.00, quality: 0.95, latency: 1.2 },
+  'deepseek-v3.1:671b-terminus': { input: 0, output: 0, quality: 0.99, latency: 1.5 },
+  'deepseek-v4-flash': { input: 0, output: 0, quality: 0.98, latency: 0.5 },
+  'kimi-k2.6': { input: 0, output: 0, quality: 0.96, latency: 1.0 },
+  'minimax-m2.7': { input: 0, output: 0, quality: 0.95, latency: 1.0 },
+  'qwen3-235b': { input: 0, output: 0, quality: 0.97, latency: 1.2 },
+  'mistral-small-3.2': { input: 0, output: 0, quality: 0.92, latency: 0.3 },
+  'codestral-latest': { input: 0, output: 0, quality: 0.95, latency: 0.4 },
+  'GLM-4.6V-Flash': { input: 0, output: 0, quality: 0.94, latency: 0.8 },
+  'devstral-small-2:24b': { input: 0, output: 0, quality: 0.90, latency: 0.3 }
 }
 
 class ModelOrchestrator {
@@ -98,6 +112,14 @@ class ModelOrchestrator {
       this.clients.set('ollama', new OpenAI({
         apiKey: 'ollama',
         baseURL: process.env.OLLAMA_BASE_URL || 'http://localhost:11434/v1'
+      }))
+    }
+
+    // LLM7 (OpenAI compatible)
+    if (process.env.LLM7_API_KEY1 || process.env.LLM7_API_KEY) {
+      this.clients.set('llm7', new OpenAI({
+        apiKey: process.env.LLM7_API_KEY1 || process.env.LLM7_API_KEY,
+        baseURL: 'https://api.llm7.io/v1'
       }))
     }
   }

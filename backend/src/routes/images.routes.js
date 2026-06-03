@@ -52,9 +52,54 @@ router.post('/generate', optionalAuth, async (req, res) => {
       }
     }
 
-    // Generate the Pollinations AI URL (unlimited, fast, high-quality)
-    const sanitizedPrompt = encodeURIComponent(prompt.trim())
-    const imageUrl = `https://image.pollinations.ai/p/${sanitizedPrompt}?width=1024&height=1024&nologo=true`
+    let imageUrl = null
+
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
+    const apiKey = process.env.CLOUDFLARE_API_KEY1
+
+    if (accountId && apiKey) {
+      try {
+        const cfResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt: prompt.trim() })
+        })
+        
+        if (cfResponse.ok) {
+          const buffer = await cfResponse.arrayBuffer()
+          const base64 = Buffer.from(buffer).toString('base64')
+          imageUrl = `data:image/jpeg;base64,${base64}`
+        } else {
+          console.error('Cloudflare image generation failed, falling back to Pollinations:', await cfResponse.text())
+        }
+      } catch (e) {
+        console.error('Cloudflare fetch error:', e)
+      }
+    }
+
+    if (!imageUrl) {
+      // Fallback to Pollinations (proxied via backend to fix desktop client issues)
+      const sanitizedPrompt = encodeURIComponent(prompt.trim())
+      const pollUrl = `https://image.pollinations.ai/p/${sanitizedPrompt}?width=1024&height=1024&nologo=true`
+      
+      try {
+        const pollResponse = await fetch(pollUrl)
+        if (pollResponse.ok) {
+          const buffer = await pollResponse.arrayBuffer()
+          const base64 = Buffer.from(buffer).toString('base64')
+          imageUrl = `data:image/jpeg;base64,${base64}`
+        } else {
+          // If fetch fails, fallback to direct URL
+          imageUrl = pollUrl
+        }
+      } catch (e) {
+        console.error('Pollinations fetch error:', e)
+        imageUrl = pollUrl
+      }
+    }
 
     return res.json({ url: imageUrl })
   } catch (error) {

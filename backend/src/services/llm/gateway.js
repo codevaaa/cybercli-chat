@@ -30,6 +30,7 @@ const PROVIDER_KEYS = {
   mistral: () => getKey('mistral'),
   opencode: () => getKey('opencode'),
   apifreellm: () => getKey('apifreellm'),
+  llm7: () => getKey('llm7'),
 }
 
 const BASE_URLS = {
@@ -39,6 +40,7 @@ const BASE_URLS = {
   opencode: 'https://opencode.ai/zen/v1',
   apifreellm: 'https://apifreellm.com/api/v1',
   cerebras: 'https://api.cerebras.ai/v1',
+  llm7: 'https://api.llm7.io/v1',
 }
 
 const MODEL_MAP = {
@@ -49,9 +51,28 @@ const MODEL_MAP = {
   'gemini/gemini-2.5-flash': { provider: 'gemini', model: 'gemini-2.5-flash', purpose: 'creative' },
   'gemini/gemini-2.5-pro': { provider: 'gemini', model: 'gemini-2.5-pro', purpose: 'reasoning' },
   'cerebras/llama-3.1-8b': { provider: 'cerebras', model: 'llama3.1-8b', purpose: 'speed' },
-  'cloudflare/@cf/meta/llama-3.1-8b-instruct': { provider: 'cloudflare', model: '@cf/meta/llama-3.1-8b-instruct', purpose: 'general' },
+  
+  // Cloudflare Models
+  'cloudflare/@cf/meta/llama-3.1-8b-instruct': { provider: 'cloudflare', model: '@cf/meta/llama-3.1-8b-instruct', purpose: 'speed' },
+  'cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast': { provider: 'cloudflare', model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', purpose: 'reasoning' },
+  'cloudflare/@cf/qwen/qwq-32b': { provider: 'cloudflare', model: '@cf/qwen/qwq-32b-preview', purpose: 'reasoning' },
+
   'openrouter/moonshotai/moonshot-v1-8k': { provider: 'openrouter', model: 'moonshotai/moonshot-v1-8k', purpose: 'general' },
   'mistral/mistral-large-latest': { provider: 'mistral', model: 'mistral-large-latest', purpose: 'reasoning' },
+  
+  // Codeva Proprietary models
+  'codeva/abhimanyu': { provider: 'cloudflare', model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', purpose: 'reasoning' },
+
+  // LLM7 models
+  'llm7/deepseek-v3.1:671b-terminus': { provider: 'llm7', model: 'deepseek-v3.1:671b-terminus', purpose: 'reasoning' },
+  'llm7/deepseek-v4-flash': { provider: 'llm7', model: 'deepseek-v4-flash', purpose: 'speed' },
+  'llm7/kimi-k2.6': { provider: 'llm7', model: 'kimi-k2.6', purpose: 'reasoning' },
+  'llm7/minimax-m2.7': { provider: 'llm7', model: 'minimax-m2.7', purpose: 'reasoning' },
+  'llm7/qwen3-235b': { provider: 'llm7', model: 'qwen3-235b', purpose: 'reasoning' },
+  'llm7/mistral-small-3.2': { provider: 'llm7', model: 'mistral-small-3.2', purpose: 'general' },
+  'llm7/codestral-latest': { provider: 'llm7', model: 'codestral-latest', purpose: 'speed' },
+  'llm7/GLM-4.6V-Flash': { provider: 'llm7', model: 'GLM-4.6V-Flash', purpose: 'general' },
+  'llm7/devstral-small-2:24b': { provider: 'llm7', model: 'devstral-small-2:24b', purpose: 'speed' },
 
   // OpenCode AI models
   'opencode/deepseek-v4-pro': { provider: 'opencode', model: 'deepseek-v4-pro', purpose: 'reasoning' },
@@ -160,7 +181,13 @@ const OPENROUTER_FALLBACK_MAP = {
   // Cerebras Fallbacks
   'cerebras/llama-3.1-8b': 'meta-llama/llama-3.1-8b-instruct',
   'cerebras/llama-3.3-70b': 'meta-llama/llama-3.3-70b-instruct',
-  'cerebras/qwen-3-32b': 'qwen/qwen-2.5-coder-32b-instruct'
+  'cerebras/qwen-3-32b': 'qwen/qwen-2.5-coder-32b-instruct',
+
+  // Cloudflare Fallbacks
+  'codeva/abhimanyu': 'meta-llama/llama-3.3-70b-instruct',
+  'cloudflare/@cf/meta/llama-3.1-8b-instruct': 'meta-llama/llama-3.1-8b-instruct',
+  'cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast': 'meta-llama/llama-3.3-70b-instruct',
+  'cloudflare/@cf/qwen/qwq-32b': 'qwen/qwq-32b-preview'
 }
 
 const FALLBACK_CHAIN = [
@@ -212,7 +239,13 @@ function getClient(provider) {
     return new OpenAI({ apiKey: key, baseURL: 'https://router.huggingface.co/v1' })
   }
 
-  if (provider === 'openrouter' || provider === 'groq' || provider === 'mistral' || provider === 'opencode' || provider === 'apifreellm' || provider === 'cerebras') {
+  if (provider === 'cloudflare') {
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
+    if (!accountId) return null
+    return new OpenAI({ apiKey: key, baseURL: `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1` })
+  }
+
+  if (provider === 'openrouter' || provider === 'groq' || provider === 'mistral' || provider === 'opencode' || provider === 'apifreellm' || provider === 'cerebras' || provider === 'llm7') {
     return new OpenAI({ apiKey: key, baseURL: BASE_URLS[provider] })
   }
 
