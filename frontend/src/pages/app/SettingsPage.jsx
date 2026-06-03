@@ -22,6 +22,7 @@ const TABS = [
   { id: 'connectors',   label: 'Connectors',    icon: Plug       },
   { id: 'usage',        label: 'Usage Stats',   icon: Activity   },
   { id: 'api-keys',     label: 'API Keys',      icon: Code2      },
+  { id: 'extensions',   label: 'Extensions',    icon: Plug       },
   { id: 'invite',       label: 'Invite Friends', icon: Gift      },
 ]
 
@@ -786,6 +787,77 @@ function InviteTab({ onOpenModal }) {
   )
 }
 
+function ExtensionsTab() {
+  return (
+    <div className="space-y-6">
+      <SectionHeading>Apps &amp; Extensions</SectionHeading>
+      <p className="text-sm text-foreground-muted mb-4 leading-relaxed">
+        Integrate Codeva seamlessly into your workflow with our official apps and extensions.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Desktop App */}
+        <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary flex flex-col items-start text-left">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-4">
+            <Monitor className="w-5 h-5 text-white" />
+          </div>
+          <h4 className="text-sm font-semibold text-foreground-primary mb-1">Codeva Desktop</h4>
+          <p className="text-xs text-foreground-muted mb-4 flex-1">
+            The full power of Codeva right on your desktop with global shortcuts and local file access.
+          </p>
+          <Link to="/downloads" className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium transition-colors border border-border-subtle text-foreground-primary">
+            Download App
+          </Link>
+        </div>
+
+        {/* VS Code */}
+        <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary flex flex-col items-start text-left">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-4">
+            <Code2 className="w-5 h-5 text-white" />
+          </div>
+          <h4 className="text-sm font-semibold text-foreground-primary mb-1">VS Code Extension</h4>
+          <p className="text-xs text-foreground-muted mb-4 flex-1">
+            Agentic AI coding assistant directly in your editor. Read files, write code, run commands.
+          </p>
+          <Link to="/docs/vscode-extension" className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium transition-colors border border-border-subtle text-foreground-primary">
+            View Documentation
+          </Link>
+        </div>
+
+        {/* Chrome Extension */}
+        <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary flex flex-col items-start text-left">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center mb-4">
+            <Plug className="w-5 h-5 text-white" />
+          </div>
+          <h4 className="text-sm font-semibold text-foreground-primary mb-1">Chrome Extension</h4>
+          <p className="text-xs text-foreground-muted mb-4 flex-1">
+            Summarize pages, extract data, and chat with Codeva from any tab in your browser.
+          </p>
+          <Link to="/chrome-extension" className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium transition-colors border border-border-subtle text-foreground-primary">
+            Get Extension
+          </Link>
+        </div>
+
+        {/* CLI */}
+        <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary flex flex-col items-start text-left">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-4">
+            <Terminal className="w-5 h-5 text-white" />
+          </div>
+          <h4 className="text-sm font-semibold text-foreground-primary mb-1">Codeva CLI</h4>
+          <p className="text-xs text-foreground-muted mb-4 flex-1">
+            Terminal-native agent that operates your computer, manages git, and runs complex tasks.
+          </p>
+          <div className="flex flex-col gap-2 w-full">
+            <code className="text-xs bg-black/30 px-3 py-2 rounded text-green-400 select-all border border-border-subtle">
+              npm install -g @codeva_chat/cli
+            </code>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main SettingsPage ────────────────────────────────────────────────────────
 
 const DEFAULT_SETTINGS = {
@@ -1109,6 +1181,7 @@ export default function SettingsPage() {
     capabilities: <CapabilitiesTab settings={settings} onUpdate={handleUpdate} />,
     connectors:   <ConnectorsTab />,
     'api-keys':   <DeveloperTab />,
+    extensions:   <ExtensionsTab />,
     invite:       <InviteTab       onOpenModal={() => setShowInviteModal(true)} />,
   }
 

@@ -891,7 +891,7 @@ function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffo
                 <div className="h-px bg-border-subtle my-1" />
                 <button
                   onClick={() => {
-                    if (userPlan === 'free') {
+                    if (userPlan === 'free' || !userPlan) {
                       if (onRequirePro) onRequirePro()
                       else alert('More Models are only available for Pro users. Please upgrade your plan.')
                       return
@@ -5772,7 +5772,10 @@ export default function ChatPage() {
                   </div>
                 )
               ) : activeNav === 'search' ? (
-                null
+                <ComingSoonView 
+                  title="Global Search" 
+                  description="Global search across all your chats, projects, and artifacts is currently being upgraded."
+                />
               ) : activeNav === 'projects' ? (
                 <ProjectsView
                   threads={threads}
