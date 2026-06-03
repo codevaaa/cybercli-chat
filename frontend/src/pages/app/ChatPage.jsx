@@ -209,6 +209,30 @@ function CodeBlock({ language, value, codeExecutionEnabled }) {
 
 // ─── Image Generator Widget ──────────────────────────────────────────────────
 
+function MidnightCountdown() {
+  const [timeLeft, setTimeLeft] = useState('')
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date()
+      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      const diff = tomorrow - now
+
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24)
+      const minutes = Math.floor((diff / 1000 / 60) % 60)
+      const seconds = Math.floor((diff / 1000) % 60)
+
+      setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`)
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  return <span className="font-mono bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded ml-1 mr-1">{timeLeft}</span>
+}
+
 function ImageGeneratorWidget({ src, alt }) {
   const [loading, setLoading] = useState(true)
   const [imageUrl, setImageUrl] = useState(null)
@@ -235,6 +259,7 @@ function ImageGeneratorWidget({ src, alt }) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'x-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
             ...(token ? { Authorization: `Bearer ${token}` } : {})
           },
           body: JSON.stringify({ prompt })
@@ -242,7 +267,7 @@ function ImageGeneratorWidget({ src, alt }) {
 
         if (!response.ok) {
           const errData = await response.json()
-          throw new Error(errData.error || `Error: ${response.status}`)
+          throw Object.assign(new Error(errData.error || `Error: ${response.status}`), { resetAt: errData.resetAt })
         }
 
         const data = await response.json()
@@ -253,7 +278,7 @@ function ImageGeneratorWidget({ src, alt }) {
         }
       } catch (err) {
         if (active) {
-          setError(err.message)
+          setError({ message: err.message, resetAt: err.resetAt })
           setLoading(false)
         }
       }
@@ -275,6 +300,9 @@ function ImageGeneratorWidget({ src, alt }) {
   }
 
   if (error) {
+    const errorMessage = typeof error === 'string' ? error : error.message
+    const isLimit = errorMessage.includes('limit')
+
     return (
       <div className="my-3 rounded-xl border border-red-500/20 bg-red-500/5 p-5 flex flex-col items-start gap-3 max-w-lg">
         <div className="flex items-center gap-2 text-red-400 font-semibold text-sm">
@@ -282,9 +310,9 @@ function ImageGeneratorWidget({ src, alt }) {
           <span>Image Generation Limit Exceeded</span>
         </div>
         <p className="text-xs text-foreground-muted leading-relaxed">
-          {error.includes('limit') 
-            ? "You have reached your daily limit of 5 free image generations. Please upgrade to Pro for unlimited image generation."
-            : error}
+          {isLimit 
+            ? <>You have reached your daily limit of 5 free image generations. Resets in <MidnightCountdown /> (local time). Please upgrade to Pro for unlimited image generation.</>
+            : errorMessage}
         </p>
         <div className="flex gap-2.5 mt-1">
           <Link to="/upgrade" className="px-3 py-1.5 rounded-lg bg-[#D97757] hover:bg-[#D97757]/80 text-[10px] uppercase tracking-wider font-bold text-white transition-all">

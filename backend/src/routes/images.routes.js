@@ -24,7 +24,13 @@ router.post('/generate', optionalAuth, async (req, res) => {
     }
 
     if (isFree) {
-      const today = new Date().toISOString().split('T')[0]
+      let tz = req.headers['x-timezone'] || 'UTC'
+      let today
+      try {
+        today = new Date().toLocaleDateString('en-CA', { timeZone: tz })
+      } catch (e) {
+        today = new Date().toISOString().split('T')[0]
+      }
 
       // 1. Try to increment count if the document already exists for today
       let usage = await ImageUsage.findOneAndUpdate(
@@ -47,7 +53,8 @@ router.post('/generate', optionalAuth, async (req, res) => {
         // Caps it at 5 so it doesn't keep increasing
         await ImageUsage.updateOne({ identifier, date: today }, { $set: { count: 5 } })
         return res.status(429).json({ 
-          error: 'Daily limit of 5 free image generations reached. Please upgrade to Pro for unlimited image generation.' 
+          error: 'Daily limit of 5 free image generations reached. Please upgrade to Pro for unlimited image generation.',
+          resetAt: 'midnight' // Signal to frontend to show local midnight timer
         })
       }
     }
