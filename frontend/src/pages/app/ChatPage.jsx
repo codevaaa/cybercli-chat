@@ -896,7 +896,8 @@ function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffo
                 <button
                   onClick={() => {
                     if (userPlan === 'free') {
-                      alert('More Models are only available for Pro users. Please upgrade your plan.')
+                      if (onRequirePro) onRequirePro()
+                      else alert('More Models are only available for Pro users. Please upgrade your plan.')
                       return
                     }
                     setShowMore(true)
@@ -923,6 +924,7 @@ function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffo
 function InputArea({
   input,
   setInput,
+  onRequirePro,
   onSend,
   loading,
   selectedModel,
@@ -947,6 +949,7 @@ function InputArea({
   activeStyle,
   setActiveStyle,
   userPlan,
+  onRequirePro,
 }) {
   const textareaRef = useRef(null)
   const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
@@ -962,6 +965,30 @@ function InputArea({
   
   const attachmentMenuRef = useRef(null)
   const attachmentButtonRef = useRef(null)
+  const fileInputRef = useRef(null)
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      // If it's an image or large binary, we could encode to base64, but for text/code:
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          setInput(prev => prev + `\n\n![${file.name}](${event.target.result})\n`)
+        }
+        reader.readAsDataURL(file)
+      } else {
+        const text = await file.text()
+        const extension = file.name.split('.').pop()
+        setInput(prev => prev + `\n\n\`\`\`${extension}\n// ${file.name}\n${text}\n\`\`\`\n`)
+      }
+    } catch (err) {
+      alert('Could not read file: ' + err.message)
+    }
+    setIsAttachmentMenuOpen(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const { projects, fetchProjects, createProject } = useProjectStore()
   const { styles, fetchStyles } = useStyleStore()
@@ -1031,7 +1058,8 @@ function InputArea({
                 className="absolute bottom-full left-0 mb-2 w-64 bg-[#2a2a2a] border border-[#3E3E3E] rounded-xl shadow-2xl overflow-visible py-1.5 z-50 text-[14px]"
               >
                 <div className="flex flex-col relative">
-                  <button className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
+                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                  <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
                     <Paperclip className="w-[18px] h-[18px] text-[#A3A097]" />
                     <span>Add files or photos</span>
                     <span className="ml-auto text-[12px] text-[#A3A097]">Ctrl+U</span>
@@ -3425,10 +3453,58 @@ function KaliKalView({ daemonConnected }) {
   )
 }
 
+// ─── Coming Soon View ──────────────────────────────────────────────────────────
+
+function ComingSoonView({ title, description }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center p-8 animate-fade-in relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1A1A1A]/50 to-transparent pointer-events-none" />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="relative z-10 flex flex-col items-center"
+      >
+        <div className="w-40 h-40 mb-8 relative">
+          <svg viewBox="0 0 200 200" className="w-full h-full animate-pulse-slow">
+            <defs>
+              <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#9333EA" stopOpacity="0.8" />
+              </linearGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <circle cx="100" cy="100" r="80" fill="none" stroke="url(#grad1)" strokeWidth="4" filter="url(#glow)"/>
+            <path d="M100 40 L100 160 M40 100 L160 100" stroke="#E8E6E1" strokeWidth="2" opacity="0.3" strokeDasharray="5,5"/>
+            <circle cx="100" cy="100" r="40" fill="url(#grad1)" filter="url(#glow)">
+              <animate attributeName="r" values="35;45;35" dur="3s" repeatCount="indefinite" />
+            </circle>
+            <path d="M85 100 L100 115 L125 85" fill="none" stroke="#FFF" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <h2 className="text-4xl font-extrabold text-white mb-4 tracking-tight text-center">{title}</h2>
+        <p className="text-lg text-[#A3A097] text-center max-w-md leading-relaxed">
+          {description}
+        </p>
+        <div className="mt-8 px-6 py-2 rounded-full bg-white/5 border border-white/10 text-white/50 text-sm tracking-widest uppercase shadow-lg">
+          Coming Soon
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 // ─── Main ChatPage ────────────────────────────────────────────────────────────
 
 export default function ChatPage() {
   const { threadId } = useParams()
+  const [showProModal, setShowProModal] = useState(false)
   const navigate = useNavigate()
 
   // State
@@ -4573,6 +4649,7 @@ export default function ChatPage() {
                   if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${parsed.content}` }
                   return next
                 })
+                throw new Error(parsed.content)
               }
             } catch {}
           }
@@ -4596,7 +4673,7 @@ export default function ChatPage() {
       }
       return
     }
-
+    
     // Use the ref as fallback so rapid consecutive sends don't create duplicate threads
     let currentId = activeThreadId || activeThreadIdRef.current || creatingThreadRef.current
     let useGuestFallback = false
@@ -5566,6 +5643,7 @@ export default function ChatPage() {
                     <HeroState userName={userName} />
                     <div className="w-full mt-4">
                       <InputArea
+                        onRequirePro={() => setShowProModal(true)}
                         activeProject={activeProject}
                         setActiveProject={setActiveProject}
                         activeStyle={activeStyle}
@@ -5656,6 +5734,7 @@ export default function ChatPage() {
                     {/* Input pinned at bottom */}
                     <div className="px-4 py-4 border-t border-border-subtle bg-background-primary flex-shrink-0">
                       <InputArea
+                        onRequirePro={() => setShowProModal(true)}
                         activeProject={activeProject}
                         setActiveProject={setActiveProject}
                         activeStyle={activeStyle}
@@ -5704,7 +5783,15 @@ export default function ChatPage() {
                   messages={messages}
                 />
               ) : activeNav === 'kali_kal' ? (
-                <KaliKalView daemonConnected={daemonConnected} />
+                <ComingSoonView 
+                  title="Kali_Kal Mode" 
+                  description="Advanced offensive security capabilities and autonomous red-teaming are currently in development."
+                />
+              ) : activeNav === 'cowork' || activeNav === 'code' ? (
+                <ComingSoonView 
+                  title={activeNav === 'cowork' ? "Cowork Tasks" : "Code Editor"} 
+                  description={`The autonomous ${activeNav} environment is being heavily upgraded for the upcoming Pro release.`}
+                />
               ) : activeNav === 'customize' ? (
                 <CustomizeView
                   webSearchEnabled={webSearchEnabled}
@@ -6169,6 +6256,43 @@ codeva link --key YOUR_API_KEY</pre>
           </div>
         )}
       </AnimatePresence>
+
+      {showProModal && (
+        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-[#1A1A1A] border border-[#3E3E3E] rounded-3xl max-w-md w-full overflow-hidden shadow-2xl"
+          >
+            <div className="relative h-48 bg-gradient-to-br from-indigo-600 to-purple-800 overflow-hidden flex items-center justify-center">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-30"></div>
+              <Sparkles className="w-20 h-20 text-white opacity-80" />
+            </div>
+            <div className="p-8 text-center">
+              <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">Upgrade to Pro</h2>
+              <p className="text-[#A3A097] mb-8 leading-relaxed">
+                Unlock exclusive access to advanced reasoning models, real-time web search, autonomous council mode, and much more.
+              </p>
+              <button 
+                onClick={() => {
+                  setShowProModal(false)
+                  navigate('/settings?tab=plan')
+                }}
+                className="w-full bg-white text-black font-semibold rounded-xl py-3.5 hover:bg-[#E8E6E1] transition-transform active:scale-95 shadow-lg mb-4"
+              >
+                Upgrade Now
+              </button>
+              <button 
+                onClick={() => setShowProModal(false)}
+                className="w-full bg-transparent text-[#A3A097] font-medium rounded-xl py-3 hover:text-white transition-colors"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
     </div>
   )
 }

@@ -21,6 +21,10 @@ export async function performWebSearch(query) {
   results = await tryDDGApi(query)
   if (results.length > 0) return results
 
+  // 4. Wikipedia API (last resort fallback)
+  results = await tryWikipedia(query)
+  if (results.length > 0) return results
+
   return []
 }
 
@@ -168,6 +172,36 @@ async function tryDDGApi(query) {
     return results
   } catch (err) {
     console.warn('DDG API fallback failed:', err.message)
+    return []
+  }
+}
+
+/* ── Strategy 4: Wikipedia API ───────────────────────────── */
+async function tryWikipedia(query) {
+  try {
+    const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=5&namespace=0&format=json`
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) })
+    if (!res.ok) return []
+
+    const data = await res.json()
+    const titles = data[1] || []
+    const descriptions = data[2] || []
+    const links = data[3] || []
+    const results = []
+
+    for (let i = 0; i < titles.length; i++) {
+      if (titles[i] && links[i]) {
+        results.push({
+          title: titles[i],
+          snippet: descriptions[i] || titles[i],
+          link: links[i]
+        })
+      }
+    }
+
+    return results
+  } catch (err) {
+    console.warn('Wikipedia fallback failed:', err.message)
     return []
   }
 }

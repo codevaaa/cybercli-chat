@@ -67,9 +67,16 @@ router.post('/', optionalAuth, async (req, res) => {
         }
       }
 
+      // Smart Implicit Search Detection
+      const timeKeywords = /\b(2024|2025|2026|latest|recent|current|who is|what is the current|today|news|update|price|weather|stock|score)\b/i
+      const needsImplicitSearch = !deepResearchEnabled && !webSearchEnabled && timeKeywords.test(lastUserMsg.content)
+
       // Handle Web Search
-      if (webSearchEnabled && !deepResearchEnabled) {
+      if ((webSearchEnabled || needsImplicitSearch) && !deepResearchEnabled) {
         try {
+          if (needsImplicitSearch) {
+             res.write(`data: ${JSON.stringify({ type: 'info', content: '🔍 Implicit search triggered for latest information...' })}\n\n`)
+          }
           const { performWebSearch } = await import('../utils/webSearch.js')
           const results = await performWebSearch(lastUserMsg.content)
           if (results && results.length > 0) {
