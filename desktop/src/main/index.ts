@@ -202,13 +202,13 @@ app.whenReady().then(() => {
   if (hasSession) {
     // If logged in, skip landing window entirely and show main window immediately
     mainWindow = createMainWindow()
-    mainWindow.on('ready-to-show', () => {
-      mainWindow.show()
+    mainWindow?.on('ready-to-show', () => {
+      mainWindow?.show()
       mainWindow?.focus()
     })
 
     // Load preview server for testing
-    mainWindow.loadURL('http://localhost:4173/')
+    mainWindow?.loadURL('http://localhost:4173/')
   } else {
     // If not logged in, show landing window and load main window in the background
     landingWindow = createLandingWindow()
@@ -376,16 +376,15 @@ function completeAuth(token: string, refresh: string = '') {
   const payload = { token, refresh }
   if (!mainWindow || mainWindow.isDestroyed()) {
     mainWindow = createMainWindow()
-    mainWindow.webContents.once('did-finish-load', () => {
+    mainWindow?.webContents.once('did-finish-load', () => {
       mainWindow?.webContents.send('auth:token', payload)
     })
   } else {
-    // If window already exists, it's already loaded, send immediately
-    mainWindow.webContents.send('auth:token', payload)
+    mainWindow?.webContents.send('auth:token', payload)
   }
   
-  mainWindow.show()
-  mainWindow.focus()
+  mainWindow?.show()
+  mainWindow?.focus()
 
   // Close login windows
   if (loginWindow && !loginWindow.isDestroyed()) {
@@ -486,8 +485,8 @@ ipcMain.handle('landing:open-main', () => {
   if (!mainWindow || mainWindow.isDestroyed()) {
     mainWindow = createMainWindow()
   }
-  mainWindow.show()
-  mainWindow.focus()
+  mainWindow?.show()
+  mainWindow?.focus()
 
   if (landingWindow && !landingWindow.isDestroyed()) {
     landingWindow.close()
