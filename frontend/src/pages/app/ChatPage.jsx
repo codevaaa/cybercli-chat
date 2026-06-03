@@ -835,13 +835,21 @@ function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffo
                       <button
                         key={model.id}
                         onClick={() => {
+                          if (userPlan === 'free') {
+                            if (onRequirePro) onRequirePro()
+                            else alert('More Models are only available for Pro users. Please upgrade your plan.')
+                            return
+                          }
                           onSelect(model.id)
                           setOpen(false)
                           setShowMore(false)
                         }}
                         className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between"
                       >
-                        <span className="text-[13px] text-foreground-primary">{model.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] text-foreground-primary">{model.name}</span>
+                          {userPlan === 'free' && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent/20 text-accent uppercase tracking-wider">PRO</span>}
+                        </div>
                         {isSelected && <Check className="w-3.5 h-3.5 text-foreground-primary shrink-0" />}
                       </button>
                     )
@@ -890,19 +898,11 @@ function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffo
                 </button>
                 <div className="h-px bg-border-subtle my-1" />
                 <button
-                  onClick={() => {
-                    if (userPlan === 'free') {
-                      if (onRequirePro) onRequirePro()
-                      else alert('More Models are only available for Pro users. Please upgrade your plan.')
-                      return
-                    }
-                    setShowMore(true)
-                  }}
+                  onClick={() => setShowMore(true)}
                   className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between text-foreground-secondary"
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-[13px]">More models</span>
-                    {userPlan === 'free' && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent/20 text-accent uppercase tracking-wider">PRO</span>}
                   </div>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -1246,16 +1246,7 @@ function InputArea({
               </motion.div>
             )}
           </AnimatePresence>
-          <ModelSelector 
-            selectedModel={selectedModel} 
-            onSelect={onModelChange} 
-            userPlan={userPlan} 
-            effortLevel={effortLevel}
-            setEffortLevel={setEffortLevel}
-            thinkingEnabled={thinkingEnabled}
-            setThinkingEnabled={setThinkingEnabled}
-            onRequirePro={onRequirePro}
-          />
+
         </div>
 
         <textarea
@@ -6215,6 +6206,13 @@ codeva link --key YOUR_API_KEY</pre>
                     ? `A new version of Codeva (${updateInfo.version}) is available. Do you want to download it now?` 
                     : 'A new version of Codeva is available. Do you want to download it now?'}
               </p>
+
+              {updateInfo?.releaseNotes && (
+                <div className="mb-6 bg-[#1f1e1c] p-4 rounded-xl border border-white/[0.05] max-h-[160px] overflow-y-auto">
+                  <h4 className="text-sm font-semibold text-[#E8E6E1] mb-2">Changelog</h4>
+                  <div className="text-[13px] text-[#A3A097] space-y-1 prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: typeof updateInfo.releaseNotes === 'string' ? updateInfo.releaseNotes : Array.isArray(updateInfo.releaseNotes) ? updateInfo.releaseNotes.map(n => n.note || n.text || '').join('<br/>') : '' }} />
+                </div>
+              )}
               
               {updateProgress && !updateDownloaded && (
                 <div className="mb-6">
