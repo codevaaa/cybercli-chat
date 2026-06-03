@@ -835,21 +835,13 @@ function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffo
                       <button
                         key={model.id}
                         onClick={() => {
-                          if (userPlan === 'free') {
-                            if (onRequirePro) onRequirePro()
-                            else alert('More Models are only available for Pro users. Please upgrade your plan.')
-                            return
-                          }
                           onSelect(model.id)
                           setOpen(false)
                           setShowMore(false)
                         }}
                         className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between"
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="text-[13px] text-foreground-primary">{model.name}</span>
-                          {userPlan === 'free' && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent/20 text-accent uppercase tracking-wider">PRO</span>}
-                        </div>
+                        <span className="text-[13px] text-foreground-primary">{model.name}</span>
                         {isSelected && <Check className="w-3.5 h-3.5 text-foreground-primary shrink-0" />}
                       </button>
                     )
@@ -898,11 +890,19 @@ function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffo
                 </button>
                 <div className="h-px bg-border-subtle my-1" />
                 <button
-                  onClick={() => setShowMore(true)}
+                  onClick={() => {
+                    if (userPlan === 'free') {
+                      if (onRequirePro) onRequirePro()
+                      else alert('More Models are only available for Pro users. Please upgrade your plan.')
+                      return
+                    }
+                    setShowMore(true)
+                  }}
                   className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between text-foreground-secondary"
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-[13px]">More models</span>
+                    {userPlan === 'free' && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent/20 text-accent uppercase tracking-wider">PRO</span>}
                   </div>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
