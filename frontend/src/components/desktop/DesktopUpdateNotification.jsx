@@ -10,7 +10,7 @@ import { Download, X, RefreshCw, Loader2, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function DesktopUpdateNotification() {
-  const [phase, setPhase] = useState(null) // null | 'available' | 'progress' | 'downloaded' | 'error'
+  const [phase, setPhase] = useState(null) // null | 'available' | 'progress' | 'downloaded' | 'error' | 'whatsNew'
   const [percent, setPercent] = useState(0)
   const [version, setVersion] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
@@ -20,6 +20,19 @@ export default function DesktopUpdateNotification() {
     const api = window.electronAPI
     if (!api) return
     const removers = []
+
+    if (api.getAppInfo) {
+      api.getAppInfo().then(info => {
+        if (!info || !info.version) return
+        const currentVersion = info.version
+        const lastVersion = localStorage.getItem('codeva_last_version')
+        if (lastVersion && currentVersion !== lastVersion) {
+          setPhase('whatsNew')
+          setVersion(currentVersion)
+        }
+        localStorage.setItem('codeva_last_version', currentVersion)
+      }).catch(console.error)
+    }
 
     if (api.onUpdateAvailable) removers.push(api.onUpdateAvailable((info) => {
       setPhase('available'); setVersion(info?.version || ''); setDismissed(false)
@@ -73,6 +86,19 @@ export default function DesktopUpdateNotification() {
       body: errorMsg,
       actions: (
         <button onClick={() => window.electronAPI?.checkForUpdates?.()} className="px-3 py-1.5 rounded-lg bg-white/[0.05] text-[#A0A0A0] text-xs hover:bg-white/[0.1] transition-colors">Retry</button>
+      ),
+    },
+    whatsNew: {
+      icon: <RefreshCw className="w-4 h-4 text-green-400" />,
+      title: `Successfully updated to v${version}`,
+      body: 'Codeva has been updated! Check out the changelog to see what\'s new.',
+      actions: (
+        <div className="flex items-center gap-2 mt-1">
+          <Link to="/changelog" onClick={() => setDismissed(true)} className="px-3 py-1.5 rounded-lg bg-[#C96442] text-white text-xs font-medium hover:bg-[#b9573a] transition-colors">
+            View Changelog
+          </Link>
+          <button onClick={() => setDismissed(true)} className="px-3 py-1.5 rounded-lg bg-white/[0.05] text-[#A0A0A0] text-xs hover:bg-white/[0.1] transition-colors">Dismiss</button>
+        </div>
       ),
     },
   }[phase]

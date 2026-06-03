@@ -15,7 +15,9 @@ router.post('/', optionalAuth, async (req, res) => {
     codeExecutionEnabled = false,
     imageGenerationEnabled = false,
     memoryEnabled = false,
-    deepResearchEnabled = false
+    deepResearchEnabled = false,
+    effort = 'low',
+    thinking = false
   } = req.body
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -124,7 +126,7 @@ Rules:
         const { runCouncilStream } = await import('../services/llm/councilEngine.js')
         generator = runCouncilStream(history)
       } else {
-        generator = await llmGateway.complete({ messages: history, model: model || 'auto', temperature })
+        generator = await llmGateway.complete({ messages: history, model: model || 'auto', temperature, effort, thinking })
       }
 
       for await (const chunk of generator) {
@@ -144,7 +146,7 @@ Rules:
     res.end()
   } else {
     try {
-      const result = await llmGateway.completeNonStream({ messages, model, temperature })
+      const result = await llmGateway.completeNonStream({ messages, model, temperature, effort, thinking })
       res.json(result)
     } catch (error) {
       res.status(500).json({ error: error.message })

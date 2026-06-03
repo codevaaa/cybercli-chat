@@ -10,8 +10,8 @@ const GITHUB_RELEASE_BASE = 'https://github.com/codevaaa/cybercli-chat/releases/
 const FILE_MAP = {
   'Codeva-win-x64.exe': 'Codeva-win-x64.exe',
   'Codeva-mac-universal.dmg': 'Codeva-mac-universal.dmg',
-  'Codeva-linux-x64.AppImage': 'Codeva-linux-x86_64.AppImage',
-  'Codeva-linux-x64.deb': 'Codeva-linux-amd64.deb',
+  'Codeva-linux-x64.AppImage': 'Codeva-linux-x64.AppImage',
+  'Codeva-linux-x64.deb': 'Codeva-linux-x64.deb',
 }
 
 const DOWNLOAD_META = {

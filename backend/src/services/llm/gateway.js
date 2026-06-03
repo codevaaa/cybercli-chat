@@ -294,10 +294,25 @@ function pruneContextWindow(messages, maxChars = 20000) {
   return [...systemMessages, ...pruned]
 }
 
+const EFFORT_MAX_TOKENS = {
+  low: 4096,
+  medium: 8192,
+  high: 16384,
+  max: 32768
+}
+
 export const llmGateway = {
-  async *complete({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free' }) {
+  async *complete({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free', effort = 'low', thinking = false }) {
     let activeModelId = modelId
-    let workingMessages = messages
+    let workingMessages = [...messages]
+
+    if (thinking) {
+      workingMessages.push({
+        role: 'system',
+        content: '[THINKING ENABLED]\nYou must explicitly reason step-by-step before providing your final answer. Provide comprehensive chain-of-thought analysis.',
+        _skip_inject: true
+      })
+    }
 
     // Plan-gate + task-route the model selection. 'auto' classifies the task
     // and picks the best model the user's plan allows; explicit models that
@@ -371,7 +386,7 @@ export const llmGateway = {
         messages: enriched,
         temperature,
         stream: true,
-        max_tokens: 4096,
+        max_tokens: EFFORT_MAX_TOKENS[effort] || 4096,
       })
 
       for await (const chunk of stream) {
@@ -449,7 +464,7 @@ export const llmGateway = {
             messages: enriched,
             temperature,
             stream: true,
-            max_tokens: 4096,
+            max_tokens: EFFORT_MAX_TOKENS[effort] || 4096,
           })
 
           for await (const chunk of stream) {
@@ -470,17 +485,27 @@ export const llmGateway = {
     }
   },
 
-  async completeNonStream({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free' }) {
+  async completeNonStream({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free', effort = 'low', thinking = false }) {
     let activeModelId = modelId
-    const lastUserText = [...messages].reverse().find((m) => m.role === 'user')?.content || ''
+    let workingMessages = [...messages]
+
+    if (thinking) {
+      workingMessages.push({
+        role: 'system',
+        content: '[THINKING ENABLED]\nYou must explicitly reason step-by-step before providing your final answer. Provide comprehensive chain-of-thought analysis.',
+        _skip_inject: true
+      })
+    }
+
+    const lastUserText = [...workingMessages].reverse().find((m) => m.role === 'user')?.content || ''
     activeModelId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText)
-    const totalChars = messages.reduce((sum, m) => sum + (m.content || '').length, 0)
+    const totalChars = workingMessages.reduce((sum, m) => sum + (m.content || '').length, 0)
     
     if (totalChars > 35000 && !activeModelId.startsWith('gemini/')) {
       activeModelId = 'gemini/gemini-2.5-flash'
     }
 
-    let enriched = injectIdentity(messages)
+    let enriched = injectIdentity(workingMessages)
     // Prune context to prevent provider token crashes
     enriched = pruneContextWindow(enriched, 24000)
 
@@ -514,7 +539,7 @@ export const llmGateway = {
           contents,
           config: {
             temperature,
-            maxOutputTokens: 4096,
+            maxOutputTokens: EFFORT_MAX_TOKENS[effort] || 4096,
             ...(systemInstruction ? { systemInstruction } : {}),
           },
         })
@@ -557,7 +582,7 @@ export const llmGateway = {
         model: activeModelName,
         messages: enriched,
         temperature,
-        max_tokens: 4096,
+        max_tokens: EFFORT_MAX_TOKENS[effort] || 4096,
       })
 
       return {
@@ -579,7 +604,7 @@ export const llmGateway = {
               model: fallbackModelName,
               messages: enriched,
               temperature,
-              max_tokens: 4096,
+              max_tokens: EFFORT_MAX_TOKENS[effort] || 4096,
             })
             return {
               content: response.choices[0].message.content,

@@ -727,9 +727,10 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
 // ─── Model Selector Dropdown ─────────────────────────────────────────────────
 
 
-function ModelSelector({ selectedModel, onSelect, userPlan }) {
+function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffortLevel, thinkingEnabled, setThinkingEnabled }) {
   const [open, setOpen] = useState(false)
   const [showMore, setShowMore] = useState(false)
+  const [showEffort, setShowEffort] = useState(false)
   const ref = useRef(null)
 
   useEffect(() => {
@@ -737,6 +738,7 @@ function ModelSelector({ selectedModel, onSelect, userPlan }) {
       if (ref.current && !ref.current.contains(e.target)) {
         setOpen(false)
         setShowMore(false)
+        setShowEffort(false)
       }
     }
     document.addEventListener('mousedown', handler)
@@ -751,7 +753,7 @@ function ModelSelector({ selectedModel, onSelect, userPlan }) {
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => { setOpen(!open); setShowMore(false) }}
+        onClick={() => { setOpen(!open); setShowMore(false); setShowEffort(false) }}
         className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[13px] font-medium text-foreground-secondary hover:text-foreground-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all"
       >
         <span>{isAdaptive ? 'Council' : selected.tag}</span>
@@ -771,7 +773,55 @@ function ModelSelector({ selectedModel, onSelect, userPlan }) {
               backdropFilter: 'blur(24px)',
             }}
           >
-            {showMore ? (
+            {showEffort ? (
+              <div className="flex flex-col max-h-[300px] overflow-y-auto">
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-border-subtle bg-background-secondary/30">
+                  <button
+                    onClick={() => setShowEffort(false)}
+                    className="text-xs font-semibold text-foreground-muted hover:text-foreground-primary"
+                  >
+                    ← Back
+                  </button>
+                  <span className="text-xs font-medium text-foreground-secondary">Effort</span>
+                </div>
+                <div className="p-3 border-b border-border-subtle">
+                   <p className="text-[11.5px] leading-tight text-foreground-muted">Higher effort means more thorough responses, but takes longer and uses your limits faster.</p>
+                </div>
+                <div className="p-1">
+                  {['low', 'medium', 'high', 'max'].map((level) => {
+                    const isSelected = effortLevel === level
+                    return (
+                      <button
+                        key={level}
+                        onClick={() => {
+                          setEffortLevel(level)
+                          // Optional: keep open so they can see change, or close
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between"
+                      >
+                        <span className="text-[13px] text-foreground-primary font-medium capitalize">
+                          {level} {level === 'low' && <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-white/10 text-foreground-secondary font-normal tracking-wide">Default</span>}
+                        </span>
+                        {isSelected && <Check className="w-4 h-4 text-blue-500 shrink-0" />}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="h-px bg-border-subtle mx-2 my-1" />
+                <div className="px-3 py-3 flex items-center justify-between">
+                   <div className="flex flex-col">
+                     <span className="text-[13px] font-medium text-foreground-primary">Thinking</span>
+                     <span className="text-[11.5px] text-foreground-muted">Can think for more complex tasks</span>
+                   </div>
+                   <button 
+                     onClick={() => setThinkingEnabled(!thinkingEnabled)}
+                     className={`w-9 h-5 rounded-full transition-all relative flex items-center p-0.5 shrink-0 ${thinkingEnabled ? 'bg-blue-500' : 'bg-white/10'}`}
+                   >
+                     <div className={`w-4 h-4 bg-white rounded-full transition-all shadow ${thinkingEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
+                   </button>
+                </div>
+              </div>
+            ) : showMore ? (
               <div className="flex flex-col max-h-[300px] overflow-y-auto">
                 <div className="flex items-center gap-2 px-3 py-2 border-b border-border-subtle bg-background-secondary/30">
                   <button
@@ -833,6 +883,17 @@ function ModelSelector({ selectedModel, onSelect, userPlan }) {
                 </button>
                 <div className="h-px bg-border-subtle my-1" />
                 <button
+                  onClick={() => setShowEffort(true)}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between text-foreground-secondary"
+                >
+                  <span className="text-[13px]">Effort</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] capitalize">{effortLevel}</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </button>
+                <div className="h-px bg-border-subtle my-1" />
+                <button
                   onClick={() => {
                     if (userPlan === 'free') {
                       alert('More Models are only available for Pro users. Please upgrade your plan.')
@@ -866,6 +927,10 @@ function InputArea({
   loading,
   selectedModel,
   onModelChange,
+  effortLevel,
+  setEffortLevel,
+  thinkingEnabled,
+  setThinkingEnabled,
   onMicClick,
   onWaveformClick,
   inlineSpeechListening,
@@ -1185,7 +1250,15 @@ function InputArea({
             <BookOpen className="w-4 h-4" />
           </button>
           
-          <ModelSelector selectedModel={selectedModel} onSelect={onModelChange} userPlan={userPlan} />
+          <ModelSelector 
+            selectedModel={selectedModel} 
+            onSelect={onModelChange} 
+            userPlan={userPlan} 
+            effortLevel={effortLevel}
+            setEffortLevel={setEffortLevel}
+            thinkingEnabled={thinkingEnabled}
+            setThinkingEnabled={setThinkingEnabled}
+          />
 
           <div className="h-6 w-px bg-border-subtle mx-1" />
 
@@ -2440,7 +2513,7 @@ function ArtifactsView({ messages }) {
                       srcDoc={selectedArt.content}
                       className="w-full h-full border-0 bg-white"
                       title="Artifact Live Render"
-                      sandbox="allow-scripts"
+                      sandbox="allow-scripts allow-forms allow-popups allow-same-origin allow-downloads"
                     />
                   ) : (
                     // Fallback to formatted pre block for non-html code preview
@@ -3371,6 +3444,8 @@ export default function ChatPage() {
   const [activeProject, setActiveProject] = useState(null)
   const [activeStyle, setActiveStyle] = useState(null)
   const [selectedModel, setSelectedModel] = useState('groq/llama-3.1-8b')
+  const [effortLevel, setEffortLevel] = useState('low')
+  const [thinkingEnabled, setThinkingEnabled] = useState(false)
   const [copied, setCopied] = useState(null)
   const [streamingIndex, setStreamingIndex] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -4336,7 +4411,7 @@ export default function ChatPage() {
     }
 
     // ── OVERRIDES ──
-    if (deepResearchEnabled && activeModel !== 'opencode/deepseek-v4-flash') {
+    if (deepResearchEnabled && activeModel !== 'opencode/deepseek-v4-flash' && activeModel !== 'council') {
       activeModel = 'opencode/deepseek-v4-flash'
     }
 
@@ -4583,7 +4658,7 @@ export default function ChatPage() {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {})
           },
-          body: JSON.stringify({ messages: history, model: activeModel, webSearchEnabled, deepResearchEnabled })
+          body: JSON.stringify({ messages: history, model: activeModel, webSearchEnabled, deepResearchEnabled, effort: effortLevel, thinking: thinkingEnabled })
         })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const reader = res.body.getReader()
@@ -4660,7 +4735,9 @@ export default function ChatPage() {
           imageGenerationEnabled,
           memoryEnabled,
           project_id: activeProject?._id || null,
-          style_id: activeStyle?._id || null
+          style_id: activeStyle?._id || null,
+          effort: effortLevel,
+          thinking: thinkingEnabled
         })
       })
       if (!res.ok) {
@@ -5499,6 +5576,10 @@ export default function ChatPage() {
                         loading={loading || isWarmingUp}
                         selectedModel={selectedModel}
                         onModelChange={setSelectedModel}
+                        effortLevel={effortLevel}
+                        setEffortLevel={setEffortLevel}
+                        thinkingEnabled={thinkingEnabled}
+                        setThinkingEnabled={setThinkingEnabled}
                         onMicClick={toggleInlineSpeech}
                         onWaveformClick={() => setVoiceChatOpen(true)}
                         webSearchEnabled={webSearchEnabled}
@@ -5585,6 +5666,10 @@ export default function ChatPage() {
                         loading={loading || isWarmingUp}
                         selectedModel={selectedModel}
                         onModelChange={setSelectedModel}
+                        effortLevel={effortLevel}
+                        setEffortLevel={setEffortLevel}
+                        thinkingEnabled={thinkingEnabled}
+                        setThinkingEnabled={setThinkingEnabled}
                         onMicClick={toggleInlineSpeech}
                         onWaveformClick={() => setVoiceChatOpen(true)}
                         webSearchEnabled={webSearchEnabled}
