@@ -5,9 +5,9 @@ const TTS_PROVIDERS = {
     name: 'Google Gemini Flash TTS',
     description: 'Google Gemini Flash Text-to-Speech (Server-side)',
     voices: [
-      { id: 'gemini_female', name: 'Nexus (Ultra-Fast Robotic)', gender: 'female', accent: 'multilingual' },
-      { id: 'gemini_male_1', name: 'Prime (Ultra-Fast Robotic)', gender: 'male', accent: 'multilingual' },
-      { id: 'gemini_male_2', name: 'Cipher (Ultra-Fast Robotic)', gender: 'male', accent: 'multilingual' },
+      { id: 'gemini_female', name: 'Kushi (Fast & Natural)', gender: 'female', accent: 'multilingual' },
+      { id: 'gemini_male_1', name: 'Rudra (Fast JARVIS-like)', gender: 'male', accent: 'multilingual' },
+      { id: 'gemini_male_2', name: 'Sankalp (Fast & Expressive)', gender: 'male', accent: 'multilingual' },
     ],
   },
   browser: {
@@ -21,8 +21,8 @@ class TTSService {
   constructor() {
     this.currentProvider = 'gemini'
     this.currentVoice = 'gemini_female'
-    this.currentSpeed = 2.0 // Ultra fast
-    this.currentPitch = 0.8 // Slightly lower pitch for robotic feel
+    this.currentSpeed = 1.15 // Fast but natural human speed
+    this.currentPitch = 1.0 // Natural pitch
     this.browserVoices = []
     this.geminiApiKey = null
 
@@ -111,7 +111,7 @@ class TTSService {
         body: JSON.stringify({
           text,
           voice_id: this.currentVoice || 'gemini_female',
-          speed: 2.0, // Forced ultra-fast for robotic models
+          speed: 1.15, // Forced fast but natural human speed
         }),
       })
 
@@ -190,8 +190,8 @@ class TTSService {
       }
 
       if (this.currentProvider === 'gemini') {
-        utterance.rate = 2.0 // Forced ultra-fast for robotic models
-        utterance.pitch = 0.8 // Lower pitch for robotic feel
+        utterance.rate = 1.15 // Forced fast but natural human speed
+        utterance.pitch = 1.0 // Natural pitch
       } else {
         utterance.rate = this.currentSpeed
         utterance.pitch = this.currentPitch

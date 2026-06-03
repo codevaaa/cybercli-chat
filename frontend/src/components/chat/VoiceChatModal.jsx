@@ -6,9 +6,9 @@ import CodevaMark from '../ui/CodevaLogo.jsx'
 
 
 const VOICE_MODELS = [
-  { id: 'gemini_female',  label: 'Nexus (Ultra-Fast Robotic)', desc: 'Hyper-optimized robotic female voice', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
-  { id: 'gemini_male_1',  label: 'Prime (Ultra-Fast Robotic)', desc: 'Lightning-fast analytical male voice',  color: '#8B5CF6', orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'] },
-  { id: 'gemini_male_2',  label: 'Cipher (Ultra-Fast Robotic)', desc: 'High-speed technical advisor voice',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
+  { id: 'gemini_female',  label: 'Kushi (Fast & Natural)', desc: 'Warm, highly responsive human girl voice', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
+  { id: 'gemini_male_1',  label: 'Rudra (Fast JARVIS-like)', desc: 'Lightning-fast, precise, warm male voice',  color: '#8B5CF6', orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'] },
+  { id: 'gemini_male_2',  label: 'Sankalp (Fast & Expressive)', desc: 'Confident, thoughtful, warm human man voice',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
 ]
 
 const BAR_COUNT = 36
