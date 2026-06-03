@@ -949,7 +949,6 @@ function InputArea({
   activeStyle,
   setActiveStyle,
   userPlan,
-  onRequirePro,
 }) {
   const textareaRef = useRef(null)
   const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
