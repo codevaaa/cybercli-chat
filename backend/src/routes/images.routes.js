@@ -76,9 +76,12 @@ router.post('/generate', optionalAuth, async (req, res) => {
         })
         
         if (cfResponse.ok) {
-          const buffer = await cfResponse.arrayBuffer()
-          const base64 = Buffer.from(buffer).toString('base64')
-          imageUrl = `data:image/jpeg;base64,${base64}`
+          const json = await cfResponse.json()
+          if (json.success && json.result && json.result.image) {
+            imageUrl = `data:image/jpeg;base64,${json.result.image}`
+          } else {
+            console.error('Cloudflare JSON success false or missing image:', json)
+          }
         } else {
           console.error('Cloudflare image generation failed, falling back to Pollinations:', await cfResponse.text())
         }
