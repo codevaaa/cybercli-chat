@@ -298,7 +298,7 @@ router.get('/:id/messages', requireAuth, async (req, res) => {
 // Stream response and persist message history
 // Stream response and persist message history
 router.post('/:id/messages', requireAuth, async (req, res) => {
-  const { 
+  let { 
     messages, 
     model, 
     temperature,
@@ -345,6 +345,17 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
   try {
     // 1. Save user's prompt to DB
     const lastUserMsg = messages.slice().reverse().find(m => m.role === 'user') || { content: '' }
+    
+    // Auto-enable OSINT/Research for Kali models
+    if (thread.mode === 'kali_kal' || thread.mode === 'kalikal') {
+      const p = lastUserMsg.content.toLowerCase()
+      if (p.includes('dork') || p.includes('osint') || p.includes('deep research') || p.includes('scrape the internet') || p.includes('deep search') || p.includes('find all') || p.includes('thoroughly search')) {
+        deepResearchEnabled = true
+      } else if (p.includes('search') || p.includes('scrape') || p.includes('latest') || p.includes('news') || p.includes('github repo') || p.includes('find') || p.includes('research')) {
+        webSearchEnabled = true
+      }
+    }
+
     const userMsg = new Message({
       thread_id: thread._id,
       user_id: req.user.id,
