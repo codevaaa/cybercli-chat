@@ -359,9 +359,9 @@ export default function KaliKalView({
     if (idx < 1 || loading) return
     const prevUserMsg = kaliMessages[idx - 1]
     if (prevUserMsg && prevUserMsg.role === 'user') {
-      handleSend(prevUserMsg.content)
+      handleSend(prevUserMsg.content, selectedKaliModel)
     }
-  }, [kaliMessages, loading, handleSend])
+  }, [kaliMessages, loading, handleSend, selectedKaliModel])
 
   // ── Send message (handles thread creation for kali_kal mode) ──
   const handleKaliSend = useCallback(async (textOverride) => {
@@ -378,7 +378,7 @@ export default function KaliKalView({
         if (threadId) {
           // Small delay for navigation to settle, then send
           setTimeout(() => {
-            handleSend(userText)
+            handleSend(userText, selectedKaliModel)
             setKaliUsage(prev => prev + 1)
           }, 300)
         }
@@ -392,10 +392,10 @@ export default function KaliKalView({
     }
 
     // Active thread exists — send directly
-    handleSend(userText)
+    handleSend(userText, selectedKaliModel)
     setKaliUsage(prev => prev + 1)
     if (typeof textOverride !== 'string') setInput('')
-  }, [input, loading, isOverLimit, activeKaliThread, isCreating, handleCreateThread, handleSend, setInput])
+  }, [input, loading, isOverLimit, activeKaliThread, isCreating, handleCreateThread, handleSend, setInput, selectedKaliModel])
 
   // ── Quick action handler ──
   const handleQuickAction = useCallback((prompt) => {

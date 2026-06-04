@@ -3988,6 +3988,11 @@ export default function ChatPage() {
     if (urlPrompt) {
       setInput(urlPrompt)
     }
+
+    if (localStorage.getItem('force_kali_mode') === 'true') {
+      setActiveNav('kali_kal')
+      localStorage.removeItem('force_kali_mode')
+    }
   }, [])
 
   useEffect(() => {
@@ -4077,6 +4082,9 @@ export default function ChatPage() {
       setMessages(data.messages || [])
       const thread = threads.find(t => t._id === id)
       if (thread?.model_id) setSelectedModel(thread.model_id)
+      if (thread?.mode === 'kali_kal') {
+        setActiveNav('kali_kal')
+      }
     } catch (err) {
       console.error('Failed to load messages:', err)
       setError('Failed to load conversation.')
@@ -4295,13 +4303,13 @@ export default function ChatPage() {
 
   // ── Send message ──
 
-  const handleSend = useCallback(async (textOverride) => {
+  const handleSend = useCallback(async (textOverride, modelOverride = null) => {
     const rawText = typeof textOverride === 'string' ? textOverride : input
     if (!rawText.trim() || loading) return
     const userText = rawText.trim()
 
     // Determine active model and system prompt override if voice chat is open
-    let activeModel = selectedModel
+    let activeModel = modelOverride || selectedModel
     const extraSystemMessages = []
 
     if (userLanguage && userLanguage.toUpperCase() !== 'EN') {
@@ -5009,12 +5017,6 @@ export default function ChatPage() {
       onDrop={handleDrop}
     >
 
-      {/* ── Kali_Kal Announcement Banner ── */}
-      <KaliKalBanner onActivateKali={() => {
-        setActiveNav('kali_kal')
-        setSelectedModel('huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b')
-      }} />
-
       {/* ── Sidebar ── */}
       {isMobile && sidebarOpen && (
         <div 
@@ -5052,7 +5054,7 @@ export default function ChatPage() {
                   ))}
                 </div>
               ) : (
-                <Link to="/" className="flex items-center gap-2.5">
+                <a href="/" className="flex items-center gap-2.5">
                   <motion.div
                     className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ background: 'rgba(217,119,87,0.15)' }}
@@ -5063,7 +5065,7 @@ export default function ChatPage() {
                     <span className="font-semibold text-sm leading-tight text-foreground-primary">Codeva</span>
                     <span className="text-[9px] text-foreground-muted leading-none tracking-wide">by Codeva</span>
                   </div>
-                </Link>
+                </a>
               )}
               <button
                 onClick={() => setSidebarOpen(false)}
@@ -5424,9 +5426,9 @@ export default function ChatPage() {
               >
                 <Menu className="w-4 h-4" />
               </button>
-              <Link to="/" className="flex items-center group transition-opacity hover:opacity-90">
+              <a href="/" className="flex items-center group transition-opacity hover:opacity-90">
                 <CodevaWordmark size={24} />
-              </Link>
+              </a>
             </div>
           )}
 

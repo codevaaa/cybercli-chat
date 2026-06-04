@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ArrowRight, Flame } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const STORAGE_KEY = 'kali_kal_banner_dismissed'
 
 export default function KaliKalBanner({ onActivateKali }) {
   const [visible, setVisible] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const dismissed = localStorage.getItem(STORAGE_KEY)
@@ -20,7 +22,13 @@ export default function KaliKalBanner({ onActivateKali }) {
   }
 
   const handleTryNow = () => {
-    if (onActivateKali) onActivateKali()
+    if (onActivateKali) {
+      onActivateKali()
+    } else {
+      // Default action if used on public pages
+      localStorage.setItem('force_kali_mode', 'true')
+      navigate('/chat')
+    }
     handleDismiss()
   }
 
