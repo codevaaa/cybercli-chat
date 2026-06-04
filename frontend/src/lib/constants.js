@@ -16,6 +16,7 @@ export const FOOTER_SECTIONS = [
     title: 'Product',
     links: [
       { label: 'CyberCoder CLI', href: '/product' },
+      { label: 'Kali_Kal Mode', href: '/kali-kal' },
       { label: 'Download Apps', href: '/downloads' },
       { label: 'Features', href: '/features' },
       { label: 'Models', href: '/models' },

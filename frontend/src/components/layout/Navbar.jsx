@@ -33,8 +33,9 @@ const MENU_GROUPS = [
     items: [
       { label: 'CyberCoder CLI', href: '/product', desc: 'Terminal AI coding assistant - Better than Claude Code', icon: 'Terminal' },
       { label: 'Codeva', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
-      { label: 'Council Mode', href: '/council-mode', desc: '4-model ensemble intelligence — One best answer', icon: 'Brain' },
-      { label: 'Models', href: '/models', desc: 'Browse 200K+ AI models from 8+ providers', icon: 'Cpu' },
+      { label: 'Kali_Kal Mode', href: '/kali-kal', desc: 'Uncensored Cyber AI Engine', icon: 'Terminal' },
+      { label: 'Council Mode', href: '/council-mode', desc: '4-model ensemble intelligence', icon: 'Brain' },
+      { label: 'Models', href: '/models', desc: 'Browse 200K+ AI models', icon: 'Cpu' },
       { label: 'Workflows', href: '/workflows', desc: 'Automate multi-agent tasks', icon: 'Layers' },
       { label: 'Discover', href: '/discover', desc: 'Find custom agents', icon: 'Globe' },
     ]

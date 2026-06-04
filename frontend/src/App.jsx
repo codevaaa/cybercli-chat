@@ -51,6 +51,7 @@ import ChromeExtensionPage from '@pages/public/ChromeExtensionPage'
 import ExtensionDocsPage from '@pages/public/ExtensionDocsPage'
 import CliLoginPage from '@pages/public/CliLoginPage'
 import CliSubscribePage from '@pages/public/CliSubscribePage'
+import KaliKalPage from '@pages/public/KaliKalPage'
 
 import SignupPage from '@pages/auth/SignupPage'
 import LoginPage from '@pages/auth/LoginPage'
@@ -80,7 +81,8 @@ const PUBLIC_PATHS = [
   '/changelog', '/api-reference', '/developers', '/status', '/downloads',
   '/product', '/login', '/subscribe', '/council-mode',
   '/legal/consumer-terms', '/legal/commercial-terms', '/legal/privacy', '/legal/aup',
-  '/responsible-disclosure-policy', '/trust', '/research', '/company', '/usage-limit-best-practices'
+  '/responsible-disclosure-policy', '/trust', '/research', '/company', '/usage-limit-best-practices',
+  '/kali-kal', '/kalikal', '/kali'
 ]
 const AUTH_PATHS = [
   '/auth/signup', '/auth/login', '/auth/forgot-password',
@@ -194,6 +196,11 @@ function App() {
           <Route path="/auth/magic-link" element={<MagicLinkPage />} />
           <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          
+          {/* ── Kali Routes ── */}
+          <Route path="/kali-kal" element={<PublicLayout><KaliKalPage /></PublicLayout>} />
+          <Route path="/kalikal" element={<Navigate to="/kali-kal" replace />} />
+          <Route path="/kali" element={<Navigate to="/kali-kal" replace />} />
 
           {/* ── Protected App Routes (no Lenis — native scroll for chat) ── */}
           <Route path="/chat/:threadId?" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />

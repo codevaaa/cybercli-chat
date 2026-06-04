@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, ArrowRight, Flame } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-const STORAGE_KEY = 'kali_kal_banner_dismissed'
+const STORAGE_KEY = 'kali_kal_banner_dismissed_v2'
 
 export default function KaliKalBanner({ onActivateKali }) {
   const [visible, setVisible] = useState(false)
