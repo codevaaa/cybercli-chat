@@ -11,7 +11,7 @@ import logger from '../../utils/logger.js'
 export async function executeInSandbox(code, userId) {
   try {
     // 1. Check Usage Limits
-    const user = await User.findById(userId)
+    const user = await User.findOne({ supabase_id: userId })
     if (!user) throw new Error('User not found')
 
     const isPro = user.plan === 'pro' || user.plan === 'max'
