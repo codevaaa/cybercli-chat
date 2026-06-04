@@ -142,6 +142,7 @@ router.get('/generate-direct', async (req, res) => {
           return res.send(buffer)
         }
       }
+    }
 
     // Fallback to Pollinations
     const sanitizedPrompt = encodeURIComponent(prompt.trim())
