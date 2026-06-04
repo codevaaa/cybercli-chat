@@ -244,53 +244,65 @@ function ImageGeneratorWidget({ src, alt }) {
 
   useEffect(() => {
     let active = true
-    const generateImage = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        let prompt = alt || 'A beautiful generated image'
-        if (src.includes('/p/')) {
-          const parts = src.split('/p/')
-          if (parts[1]) {
-            const promptPart = parts[1].split('?')[0]
-            prompt = decodeURIComponent(promptPart)
+    const timeoutId = setTimeout(() => {
+      const generateImage = async () => {
+        setLoading(true)
+        setError(null)
+        try {
+          let prompt = alt || 'A beautiful generated image'
+          if (src.includes('/p/')) {
+            const parts = src.split('/p/')
+            if (parts[1]) {
+              const promptPart = parts[1].split('?')[0]
+              prompt = decodeURIComponent(promptPart)
+            }
+          } else if (src.includes('prompt=')) {
+            const urlObj = new URL(src, window.location.origin)
+            const p = urlObj.searchParams.get('prompt')
+            if (p) prompt = p
+          }
+
+          const token = localStorage.getItem('sb-access-token')
+          const response = await fetch(`${API_BASE}/images/generate`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ prompt })
+          })
+
+          if (!response.ok) {
+            let errData
+            try {
+              errData = await response.json()
+            } catch {
+              throw new Error(`Error: ${response.status} ${response.statusText}`)
+            }
+            throw Object.assign(new Error(errData.error || `Error: ${response.status}`), { resetAt: errData.resetAt })
+          }
+
+          const data = await response.json()
+
+          if (active) {
+            setImageUrl(data.url)
+            setLoading(false)
+            window.dispatchEvent(new Event('image-generated'))
+          }
+        } catch (err) {
+          if (active) {
+            setError({ message: err.message, resetAt: err.resetAt })
+            setLoading(false)
           }
         }
-
-        const token = localStorage.getItem('sb-access-token')
-        const response = await fetch(`${API_BASE}/images/generate`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
-          },
-          body: JSON.stringify({ prompt })
-        })
-
-        if (!response.ok) {
-          const errData = await response.json()
-          throw Object.assign(new Error(errData.error || `Error: ${response.status}`), { resetAt: errData.resetAt })
-        }
-
-        const data = await response.json()
-
-        if (active) {
-          setImageUrl(data.url)
-          setLoading(false)
-          window.dispatchEvent(new Event('image-generated'))
-        }
-      } catch (err) {
-        if (active) {
-          setError({ message: err.message, resetAt: err.resetAt })
-          setLoading(false)
-        }
       }
-    }
+      generateImage()
+    }, 1500) // debounce by 1.5s to prevent firing constantly during LLM streaming
 
-    generateImage()
     return () => {
       active = false
+      clearTimeout(timeoutId)
     }
   }, [src, alt, retryCount])
 
@@ -305,13 +317,13 @@ function ImageGeneratorWidget({ src, alt }) {
 
   if (error) {
     const errorMessage = typeof error === 'string' ? error : error.message
-    const isLimit = errorMessage.includes('limit')
+    const isLimit = errorMessage.toLowerCase().includes('limit')
 
     return (
       <div className="my-3 rounded-xl border border-red-500/20 bg-red-500/5 p-5 flex flex-col items-start gap-3 max-w-lg">
         <div className="flex items-center gap-2 text-red-400 font-semibold text-sm">
           <AlertCircle className="w-4 h-4" />
-          <span>Image Generation Limit Exceeded</span>
+          <span>{isLimit ? 'Image Generation Limit Exceeded' : 'Image Generation Failed'}</span>
         </div>
         <p className="text-xs text-foreground-muted leading-relaxed">
           {isLimit 
