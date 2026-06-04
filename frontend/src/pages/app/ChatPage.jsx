@@ -263,7 +263,7 @@ function ImageGeneratorWidget({ src, alt }) {
           }
 
           const token = localStorage.getItem('sb-access-token')
-          const response = await fetch(`${API_BASE}/media/generate`, {
+          const response = await fetch(`${API_BASE}/art/create`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -4569,7 +4569,7 @@ export default function ChatPage() {
       setStreamingIndex(messages.length + 1)
       
       try {
-        const response = await fetch(`${API_BASE}/media/generate`, {
+        const response = await fetch(`${API_BASE}/art/create`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

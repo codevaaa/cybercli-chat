@@ -197,7 +197,7 @@ app.use('/api/v1/api-keys', apiKeysRoutes)
 app.use('/api/v1/daemon', daemonRoutes)
 app.use('/api/v1/execute', executeRoutes)
 app.use('/api/v1/images', imagesRoutes)
-app.use('/api/v1/media', imagesRoutes) // Alias for /images to bypass adblockers
+app.use('/api/v1/art', imagesRoutes) // Alias for /images to bypass adblockers
 app.use('/api/v1/contact', contactRoutes)
 app.use('/api/v1/projects', projectsRoutes)
 app.use('/api/v1/styles', stylesRoutes)

@@ -4,7 +4,7 @@ import ImageUsage from '../models/ImageUsage.js'
 
 const router = Router()
 
-router.post('/generate', optionalAuth, async (req, res) => {
+router.post('/create', optionalAuth, async (req, res) => {
   const { prompt } = req.body
 
   if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
