@@ -31,10 +31,15 @@ router.post('/dev-bypass', async (req, res) => {
     });
 
     const userId = req.user.id;
-    const userDoc = await User.findOne({ supabase_id: userId });
+    let userDoc = await User.findOne({ supabase_id: userId });
     
     if (!userDoc) {
-       return res.status(404).json({ error: 'User not found' });
+       // Auto-create user if they somehow bypassed auth/sync
+       userDoc = await User.create({
+         supabase_id: userId,
+         email: req.user.email || `test-${userId}@example.com`,
+         plan: 'team'
+       });
     }
 
     userDoc.plan = 'team';
