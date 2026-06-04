@@ -31,6 +31,8 @@ router.post('/dev-bypass', async (req, res) => {
     });
 
     const userId = req.user.id;
+    const planType = req.body.plan === 'enterprise' ? 'enterprise' : 'team';
+    
     let userDoc = await User.findOne({ supabase_id: userId });
     
     if (!userDoc) {
@@ -38,21 +40,21 @@ router.post('/dev-bypass', async (req, res) => {
        userDoc = await User.create({
          supabase_id: userId,
          email: req.user.email || `test-${userId}@example.com`,
-         plan: 'team'
+         plan: planType
        });
     }
 
-    userDoc.plan = 'team';
+    userDoc.plan = planType;
     await userDoc.save();
 
-    const orgName = `${userDoc.full_name || 'Test'} Team`;
+    const orgName = `${userDoc.full_name || 'Test'} ${planType === 'enterprise' ? 'Enterprise' : 'Team'}`;
     
-    let org = await Organization.findOne({ owner_id: userDoc._id, plan: 'team' });
+    let org = await Organization.findOne({ owner_id: userDoc._id, plan: planType });
     if (!org) {
       org = await Organization.create({
         name: orgName,
         owner_id: userDoc._id,
-        plan: 'team',
+        plan: planType,
         seats_standard: 5,
         seats_premium: 2,
         billing_email: userDoc.email
@@ -73,7 +75,7 @@ router.post('/dev-bypass', async (req, res) => {
     try {
       const supabase = (await import('../config/supabase.js')).default;
       if (supabase) {
-         await supabase.auth.admin.updateUserById(userId, { user_metadata: { plan_tier: 'team' } });
+         await supabase.auth.admin.updateUserById(userId, { user_metadata: { plan_tier: planType } });
       }
     } catch (e) {}
 

@@ -159,11 +159,11 @@ export default function UpgradePage() {
       return
     }
     if (action === 'team') {
-      setShowSeatModal(true)
+      setShowSeatModal('team')
       return
     }
     if (action === 'enterprise') {
-      navigate('/contact?plan=enterprise')
+      setShowSeatModal('enterprise')
       return
     }
     
@@ -397,7 +397,9 @@ export default function UpgradePage() {
             >
               <div className="p-6 pb-4 border-b border-white/[0.06] flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-serif text-white" style={{ fontFamily: "'Instrument Serif', serif" }}>Configure Team Seats</h3>
+                  <h3 className="text-xl font-serif text-white" style={{ fontFamily: "'Instrument Serif', serif" }}>
+                    Configure {showSeatModal === 'enterprise' ? 'Enterprise' : 'Team'} Seats
+                  </h3>
                   <p className="text-sm text-gray-400 mt-1">Select the number of seats for your organization.</p>
                 </div>
                 <button onClick={() => setShowSeatModal(false)} className="text-gray-500 hover:text-white transition-colors">
@@ -465,17 +467,17 @@ export default function UpgradePage() {
                   </span>
                 </div>
                 <button
-                  onClick={() => startCheckout('team', seats)}
-                  disabled={loadingPlan === 'team'}
+                  onClick={() => startCheckout(showSeatModal, seats)}
+                  disabled={loadingPlan === showSeatModal}
                   className="w-full py-3 rounded-xl text-sm font-semibold bg-[#f5f4ef] text-[#1a1a18] hover:bg-white transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  {loadingPlan === 'team' ? 'Processing...' : 'Continue to Checkout'}
+                  {loadingPlan === showSeatModal ? 'Processing...' : 'Continue to Checkout'}
                 </button>
                 <button
                   onClick={async () => {
-                    setLoadingPlan('team');
+                    setLoadingPlan(showSeatModal);
                     try {
-                      await api.post('/orgs/dev-bypass');
+                      await api.post('/orgs/dev-bypass', { plan: showSeatModal });
                       window.location.href = '/app/org';
                     } catch (e) {
                       alert('Bypass failed: ' + e.message);
