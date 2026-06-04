@@ -12,13 +12,22 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'code must be a string' })
   }
 
-  if (language.toLowerCase() !== 'javascript' && language.toLowerCase() !== 'js') {
-    return res.status(400).json({ error: 'Only JavaScript is supported in sandboxed code execution currently.' })
+  if (language.toLowerCase() !== 'javascript' && language.toLowerCase() !== 'js' && language.toLowerCase() !== 'python' && language.toLowerCase() !== 'py') {
+    return res.status(400).json({ error: 'Only JavaScript and Python are supported.' })
   }
 
   try {
-    const result = executeCodeSandbox(code)
-    res.json(result)
+    if (language.toLowerCase() === 'python' || language.toLowerCase() === 'py') {
+      const { executeInSandbox } = await import('../services/sandbox/agenticSandbox.js')
+      const result = await executeInSandbox(code, req.user.id)
+      return res.json({
+        success: !result.error,
+        output: result.error || ((result.stdout || '') + '\n' + (result.stderr || '')).trim() || 'Process exited with no output.'
+      })
+    } else {
+      const result = executeCodeSandbox(code)
+      res.json(result)
+    }
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

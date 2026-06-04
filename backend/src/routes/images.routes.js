@@ -32,24 +32,14 @@ router.post('/generate', optionalAuth, async (req, res) => {
         today = new Date().toISOString().split('T')[0]
       }
 
-      // 1. Try to increment count if the document already exists for today
-      let usage = await ImageUsage.findOneAndUpdate(
-        { identifier, date: today },
-        { $inc: { count: 1 } },
-        { new: true }
-      )
-
-      // 2. If it doesn't exist for today, upsert/reset it to today with count 1
+      // 1. Just check the current usage count, do NOT increment yet
+      let usage = await ImageUsage.findOne({ identifier, date: today })
       if (!usage) {
-        usage = await ImageUsage.findOneAndUpdate(
-          { identifier },
-          { $set: { date: today, count: 1 } },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        )
+        usage = { count: 0 }
       }
 
       // 3. Enforce the limit of 5 images per day
-      if (usage.count > 5) {
+      if (usage.count >= 5) {
         // Caps it at 5 so it doesn't keep increasing
         await ImageUsage.updateOne({ identifier, date: today }, { $set: { count: 5 } })
         return res.status(429).json({ 
@@ -93,7 +83,7 @@ router.post('/generate', optionalAuth, async (req, res) => {
     if (!imageUrl) {
       // Fallback to Pollinations (proxied via backend to fix desktop client issues)
       const sanitizedPrompt = encodeURIComponent(prompt.trim())
-      const pollUrl = `https://image.pollinations.ai/p/${sanitizedPrompt}?width=1024&height=1024&nologo=true`
+      const pollUrl = `https://image.pollinations.ai/prompt/${sanitizedPrompt}?width=1024&height=1024&nologo=true`
       
       try {
         const pollResponse = await fetch(pollUrl)
@@ -109,6 +99,26 @@ router.post('/generate', optionalAuth, async (req, res) => {
         console.error('Pollinations fetch error:', e)
         imageUrl = pollUrl
       }
+    }
+
+    // Now that we have the image, IF the user is on free tier, increment their usage count.
+    // This prevents failed generations from consuming quota.
+    if (isFree && imageUrl) {
+      let tz = req.headers['x-timezone'] || 'UTC'
+      let today
+      try {
+        today = new Date().toLocaleDateString('en-CA', { timeZone: tz })
+      } catch (e) {
+        today = new Date().toISOString().split('T')[0]
+      }
+
+      let usage = await ImageUsage.findOne({ identifier, date: today })
+      if (!usage) {
+        usage = new ImageUsage({ identifier, date: today, count: 1 })
+      } else {
+        usage.count += 1
+      }
+      await usage.save()
     }
 
     return res.json({ url: imageUrl })

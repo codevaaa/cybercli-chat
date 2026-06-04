@@ -433,7 +433,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
 
     // 5. Handle Image Generation Instructions
     if (imageGenerationEnabled) {
-      extraSystemContent += `\n\n[IMAGE GENERATION CAPABILITY]\nYou have the real power to generate images. If the user asks you to generate, draw, or paint an image, you MUST formulate a detailed, high-quality, English image prompt and output it inside a markdown image tag using the backend direct generation URL exactly like this:\n![description](https://cybercli-api.onrender.com/api/v1/images/generate-direct?prompt={url_encoded_prompt})\nDo not use placeholders. Generate a real descriptive prompt. E.g. ![A futuristic cyberpunk city](https://cybercli-api.onrender.com/api/v1/images/generate-direct?prompt=A+futuristic+cyberpunk+city+neon+lights)`
+      extraSystemContent += `\n\n[IMAGE GENERATION CAPABILITY]\nYou have the real power to generate images. If the user asks you to generate, draw, or paint an image, you MUST formulate a detailed, high-quality, English image prompt and output it inside a markdown image tag using the backend direct generation URL exactly like this:\n![description](https://cybercli-api.onrender.com/api/v1/images/generate-direct?prompt={url_encoded_prompt})\nCRITICAL: When generating an image, you MUST ONLY output the markdown image tag. DO NOT provide any tips, explanations, or conversational filler. Just the markdown tag.`
     }
 
     // 6. Handle Code Execution Instructions
@@ -499,48 +499,6 @@ Rules:
         res.write(`data: ${JSON.stringify({ type: 'info', content: chunk.content })}\n\n`)
       } else if (chunk.type === 'done') {
         
-        // --- Agentic Sandbox Execution Interception for Kali ---
-        if (isKaliKal) {
-          // Detect if model output a python script
-          const pythonMatch = assistantReply.match(/```python\n([\s\S]*?)```/)
-          if (pythonMatch && pythonMatch[1]) {
-            res.write(`data: ${JSON.stringify({ type: 'info', content: '⚡ Autonomous Execution Engine Triggered. Sending payload to E2B Cloud Sandbox...' })}\n\n`)
-            
-            try {
-              const { executeInSandbox } = await import('../services/sandbox/agenticSandbox.js')
-              
-              // Define streaming callbacks
-              const onStdout = (line) => {
-                res.write(`data: ${JSON.stringify({ type: 'terminal_stdout', content: line })}\n\n`)
-              }
-              const onStderr = (line) => {
-                res.write(`data: ${JSON.stringify({ type: 'terminal_stderr', content: line })}\n\n`)
-              }
-              
-              const sandboxResult = await executeInSandbox(pythonMatch[1], req.user.id, onStdout, onStderr)
-              
-              let executionOutput = '\n\n**🤖 Autonomous Sandbox Execution Result:**\n```terminal\n'
-              if (sandboxResult.error) {
-                executionOutput += sandboxResult.error
-              } else {
-                if (sandboxResult.stdout) executionOutput += `[STDOUT]\n${sandboxResult.stdout}\n`
-                if (sandboxResult.stderr) executionOutput += `[STDERR]\n${sandboxResult.stderr}\n`
-                if (!sandboxResult.stdout && !sandboxResult.stderr) executionOutput += `Process exited with no output.`
-              }
-              executionOutput += '\n```'
-              
-              // Append to reply and send to user
-              assistantReply += executionOutput
-              res.write(`data: ${JSON.stringify({ type: 'token', content: executionOutput })}\n\n`)
-            } catch (sandboxErr) {
-              console.error('Sandbox execution failed:', sandboxErr)
-              const errOut = `\n\n**🤖 Sandbox Execution Failed:**\n\`\`\`terminal\nError: ${sandboxErr.message}\n\`\`\``
-              assistantReply += errOut
-              res.write(`data: ${JSON.stringify({ type: 'token', content: errOut })}\n\n`)
-            }
-          }
-        }
-
         // Save assistant response to DB
         const assistantMsg = new Message({
           thread_id: thread._id,

@@ -130,7 +130,7 @@ function CodeBlock({ language, value, codeExecutionEnabled }) {
     setRunning(true)
     setRunResult(null)
     try {
-      const { data } = await api.post('/execute', { code: value, language: 'javascript' })
+      const { data } = await api.post('/execute', { code: value, language: language })
       setRunResult(data)
     } catch (err) {
       console.error('Code execution error:', err)
@@ -143,14 +143,14 @@ function CodeBlock({ language, value, codeExecutionEnabled }) {
     }
   }
 
-  const isJS = language === 'javascript' || language === 'js'
+  const isExecutable = language === 'javascript' || language === 'js' || language === 'python' || language === 'py'
 
   return (
     <div className="relative group my-3 rounded-xl overflow-hidden border border-border-subtle">
       <div className="flex items-center justify-between px-4 py-2 bg-background-tertiary border-b border-border-subtle">
         <span className="text-xs font-mono text-foreground-muted">{language || 'code'}</span>
         <div className="flex items-center gap-3">
-          {codeExecutionEnabled && isJS && (
+          {codeExecutionEnabled && isExecutable && (
             <button
               onClick={handleRun}
               disabled={running}
