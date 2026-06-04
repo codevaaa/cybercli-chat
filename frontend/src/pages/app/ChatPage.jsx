@@ -4307,7 +4307,7 @@ export default function ChatPage() {
 
   const handleSend = useCallback(async (textOverride, modelOverride = null) => {
     const rawText = typeof textOverride === 'string' ? textOverride : input
-    if (!rawText.trim() || loading) return
+    if (!rawText.trim() || loading) return false
     const userText = rawText.trim()
 
     // Determine active model and system prompt override if voice chat is open
@@ -4454,11 +4454,12 @@ export default function ChatPage() {
           if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${err.message}` }
           return next
         })
+        return false
       } finally {
         setStreamingIndex(null)
         setLoading(false)
       }
-      return
+      return true
     }
     
     if (typeof textOverride !== 'string') {
@@ -4552,11 +4553,12 @@ export default function ChatPage() {
           next[next.length - 1] = { ...next[next.length - 1], content: `Error generating image: ${e.message}` }
           return next
         })
+        return false
       } finally {
         setStreamingIndex(null)
         setLoading(false)
       }
-      return
+      return true
     }
 
     // Guest mode / Incognito: no token or incognito → use completions endpoint directly
@@ -4655,18 +4657,19 @@ export default function ChatPage() {
           return next
         })
         setError('Chat failed. Please try again.')
+        return false
       } finally {
         setStreamingIndex(null)
         setLoading(false)
       }
-      return
+      return true
     }
     
     // Use the ref as fallback so rapid consecutive sends don't create duplicate threads
     let currentId = activeThreadId || activeThreadIdRef.current || creatingThreadRef.current
     let useGuestFallback = false
     if (!currentId) {
-      if (isCreatingThreadRef.current) return
+      if (isCreatingThreadRef.current) return false
       isCreatingThreadRef.current = true
       
       // Retry with exponential backoff (3 attempts)
@@ -4908,10 +4911,12 @@ export default function ChatPage() {
         return next
       })
       setError(errorMessage)
+      return false
     } finally {
       setStreamingIndex(null)
       setLoading(false)
     }
+    return true
   }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions, userPlan, effortLevel, thinkingEnabled])
 
   // ── User info (from state & localStorage) ──

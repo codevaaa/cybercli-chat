@@ -361,7 +361,9 @@ export default function KaliKalView({
     if (idx < 1 || loading) return
     const prevUserMsg = kaliMessages[idx - 1]
     if (prevUserMsg && prevUserMsg.role === 'user') {
-      handleSend(prevUserMsg.content, selectedKaliModel)
+      handleSend(prevUserMsg.content, selectedKaliModel).then(success => {
+        if (success) setKaliUsage(prev => prev + 1)
+      })
     }
   }, [kaliMessages, loading, handleSend, selectedKaliModel])
 
@@ -379,9 +381,9 @@ export default function KaliKalView({
         const threadId = await handleCreateThread('Kali Session', null, 'kali_kal')
         if (threadId) {
           // Small delay for navigation to settle, then send
-          setTimeout(() => {
-            handleSend(userText, selectedKaliModel)
-            setKaliUsage(prev => prev + 1)
+          setTimeout(async () => {
+            const success = await handleSend(userText, selectedKaliModel)
+            if (success) setKaliUsage(prev => prev + 1)
           }, 300)
         }
       } catch (err) {
@@ -394,8 +396,8 @@ export default function KaliKalView({
     }
 
     // Active thread exists — send directly
-    handleSend(userText, selectedKaliModel)
-    setKaliUsage(prev => prev + 1)
+    const success = await handleSend(userText, selectedKaliModel)
+    if (success) setKaliUsage(prev => prev + 1)
     if (typeof textOverride !== 'string') setInput('')
   }, [input, loading, isOverLimit, activeKaliThread, isCreating, handleCreateThread, handleSend, setInput, selectedKaliModel])
 
