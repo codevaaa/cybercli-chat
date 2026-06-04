@@ -4569,7 +4569,7 @@ export default function ChatPage() {
       setStreamingIndex(messages.length + 1)
       
       try {
-        const response = await fetch(`${API_BASE}/images/generate`, {
+        const response = await fetch(`${API_BASE}/media/generate`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
