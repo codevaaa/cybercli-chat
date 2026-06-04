@@ -471,6 +471,22 @@ export default function UpgradePage() {
                 >
                   {loadingPlan === 'team' ? 'Processing...' : 'Continue to Checkout'}
                 </button>
+                <button
+                  onClick={async () => {
+                    setLoadingPlan('team');
+                    try {
+                      await api.post('/orgs/dev-bypass');
+                      window.location.href = '/app/org';
+                    } catch (e) {
+                      alert('Bypass failed: ' + e.message);
+                    } finally {
+                      setLoadingPlan(null);
+                    }
+                  }}
+                  className="w-full mt-3 py-2 rounded-xl text-xs font-medium text-gray-500 border border-dashed border-gray-600 hover:text-white transition-all cursor-pointer"
+                >
+                  (Dev Only) Bypass Checkout & Create Org
+                </button>
               </div>
             </motion.div>
           </div>
