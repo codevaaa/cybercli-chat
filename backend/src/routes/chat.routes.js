@@ -327,7 +327,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
   // --- Kali_Kal Mode Rate Limiting ---
   if (thread.mode === 'kali_kal') {
     const User = (await import('../models/User.js')).default
-    const userObj = await User.findById(req.user.id)
+    const userObj = await User.findOne({ supabase_id: req.user.id })
     const plan = userObj?.plan || 'free'
     const limit = (plan === 'pro' || plan === 'max' || plan === 'enterprise') ? 100 : 10
     
