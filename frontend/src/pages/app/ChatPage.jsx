@@ -4097,6 +4097,8 @@ export default function ChatPage() {
     try {
       const { data } = await api.post('/chat', { title, model_id: selectedModel, folder_id: folderId, mode })
       setThreads(prev => [data, ...prev])
+      creatingThreadRef.current = data._id
+      activeThreadIdRef.current = data._id
       navigate(`/chat/${data._id}`)
       return data._id
     } catch (err) {

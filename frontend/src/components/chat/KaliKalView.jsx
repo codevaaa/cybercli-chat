@@ -9,6 +9,7 @@ import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import MatrixRain from './MatrixRain'
+import { CodevaMark } from '@components/ui/CodevaLogo'
 
 // ─── Kali-compatible models (kali: true in EXTRA_MODELS) ────────────────────
 const KALI_MODELS = [
@@ -441,7 +442,7 @@ export default function KaliKalView({
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-red-950/80 to-[#1A0508] border border-red-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(217,22,36,0.15)]">
-                <Shield className="w-4.5 h-4.5 text-red-500" />
+                <CodevaMark size={20} color="#ef4444" />
               </div>
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_6px_rgba(255,0,51,0.6)]" />
             </div>

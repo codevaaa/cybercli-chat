@@ -25,7 +25,7 @@ router.post('/', requireAuth, async (req, res) => {
       is_pinned: z.boolean().optional(),
       is_archived: z.boolean().optional(),
       tags: z.array(z.string()).optional(),
-      mode: z.enum(['standard', 'kalikal']).optional(),
+      mode: z.enum(['standard', 'kalikal', 'kali_kal']).optional(),
     })
     const data = schema.parse(req.body)
     const thread = new Thread({
