@@ -25,6 +25,7 @@ import InviteFriendsModal from '../../components/invite/InviteFriendsModal.jsx'
 import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
 import KaliKalView from '../../components/chat/KaliKalView.jsx'
 import MatrixRain from '../../components/chat/MatrixRain.jsx'
+import KaliKalBanner from '../../components/chat/KaliKalBanner.jsx'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -3589,7 +3590,6 @@ export default function ChatPage() {
 
   // Claude & Cyber Mode Upgrades
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  const [cyberMode, setCyberMode] = useState(false)
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [workspaceTab, setWorkspaceTab] = useState('terminal')
   const [terminalHistory, setTerminalHistory] = useState([
@@ -5000,7 +5000,7 @@ export default function ChatPage() {
 
   return (
     <div
-      className={`relative h-screen flex overflow-hidden ${cyberMode ? 'cyber-theme' : ''} ${isKaliMode ? 'kali-theme' : ''}`}
+      className={`relative h-screen flex overflow-hidden ${isKaliMode ? 'kali-theme' : ''}`}
       style={{
         background: '#0C0C0C',
       }}
@@ -5008,6 +5008,12 @@ export default function ChatPage() {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+
+      {/* ── Kali_Kal Announcement Banner ── */}
+      <KaliKalBanner onActivateKali={() => {
+        setActiveNav('kali_kal')
+        setSelectedModel('huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b')
+      }} />
 
       {/* ── Sidebar ── */}
       {isMobile && sidebarOpen && (
@@ -5484,35 +5490,12 @@ export default function ChatPage() {
           
           <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' }}>
             {/* Active mode badges */}
-            <AnimatePresence>
-              {cyberMode && (
-                <motion.span
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="hidden sm:flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase tracking-widest"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  CYBER ACTIVE
-                </motion.span>
-              )}
-            </AnimatePresence>
+
 
             {/* Top Bar Toggles - Hide on Desktop for minimalist aesthetic */}
             {!window.electronAPI && (
               <>
-                {/* Cyber Mode Toggle */}
-                <button
-                  onClick={() => setCyberMode(prev => !prev)}
-                  className={`p-2 rounded-xl border transition-all duration-200 ${
-                    cyberMode 
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
-                  }`}
-                  title="Toggle Cyber Mode"
-                >
-                  <Zap className="w-4 h-4" />
-                </button>
+
 
                 {/* Workspace split toggle */}
                 <button
