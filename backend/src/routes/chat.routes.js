@@ -525,7 +525,7 @@ Rules:
               res.write(`data: ${JSON.stringify({ type: 'token', content: executionOutput })}\n\n`)
             } catch (sandboxErr) {
               console.error('Sandbox execution failed:', sandboxErr)
-              const errOut = `\n\n**🤖 Sandbox Execution Failed:**\n```terminal\nError: ${sandboxErr.message}\n````
+              const errOut = `\n\n**🤖 Sandbox Execution Failed:**\n\`\`\`terminal\nError: ${sandboxErr.message}\n\`\`\``
               assistantReply += errOut
               res.write(`data: ${JSON.stringify({ type: 'token', content: errOut })}\n\n`)
             }
