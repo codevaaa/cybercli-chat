@@ -212,9 +212,9 @@ const FALLBACK_CHAIN = [
 ]
 
 const KALI_FALLBACK_CHAIN = [
-  'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b',
-  'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b',
-  'openrouter/dolphin-venice-free', // Uncensored free model on OpenRouter
+  'groq/llama-3.3-70b',
+  'groq/llama-3.1-70b',
+  'groq/llama-3.1-8b',
 ]
 
 /**
