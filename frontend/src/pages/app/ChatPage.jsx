@@ -263,7 +263,7 @@ function ImageGeneratorWidget({ src, alt }) {
           }
 
           const token = localStorage.getItem('sb-access-token')
-          const response = await fetch(`${API_BASE}/images/generate`, {
+          const response = await fetch(`${API_BASE}/media/generate`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -5847,6 +5847,7 @@ export default function ChatPage() {
                   navigate={navigate}
                   userPlan={userPlan}
                   activeThreadId={activeThreadId || activeThreadIdRef.current || creatingThreadRef.current}
+                  handleDeleteThread={handleDeleteThread}
                 />
               ) : activeNav === 'cowork' || activeNav === 'code' ? (
                 <ComingSoonView 

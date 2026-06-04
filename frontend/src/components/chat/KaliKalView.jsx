@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Shield, Terminal, Send, Copy, Check, RotateCcw, ChevronDown,
+  Shield, Terminal, Send, Copy, Check, RotateCcw, ChevronDown, Trash2, Play,
   Globe, Cpu, Search, Code2, Skull, Crosshair, Zap, Lock, ArrowUp,
   Loader2, AlertTriangle
 } from 'lucide-react'
@@ -12,6 +12,7 @@ import MatrixRain from './MatrixRain'
 import { CodevaMark } from '@components/ui/CodevaLogo'
 import { useNavigate } from 'react-router-dom'
 import mermaid from 'mermaid'
+import api from '../../lib/api.js'
 
 // ─── Kali-compatible models (kali: true in EXTRA_MODELS) ────────────────────
 const KALI_MODELS = [
@@ -112,9 +113,13 @@ function KaliMermaidDiagram({ code }) {
   )
 }
 
-// ─── Kali Code Block ────────────────────────────────────────────────────────
 function KaliCodeBlock({ language, value }) {
   const [copied, setCopied] = useState(false)
+  const [status, setStatus] = useState('idle') // idle, running, success, error
+  const [runResult, setRunResult] = useState(null)
+  const [errMessage, setErrMessage] = useState('')
+
+  const isExecutable = language === 'javascript' || language === 'js' || language === 'python' || language === 'py'
 
   const handleCopy = () => {
     navigator.clipboard.writeText(value)
@@ -122,17 +127,65 @@ function KaliCodeBlock({ language, value }) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleRun = async () => {
+    if (!isExecutable || status === 'running') return
+    setStatus('running')
+    setRunResult(null)
+    setErrMessage('')
+
+    try {
+      const { data } = await api.post('/execute', { code: value, language: language })
+      setRunResult(data)
+      setStatus('success')
+      
+      const evt = new CustomEvent('kali-terminal-log', {
+        detail: { type: 'terminal_stdout', content: data.output || 'Execution finished.' }
+      })
+      window.dispatchEvent(evt)
+    } catch (err) {
+      console.error(err)
+      setStatus('error')
+      setErrMessage(err.response?.data?.error || err.message || 'Execution failed')
+      
+      const evt = new CustomEvent('kali-terminal-log', {
+        detail: { type: 'terminal_stderr', content: err.response?.data?.error || err.message }
+      })
+      window.dispatchEvent(evt)
+    }
+  }
+
   return (
     <div className="relative group my-3 rounded-lg overflow-hidden border border-red-900/40">
       <div className="flex items-center justify-between px-4 py-2 bg-[#0D0208] border-b border-red-900/30">
         <span className="text-[10px] font-mono text-red-400/70 uppercase tracking-wider">{language || 'code'}</span>
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1.5 text-[10px] text-red-400/60 hover:text-red-400 transition-colors"
-        >
-          {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-          {copied ? 'Copied' : 'Copy'}
-        </button>
+        <div className="flex items-center gap-3">
+          {isExecutable && (
+            <button
+              onClick={handleRun}
+              disabled={status === 'running'}
+              className="flex items-center gap-1.5 text-[10px] font-bold text-red-500/80 hover:text-red-400 transition-colors bg-red-950/40 hover:bg-red-900/50 px-2 py-1 rounded border border-red-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {status === 'running' ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Running...
+                </>
+              ) : (
+                <>
+                  <Play className="w-3 h-3" />
+                  Run
+                </>
+              )}
+            </button>
+          )}
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 text-[10px] text-red-400/60 hover:text-red-400 transition-colors"
+          >
+            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
       </div>
       <SyntaxHighlighter
         language={language || 'text'}
@@ -148,6 +201,22 @@ function KaliCodeBlock({ language, value }) {
       >
         {value}
       </SyntaxHighlighter>
+      {runResult && status === 'success' && (
+        <div className="bg-[#0A0205] border-t border-red-900/30 p-3 max-h-48 overflow-y-auto">
+          <div className="text-[10px] text-emerald-500/70 font-mono mb-1 flex items-center gap-1">
+            <Check className="w-3 h-3" /> Output:
+          </div>
+          <pre className="text-[11px] text-red-300/80 font-mono whitespace-pre-wrap">{runResult.output}</pre>
+        </div>
+      )}
+      {status === 'error' && (
+        <div className="bg-[#0A0205] border-t border-red-900/30 p-3 max-h-48 overflow-y-auto">
+          <div className="text-[10px] text-red-500/70 font-mono mb-1 flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" /> Error:
+          </div>
+          <pre className="text-[11px] text-red-400 font-mono whitespace-pre-wrap">{errMessage}</pre>
+        </div>
+      )}
     </div>
   )
 }
@@ -395,6 +464,7 @@ export default function KaliKalView({
   handleSend,
   loading = false,
   handleCreateThread,
+  handleDeleteThread,
   navigate,
   userPlan = 'free',
   activeThreadId = null
@@ -662,19 +732,29 @@ export default function KaliKalView({
                     <p className="text-[9px] text-red-500/30 uppercase tracking-[0.2em] font-bold mb-3 px-1">Previous Sessions</p>
                     <div className="space-y-1.5">
                       {kaliThreads.slice(0, 5).map(thread => (
-                        <button
-                          key={thread._id}
-                          onClick={() => navigate(`/chat/${thread._id}`)}
-                          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-[#0D0208]/50 border border-red-900/20 hover:border-red-500/25 hover:bg-red-950/15 transition-all group/thread text-left"
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <Terminal className="w-3.5 h-3.5 text-red-500/30 group-hover/thread:text-red-500/60 transition-colors flex-shrink-0" />
-                            <span className="text-[12px] text-red-400/60 group-hover/thread:text-red-400/80 truncate transition-colors">{thread.title}</span>
-                          </div>
-                          <span className="text-[9px] text-red-500/25 font-mono flex-shrink-0 ml-2">
-                            {new Date(thread.updatedAt || thread.createdAt).toLocaleDateString()}
-                          </span>
-                        </button>
+                        <div key={thread._id} className="relative group/thread">
+                          <button
+                            onClick={() => navigate(`/chat/${thread._id}`)}
+                            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-[#0D0208]/50 border border-red-900/20 hover:border-red-500/25 hover:bg-red-950/15 transition-all text-left"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0 pr-10">
+                              <Terminal className="w-3.5 h-3.5 text-red-500/30 group-hover/thread:text-red-500/60 transition-colors flex-shrink-0" />
+                              <span className="text-[12px] text-red-400/60 group-hover/thread:text-red-400/80 truncate transition-colors">{thread.title}</span>
+                            </div>
+                            <span className="text-[9px] text-red-500/25 font-mono flex-shrink-0 ml-2 group-hover/thread:opacity-0 transition-opacity">
+                              {new Date(thread.updatedAt || thread.createdAt).toLocaleDateString()}
+                            </span>
+                          </button>
+                          {handleDeleteThread && (
+                            <button
+                              onClick={(e) => handleDeleteThread(thread._id, e)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-red-500/40 hover:text-red-400 hover:bg-red-950/50 rounded opacity-0 group-hover/thread:opacity-100 transition-all z-10"
+                              title="Delete Session"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </motion.div>
