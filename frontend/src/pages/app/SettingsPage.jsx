@@ -363,7 +363,8 @@ function PrivacyTab({ settings, onUpdate, onDownloadData }) {
   )
 }
 
-function BillingTab({ onUpgrade, onManageBilling }) {
+function BillingTab({ userPlan = 'free', onUpgrade, onManageBilling }) {
+  const planDisplay = userPlan === 'free' ? 'Free Plan' : `${userPlan.charAt(0).toUpperCase() + userPlan.slice(1)} Plan`;
   return (
     <div>
       <SectionHeading>Plan</SectionHeading>
@@ -374,7 +375,7 @@ function BillingTab({ onUpgrade, onManageBilling }) {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-base font-semibold text-foreground-primary">Free Plan</span>
+              <span className="text-base font-semibold text-foreground-primary">{planDisplay}</span>
               <span
                 className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                 style={{ background: 'rgba(217,119,87,0.15)', color: '#D97757' }}
@@ -382,9 +383,11 @@ function BillingTab({ onUpgrade, onManageBilling }) {
                 CURRENT
               </span>
             </div>
-            <p className="text-sm text-foreground-muted">50 messages/hour · Basic models · Gemini Flash TTS</p>
+            <p className="text-sm text-foreground-muted">
+              {userPlan === 'free' ? '50 messages/hour · Basic models · Gemini Flash TTS' : 'Premium features unlocked'}
+            </p>
           </div>
-          <span className="text-xl font-bold text-foreground-primary">$0</span>
+          <span className="text-xl font-bold text-foreground-primary">{userPlan === 'free' ? '$0' : ''}</span>
         </div>
       </div>
 
@@ -893,6 +896,16 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
   const [showInviteModal, setShowInviteModal] = useState(false)
+  const [userPlan, setUserPlan] = useState('free')
+
+  useEffect(() => {
+    // Fetch stats and plan
+    api.get('/auth/me/stats')
+      .then(res => {
+         if (res.data?.plan) setUserPlan(String(res.data.plan).toLowerCase())
+      })
+      .catch(err => console.error('Error fetching plan/stats', err))
+  }, [])
 
   useEffect(() => {
     const path = location.pathname
@@ -1177,7 +1190,7 @@ export default function SettingsPage() {
     general:      <GeneralTab      settings={settings} onUpdate={handleUpdate} />,
     account:      <AccountTab      settings={settings} onUpdate={handleUpdate} onChangePassword={handleChangePassword} onDeleteAccount={handleDeleteAccount} />,
     privacy:      <PrivacyTab      settings={settings} onUpdate={handleUpdate} onDownloadData={handleDownloadData} />,
-    billing:      <BillingTab      onUpgrade={handleUpgradeToPro} onManageBilling={handleManageBilling} />,
+    billing:      <BillingTab      userPlan={userPlan} onUpgrade={handleUpgradeToPro} onManageBilling={handleManageBilling} />,
     capabilities: <CapabilitiesTab settings={settings} onUpdate={handleUpdate} />,
     connectors:   <ConnectorsTab />,
     'api-keys':   <DeveloperTab />,

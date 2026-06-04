@@ -5542,7 +5542,7 @@ export default function ChatPage() {
               to="/upgrade"
               className="text-[12px] font-sans px-3.5 py-1.5 rounded-full bg-[#1e1e1e] border border-white/5 hover:bg-[#252525] text-[#d4d4d4] transition-all flex items-center gap-2 select-none shadow-sm"
             >
-              <span>Free plan</span>
+              <span>{userPlan === 'free' ? 'Free plan' : `${userPlan.charAt(0).toUpperCase() + userPlan.slice(1)} plan`}</span>
               <span className="w-[3px] h-[3px] rounded-full bg-[#666666]" />
               <span className="text-[#a3a3a3] hover:text-[#d4d4d4] underline decoration-white/20 underline-offset-4">Upgrade</span>
             </Link>
