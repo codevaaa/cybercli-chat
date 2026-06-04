@@ -3998,6 +3998,12 @@ export default function ChatPage() {
   useEffect(() => {
     if (threadId && isLoggedIn()) {
       activeThreadIdRef.current = threadId
+      
+      const t = threads.find(x => x._id === threadId)
+      if (t && (t.mode === 'kali_kal' || t.mode === 'kalikal')) {
+        setActiveNav('kali_kal')
+      }
+
       if (creatingThreadRef.current === threadId) {
         creatingThreadRef.current = null
       } else {
@@ -4007,7 +4013,7 @@ export default function ChatPage() {
       activeThreadIdRef.current = null
       setMessages([])
     }
-  }, [threadId])
+  }, [threadId, threads])
 
   useEffect(() => {
     const fetchCapabilities = async () => {
@@ -4900,7 +4906,7 @@ export default function ChatPage() {
       console.error('Chat stream error:', err)
       const isNetworkError = err.message.includes('Failed to fetch')
       const errorMessage = isNetworkError 
-        ? 'Cannot reach server. Check your connection or ensure backend is running.' 
+        ? `Cannot reach server. (${err.name}: ${err.message}) [ID: ${currentId}]` 
         : `Error: ${err.message}`
         
       setMessages(prev => {
@@ -4961,8 +4967,9 @@ export default function ChatPage() {
     }
   }
 
-  const pinnedThreads = threads.filter(t => t.is_pinned)
-  const recentThreads = threads.filter(t => !t.is_pinned).slice(0, 30)
+  const standardThreads = threads.filter(t => t.mode !== 'kali_kal' && t.mode !== 'kalikal')
+  const pinnedThreads = standardThreads.filter(t => t.is_pinned)
+  const recentThreads = standardThreads.filter(t => !t.is_pinned).slice(0, 30)
 
   const selectedModelObj = [...MODELS, ...EXTRA_MODELS].find(m => m.id === selectedModel)
   const isKaliMode = selectedModelObj?.kali === true

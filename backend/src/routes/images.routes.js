@@ -114,5 +114,48 @@ router.post('/generate', optionalAuth, async (req, res) => {
     return res.status(500).json({ error: error.message || 'Internal server error during image generation' })
   }
 })
+router.get('/generate-direct', async (req, res) => {
+  const { prompt } = req.query
+  if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+    return res.status(400).send('Prompt is required')
+  }
+
+  try {
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
+    const apiKey = process.env.CLOUDFLARE_API_KEY1
+
+    if (accountId && apiKey) {
+      const cfResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: prompt.trim() })
+      })
+      
+      if (cfResponse.ok) {
+        const buffer = await cfResponse.arrayBuffer()
+        res.setHeader('Content-Type', 'image/jpeg')
+        return res.send(Buffer.from(buffer))
+      }
+    }
+
+    // Fallback to Pollinations
+    const sanitizedPrompt = encodeURIComponent(prompt.trim())
+    const pollUrl = `https://image.pollinations.ai/p/${sanitizedPrompt}?width=1024&height=1024&nologo=true`
+    const pollResponse = await fetch(pollUrl)
+    if (pollResponse.ok) {
+      const buffer = await pollResponse.arrayBuffer()
+      res.setHeader('Content-Type', 'image/jpeg')
+      return res.send(Buffer.from(buffer))
+    }
+
+    res.status(500).send('Failed to generate image')
+  } catch (error) {
+    console.error('Image generation error:', error)
+    res.status(500).send('Internal server error')
+  }
+})
 
 export default router

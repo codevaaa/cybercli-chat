@@ -422,7 +422,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
 
     // 5. Handle Image Generation Instructions
     if (imageGenerationEnabled) {
-      extraSystemContent += `\n\n[IMAGE GENERATION CAPABILITY]\nYou have the real power to generate images. If the user asks you to generate, draw, or paint an image, you MUST formulate a detailed, high-quality, English image prompt and output it inside a markdown image tag using Pollinations AI, exactly like this:\n![description](https://image.pollinations.ai/p/{detailed_url_encoded_prompt}?width=512&height=512&nologo=true)\nDo not use placeholders. Generate a real descriptive prompt.`
+      extraSystemContent += `\n\n[IMAGE GENERATION CAPABILITY]\nYou have the real power to generate images. If the user asks you to generate, draw, or paint an image, you MUST formulate a detailed, high-quality, English image prompt and output it inside a markdown image tag using the backend direct generation URL exactly like this:\n![description](https://cybercli-api.onrender.com/api/v1/images/generate-direct?prompt={url_encoded_prompt})\nDo not use placeholders. Generate a real descriptive prompt. E.g. ![A futuristic cyberpunk city](https://cybercli-api.onrender.com/api/v1/images/generate-direct?prompt=A+futuristic+cyberpunk+city+neon+lights)`
     }
 
     // 6. Handle Code Execution Instructions
@@ -462,7 +462,7 @@ Rules:
 
     // 8. Call LLM Gateway
     let generator
-    const isKaliKal = thread.mode === 'kalikal'
+    const isKaliKal = (thread.mode === 'kalikal' || thread.mode === 'kali_kal')
     
     if (model === 'council') {
       const { runCouncilStream } = await import('../services/llm/councilEngine.js')
