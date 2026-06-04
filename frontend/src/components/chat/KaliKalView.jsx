@@ -31,6 +31,47 @@ const KALI_QUICK_ACTIONS = [
 // ─── Usage Limits ───────────────────────────────────────────────────────────
 const USAGE_LIMITS = { free: 20, pro: 100 }
 
+// ─── Kali Terminal Component ───────────────────────────────────────────────────
+function KaliTerminal({ logs }) {
+  const scrollRef = useRef(null)
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [logs])
+
+  if (!logs || logs.length === 0) return null
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="my-4 mx-2 rounded-xl overflow-hidden border border-red-900/40 bg-[#050102] shadow-[0_0_20px_rgba(220,38,38,0.15)] flex flex-col"
+    >
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-red-900/30 bg-[#0A0205]">
+        <Terminal className="w-4 h-4 text-red-500/80" />
+        <span className="text-[11px] font-bold text-red-400/80 uppercase tracking-widest">E2B Cloud Sandbox</span>
+        <div className="ml-auto flex gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-900/40" />
+          <span className="w-2.5 h-2.5 rounded-full bg-red-900/40" />
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500/60 animate-pulse" />
+        </div>
+      </div>
+      <div
+        ref={scrollRef}
+        className="p-4 text-[12px] font-mono leading-relaxed text-red-300/80 max-h-[300px] overflow-y-auto whitespace-pre-wrap"
+      >
+        {logs.map((log, idx) => (
+          <div key={idx} className={`${log.startsWith('[STDERR]') ? 'text-red-500 font-bold' : ''}`}>
+            {log.replace(/^\[STDOUT\]\n|^\[STDERR\]\n/, '')}
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── Kali Mermaid Component ───────────────────────────────────────────────────
 function KaliMermaidDiagram({ code }) {
   const containerRef = useRef(null)
@@ -65,8 +106,8 @@ function KaliMermaidDiagram({ code }) {
   }, [code])
 
   return (
-    <div className="my-4 p-4 rounded-xl border border-red-900/40 bg-[#0A0205] flex justify-center shadow-[0_0_15px_rgba(220,38,38,0.1)] overflow-x-auto">
-      <div ref={containerRef} className="mermaid-container max-w-full" />
+    <div className="my-4 p-4 rounded-xl border border-red-900/40 bg-[#0A0205] shadow-[0_0_15px_rgba(220,38,38,0.1)] overflow-x-auto w-full">
+      <div ref={containerRef} className="mermaid-container w-full min-w-max" />
     </div>
   )
 }
@@ -364,6 +405,7 @@ export default function KaliKalView({
     try { return parseInt(localStorage.getItem('kali_usage') || '0', 10) } catch { return 0 }
   })
   const [isCreating, setIsCreating] = useState(false)
+  const [sandboxLogs, setSandboxLogs] = useState([])
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -395,6 +437,18 @@ export default function KaliKalView({
     localStorage.setItem('kali_usage', String(kaliUsage))
   }, [kaliUsage])
 
+  // ── Listen to Terminal Stream ──
+  useEffect(() => {
+    const handleTerminalLog = (e) => {
+      const { type, content } = e.detail
+      if (type === 'terminal_stdout' || type === 'terminal_stderr') {
+        setSandboxLogs(prev => [...prev, content])
+      }
+    }
+    window.addEventListener('kali-terminal-log', handleTerminalLog)
+    return () => window.removeEventListener('kali-terminal-log', handleTerminalLog)
+  }, [])
+
   // ── Copy handler ──
   const handleCopy = useCallback((content, idx) => {
     navigator.clipboard.writeText(content)
@@ -423,6 +477,7 @@ export default function KaliKalView({
     // If no active kali thread, create one first
     if (!activeKaliThread && !isCreating) {
       setIsCreating(true)
+      setSandboxLogs([]) // Clear old logs
       try {
         const threadId = await handleCreateThread('Kali Session', null, 'kali_kal')
         if (threadId) {
@@ -442,6 +497,7 @@ export default function KaliKalView({
     }
 
     // Active thread exists — send directly
+    setSandboxLogs([]) // Clear old logs
     const success = await handleSend(userText, selectedKaliModel)
     if (success) setKaliUsage(prev => prev + 1)
     if (typeof textOverride !== 'string') setInput('')
@@ -641,6 +697,10 @@ export default function KaliKalView({
                 ))}
               </AnimatePresence>
             )}
+            
+            {/* ── Terminal Stream Output ── */}
+            {sandboxLogs.length > 0 && <KaliTerminal logs={sandboxLogs} />}
+            
             <div ref={messagesEndRef} />
           </div>
         </div>

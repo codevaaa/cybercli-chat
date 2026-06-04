@@ -6,9 +6,11 @@ import logger from '../../utils/logger.js'
  * Executes Python code inside a secure E2B cloud sandbox.
  * @param {string} code - The code to execute.
  * @param {string} userId - The ID of the user requesting execution.
+ * @param {Function} [onStdout] - Callback for real-time stdout chunks.
+ * @param {Function} [onStderr] - Callback for real-time stderr chunks.
  * @returns {Promise<{stdout: string, stderr: string, error?: string}>}
  */
-export async function executeInSandbox(code, userId) {
+export async function executeInSandbox(code, userId, onStdout, onStderr) {
   try {
     // 1. Check Usage Limits
     const user = await User.findOne({ supabase_id: userId })
@@ -42,8 +44,7 @@ export async function executeInSandbox(code, userId) {
     // 3. Create Sandbox & Execute
     logger.info(`Starting E2B Sandbox for user ${userId}...`)
     
-    // We don't stream here because LLMs prefer the complete output text to reason upon.
-    // If the API key is missing, it will throw.
+    // Create sandbox instance
     const sandbox = await Sandbox.create({
       apiKey: process.env.E2B_API_KEY
     })
@@ -51,7 +52,9 @@ export async function executeInSandbox(code, userId) {
     logger.info(`Sandbox ${sandbox.sandboxId} started. Executing code...`)
     
     const execution = await sandbox.runCode(code, {
-      language: 'python' // default to python for now
+      language: 'python',
+      onStdout: onStdout ? (out) => onStdout(out.line) : undefined,
+      onStderr: onStderr ? (err) => onStderr(err.line) : undefined
     })
 
     await sandbox.kill()

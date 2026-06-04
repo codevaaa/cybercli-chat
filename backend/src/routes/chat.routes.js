@@ -508,7 +508,16 @@ Rules:
             
             try {
               const { executeInSandbox } = await import('../services/sandbox/agenticSandbox.js')
-              const sandboxResult = await executeInSandbox(pythonMatch[1], req.user.id)
+              
+              // Define streaming callbacks
+              const onStdout = (line) => {
+                res.write(`data: ${JSON.stringify({ type: 'terminal_stdout', content: line })}\n\n`)
+              }
+              const onStderr = (line) => {
+                res.write(`data: ${JSON.stringify({ type: 'terminal_stderr', content: line })}\n\n`)
+              }
+              
+              const sandboxResult = await executeInSandbox(pythonMatch[1], req.user.id, onStdout, onStderr)
               
               let executionOutput = '\n\n**🤖 Autonomous Sandbox Execution Result:**\n```terminal\n'
               if (sandboxResult.error) {

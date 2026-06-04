@@ -4440,9 +4440,11 @@ export default function ChatPage() {
               } else if (parsed.type === 'error') {
                 setMessages(prev => {
                   const next = [...prev]
-                  if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${parsed.content}` }
+                  if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${parsed.content}`, error: true }
                   return next
                 })
+              } else if (parsed.type === 'terminal_stdout' || parsed.type === 'terminal_stderr') {
+                window.dispatchEvent(new CustomEvent('kali-terminal-log', { detail: parsed }))
               }
             } catch {}
           }

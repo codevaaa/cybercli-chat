@@ -135,11 +135,13 @@ router.get('/generate-direct', async (req, res) => {
       })
       
       if (cfResponse.ok) {
-        const buffer = await cfResponse.arrayBuffer()
-        res.setHeader('Content-Type', 'image/jpeg')
-        return res.send(Buffer.from(buffer))
+        const json = await cfResponse.json()
+        if (json.success && json.result && json.result.image) {
+          const buffer = Buffer.from(json.result.image, 'base64')
+          res.setHeader('Content-Type', 'image/jpeg')
+          return res.send(buffer)
+        }
       }
-    }
 
     // Fallback to Pollinations
     const sanitizedPrompt = encodeURIComponent(prompt.trim())

@@ -85,10 +85,25 @@ export default function SignupPage() {
     }
   }
 
+const DISPOSABLE_EMAIL_DOMAINS = [
+  'mailinator.com', 'yopmail.com', 'temp-mail.org', 'guerrillamail.com',
+  '10minutemail.com', 'tempmail.com', 'throwawaymail.com', 'sharklasers.com',
+  'fakemail.net', 'temp-mail.io', 'minuteinbox.com', 'tempinbox.com',
+  'getairmail.com', 'incognitomail.org', 'maildrop.cc', 'dispostable.com',
+  'tempmailaddress.com', '10minutemail.net'
+]
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     clearError()
     setLocalError(null)
+
+    // Disposable email check
+    const domain = form.email.split('@')[1]?.toLowerCase()
+    if (domain && DISPOSABLE_EMAIL_DOMAINS.includes(domain)) {
+      setLocalError('Temporary/disposable emails are not allowed for security reasons.')
+      return
+    }
 
     if (form.password.length < 8) {
       setLocalError('Password must be at least 8 characters long')
