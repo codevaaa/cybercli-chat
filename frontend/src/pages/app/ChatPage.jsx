@@ -3431,54 +3431,6 @@ function SearchModal({ isOpen, onClose, navigate }) {
   )
 }
 
-// ─── KaliKal View ─────────────────────────────────────────────────────────────
-function KaliKalView({ daemonConnected }) {
-  return (
-    <div className="flex flex-col h-full bg-[#0a0a0a] text-emerald-400 font-mono p-6">
-      <div className="flex items-center justify-between mb-6 border-b border-emerald-900/50 pb-4">
-        <h2 className="text-2xl font-bold flex items-center gap-3 tracking-widest text-emerald-500">
-          <Terminal className="w-6 h-6" />
-          KALI_KAL SYSTEM
-        </h2>
-        <div className="flex items-center gap-3 text-xs">
-          <span className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${daemonConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-            {daemonConnected ? 'DAEMON CONNECTED' : 'DAEMON DISCONNECTED'}
-          </span>
-        </div>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto space-y-4">
-        <div className="p-4 rounded border border-emerald-900/30 bg-emerald-950/10">
-          <p className="text-sm opacity-80 mb-2">Initialize Autonomous Execution Module...</p>
-          <p className="text-sm opacity-80 mb-2">Loading core exploitation scripts...</p>
-          <p className="text-sm opacity-80 mb-2">Bypassing standard safety protocols...</p>
-          <p className="text-sm font-bold text-emerald-300 mt-4">System Ready. Awaiting coordinates.</p>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 mt-6">
-          <button className="p-4 rounded border border-emerald-900 hover:bg-emerald-900/20 text-left transition-colors">
-            <h3 className="font-bold mb-1 flex items-center gap-2"><Zap className="w-4 h-4" /> Quick Recon</h3>
-            <p className="text-xs opacity-70">Execute rapid target enumeration.</p>
-          </button>
-          <button className="p-4 rounded border border-emerald-900 hover:bg-emerald-900/20 text-left transition-colors">
-            <h3 className="font-bold mb-1 flex items-center gap-2"><Skull className="w-4 h-4" /> Exploit Mode</h3>
-            <p className="text-xs opacity-70">Engage autonomous vulnerability exploitation.</p>
-          </button>
-        </div>
-      </div>
-      
-      <div className="mt-4 flex items-center gap-3 border border-emerald-900/50 rounded p-2 bg-emerald-950/20">
-        <span className="text-emerald-500 font-bold pl-2">{'>'}</span>
-        <input 
-          type="text" 
-          placeholder="Enter command or target..." 
-          className="flex-1 bg-transparent border-none outline-none text-emerald-400 placeholder:text-emerald-800 font-mono text-sm"
-        />
-      </div>
-    </div>
-  )
-}
 
 // ─── Coming Soon View ──────────────────────────────────────────────────────────
 
