@@ -4,6 +4,7 @@ const threadSchema = new mongoose.Schema({
   user_id: { type: String, required: true, index: true },
   title: { type: String, default: 'New Chat' },
   model_id: { type: String, default: 'auto' },
+  mode: { type: String, enum: ['standard', 'kalikal'], default: 'standard' },
   folder_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder', default: null },
   project_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', default: null },
   style_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Style', default: null },

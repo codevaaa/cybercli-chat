@@ -25,12 +25,14 @@ router.post('/', requireAuth, async (req, res) => {
       is_pinned: z.boolean().optional(),
       is_archived: z.boolean().optional(),
       tags: z.array(z.string()).optional(),
+      mode: z.enum(['standard', 'kalikal']).optional(),
     })
     const data = schema.parse(req.body)
     const thread = new Thread({
       user_id: req.user.id,
       title: data.title || 'New Chat',
       model_id: data.model_id || 'auto',
+      mode: data.mode || 'standard',
       folder_id: data.folder_id || null,
       project_id: data.project_id || null,
       style_id: data.style_id || null
@@ -322,6 +324,20 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     return res.status(404).json({ error: 'Thread not found' })
   }
 
+  // --- Kali_Kal Mode Rate Limiting ---
+  if (thread.mode === 'kali_kal') {
+    const User = (await import('../models/User.js')).default
+    const userObj = await User.findById(req.user.id)
+    const plan = userObj?.plan || 'free'
+    const limit = (plan === 'pro' || plan === 'max' || plan === 'enterprise') ? 100 : 10
+    
+    const count = await Message.countDocuments({ thread_id: thread._id, role: 'assistant' })
+    if (count >= limit) {
+      return res.status(403).json({ error: `Kali_Kal Mode limit reached (${limit} responses). Upgrade to Pro for more.` })
+    }
+  }
+
+
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
@@ -446,11 +462,13 @@ Rules:
 
     // 8. Call LLM Gateway
     let generator
+    const isKaliKal = thread.mode === 'kalikal'
+    
     if (model === 'council') {
       const { runCouncilStream } = await import('../services/llm/councilEngine.js')
       generator = runCouncilStream(history)
     } else {
-      generator = await llmGateway.complete({ messages: history, model: model || thread.model_id, temperature, effort, thinking })
+      generator = await llmGateway.complete({ messages: history, model: model || thread.model_id, temperature, effort, thinking, isKaliKal })
     }
     
     let assistantReply = ''

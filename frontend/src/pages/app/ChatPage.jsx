@@ -23,6 +23,8 @@ import { useStyleStore } from '@stores/styleStore.js'
 import CodevaMark, { CodevaWordmark } from '../../components/ui/CodevaLogo.jsx'
 import InviteFriendsModal from '../../components/invite/InviteFriendsModal.jsx'
 import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
+import KaliKalView from '../../components/chat/KaliKalView.jsx'
+import MatrixRain from '../../components/chat/MatrixRain.jsx'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -4131,9 +4133,9 @@ export default function ChatPage() {
     }
   }
 
-  const handleCreateThread = async (title = 'New Chat', folderId = null) => {
+  const handleCreateThread = async (title = 'New Chat', folderId = null, mode = 'standard') => {
     try {
-      const { data } = await api.post('/chat', { title, model_id: selectedModel, folder_id: folderId })
+      const { data } = await api.post('/chat', { title, model_id: selectedModel, folder_id: folderId, mode })
       setThreads(prev => [data, ...prev])
       navigate(`/chat/${data._id}`)
       return data._id
@@ -5664,7 +5666,12 @@ export default function ChatPage() {
               </div>
             )}
             {/* Main Content Area based on Nav selection */}
-            <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto flex flex-col min-h-0 relative">
+              {threads.find(t => t._id === threadId)?.mode === 'kali_kal' && (
+                <div className="absolute inset-0 z-0 opacity-15 pointer-events-none">
+                  <MatrixRain color="#D91624" />
+                </div>
+              )}
               {activeNav === 'chats' ? (
                 messages.length === 0 && !loading ? (
                   <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full px-4 pb-20">
@@ -5816,9 +5823,16 @@ export default function ChatPage() {
                   messages={messages}
                 />
               ) : activeNav === 'kali_kal' ? (
-                <ComingSoonView 
-                  title="Kali_Kal Mode" 
-                  description="Advanced offensive security capabilities and autonomous red-teaming are currently in development."
+                <KaliKalView 
+                  threads={threads}
+                  messages={messages}
+                  input={input}
+                  setInput={setInput}
+                  handleSend={handleSend}
+                  loading={loading}
+                  handleCreateThread={handleCreateThread}
+                  navigate={navigate}
+                  userPlan={userPlan}
                 />
               ) : activeNav === 'cowork' || activeNav === 'code' ? (
                 <ComingSoonView 
