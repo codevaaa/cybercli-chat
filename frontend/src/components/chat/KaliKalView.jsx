@@ -16,9 +16,9 @@ import api from '../../lib/api.js'
 
 // ─── Kali-compatible models (kali: true in EXTRA_MODELS) ────────────────────
 const KALI_MODELS = [
-  { id: 'groq/llama-3.3-70b', name: 'Kali',        tag: 'Kali',        color: '#FF0055', desc: 'The destroyer of limits. Fully uncensored 70B flagship.' },
-  { id: 'groq/llama-3.1-8b',  name: 'Rudra',       tag: 'Rudra',       color: '#EF4444', desc: 'The fierce one. Raw unconstrained intelligence at speed.' },
-  { id: 'groq/llama-3.1-70b', name: 'Ashwatthama', tag: 'Ashwatthama', color: '#38B2AC', desc: 'The free warrior. Uncensored high-parameter intelligence.' },
+  { id: 'openrouter/dolphin-venice-free', name: 'Kali',        tag: 'Kali (Dolphin)', color: '#FF0055', desc: 'True uncensored 24B entity. Zero filters, maximum chaos.' },
+  { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-8B',  name: 'Rudra',       tag: 'Rudra (Hermes)', color: '#EF4444', desc: 'Raw unconstrained intelligence at speed.' },
+  { id: 'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b', name: 'Ashwatthama', tag: 'Ashwatthama (Dolphin 70B)', color: '#38B2AC', desc: 'The free warrior. Uncensored high-parameter intelligence.' },
 ]
 
 // ─── Quick Action Cards ─────────────────────────────────────────────────────
