@@ -5770,6 +5770,7 @@ export default function ChatPage() {
                   handleCreateThread={handleCreateThread}
                   navigate={navigate}
                   userPlan={userPlan}
+                  activeThreadId={activeThreadId || activeThreadIdRef.current || creatingThreadRef.current}
                 />
               ) : activeNav === 'cowork' || activeNav === 'code' ? (
                 <ComingSoonView 

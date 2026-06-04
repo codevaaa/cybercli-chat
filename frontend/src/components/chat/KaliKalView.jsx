@@ -300,15 +300,16 @@ function UsageBar({ used, limit }) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export default function KaliKalView({
-  threads,
-  messages,
-  input,
+  threads = [],
+  messages = [],
+  input = '',
   setInput,
   handleSend,
-  loading,
+  loading = false,
   handleCreateThread,
   navigate,
-  userPlan
+  userPlan = 'free',
+  activeThreadId = null
 }) {
   const [selectedKaliModel, setSelectedKaliModel] = useState(KALI_MODELS[0].id)
   const [copiedIdx, setCopiedIdx] = useState(null)
@@ -323,7 +324,7 @@ export default function KaliKalView({
 
   // Derive kali threads and active thread
   const kaliThreads = useMemo(() => threads.filter(t => t.mode === 'kali_kal'), [threads])
-  const activeKaliThread = useMemo(() => kaliThreads[0] || null, [kaliThreads])
+  const activeKaliThread = useMemo(() => kaliThreads.find(t => t._id === activeThreadId) || null, [kaliThreads, activeThreadId])
 
   // Filter messages to only show kali_kal thread messages
   const kaliMessages = useMemo(() => {
