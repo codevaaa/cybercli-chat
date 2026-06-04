@@ -63,6 +63,7 @@ import AuthCallbackPage from '@pages/auth/AuthCallbackPage'
 
 import ChatPage from '@pages/app/ChatPage'
 import SettingsPage from '@pages/app/SettingsPage'
+import OrgDashboardPage from '@pages/app/OrgDashboardPage'
 import ProfilePage from '@pages/app/ProfilePage'
 import LibraryPage from '@pages/app/LibraryPage'
 import AgentsPage from '@pages/app/AgentsPage'
@@ -205,6 +206,7 @@ function App() {
           {/* ── Protected App Routes (no Lenis — native scroll for chat) ── */}
           <Route path="/chat/:threadId?" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/app/org" element={<ProtectedRoute><OrgDashboardPage /></ProtectedRoute>} />
           {/* Catch-all for every settings sub-tab (account, connectors, usage,
               capabilities, billing, api-keys, personas, security, invite…) so no
               tab ever renders a blank screen. SettingsPage maps the path → tab. */}

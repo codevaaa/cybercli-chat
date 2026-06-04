@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
   avatar_url: { type: String, default: '' },
   provider: { type: String, default: 'email' }, // email | google | etc.
 
-  plan: { type: String, enum: ['free', 'pro', 'max'], default: 'free' },
+  plan: { type: String, enum: ['free', 'pro', 'max', 'team', 'enterprise'], default: 'free' },
 
   // Moderation / abuse handling
   status: { type: String, enum: ['active', 'banned', 'suspended'], default: 'active', index: true },
