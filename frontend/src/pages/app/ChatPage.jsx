@@ -1342,20 +1342,6 @@ function InputArea({
             </svg>
           </button>
 
-          {/* Limit UI */}
-          {imageUsage && imageUsage.limit !== 'unlimited' && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-medium mr-1 shadow-sm">
-              <span className="text-yellow-400">⚡ Images:</span>
-              <span className={imageUsage.count >= imageUsage.limit ? 'text-rose-400 font-bold' : 'text-gray-300'}>
-                {Math.max(0, imageUsage.limit - imageUsage.count)} left
-              </span>
-              {imageUsage.count >= imageUsage.limit && (
-                <a href="/upgrade" target="_blank" rel="noreferrer" className="ml-1 text-[10px] uppercase font-bold text-accent hover:underline">
-                  Upgrade
-                </a>
-              )}
-            </div>
-          )}
 
           <button
             onClick={onSend}
@@ -5553,6 +5539,20 @@ export default function ChatPage() {
           <div className="flex-1" />
           
           <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' }}>
+            {/* Limit UI */}
+            {imageUsage && imageUsage.limit !== 'unlimited' && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-medium mr-2 shadow-sm">
+                <span className="text-yellow-400">⚡ Images:</span>
+                <span className={imageUsage.count >= imageUsage.limit ? 'text-rose-400 font-bold' : 'text-gray-300'}>
+                  {Math.max(0, imageUsage.limit - imageUsage.count)} left
+                </span>
+                {imageUsage.count >= imageUsage.limit && (
+                  <a href="/upgrade" target="_blank" rel="noreferrer" className="ml-1 text-[10px] uppercase font-bold text-accent hover:underline">
+                    Upgrade
+                  </a>
+                )}
+              </div>
+            )}
             {/* Active mode badges */}
 
 
