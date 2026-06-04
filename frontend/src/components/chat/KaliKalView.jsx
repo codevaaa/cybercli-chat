@@ -10,6 +10,8 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import MatrixRain from './MatrixRain'
 import { CodevaMark } from '@components/ui/CodevaLogo'
+import { useNavigate } from 'react-router-dom'
+import mermaid from 'mermaid'
 
 // ─── Kali-compatible models (kali: true in EXTRA_MODELS) ────────────────────
 const KALI_MODELS = [
@@ -28,6 +30,46 @@ const KALI_QUICK_ACTIONS = [
 
 // ─── Usage Limits ───────────────────────────────────────────────────────────
 const USAGE_LIMITS = { free: 20, pro: 100 }
+
+// ─── Kali Mermaid Component ───────────────────────────────────────────────────
+function KaliMermaidDiagram({ code }) {
+  const containerRef = useRef(null)
+  const id = useRef(`mermaid-${Math.random().toString(36).substr(2, 9)}`)
+
+  useEffect(() => {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#0A0205',
+        primaryTextColor: '#FCA5A5',
+        primaryBorderColor: '#991B1B',
+        lineColor: '#EF4444',
+        secondaryColor: '#2A0410',
+        tertiaryColor: '#1A0208'
+      }
+    })
+
+    const renderDiagram = async () => {
+      if (containerRef.current) {
+        try {
+          const { svg } = await mermaid.render(id.current, code)
+          containerRef.current.innerHTML = svg
+        } catch (e) {
+          console.error('Mermaid error', e)
+          containerRef.current.innerHTML = `<pre class="text-[10px] text-red-500 p-2">Diagram Error: ${e.message}</pre>`
+        }
+      }
+    }
+    renderDiagram()
+  }, [code])
+
+  return (
+    <div className="my-4 p-4 rounded-xl border border-red-900/40 bg-[#0A0205] flex justify-center shadow-[0_0_15px_rgba(220,38,38,0.1)] overflow-x-auto">
+      <div ref={containerRef} className="mermaid-container max-w-full" />
+    </div>
+  )
+}
 
 // ─── Kali Code Block ────────────────────────────────────────────────────────
 function KaliCodeBlock({ language, value }) {
@@ -121,11 +163,15 @@ function KaliMessage({ msg, index, isStreaming, copiedIdx, onCopy, onRetry, mode
                 components={{
                   code({ node, inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '')
+                    const codeString = String(children).replace(/\n$/, '')
+                    if (!inline && match?.[1] === 'mermaid') {
+                      return <KaliMermaidDiagram code={codeString} />
+                    }
                     if (!inline && match) {
                       return (
                         <KaliCodeBlock
                           language={match[1]}
-                          value={String(children).replace(/\n$/, '')}
+                          value={codeString}
                         />
                       )
                     }
