@@ -4,8 +4,10 @@ import User from '../models/User.js'
 
 export const getMyOrgs = async (req, res) => {
   try {
-    const userId = req.user.id
-    const memberships = await OrganizationMember.find({ user_id: userId }).populate('org_id')
+    const userDoc = await User.findOne({ supabase_id: req.user.id })
+    if (!userDoc) return res.status(404).json({ error: 'User not found' })
+    
+    const memberships = await OrganizationMember.find({ user_id: userDoc._id }).populate('org_id')
     const orgs = memberships.map(m => ({
       ...m.org_id.toObject(),
       my_role: m.role,
@@ -21,9 +23,10 @@ export const getMyOrgs = async (req, res) => {
 export const getOrgDetails = async (req, res) => {
   try {
     const { orgId } = req.params
-    const userId = req.user.id
+    const userDoc = await User.findOne({ supabase_id: req.user.id })
+    if (!userDoc) return res.status(404).json({ error: 'User not found' })
 
-    const membership = await OrganizationMember.findOne({ org_id: orgId, user_id: userId })
+    const membership = await OrganizationMember.findOne({ org_id: orgId, user_id: userDoc._id })
     if (!membership) {
       return res.status(403).json({ error: 'Not a member of this organization' })
     }
@@ -56,9 +59,11 @@ export const updateOrgSettings = async (req, res) => {
   try {
     const { orgId } = req.params
     const { name, settings } = req.body
-    const userId = req.user.id
+    
+    const userDoc = await User.findOne({ supabase_id: req.user.id })
+    if (!userDoc) return res.status(404).json({ error: 'User not found' })
 
-    const membership = await OrganizationMember.findOne({ org_id: orgId, user_id: userId })
+    const membership = await OrganizationMember.findOne({ org_id: orgId, user_id: userDoc._id })
     if (!membership || !['owner', 'admin'].includes(membership.role)) {
       return res.status(403).json({ error: 'Requires admin privileges' })
     }
@@ -78,9 +83,11 @@ export const inviteMember = async (req, res) => {
   try {
     const { orgId } = req.params
     const { email, role = 'member', seat_type = 'standard' } = req.body
-    const userId = req.user.id
+    
+    const userDoc = await User.findOne({ supabase_id: req.user.id })
+    if (!userDoc) return res.status(404).json({ error: 'User not found' })
 
-    const membership = await OrganizationMember.findOne({ org_id: orgId, user_id: userId })
+    const membership = await OrganizationMember.findOne({ org_id: orgId, user_id: userDoc._id })
     if (!membership || !['owner', 'admin'].includes(membership.role)) {
       return res.status(403).json({ error: 'Requires admin privileges to invite' })
     }
@@ -113,9 +120,11 @@ export const inviteMember = async (req, res) => {
 export const removeMember = async (req, res) => {
   try {
     const { orgId, memberId } = req.params
-    const userId = req.user.id
+    
+    const userDoc = await User.findOne({ supabase_id: req.user.id })
+    if (!userDoc) return res.status(404).json({ error: 'User not found' })
 
-    const membership = await OrganizationMember.findOne({ org_id: orgId, user_id: userId })
+    const membership = await OrganizationMember.findOne({ org_id: orgId, user_id: userDoc._id })
     if (!membership || !['owner', 'admin'].includes(membership.role)) {
       return res.status(403).json({ error: 'Requires admin privileges' })
     }
