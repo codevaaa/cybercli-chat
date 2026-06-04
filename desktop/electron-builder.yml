@@ -28,6 +28,8 @@ mac:
   target:
     - target: dmg
       arch: universal
+    - target: zip
+      arch: universal
   icon: resources/icon.png
   darkModeSupport: true
   hardenedRuntime: true

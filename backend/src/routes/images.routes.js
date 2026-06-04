@@ -114,6 +114,41 @@ router.post('/generate', optionalAuth, async (req, res) => {
     return res.status(500).json({ error: error.message || 'Internal server error during image generation' })
   }
 })
+
+router.get('/usage', optionalAuth, async (req, res) => {
+  try {
+    let identifier = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || 'unknown_ip'
+    if (Array.isArray(identifier)) {
+      identifier = identifier[0]
+    }
+    let isFree = true
+
+    if (req.user) {
+      isFree = req.user.plan === 'free'
+      identifier = req.user.id
+    }
+
+    if (!isFree) {
+      return res.json({ limit: 'unlimited', count: 0, isPro: true })
+    }
+
+    let tz = req.headers['x-timezone'] || 'UTC'
+    let today
+    try {
+      today = new Date().toLocaleDateString('en-CA', { timeZone: tz })
+    } catch (e) {
+      today = new Date().toISOString().split('T')[0]
+    }
+
+    const usage = await ImageUsage.findOne({ identifier, date: today })
+    const count = usage ? usage.count : 0
+
+    return res.json({ limit: 5, count, isPro: false })
+  } catch (error) {
+    console.error('Image usage fetch error:', error)
+    return res.status(500).json({ error: 'Failed to fetch image usage' })
+  }
+})
 router.get('/generate-direct', async (req, res) => {
   const { prompt } = req.query
   if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {

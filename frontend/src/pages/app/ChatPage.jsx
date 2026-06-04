@@ -278,6 +278,7 @@ function ImageGeneratorWidget({ src, alt }) {
         if (active) {
           setImageUrl(data.url)
           setLoading(false)
+          window.dispatchEvent(new Event('image-generated'))
         }
       } catch (err) {
         if (active) {
@@ -976,6 +977,7 @@ function InputArea({
   activeStyle,
   setActiveStyle,
   userPlan,
+  imageUsage,
 }) {
   const textareaRef = useRef(null)
   const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
@@ -1339,6 +1341,21 @@ function InputArea({
               <path d="M12 2v20M17 7v10M22 10v4M7 7v10M2 10v4"/>
             </svg>
           </button>
+
+          {/* Limit UI */}
+          {imageUsage && imageUsage.limit !== 'unlimited' && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-medium mr-1 shadow-sm">
+              <span className="text-yellow-400">⚡ Images:</span>
+              <span className={imageUsage.count >= imageUsage.limit ? 'text-rose-400 font-bold' : 'text-gray-300'}>
+                {Math.max(0, imageUsage.limit - imageUsage.count)} left
+              </span>
+              {imageUsage.count >= imageUsage.limit && (
+                <a href="/upgrade" target="_blank" rel="noreferrer" className="ml-1 text-[10px] uppercase font-bold text-accent hover:underline">
+                  Upgrade
+                </a>
+              )}
+            </div>
+          )}
 
           <button
             onClick={onSend}
@@ -3503,6 +3520,31 @@ export default function ChatPage() {
   const [effortLevel, setEffortLevel] = useState('low')
   const [thinkingEnabled, setThinkingEnabled] = useState(false)
   const [copied, setCopied] = useState(null)
+  
+  // Image Usage State
+  const [imageUsage, setImageUsage] = useState(null)
+
+  const fetchImageUsage = async () => {
+    try {
+      const token = localStorage.getItem('sb-access-token')
+      const res = await fetch(`${API_BASE}/images/usage`, {
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setImageUsage(data)
+      }
+    } catch (e) {
+      console.error('Failed to fetch image usage:', e)
+    }
+  }
+
+  useEffect(() => {
+    fetchImageUsage()
+    const handleImageUpdate = () => fetchImageUsage()
+    window.addEventListener('image-generated', handleImageUpdate)
+    return () => window.removeEventListener('image-generated', handleImageUpdate)
+  }, [])
   const [streamingIndex, setStreamingIndex] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState('general')
@@ -5667,6 +5709,7 @@ export default function ChatPage() {
                         incognitoMode={incognitoMode}
                         onToggleIncognito={() => setIncognitoMode(v => !v)}
                         showQuickActions={messages.length === 0}
+                        imageUsage={imageUsage}
                       />
                     </div>
                     <motion.div
@@ -5759,6 +5802,7 @@ export default function ChatPage() {
                         incognitoMode={incognitoMode}
                         onToggleIncognito={() => setIncognitoMode(v => !v)}
                         showQuickActions={false}
+                        imageUsage={imageUsage}
                       />
                     </div>
                   </div>
