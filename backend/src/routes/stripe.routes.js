@@ -39,19 +39,22 @@ function resolvePriceId(plan, billing) {
 
 /** Look up (or lazily create) the Stripe customer id for a user. */
 async function getOrCreateCustomer(userId, email) {
-  // Try to read a stored customer id from Supabase.
   try {
-    const { data } = await supabase.from('users').select('stripe_customer_id, email').eq('id', userId).single()
-    if (data?.stripe_customer_id) return data.stripe_customer_id
+    const user = await User.findOne({ supabase_id: userId })
+    if (user?.stripe_customer_id) return user.stripe_customer_id
+    
     const customer = await stripe.customers.create({
-      email: email || data?.email || undefined,
+      email: email || user?.email || undefined,
       metadata: { user_id: userId },
     })
-    await supabase.from('users').update({ stripe_customer_id: customer.id }).eq('id', userId)
+    
+    if (user) {
+      user.stripe_customer_id = customer.id
+      await user.save()
+    }
     return customer.id
-  } catch {
-    // If the users table lacks the column or Supabase is down, create a
-    // throwaway customer keyed by metadata so checkout still works.
+  } catch (e) {
+    console.error('[stripe] getOrCreateCustomer error:', e.message)
     const customer = await stripe.customers.create({ email, metadata: { user_id: userId } })
     return customer.id
   }
@@ -120,11 +123,11 @@ router.post('/portal', requireAuth, async (req, res) => {
   }
 })
 
-/** Persist a user's plan to Supabase (the source of truth the gateway reads). */
+/** Persist a user's plan to MongoDB and Supabase Auth metadata. */
 async function setUserPlan(userId, plan) {
   if (!userId) return
   try {
-    await supabase.from('users').update({ plan }).eq('id', userId)
+    await User.findOneAndUpdate({ supabase_id: userId }, { plan })
     // Also reflect in auth metadata so JWT-based reads stay consistent.
     await supabase.auth.admin.updateUserById(userId, { user_metadata: { plan_tier: plan } })
   } catch (err) {
