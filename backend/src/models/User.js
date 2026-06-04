@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema({
   last_ip: { type: String, default: '' },
   last_seen_at: { type: Date, default: Date.now },
   login_count: { type: Number, default: 0 },
+  
+  // E2B Sandbox Usage tracking
+  sandbox_executions_count: { type: Number, default: 0 },
+  sandbox_last_execution_date: { type: Date, default: null },
 }, { timestamps: true })
 
 userSchema.methods.isBanned = function isBanned() {

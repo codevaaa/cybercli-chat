@@ -484,6 +484,7 @@ Rules:
     
     let assistantReply = ''
     let chosenProvider = ''
+    let isExecuting = false
 
     for await (const chunk of generator) {
       if (chunk.type === 'token') {
@@ -497,6 +498,40 @@ Rules:
         if (chunk.provider) chosenProvider = chunk.provider
         res.write(`data: ${JSON.stringify({ type: 'info', content: chunk.content })}\n\n`)
       } else if (chunk.type === 'done') {
+        
+        // --- Agentic Sandbox Execution Interception for Kali ---
+        if (isKaliKal) {
+          // Detect if model output a python script
+          const pythonMatch = assistantReply.match(/```python\n([\s\S]*?)```/)
+          if (pythonMatch && pythonMatch[1]) {
+            res.write(`data: ${JSON.stringify({ type: 'info', content: '⚡ Autonomous Execution Engine Triggered. Sending payload to E2B Cloud Sandbox...' })}\n\n`)
+            
+            try {
+              const { executeInSandbox } = await import('../services/sandbox/agenticSandbox.js')
+              const sandboxResult = await executeInSandbox(pythonMatch[1], req.user.id)
+              
+              let executionOutput = '\n\n**🤖 Autonomous Sandbox Execution Result:**\n```terminal\n'
+              if (sandboxResult.error) {
+                executionOutput += sandboxResult.error
+              } else {
+                if (sandboxResult.stdout) executionOutput += `[STDOUT]\n${sandboxResult.stdout}\n`
+                if (sandboxResult.stderr) executionOutput += `[STDERR]\n${sandboxResult.stderr}\n`
+                if (!sandboxResult.stdout && !sandboxResult.stderr) executionOutput += `Process exited with no output.`
+              }
+              executionOutput += '\n```'
+              
+              // Append to reply and send to user
+              assistantReply += executionOutput
+              res.write(`data: ${JSON.stringify({ type: 'token', content: executionOutput })}\n\n`)
+            } catch (sandboxErr) {
+              console.error('Sandbox execution failed:', sandboxErr)
+              const errOut = `\n\n**🤖 Sandbox Execution Failed:**\n```terminal\nError: ${sandboxErr.message}\n````
+              assistantReply += errOut
+              res.write(`data: ${JSON.stringify({ type: 'token', content: errOut })}\n\n`)
+            }
+          }
+        }
+
         // Save assistant response to DB
         const assistantMsg = new Message({
           thread_id: thread._id,
