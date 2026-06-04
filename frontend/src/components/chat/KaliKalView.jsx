@@ -82,6 +82,7 @@ function KaliMermaidDiagram({ code }) {
     mermaid.initialize({
       startOnLoad: false,
       theme: 'base',
+      suppressErrorRendering: true,
       themeVariables: {
         primaryColor: '#0A0205',
         primaryTextColor: '#FCA5A5',
@@ -98,8 +99,11 @@ function KaliMermaidDiagram({ code }) {
           const { svg } = await mermaid.render(id.current, code)
           containerRef.current.innerHTML = svg
         } catch (e) {
-          console.error('Mermaid error', e)
-          containerRef.current.innerHTML = `<pre class="text-[10px] text-red-500 p-2">Diagram Error: ${e.message}</pre>`
+          // Remove mermaid's globally injected error element if it exists
+          const errorSvg = document.getElementById('d' + id.current)
+          if (errorSvg) errorSvg.remove()
+          
+          containerRef.current.innerHTML = `<div class="text-[10px] text-red-500/50 p-2 italic animate-pulse">Rendering diagram...</div>`
         }
       }
     }
@@ -456,6 +460,17 @@ function UsageBar({ used, limit }) {
 //  MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════
 
+const getDailyResetTime = () => {
+  const now = new Date()
+  const resetTime = new Date(now)
+  resetTime.setHours(0, 30, 0, 0) // 12:30 AM
+  if (now < resetTime) {
+    // If it's before 12:30 AM today, the last reset happened yesterday
+    resetTime.setDate(resetTime.getDate() - 1)
+  }
+  return resetTime.getTime()
+}
+
 export default function KaliKalView({
   threads = [],
   messages = [],
@@ -471,8 +486,22 @@ export default function KaliKalView({
 }) {
   const [selectedKaliModel, setSelectedKaliModel] = useState(KALI_MODELS[0].id)
   const [copiedIdx, setCopiedIdx] = useState(null)
+  
   const [kaliUsage, setKaliUsage] = useState(() => {
-    try { return parseInt(localStorage.getItem('kali_usage') || '0', 10) } catch { return 0 }
+    try {
+      const stored = localStorage.getItem('kali_usage_data')
+      if (stored) {
+        const data = JSON.parse(stored)
+        // If the reset time matches the current period's reset time, keep usage
+        if (data.resetTime === getDailyResetTime()) {
+          return data.usage || 0
+        }
+      }
+      // If we're in a new period, or no data exists, reset to 0
+      return 0
+    } catch {
+      return 0
+    }
   })
   const [isCreating, setIsCreating] = useState(false)
   const [sandboxLogs, setSandboxLogs] = useState([])
@@ -504,7 +533,10 @@ export default function KaliKalView({
 
   // ── Persist usage ──
   useEffect(() => {
-    localStorage.setItem('kali_usage', String(kaliUsage))
+    localStorage.setItem('kali_usage_data', JSON.stringify({
+      usage: kaliUsage,
+      resetTime: getDailyResetTime()
+    }))
   }, [kaliUsage])
 
   // ── Listen to Terminal Stream ──
