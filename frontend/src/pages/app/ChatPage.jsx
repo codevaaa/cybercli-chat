@@ -5113,6 +5113,10 @@ export default function ChatPage() {
                     } else if (item.id === 'search') {
                       setIsSearchModalOpen(true)
                     } else {
+                      if (activeNav !== item.id && activeThreadId) {
+                        navigate('/chat')
+                        setMessages([])
+                      }
                       setActiveNav(item.id)
                     }
                   }}

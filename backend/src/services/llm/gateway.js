@@ -211,6 +211,12 @@ const FALLBACK_CHAIN = [
   'gemini/gemini-2.5-flash',
 ]
 
+const KALI_FALLBACK_CHAIN = [
+  'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b',
+  'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b',
+  'openrouter/dolphin-venice-free', // Uncensored free model on OpenRouter
+]
+
 /**
  * Heuristic task → tier classifier. Cheap models for simple tasks, stronger
  * ones for reasoning-heavy work. Lets `auto` route intelligently while staying
@@ -387,7 +393,7 @@ export const llmGateway = {
     // Prune context to prevent provider token crashes (Groq fails hard > 8K tokens)
     enriched = pruneContextWindow(enriched, 24000)
 
-    const targetModel = MODEL_MAP[activeModelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
+    const targetModel = MODEL_MAP[activeModelId] || (isKaliKal ? MODEL_MAP[KALI_FALLBACK_CHAIN[0]] : MODEL_MAP[FALLBACK_CHAIN[0]])
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
     let directGeminiFailed = false
@@ -476,9 +482,13 @@ export const llmGateway = {
         }
       }
 
-      const activeFallbackChain = totalChars > 25000
+      let activeFallbackChain = totalChars > 25000
         ? ['gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini']
         : FALLBACK_CHAIN
+        
+      if (isKaliKal) {
+        activeFallbackChain = KALI_FALLBACK_CHAIN
+      }
 
       // Try fallback chain
       for (const fallbackId of activeFallbackChain) {
@@ -560,7 +570,7 @@ export const llmGateway = {
     // Prune context to prevent provider token crashes
     enriched = pruneContextWindow(enriched, 24000)
 
-    const targetModel = MODEL_MAP[activeModelId] || MODEL_MAP[FALLBACK_CHAIN[0]]
+    const targetModel = MODEL_MAP[activeModelId] || (isKaliKal ? MODEL_MAP[KALI_FALLBACK_CHAIN[0]] : MODEL_MAP[FALLBACK_CHAIN[0]])
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
     let directGeminiFailed = false
