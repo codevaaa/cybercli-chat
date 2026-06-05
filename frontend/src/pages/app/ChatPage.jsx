@@ -6017,7 +6017,6 @@ export default function ChatPage() {
                           </div>
                           <p className="text-[10px] text-gray-700 mt-4 px-2">File tree is populated from daemon. Click a file to open in Preview.</p>
                         </div>
-                        </div>
                     </div>
                   ) : workspaceTab === 'preview' ? (
                     /* File Preview */
@@ -6033,7 +6032,7 @@ export default function ChatPage() {
                         />
                         <button
                           onClick={() => handleLoadPreviewFile()}
-                          disabled={previewFileLoading || !daemonConnected}
+                          disabled={previewFileLoading}
                           className="px-3 py-1 rounded-lg bg-accent text-white text-xs font-bold hover:bg-accent-dark disabled:bg-white/5 disabled:text-white/30 transition-all flex-shrink-0"
                         >
                           {previewFileLoading ? 'Loading...' : 'Load'}
