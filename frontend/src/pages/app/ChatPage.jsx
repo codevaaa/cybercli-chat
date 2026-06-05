@@ -5972,18 +5972,7 @@ export default function ChatPage() {
                         )}
                       </div>
 
-                      {/* Link helper warning if daemon offline */}
-                      {!daemonConnected && (
-                        <div className="mb-3 p-3 rounded-lg border border-red-500/20 bg-red-500/5 space-y-2 font-sans">
-                          <p className="text-xs font-semibold text-rose-400 flex items-center gap-2">
-                            <AlertCircle className="w-3.5 h-3.5" />
-                            Daemon Offline — Link your workspace
-                          </p>
-                          <pre className="p-2.5 bg-black/40 border border-white/5 rounded text-xs font-mono text-gray-300 leading-relaxed whitespace-pre-wrap select-all text-[10px]">
-npm install -g codeva{"\n"}
-codeva link --key YOUR_API_KEY</pre>
-                        </div>
-                      )}
+
 
                       {/* Terminal input bar */}
                       <form onSubmit={handleTerminalSubmit} className="flex items-center gap-1.5 bg-black/50 border border-white/[0.08] rounded-lg p-2 flex-shrink-0">
@@ -5992,22 +5981,14 @@ codeva link --key YOUR_API_KEY</pre>
                           type="text"
                           value={terminalInput}
                           onChange={(e) => setTerminalInput(e.target.value)}
-                          placeholder={daemonConnected ? "Type command..." : "Connect daemon to run commands"}
-                          disabled={terminalLoading || !daemonConnected}
+                          placeholder="Type command..."
+                          disabled={terminalLoading}
                           className="flex-1 bg-transparent border-0 outline-none p-0 text-white font-mono text-[11px] focus:ring-0 placeholder-gray-600 disabled:cursor-not-allowed"
                         />
                       </form>
                     </div>
                   ) : workspaceTab === 'files' ? (
-                    /* File Tree */
                     <div className="flex-1 flex flex-col overflow-hidden bg-[#06060A]">
-                      {!daemonConnected ? (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-                          <FolderTree className="w-10 h-10 text-gray-700" />
-                          <p className="text-xs text-gray-500 font-medium">Daemon offline</p>
-                          <p className="text-[10px] text-gray-600 max-w-xs leading-normal">Connect your local workspace daemon to browse the file tree.</p>
-                        </div>
-                      ) : (
                         <div className="flex-1 overflow-y-auto p-3 font-mono text-xs">
                           <div className="space-y-0.5">
                             {[
@@ -6036,7 +6017,7 @@ codeva link --key YOUR_API_KEY</pre>
                           </div>
                           <p className="text-[10px] text-gray-700 mt-4 px-2">File tree is populated from daemon. Click a file to open in Preview.</p>
                         </div>
-                      )}
+                        </div>
                     </div>
                   ) : workspaceTab === 'preview' ? (
                     /* File Preview */
@@ -6116,12 +6097,7 @@ codeva link --key YOUR_API_KEY</pre>
                   ) : workspaceTab === 'git' ? (
                     /* Git Tab */
                     <div className="flex-1 flex flex-col overflow-hidden bg-[#06060A] p-4 font-mono text-xs">
-                      {!daemonConnected ? (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
-                          <GitIcon className="w-10 h-10 text-gray-700" />
-                          <p className="text-xs text-gray-500">Daemon offline</p>
-                        </div>
-                      ) : (
+
                         <div className="space-y-4">
                           <div className="flex items-center gap-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
                             <GitIcon className="w-4 h-4 text-orange-400" />
@@ -6154,7 +6130,6 @@ codeva link --key YOUR_API_KEY</pre>
                           </div>
                           <p className="text-[10px] text-gray-600 border-t border-white/[0.04] pt-3">Git data synced via workspace daemon. Run git commands from Terminal tab.</p>
                         </div>
-                      )}
                     </div>
                   ) : null}
                 </div>
