@@ -3729,11 +3729,6 @@ export default function ChatPage() {
     setTerminalInput('')
     setTerminalHistory(prev => [...prev, { type: 'input', text: cmd }])
     
-    if (!daemonConnected) {
-      setTerminalHistory(prev => [...prev, { type: 'error', text: 'Error: Local Workspace Daemon is offline. Please link your workspace first.' }])
-      return
-    }
-
     setTerminalLoading(true)
     try {
       const token = localStorage.getItem('sb-access-token')
