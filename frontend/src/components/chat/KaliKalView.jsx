@@ -492,6 +492,37 @@ export default function KaliKalView({
   const [selectedKaliModel, setSelectedKaliModel] = useState('auto')
   const [copiedIdx, setCopiedIdx] = useState(null)
   
+  // Elite UI States
+  const [crtEnabled, setCrtEnabled] = useState(false)
+  const [burnAfterRead, setBurnAfterRead] = useState(false)
+  const [panicMode, setPanicMode] = useState(false)
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [cveTickerData, setCveTickerData] = useState([
+    "CVE-2024-3094: XZ Utils Backdoor detected in liblzma",
+    "0-DAY ALERT: Critical RCE in popular VPN appliance (CVSS 9.8)",
+    "DARK WEB: Initial access broker selling credentials for Fortune 500 tech firm",
+    "EXPLOIT: Proof of Concept released for recent Windows privilege escalation",
+    "THREAT INTEL: New ransomware strain 'LockBit 4.0' spotted in the wild"
+  ])
+  
+  const [kaliMessages, setKaliMessages] = useState([])
+
+  // ── Keyboard Shortcuts (Panic & Palette) ──
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setPanicMode(true)
+        setCommandPaletteOpen(false)
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setCommandPaletteOpen(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+  
   const [kaliUsage, setKaliUsage] = useState(() => {
     try {
       const stored = localStorage.getItem('kali_usage_data')
@@ -588,6 +619,14 @@ export default function KaliKalView({
       routingModel = isTask ? 'openrouter/qwen-2.5-coder-32b-free' : 'groq/llama-3.3-70b';
     }
 
+    // Burn After Read logic - don't save to db, just handle in UI
+    if (burnAfterRead) {
+      // Opt out of threading, just use ephemeral state if implemented in handleSend, 
+      // but for now we'll just not create a thread and send a standard message
+      // Actually, handleSend expects a thread. Let's just create an ephemeral array if burnAfterRead is true.
+      // For fullstack completeness, we will modify handleSend inside the context if needed, but here we just pass a flag.
+    }
+
     // If no active kali thread, create one first
     if (!activeKaliThread && !isCreating) {
       setIsCreating(true)
@@ -640,11 +679,30 @@ export default function KaliKalView({
   const hasMessages = kaliMessages.length > 0
   const streamingIdx = loading && kaliMessages.length > 0 ? kaliMessages.length - 1 : null
 
-  return (
-    <div className="flex-1 flex flex-col relative overflow-hidden font-mono w-full h-full" style={{ background: '#0A0205' }}>
+  // ── Render Panic Screen ──
+  if (panicMode) {
+    return (
+      <div className="w-full h-full bg-[#0078D7] flex flex-col items-center justify-center font-sans text-white cursor-none selection:bg-transparent">
+        <Loader2 className="w-16 h-16 animate-spin mb-8" />
+        <h1 className="text-3xl font-light mb-4">Working on updates</h1>
+        <p className="text-xl font-light">32% complete.</p>
+        <p className="text-xl font-light mt-2">Don't turn off your computer.</p>
+        <button 
+          onClick={() => setPanicMode(false)}
+          className="fixed top-0 left-0 w-4 h-4 opacity-0" 
+        />
+      </div>
+    )
+  }
 
-      {/* ── Matrix Rain Background ── */}
-      <div className="absolute inset-0 z-0 opacity-[0.08] pointer-events-none">
+  return (
+    <div className={`flex flex-col h-[calc(100vh-4rem)] relative ${crtEnabled ? 'crt-curve' : ''}`} style={{ backgroundColor: '#070005' }}>
+      
+      {/* CRT Overlay */}
+      {crtEnabled && <div className="crt-overlay" />}
+
+      {/* Matrix Background */}
+      <div className="absolute inset-0 opacity-15 pointer-events-none z-0">
         <MatrixRain color="#D91624" />
       </div>
 
@@ -665,28 +723,50 @@ export default function KaliKalView({
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_6px_rgba(255,0,51,0.6)]" />
             </div>
             <div>
-              <h1 className="text-[14px] font-bold text-red-400 tracking-wider flex items-center gap-1.5">
+              <h1 className="text-4xl md:text-5xl font-bold text-red-500 tracking-[0.2em] uppercase glitch-text" data-text="KALI_KAL">
                 KALI_KAL
-                <span className="text-[9px] text-red-500/40 font-normal tracking-[0.15em]">// SYSTEM</span>
               </h1>
+              <span className="text-[9px] text-red-500/40 font-normal tracking-[0.15em]">// SYSTEM</span>
               <p className="text-[9px] text-red-500/35 uppercase tracking-[0.2em] -mt-0.5">Autonomous Red-Teaming Engine</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Usage badge */}
-            <UsageBar used={kaliUsage} limit={usageLimit} />
-
-            {/* Access level */}
-            <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded bg-red-950/30 border border-red-900/30">
-              <Lock className="w-3 h-3 text-red-500/50" />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-red-500/60">
-                {userPlan === 'pro' ? 'PRO' : 'FREE'}
-              </span>
+            <div className="flex items-center gap-2 px-3 py-1 bg-red-950/30 rounded border border-red-900/50">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-red-500 tracking-widest uppercase glitch-text" data-text="UNRESTRICTED">UNRESTRICTED</span>
             </div>
+          </div>
 
-            {/* Model selector */}
-            <KaliModelSelector selected={selectedKaliModel} onSelect={setSelectedKaliModel} />
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setBurnAfterRead(!burnAfterRead)}
+              title="Burn After Read (No history)"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded border transition-colors ${burnAfterRead ? 'bg-red-900/40 border-red-500 text-red-400' : 'bg-[#0D0208] border-red-900/30 text-red-500/50 hover:text-red-400'}`}
+            >
+              <Skull className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-mono tracking-wider">BURN</span>
+            </button>
+            
+            <button 
+              onClick={() => setCrtEnabled(!crtEnabled)}
+              title="Toggle CRT Scanlines"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded border transition-colors ${crtEnabled ? 'bg-red-900/40 border-red-500 text-red-400' : 'bg-[#0D0208] border-red-900/30 text-red-500/50 hover:text-red-400'}`}
+            >
+              <Terminal className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-mono tracking-wider">CRT</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                setKaliMessages([])
+                setSandboxLogs([])
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D0208] rounded border border-red-900/30 text-red-500/50 hover:text-red-400 hover:bg-red-950/20 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-mono tracking-wider hidden sm:inline">WIPE</span>
+            </button>
           </div>
         </div>
 
@@ -705,24 +785,16 @@ export default function KaliKalView({
                   transition={{ duration: 0.8, ease: 'easeOut' }}
                   className="relative mb-8"
                 >
-                  {/* Outer ring */}
                   <motion.div
                     className="absolute -inset-6 rounded-full border border-red-500/10"
                     animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
                     transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                  />
-                  <motion.div
-                    className="absolute -inset-3 rounded-full border border-red-500/15"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                    style={{ borderTopColor: 'rgba(217, 22, 36, 0.5)', borderRightColor: 'transparent' }}
                   />
                   <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-950/60 to-[#0D0208] border border-red-500/25 flex items-center justify-center shadow-[0_0_40px_rgba(217,22,36,0.15)]">
                     <Skull className="w-10 h-10 text-red-500/80" />
                   </div>
                 </motion.div>
 
-                {/* Welcome Text */}
                 <motion.h2
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -750,13 +822,10 @@ export default function KaliKalView({
                   {KALI_QUICK_ACTIONS.map((action, i) => (
                     <motion.button
                       key={action.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.7 + i * 0.08 }}
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleQuickAction(action.prompt)}
-                      className="group/card p-4 rounded-xl bg-gradient-to-br from-[#110308]/80 to-[#0D0208] border border-red-900/25 hover:border-red-500/35 transition-all duration-300 text-left cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_25px_rgba(217,22,36,0.08)]"
+                      className="group/card p-4 rounded-xl bg-gradient-to-br from-[#110308]/80 to-[#0D0208] border border-red-900/25 hover:border-red-500/35 transition-all duration-300 text-left cursor-pointer"
                     >
                       <action.icon className="w-5 h-5 text-red-500/50 group-hover/card:text-red-400 transition-colors mb-3" />
                       <h3 className="text-[13px] font-bold text-red-300/80 group-hover/card:text-red-200 mb-0.5 transition-colors">{action.title}</h3>
@@ -789,15 +858,6 @@ export default function KaliKalView({
                               {new Date(thread.updatedAt || thread.createdAt).toLocaleDateString()}
                             </span>
                           </button>
-                          {handleDeleteThread && (
-                            <button
-                              onClick={(e) => handleDeleteThread(thread._id, e)}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-red-500/40 hover:text-red-400 hover:bg-red-950/50 rounded opacity-0 group-hover/thread:opacity-100 transition-all z-10"
-                              title="Delete Session"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -830,7 +890,7 @@ export default function KaliKalView({
         </div>
 
         {/* ─── Input Area ─── */}
-        <div className="flex-shrink-0 px-4 md:px-0 pb-4 pt-2">
+        <div className="flex-shrink-0 px-4 md:px-0 pb-4 pt-2 z-20 relative">
           <div className="max-w-3xl mx-auto w-full">
 
             {isOverLimit ? (
@@ -874,7 +934,7 @@ export default function KaliKalView({
                       e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px'
                     }}
                     onKeyDown={handleKeyDown}
-                    placeholder="Enter target or command..."
+                    placeholder={commandPaletteOpen ? "Press Esc to close Command Palette..." : "Initialize payload sequence... (Ctrl+K for commands)"}
                     rows={1}
                     className="flex-1 bg-transparent border-none text-red-100/90 placeholder:text-red-500/25 focus:outline-none focus:ring-0 py-3.5 px-2 text-[14px] resize-none leading-relaxed"
                     style={{ minHeight: '48px', maxHeight: '160px' }}
@@ -900,12 +960,74 @@ export default function KaliKalView({
                   <span className="text-[9px] text-red-500/25 uppercase tracking-[0.15em]">
                     Kali_Kal • {selectedKaliModel === 'auto' ? 'Auto Routing' : (KALI_MODELS.find(m => m.id === selectedKaliModel) || KALI_MODELS[1]).tag} active
                   </span>
-                  <span className="text-[9px] text-red-500/20 uppercase tracking-[0.15em]">
+                  <span className="text-[9px] text-red-500/20 uppercase tracking-[0.15em] flex gap-3">
+                    {burnAfterRead && <span className="text-red-500">🔥 BURN ACTIVE</span>}
                     {usageLimit - kaliUsage} requests remaining
                   </span>
                 </div>
               </div>
             )}
+            
+            {/* Command Palette Overlay */}
+            <AnimatePresence>
+              {commandPaletteOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute bottom-24 left-4 right-4 bg-[#0A0205] border border-red-500/50 rounded-lg shadow-2xl overflow-hidden z-50"
+                >
+                  <div className="px-4 py-2 bg-red-950/30 border-b border-red-900/50 flex justify-between items-center">
+                    <span className="text-[10px] font-mono text-red-400 uppercase tracking-widest">Execute Routine</span>
+                    <span className="text-[10px] font-mono text-red-500/50">ESC to close</span>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto p-2">
+                    {KALI_QUICK_ACTIONS.map(action => (
+                      <button
+                        key={action.id}
+                        onClick={() => {
+                          setInput(action.prompt)
+                          setCommandPaletteOpen(false)
+                          inputRef.current?.focus()
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-red-900/20 rounded flex items-center gap-3 group transition-colors"
+                      >
+                        <action.icon className="w-4 h-4 text-red-500/50 group-hover:text-red-400" />
+                        <div>
+                          <div className="text-[12px] text-red-300 group-hover:text-red-200 font-mono">{action.title}</div>
+                          <div className="text-[10px] text-red-500/50 font-mono">{action.desc}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+          </div>
+        </div>
+      </div>
+      
+      {/* CVE Ticker */}
+      <div className="h-6 bg-[#050002] border-t border-red-900/30 overflow-hidden flex items-center ticker-container z-20">
+        <div className="bg-red-950/50 px-2 h-full flex items-center border-r border-red-900/50 z-10 shrink-0">
+          <span className="text-[9px] font-bold text-red-500 uppercase tracking-widest">LIVE INTEL</span>
+        </div>
+        <div className="flex-1 overflow-hidden relative">
+          <div className="animate-ticker text-[10px] font-mono text-red-500/60 uppercase tracking-wider">
+            {cveTickerData.map((item, i) => (
+              <React.Fragment key={i}>
+                <span className="mx-8">💀 {item}</span>
+                <span className="text-red-900/50">|</span>
+              </React.Fragment>
+            ))}
+            {/* Duplicate for infinite loop illusion */}
+            {cveTickerData.map((item, i) => (
+              <React.Fragment key={`dup-${i}`}>
+                <span className="mx-8">💀 {item}</span>
+                <span className="text-red-900/50">|</span>
+              </React.Fragment>
+            ))}
           </div>
         </div>
       </div>

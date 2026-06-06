@@ -525,3 +525,68 @@ html.lenis { height: auto; }
   border-color: rgba(255, 0, 60, 0.25) !important;
   box-shadow: 0 0 24px rgba(255, 0, 60, 0.12) !important;
 }
+
+/* --- Kali_Kal Elite Effects --- */
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%, rgba(0, 0, 0, 0.25));
+  background-size: 100% 4px;
+  opacity: 0.15;
+}
+.crt-curve {
+  animation: crtFlicker 0.15s infinite;
+  box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+}
+@keyframes crtFlicker { 0% { opacity: 0.95; } 50% { opacity: 1; } 100% { opacity: 0.95; } }
+
+.glitch-text {
+  position: relative;
+  display: inline-block;
+  color: #FF0055;
+  animation: glitch-anim 2s infinite linear alternate-reverse;
+}
+.glitch-text::before, .glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: transparent;
+}
+.glitch-text::before {
+  left: 2px; text-shadow: -1px 0 #00FF66;
+  clip: rect(24px, 550px, 90px, 0);
+  animation: glitch-anim-2 3s infinite linear alternate-reverse;
+}
+.glitch-text::after {
+  left: -2px; text-shadow: -1px 0 #00FFFF;
+  clip: rect(85px, 550px, 140px, 0);
+  animation: glitch-anim 2.5s infinite linear alternate-reverse;
+}
+@keyframes glitch-anim {
+  0% { clip: rect(10px, 9999px, 93px, 0); transform: skew(0.5deg); }
+  5% { clip: rect(62px, 9999px, 66px, 0); transform: skew(0.2deg); }
+  10% { clip: rect(81px, 9999px, 81px, 0); transform: skew(0.7deg); }
+  100% { clip: rect(7px, 9999px, 31px, 0); transform: skew(0.5deg); }
+}
+@keyframes glitch-anim-2 {
+  0% { clip: rect(65px, 9999px, 100px, 0); transform: skew(0.5deg); }
+  5% { clip: rect(52px, 9999px, 74px, 0); transform: skew(0.2deg); }
+  100% { clip: rect(2px, 9999px, 33px, 0); transform: skew(0.5deg); }
+}
+
+@keyframes ticker {
+  0% { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+.animate-ticker {
+  display: inline-block;
+  white-space: nowrap;
+  animation: ticker 40s linear infinite;
+}
+.ticker-container:hover .animate-ticker { animation-play-state: paused; }
+
