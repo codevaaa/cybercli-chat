@@ -660,6 +660,29 @@ export default function KaliKalView({
     setTimeout(() => inputRef.current?.focus(), 100)
   }, [setInput])
 
+  // ── Export Pentest Report ──
+  const handleExportReport = useCallback(() => {
+    if (kaliMessages.length === 0) return
+    
+    let reportContent = `# KALI_KAL PENTEST REPORT\nDate: ${new Date().toLocaleString()}\n\n`
+    reportContent += `TARGET ANALYSIS & INTELLIGENCE\n==============================\n\n`
+    
+    kaliMessages.forEach(msg => {
+      const roleName = msg.role === 'user' ? 'OPERATOR' : 'KALI_KAL'
+      reportContent += `[${roleName}]\n${msg.content}\n\n------------------------------\n\n`
+    })
+    
+    const blob = new Blob([reportContent], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `kalikal_report_${new Date().getTime()}.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }, [kaliMessages])
+
   // ── Get model display name ──
   const getModelName = useCallback((modelId) => {
     const model = KALI_MODELS.find(m => m.id === modelId)
@@ -737,6 +760,16 @@ export default function KaliKalView({
           </div>
 
           <div className="flex items-center gap-3">
+            <button 
+              onClick={handleExportReport}
+              disabled={kaliMessages.length === 0}
+              title="Export Pentest Report (MD)"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D0208] rounded border border-red-900/30 text-red-500/50 hover:text-red-400 hover:bg-red-950/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ArrowUp className="w-3.5 h-3.5 rotate-45" />
+              <span className="text-[10px] font-mono tracking-wider hidden sm:inline">EXPORT</span>
+            </button>
+
             <button 
               onClick={() => setBurnAfterRead(!burnAfterRead)}
               title="Burn After Read (No history)"
