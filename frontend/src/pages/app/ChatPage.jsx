@@ -5881,7 +5881,7 @@ export default function ChatPage() {
                   userPlan={userPlan}
                   activeThreadId={activeThreadId || activeThreadIdRef.current || creatingThreadRef.current}
                   handleDeleteThread={handleDeleteThread}
-                  startNewChat={startNewChat}
+                  startNewChat={() => { navigate('/kali-kal'); setMessages([]); }}
                 />
               ) : activeNav === 'cowork' || activeNav === 'code' ? (
                 <ComingSoonView 
