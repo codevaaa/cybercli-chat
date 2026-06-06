@@ -103,7 +103,10 @@ function KaliMermaidDiagram({ code }) {
           const errorSvg = document.getElementById('d' + id.current)
           if (errorSvg) errorSvg.remove()
           
-          containerRef.current.innerHTML = `<div class="text-[10px] text-red-500/50 p-2 italic animate-pulse">Rendering diagram...</div>`
+          containerRef.current.innerHTML = `<div class="text-[12px] text-red-500 font-mono p-4 border border-red-900/50 bg-red-950/20 rounded">
+            <span class="font-bold">⚠️ Diagram Syntax Error</span>
+            <pre class="mt-2 text-[10px] text-red-400/80 whitespace-pre-wrap overflow-x-auto">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+          </div>`
         }
       }
     }
@@ -484,7 +487,7 @@ export default function KaliKalView({
   userPlan = 'free',
   activeThreadId = null
 }) {
-  const [selectedKaliModel, setSelectedKaliModel] = useState(KALI_MODELS[0].id)
+  const [selectedKaliModel, setSelectedKaliModel] = useState('huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b')
   const [copiedIdx, setCopiedIdx] = useState(null)
   
   const [kaliUsage, setKaliUsage] = useState(() => {

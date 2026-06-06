@@ -90,8 +90,12 @@ export async function executeInSandbox(code, userId, language = 'python', onStdo
     logger.info(`Sandbox ${sandbox.sandboxId} killed.`)
 
     return {
-      stdout: execution.text || '',
-      stderr: execution.error ? execution.error.traceback || execution.error.value : '',
+      stdout: (execution.logs && execution.logs.stdout && execution.logs.stdout.length > 0) 
+        ? execution.logs.stdout.join('\\n') 
+        : (execution.text || ''),
+      stderr: (execution.logs && execution.logs.stderr && execution.logs.stderr.length > 0)
+        ? execution.logs.stderr.join('\\n')
+        : (execution.error ? execution.error.traceback || execution.error.value : ''),
       error: null
     }
 
