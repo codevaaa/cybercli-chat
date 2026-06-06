@@ -598,7 +598,8 @@ export default function KaliKalView({
     return messages
   }, [messages])
 
-  const usageLimit = USAGE_LIMITS[userPlan === 'pro' ? 'pro' : 'free']
+  // Ensure usage limit fallback
+  const usageLimit = 1000; // Unlimited for now or use config if available
   const isOverLimit = kaliUsage >= usageLimit
 
   // ── Auto-scroll ──
