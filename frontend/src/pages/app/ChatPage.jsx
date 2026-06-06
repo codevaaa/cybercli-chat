@@ -26,7 +26,7 @@ import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
 import KaliKalView from '../../components/chat/KaliKalView.jsx'
 import MatrixRain from '../../components/chat/MatrixRain.jsx'
 import KaliKalBanner from '../../components/chat/KaliKalBanner.jsx'
-import ChatExportMenu from '../../components/chat/ChatExportMenu.jsx'
+import DocumentArtifact from '../../components/chat/DocumentArtifact.jsx'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -639,6 +639,10 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
                         code({ node, inline, className, children, ...props }) {
                           const match = /language-(\w+)/.exec(className || '')
                           if (!inline && match) {
+                            const lang = match[1].toLowerCase()
+                            if (lang === 'pdf' || lang === 'docx' || lang === 'pptx') {
+                              return <DocumentArtifact format={lang} content={String(children).replace(/\n$/, '')} />
+                            }
                             return (
                               <CodeBlock
                                 language={match[1]}
@@ -5596,12 +5600,6 @@ export default function ChatPage() {
                 >
                   <Brain className="w-4 h-4" />
                 </button>
-                {activeThreadId && (
-                  <ChatExportMenu 
-                    messages={messages} 
-                    threadTitle={threads.find(t => t._id === activeThreadId)?.title} 
-                  />
-                )}
               </>
             )}
 
