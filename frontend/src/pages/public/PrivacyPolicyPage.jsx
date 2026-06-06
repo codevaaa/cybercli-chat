@@ -9,11 +9,11 @@ const SECTIONS = [
   {
     id: 'overview',
     title: '1. Overview',
-    content: `Codeva ("we," "us," "our") operates Codeva at codevachat.com (the "Service"). This Privacy Policy explains how we collect, use, store, and protect your personal data when you use the Service.
+    content: `CODEVAA Pvt Ltd ("we," "us," "our") operates Codeva at codevachat.com (the "Service"). This Privacy Policy explains how we collect, use, store, and protect your personal data when you use the Service.
 
 We are committed to processing your personal data in accordance with applicable data protection laws, including the EU General Data Protection Regulation (GDPR), the UK GDPR, the California Consumer Privacy Act (CCPA), and other applicable privacy laws.
 
-If you are an EU/EEA resident, the data controller responsible for your personal data is Codeva, contactable at cybermindcli@cybermindcli.com.`,
+If you are an EU/EEA resident, the data controller responsible for your personal data is CODEVAA Pvt Ltd, contactable at cybermindcli@cybermindcli.com.`,
   },
   {
     id: 'data-collected',
@@ -247,7 +247,7 @@ export default function PrivacyPolicyPage() {
             <main className="flex-1 min-w-0">
               <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-8 mb-8">
                 <p className="text-[#444444] text-sm leading-relaxed">
-                  At Codeva, privacy is not a checkbox — it is a design principle. We are committed to being transparent about the data we collect, why we collect it, and how we protect it. This policy applies to all users of Codeva globally.
+                  At CODEVAA Pvt Ltd, privacy is not a checkbox — it is a design principle. We are committed to being transparent about the data we collect, why we collect it, and how we protect it. This policy applies to all users of Codeva globally.
                 </p>
               </div>
 

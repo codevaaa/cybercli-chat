@@ -52,12 +52,12 @@ export const FOOTER_SECTIONS = [
   {
     title: 'Legal & Security',
     links: [
-      { label: 'Consumer Terms', href: '/legal/consumer-terms' },
-      { label: 'Commercial Terms', href: '/legal/commercial-terms' },
-      { label: 'Privacy Policy', href: '/legal/privacy' },
-      { label: 'Acceptable Use', href: '/legal/aup' },
+      { label: 'Terms of Service', href: '/terms-of-service' },
+      { label: 'Privacy Policy', href: '/privacy-policy' },
+      { label: 'Disclaimer', href: '/terms-of-service#disclaimers' },
+      { label: 'Acceptable Use', href: '/acceptable-use' },
+      { label: 'Cookie Policy', href: '/cookie-policy' },
       { label: 'Trust Center', href: '/trust' },
-      { label: 'Disclosure Policy', href: '/responsible-disclosure-policy' },
       { label: 'Usage Best Practices', href: '/usage-limit-best-practices' },
     ],
   },
