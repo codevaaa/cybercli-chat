@@ -505,8 +505,6 @@ export default function KaliKalView({
     "THREAT INTEL: New ransomware strain 'LockBit 4.0' spotted in the wild"
   ])
   
-  const [kaliMessages, setKaliMessages] = useState([])
-
   // ── Keyboard Shortcuts (Panic & Palette) ──
   useEffect(() => {
     const handleKeyDown = (e) => {
