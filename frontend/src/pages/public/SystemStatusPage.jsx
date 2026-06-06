@@ -353,7 +353,7 @@ export default function SystemStatusPage() {
             <Tooltip content="Attempt to fetch status again">
               <button
                 onClick={() => { setLoading(true); setError(null); fetchStatus(true) }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-violet-600/20 text-violet-400 border border-violet-500/20 hover:bg-violet-600/30 transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-orange-/20 text-orange- border border-orange-/20 hover:bg-orange-/30 transition-all"
               >
                 <RefreshCw className="w-4 h-4" /> Retry
               </button>

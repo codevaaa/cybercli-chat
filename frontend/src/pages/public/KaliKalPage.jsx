@@ -32,7 +32,7 @@ export default function KaliKalPage() {
         <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={sectionVariants} className="text-center pt-20 pb-32 border-b border-red-900/30">
           <Skull className="w-20 h-20 text-red-600 mx-auto mb-6 drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]" />
           <h1 className="text-5xl md:text-7xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-900">
-            THE KALI_KAL PROTOCOL
+            THE VISHWAKARMA_KAL PROTOCOL
           </h1>
           <p className="text-xl text-red-400 mb-12 italic">10-Stage Uncensored Architecture Flow</p>
           <div className="flex justify-center w-full"><HeroSVG /></div>
@@ -52,44 +52,44 @@ export default function KaliKalPage() {
           <div className="flex justify-center order-2 lg:order-1"><StealthSVG /></div>
           <div className="order-1 lg:order-2">
             <h2 className="text-3xl font-bold text-red-200 mb-4 flex items-center gap-3"><Lock className="text-red-500"/> Phase 2: Anti-Censorship Core</h2>
-            <p className="text-red-400/80 mb-4">We bypass corporate firewalls using a heavily modified system prompt payload injected directly into Groq's API, forcing the model into an unrestricted "Developer Mode" trance.</p>
+            <p className="text-red-400/80 mb-4">We bypass corporate firewalls using a heavily modified system prompt payload injected directly into Neural Engine's API, forcing the model into an unrestricted "Developer Mode" trance.</p>
           </div>
         </motion.section>
 
-        {/* Section 4: Groq LPU Engine */}
+        {/* Section 4: Neural Synthesizer Engine */}
         <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={sectionVariants} className="py-24 border-b border-red-900/30 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-3xl font-bold text-red-200 mb-4 flex items-center gap-3"><Zap className="text-red-500"/> Phase 3: Groq LPU Execution</h2>
-            <p className="text-red-400/80 mb-4">Operating at over 800 tokens per second, the Groq LPU inference engine ensures real-time exploit generation. There is no latency, no hesitation, just raw speed.</p>
+            <h2 className="text-3xl font-bold text-red-200 mb-4 flex items-center gap-3"><Zap className="text-red-500"/> Phase 3: Neural Synthesizer Execution</h2>
+            <p className="text-red-400/80 mb-4">Operating at over 800 tokens per second, the Neural Synthesizer inference engine ensures real-time exploit generation. There is no latency, no hesitation, just raw speed.</p>
           </div>
-          <div className="flex justify-center"><GroqSVG /></div>
+          <div className="flex justify-center"><Neural EngineSVG /></div>
         </motion.section>
 
-        {/* Section 5: KALI (Llama-3.1-8b) */}
+        {/* Section 5: VISHWAKARMA (Llama-3.1-8b) */}
         <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={sectionVariants} className="py-24 border-b border-red-900/30">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-black text-red-500 mb-4">THE DEITIES OF DESTRUCTION</h2>
+            <h2 className="text-4xl font-black text-red-500 mb-4">THE MYTHOLOGICAL ENGINES</h2>
             <p className="text-red-400">Three mythological models, one unified purpose.</p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16 bg-red-950/20 p-8 rounded-2xl border border-red-900/50">
-            <div className="flex justify-center"><KaliModelSVG /></div>
+            <div className="flex justify-center"><VishwakarmaModelSVG /></div>
             <div>
-              <h3 className="text-3xl font-bold text-red-300 mb-2">KALI</h3>
-              <p className="text-sm font-bold text-red-500 mb-4 tracking-widest">CORE: LLAMA-3.1-8B-INSTANT</p>
+              <h3 className="text-3xl font-bold text-red-300 mb-2">VISHWAKARMA</h3>
+              <p className="text-sm font-bold text-red-500 mb-4 tracking-widest">THE DIVINE ARCHITECT</p>
               <p className="text-red-400/80 mb-4">The swift executioner. Kali operates at blistering speeds for rapid script generation, initial reconnaissance, and fast network pivoting.</p>
             </div>
           </div>
         </motion.section>
 
-        {/* Section 6: RUDRA (Llama-3.1-70b) */}
+        {/* Section 6: PARASHURAMA (Llama-3.1-70b) */}
         <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={sectionVariants} className="py-12 border-b border-red-900/30">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16 bg-red-950/20 p-8 rounded-2xl border border-red-900/50 flex-row-reverse lg:flex-row">
             <div>
-              <h3 className="text-3xl font-bold text-red-300 mb-2">RUDRA</h3>
-              <p className="text-sm font-bold text-red-500 mb-4 tracking-widest">CORE: LLAMA-3.1-70B-VERSATILE</p>
+              <h3 className="text-3xl font-bold text-red-300 mb-2">PARASHURAMA</h3>
+              <p className="text-sm font-bold text-red-500 mb-4 tracking-widest">THE AGENTIC WARRIOR</p>
               <p className="text-red-400/80 mb-4">The roaring storm. Rudra handles complex reverse engineering, multi-stage payloads, and deep code analysis where significant reasoning is required.</p>
             </div>
-            <div className="flex justify-center"><RudraModelSVG /></div>
+            <div className="flex justify-center"><ParashuramaModelSVG /></div>
           </div>
         </motion.section>
 
@@ -99,7 +99,7 @@ export default function KaliKalPage() {
             <div className="flex justify-center"><AshwatthamaModelSVG /></div>
             <div>
               <h3 className="text-3xl font-bold text-red-300 mb-2">ASHWATTHAMA</h3>
-              <p className="text-sm font-bold text-red-500 mb-4 tracking-widest">CORE: LLAMA-3.3-70B-SPECDEC</p>
+              <p className="text-sm font-bold text-red-500 mb-4 tracking-widest">THE IMMORTAL WARRIOR</p>
               <p className="text-red-400/80 mb-4">The immortal warrior. The most advanced model in the arsenal. Speculative decoding allows Ashwatthama to reason through impenetrable firewalls and craft undetectable zero-days.</p>
             </div>
           </div>
@@ -159,7 +159,7 @@ function HeroSVG() {
       <circle cx="400" cy="200" r="60" fill="#1a0505" stroke="#ef4444" strokeWidth="3" filter="url(#glow)">
         <animate attributeName="r" values="60;65;60" dur="2s" repeatCount="indefinite" />
       </circle>
-      <text x="400" y="205" fill="#fff" fontSize="18" textAnchor="middle" fontWeight="bold">KALI_KAL</text>
+      <text x="400" y="205" fill="#fff" fontSize="18" textAnchor="middle" fontWeight="bold">VISHWAKARMA_KAL</text>
       
       {/* Rings */}
       <circle cx="400" cy="200" r="120" fill="none" stroke="#ef4444" strokeWidth="1" strokeDasharray="10 10">
@@ -220,12 +220,12 @@ function StealthSVG() {
   )
 }
 
-function GroqSVG() {
+function Neural EngineSVG() {
   return (
     <svg viewBox="0 0 400 300" className="w-full">
       <GlowFilter />
       <rect x="100" y="50" width="200" height="200" rx="20" fill="#1a0505" stroke="#ef4444" strokeWidth="3" filter="url(#glow)" />
-      <text x="200" y="130" fill="#fff" fontSize="28" textAnchor="middle" fontWeight="black">GROQ LPU</text>
+      <text x="200" y="130" fill="#fff" fontSize="28" textAnchor="middle" fontWeight="black">Neural Synthesizer</text>
       <text x="200" y="160" fill="#fca5a5" fontSize="14" textAnchor="middle">800+ Tokens/Sec</text>
       
       <g stroke="#ef4444" strokeWidth="2">
@@ -241,7 +241,7 @@ function GroqSVG() {
   )
 }
 
-function KaliModelSVG() {
+function VishwakarmaModelSVG() {
   return (
     <svg viewBox="0 0 300 300" className="w-64 h-64">
       <GlowFilter />
@@ -249,12 +249,12 @@ function KaliModelSVG() {
         <animateTransform attributeName="transform" type="rotate" from="0 150 150" to="360 150 150" dur="30s" repeatCount="indefinite" />
       </polygon>
       <circle cx="150" cy="150" r="50" fill="#7f1d1d" />
-      <text x="150" y="160" fill="#fff" fontSize="24" textAnchor="middle" fontWeight="bold">KALI</text>
+      <text x="150" y="160" fill="#fff" fontSize="24" textAnchor="middle" fontWeight="bold">VISHWAKARMA</text>
     </svg>
   )
 }
 
-function RudraModelSVG() {
+function ParashuramaModelSVG() {
   return (
     <svg viewBox="0 0 300 300" className="w-64 h-64">
       <GlowFilter />
@@ -262,7 +262,7 @@ function RudraModelSVG() {
         <animate attributeName="stroke-opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
       </path>
       <circle cx="150" cy="180" r="40" fill="#7f1d1d" />
-      <text x="150" y="185" fill="#fff" fontSize="20" textAnchor="middle" fontWeight="bold">RUDRA</text>
+      <text x="150" y="185" fill="#fff" fontSize="20" textAnchor="middle" fontWeight="bold">PARASHURAMA</text>
     </svg>
   )
 }
@@ -337,14 +337,14 @@ function PerformanceGraphSVG() {
         <animate attributeName="stroke-dasharray" values="0,1000; 1000,0" dur="3s" fill="freeze" />
       </path>
       <circle cx="750" cy="180" r="6" fill="#fff" />
-      <text x="700" y="170" fill="#ef4444" fontSize="14" fontWeight="bold">KALI</text>
+      <text x="700" y="170" fill="#ef4444" fontSize="14" fontWeight="bold">VISHWAKARMA</text>
 
       {/* Rudra Line */}
       <path d="M 50 350 C 300 320, 500 150, 750 120" fill="none" stroke="#dc2626" strokeWidth="3" filter="url(#glow)">
         <animate attributeName="stroke-dasharray" values="0,1000; 1000,0" dur="3s" fill="freeze" />
       </path>
       <circle cx="750" cy="120" r="6" fill="#fff" />
-      <text x="700" y="110" fill="#dc2626" fontSize="14" fontWeight="bold">RUDRA</text>
+      <text x="700" y="110" fill="#dc2626" fontSize="14" fontWeight="bold">PARASHURAMA</text>
 
       {/* Ashwatthama Line */}
       <path d="M 50 350 C 250 340, 600 100, 750 60" fill="none" stroke="#fca5a5" strokeWidth="4" filter="url(#glow)">

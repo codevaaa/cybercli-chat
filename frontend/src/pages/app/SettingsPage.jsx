@@ -812,7 +812,7 @@ function ExtensionsTab() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Desktop App */}
         <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary flex flex-col items-start text-left">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-4">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange- to-orange- flex items-center justify-center mb-4">
             <Monitor className="w-5 h-5 text-white" />
           </div>
           <h4 className="text-sm font-semibold text-foreground-primary mb-1">Codeva Desktop</h4>

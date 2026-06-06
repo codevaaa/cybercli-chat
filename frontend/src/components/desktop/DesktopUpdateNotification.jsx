@@ -168,8 +168,8 @@ export default function DesktopUpdateNotification() {
 
                   {/* Feature 3 */}
                   <div className="flex gap-4">
-                    <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0 mt-1">
-                      <Code2 className="w-5 h-5 text-purple-400" />
+                    <div className="w-10 h-10 rounded-full bg-orange-/10 flex items-center justify-center flex-shrink-0 mt-1">
+                      <Code2 className="w-5 h-5 text-orange-" />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold text-white mb-2">UI & Stability Fixes</h3>

@@ -6077,7 +6077,7 @@ export default function ChatPage() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className="bg-[#1A1A1A] border border-[#3E3E3E] rounded-3xl max-w-md w-full overflow-hidden shadow-2xl"
           >
-            <div className="relative h-48 bg-gradient-to-br from-indigo-600 to-purple-800 overflow-hidden flex items-center justify-center">
+            <div className="relative h-48 bg-gradient-to-br from-orange-600 to-orange-800 overflow-hidden flex items-center justify-center">
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-30"></div>
               <Sparkles className="w-20 h-20 text-white opacity-80" />
             </div>

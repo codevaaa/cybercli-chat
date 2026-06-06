@@ -6,6 +6,7 @@ import PublicLayout from '@components/layout/PublicLayout'
 import CookieConsent from '@components/legal/CookieConsent'
 import ProtectedRoute from '@components/auth/ProtectedRoute.jsx'
 import DesktopUpdateNotification from '@components/desktop/DesktopUpdateNotification.jsx'
+import { ErrorBoundary } from '@components/layout/ErrorBoundary.jsx'
 import { useAuthStore } from '@stores/authStore.js'
 
 import HomePage from '@pages/public/HomePage'
@@ -138,6 +139,7 @@ function App() {
     <div className="min-h-screen bg-background-primary text-foreground-primary">
       {isPublicRoute() && !location.pathname.startsWith('/auth') && <Navbar />}
       <main>
+        <ErrorBoundary>
         <Routes>
           {/* ── Public Marketing Routes (with Lenis smooth scroll) ── */}
           <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
@@ -222,6 +224,7 @@ function App() {
           <Route path="/workflows" element={<ProtectedRoute><WorkflowsPage /></ProtectedRoute>} />
           <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
         </Routes>
+        </ErrorBoundary>
       </main>
       {isPublicRoute() && !window.location.pathname.startsWith('/auth') && <Footer />}
       <CookieConsent />
