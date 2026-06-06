@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Plus, FolderOpen, Calendar, MessageSquare, Cpu, Trash2, X } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Skeleton } from '../ui/Skeleton.jsx'
-import { Tooltip } from '../ui/Tooltip.jsx'
+import { Skeleton } from '@components/ui/Skeleton.jsx'
+import { Tooltip } from '@components/ui/Tooltip.jsx'
 import api from '../../lib/api.js'
 
 export default function ProjectsPage() {

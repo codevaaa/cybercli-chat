@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft, Mail, User, Calendar, Zap, Check, Loader2, Pencil } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@stores/authStore.js'
-import { Skeleton } from '../ui/Skeleton.jsx'
-import { Tooltip } from '../ui/Tooltip.jsx'
+import { Skeleton } from '@components/ui/Skeleton.jsx'
+import { Tooltip } from '@components/ui/Tooltip.jsx'
 import api from '../../lib/api.js'
 
 function initialsFrom(name = '', email = '') {
