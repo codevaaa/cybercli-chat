@@ -5022,6 +5022,7 @@ export default function ChatPage() {
   const standardThreads = threads.filter(t => t.mode !== 'kali_kal' && t.mode !== 'kalikal')
   const pinnedThreads = standardThreads.filter(t => t.is_pinned)
   const recentThreads = standardThreads.filter(t => !t.is_pinned).slice(0, 30)
+  const kaliThreads = threads.filter(t => t.mode === 'kali_kal' || t.mode === 'kalikal')
 
   const selectedModelObj = [...MODELS, ...EXTRA_MODELS].find(m => m.id === selectedModel)
   const isKaliMode = selectedModelObj?.kali === true
@@ -5241,6 +5242,24 @@ export default function ChatPage() {
                   />
                 ))}
               </div>
+
+              {kaliThreads.length > 0 && (
+                <div className="mt-4 mb-2">
+                  <p className="text-[10px] font-semibold text-red-500/50 px-2 mb-1 uppercase tracking-widest">Kali Kal Sessions</p>
+                  <div className="space-y-0.5">
+                    {kaliThreads.map(t => (
+                      <ThreadItem
+                        key={t._id}
+                        thread={t}
+                        isActive={activeThreadId === t._id && activeNav === 'chats'}
+                        onSelect={() => { navigate(`/chat/${t._id}`); setActiveNav('chats') }}
+                        onDelete={(e) => handleDeleteThread(t._id, e)}
+                        onPin={(e) => handlePinThread(t._id, e)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {threads.length === 0 && !threadsLoading && (
                 <p className="text-xs text-foreground-muted text-center mt-6">No conversations yet</p>
