@@ -398,11 +398,11 @@ function KaliModelSelector({ selected, onSelect }) {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.96 }}
+            initial={{ opacity: 0, y: 4, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.96 }}
+            exit={{ opacity: 0, y: 4, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full mt-1.5 right-0 z-50 rounded-lg border border-red-900/40 w-[280px] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.6)]"
+            className="absolute bottom-full mb-1.5 right-0 z-50 rounded-lg border border-red-900/40 w-[280px] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.6)]"
             style={{ background: '#0D0208' }}
           >
             <div className="px-3 py-2 border-b border-red-900/30">
