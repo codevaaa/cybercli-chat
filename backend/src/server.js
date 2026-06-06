@@ -375,7 +375,7 @@ connectMongoDB().then(async () => {
     console.error('Error seeding testimonials:', seedErr.message)
   }
 
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`Codeva API server running on port ${PORT}`)
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
   })
