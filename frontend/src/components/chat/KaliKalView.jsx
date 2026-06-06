@@ -521,6 +521,49 @@ export default function KaliKalView({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
   
+  // ── Audio Context for Mechanical Typing ──
+  const audioCtxRef = useRef(null)
+  useEffect(() => {
+    try {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
+    } catch (e) {
+      console.warn('Web Audio API not supported')
+    }
+    return () => {
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+        audioCtxRef.current.close()
+      }
+    }
+  }, [])
+
+  const playClickSound = useCallback(() => {
+    if (!audioCtxRef.current) return
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume()
+    }
+    
+    try {
+      const osc = audioCtxRef.current.createOscillator()
+      const gainNode = audioCtxRef.current.createGain()
+      
+      // Mechanical switch click characteristics
+      osc.type = 'square'
+      osc.frequency.setValueAtTime(150, audioCtxRef.current.currentTime)
+      osc.frequency.exponentialRampToValueAtTime(40, audioCtxRef.current.currentTime + 0.05)
+      
+      gainNode.gain.setValueAtTime(0.05, audioCtxRef.current.currentTime) // Very quiet
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.05)
+      
+      osc.connect(gainNode)
+      gainNode.connect(audioCtxRef.current.destination)
+      
+      osc.start()
+      osc.stop(audioCtxRef.current.currentTime + 0.05)
+    } catch (e) {
+      // Ignore audio errors
+    }
+  }, [])
+  
   const [kaliUsage, setKaliUsage] = useState(() => {
     try {
       const stored = localStorage.getItem('kali_usage_data')
@@ -615,14 +658,6 @@ export default function KaliKalView({
     if (routingModel === 'auto') {
       const isTask = /code|script|build|create|hack|exploit|analyze|write|generate|function|component|app|web|html|react/i.test(userText) || userText.length > 50;
       routingModel = isTask ? 'openrouter/qwen-2.5-coder-32b-free' : 'groq/llama-3.3-70b';
-    }
-
-    // Burn After Read logic - don't save to db, just handle in UI
-    if (burnAfterRead) {
-      // Opt out of threading, just use ephemeral state if implemented in handleSend, 
-      // but for now we'll just not create a thread and send a standard message
-      // Actually, handleSend expects a thread. Let's just create an ephemeral array if burnAfterRead is true.
-      // For fullstack completeness, we will modify handleSend inside the context if needed, but here we just pass a flag.
     }
 
     // If no active kali thread, create one first
@@ -790,6 +825,9 @@ export default function KaliKalView({
 
             <button 
               onClick={() => {
+                if (burnAfterRead && activeThreadId && handleDeleteThread) {
+                  handleDeleteThread(activeThreadId)
+                }
                 setKaliMessages([])
                 setSandboxLogs([])
               }}
@@ -964,7 +1002,10 @@ export default function KaliKalView({
                       e.target.style.height = 'auto'
                       e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px'
                     }}
-                    onKeyDown={handleKeyDown}
+                    onKeyDown={(e) => {
+                      playClickSound()
+                      handleKeyDown(e)
+                    }}
                     placeholder={commandPaletteOpen ? "Press Esc to close Command Palette..." : "Initialize payload sequence... (Ctrl+K for commands)"}
                     rows={1}
                     className="flex-1 bg-transparent border-none text-red-100/90 placeholder:text-red-500/25 focus:outline-none focus:ring-0 py-3.5 px-2 text-[14px] resize-none leading-relaxed"
