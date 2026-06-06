@@ -11,6 +11,9 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
+import mongoSanitize from 'express-mongo-sanitize'
+import xss from 'xss-clean'
+import cookieParser from 'cookie-parser'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -91,6 +94,12 @@ app.use(helmet({
   frameguard: { action: 'deny' },
 }))
 
+// Data Sanitization against NoSQL query injection
+app.use(mongoSanitize())
+
+// Data Sanitization against XSS
+app.use(xss())
+
 app.use(cors({
   origin: (origin, callback) => {
     const whitelist = process.env.FRONTEND_URL?.split(',') || []
@@ -116,17 +125,21 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
 }))
 
+// Auth/API specific strict rate limiting
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 mins
+  max: 20, // limit to 20 requests per window for auth routes
+  message: 'Too many auth requests from this IP, please try again after 15 minutes'
+})
+
 // Rate limiting — per-plan throughput from the single source of truth (plans.js).
-// The window is 15 min, so we scale the plan's hourly budget to the window and
-// add headroom for guests. Authenticated users resolve their real plan upstream.
 const RATE_WINDOW_MS = 15 * 60 * 1000
 const limiter = rateLimit({
   windowMs: RATE_WINDOW_MS,
   max: (req) => {
     const planId = req.user?.plan || 'free'
     const plan = PLANS[planId] || PLANS.free
-    if (!req.user) return 500 // increased from 20 for testing
-    // hourly budget -> per-15-min window, dramatically increased for testing
+    if (!req.user) return 500
     return Math.max(1000, Math.ceil((plan.requestsPerHour || 50) * 10))
   },
   standardHeaders: true,
@@ -139,6 +152,11 @@ const limiter = rateLimit({
     })
   },
 })
+
+// Apply auth limiter to auth and api-keys routes
+app.use('/api/v1/auth', authLimiter)
+app.use('/api/v1/api-keys', authLimiter)
+
 app.use(optionalAuth)
 app.use(limiter)
 
@@ -148,11 +166,10 @@ app.post('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }), (r
   import('./routes/stripe.routes.js').then((m) => m.handleWebhook(req, res, next)).catch(next)
 })
 
-// Body parsing
+// Body parsing and Cookie parsing
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
-
-
+app.use(cookieParser())
 
 // Request logging
 app.use(requestLogger)

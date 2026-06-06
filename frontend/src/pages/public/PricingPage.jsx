@@ -218,7 +218,7 @@ export default function PricingPage() {
           ))}
         </div>
         <p className="text-center text-xs text-gray-600 mt-6">
-          Need a team or enterprise plan? <Link to="/contact?plan=enterprise" className="text-orange-400 hover:underline">Contact sales</Link>.
+          Need a team or enterprise plan? <Link to="/upgrade" className="text-orange-400 hover:underline">Upgrade Now</Link>.
         </p>
       </div>
 

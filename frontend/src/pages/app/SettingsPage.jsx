@@ -900,12 +900,34 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // Fetch stats and plan
-    api.get('/auth/me/stats')
-      .then(res => {
-         if (res.data?.plan) setUserPlan(String(res.data.plan).toLowerCase())
-      })
-      .catch(err => console.error('Error fetching plan/stats', err))
-  }, [])
+    const fetchPlan = () => {
+      api.get('/auth/me/stats')
+        .then(res => {
+           if (res.data?.plan) setUserPlan(String(res.data.plan).toLowerCase())
+        })
+        .catch(err => console.error('Error fetching plan/stats', err))
+    }
+    
+    fetchPlan()
+
+    const searchParams = new URLSearchParams(location.search)
+    if (searchParams.get('success') === 'true') {
+      let attempts = 0
+      const interval = setInterval(() => {
+        attempts++
+        api.get('/auth/me/stats').then(res => {
+          if (res.data?.plan && String(res.data.plan).toLowerCase() !== 'free') {
+            setUserPlan(String(res.data.plan).toLowerCase())
+            clearInterval(interval)
+            navigate(location.pathname, { replace: true })
+          } else if (attempts >= 10) {
+            clearInterval(interval)
+          }
+        }).catch(() => {})
+      }, 2000)
+      return () => clearInterval(interval)
+    }
+  }, [location.search, navigate, location.pathname])
 
   useEffect(() => {
     const path = location.pathname

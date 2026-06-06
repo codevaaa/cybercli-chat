@@ -26,6 +26,7 @@ import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
 import KaliKalView from '../../components/chat/KaliKalView.jsx'
 import MatrixRain from '../../components/chat/MatrixRain.jsx'
 import KaliKalBanner from '../../components/chat/KaliKalBanner.jsx'
+import ChatExportMenu from '../../components/chat/ChatExportMenu.jsx'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -452,11 +453,13 @@ function DaemonActionWidget({ action, payload, daemonConnected, onExecuteSuccess
       <div className="flex items-center justify-between border-b border-white/[0.03] pb-2">
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-accent" />
-          <span className="text-xs font-semibold text-foreground-primary">Local Workspace Daemon Action</span>
+          <span className="text-xs font-semibold text-foreground-primary">
+            {daemonConnected ? 'Local Workspace Daemon Action' : ((thread?.mode === 'kalikal' || thread?.mode === 'kali_kal') ? 'Cloud Sandbox Execution' : 'Local Workspace Daemon Action')}
+          </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className={`w-1.5 h-1.5 rounded-full ${daemonConnected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-          <span className="text-[10px] text-foreground-muted">{daemonConnected ? 'Daemon connected' : 'Daemon offline'}</span>
+          <span className={`w-1.5 h-1.5 rounded-full ${daemonConnected ? 'bg-emerald-400 animate-pulse' : ((thread?.mode === 'kalikal' || thread?.mode === 'kali_kal') ? 'bg-blue-400 animate-pulse' : 'bg-red-400')}`} />
+          <span className="text-[10px] text-foreground-muted">{daemonConnected ? 'Daemon connected' : ((thread?.mode === 'kalikal' || thread?.mode === 'kali_kal') ? 'Sandbox connected' : 'Daemon offline')}</span>
         </div>
       </div>
 
@@ -466,15 +469,15 @@ function DaemonActionWidget({ action, payload, daemonConnected, onExecuteSuccess
 
       {status === 'idle' && (
         <button
-          disabled={!daemonConnected}
+          disabled={!daemonConnected && thread?.mode !== 'kalikal' && thread?.mode !== 'kali_kal'}
           onClick={handleExecute}
           className={`w-full py-2 rounded-lg text-xs font-bold text-center transition-all ${
-            daemonConnected
+            daemonConnected || thread?.mode === 'kalikal' || thread?.mode === 'kali_kal'
               ? 'bg-accent text-white hover:bg-accent-dark active:scale-[0.98]'
               : 'bg-white/5 text-white/30 border border-white/5 cursor-not-allowed'
           }`}
         >
-          {daemonConnected ? 'Execute Workspace Action' : 'Connect Daemon to Execute'}
+          {daemonConnected ? 'Execute Workspace Action' : ((thread?.mode === 'kalikal' || thread?.mode === 'kali_kal') ? 'Execute in Cloud Sandbox' : 'Connect Daemon to Execute')}
         </button>
       )}
 
@@ -2797,18 +2800,20 @@ function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: pa
       </div>
 
       {/* Setup Guide */}
-      <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary space-y-3.5">
-        <h3 className="text-sm font-semibold text-foreground-primary flex items-center gap-2">
-          <Zap className="w-4 h-4 text-accent" />
-          Quick Setup Guide
-        </h3>
-        <p className="text-xs text-foreground-secondary leading-relaxed">
-          Open a terminal inside your target development directory on your local machine and run:
-        </p>
-        <pre className="bg-[#0f0f13] border border-white/[0.03] p-3 rounded-lg font-mono text-[11px] text-foreground-secondary select-all leading-relaxed whitespace-pre-wrap">
-          # Install CLI globally{"\n"}npm install -g codeva{"\n\n"}# Link workspace using your API key below{"\n"}codeva link --key YOUR_API_KEY
-        </pre>
-      </div>
+      {!(thread?.mode === 'kalikal' || thread?.mode === 'kali_kal') && (
+        <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary space-y-3.5">
+          <h3 className="text-sm font-semibold text-foreground-primary flex items-center gap-2">
+            <Zap className="w-4 h-4 text-accent" />
+            Quick Setup Guide
+          </h3>
+          <p className="text-xs text-foreground-secondary leading-relaxed">
+            Open a terminal inside your target development directory on your local machine and run:
+          </p>
+          <pre className="bg-[#0f0f13] border border-white/[0.03] p-3 rounded-lg font-mono text-[11px] text-foreground-secondary select-all leading-relaxed whitespace-pre-wrap">
+            # Install CLI globally{"\n"}npm install -g codeva{"\n\n"}# Link workspace using your API key below{"\n"}codeva link --key YOUR_API_KEY
+          </pre>
+        </div>
+      )}
 
       {/* API Key Section */}
       <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary space-y-4">
@@ -4960,7 +4965,7 @@ export default function ChatPage() {
       setLoading(false)
     }
     return true
-  }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions, userPlan, effortLevel, thinkingEnabled])
+  }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, deepResearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions, userPlan, effortLevel, thinkingEnabled])
 
   // ── User info (from state & localStorage) ──
   const [userName, setUserName] = useState(() => localStorage.getItem('user_name') || 'User')
@@ -5580,6 +5585,23 @@ export default function ChatPage() {
                 >
                   <Terminal className="w-4 h-4" />
                 </button>
+                <button
+                  onClick={() => setDeepResearchEnabled(prev => !prev)}
+                  className={`p-2 rounded-xl border transition-all duration-200 ${
+                    deepResearchEnabled 
+                      ? 'bg-blue-500/20 border-blue-500/40 text-blue-400' 
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                  }`}
+                  title="Toggle Deep Research Agents"
+                >
+                  <Brain className="w-4 h-4" />
+                </button>
+                {activeThreadId && (
+                  <ChatExportMenu 
+                    messages={messages} 
+                    threadTitle={threads.find(t => t._id === activeThreadId)?.title} 
+                  />
+                )}
               </>
             )}
 
@@ -6314,7 +6336,7 @@ export default function ChatPage() {
               <button 
                 onClick={() => {
                   setShowProModal(false)
-                  navigate('/settings?tab=plan')
+                  navigate('/settings/billing')
                 }}
                 className="w-full bg-white text-black font-semibold rounded-xl py-3.5 hover:bg-[#E8E6E1] transition-transform active:scale-95 shadow-lg mb-4"
               >

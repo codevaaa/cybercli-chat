@@ -10,7 +10,7 @@ import logger from '../../utils/logger.js'
  * @param {Function} [onStderr] - Callback for real-time stderr chunks.
  * @returns {Promise<{stdout: string, stderr: string, error?: string}>}
  */
-export async function executeInSandbox(code, userId, onStdout, onStderr) {
+export async function executeInSandbox(code, userId, language = 'python', onStdout, onStderr) {
   try {
     // 1. Check Usage Limits
     let user = await User.findOne({ supabase_id: userId })
@@ -49,7 +49,7 @@ export async function executeInSandbox(code, userId, onStdout, onStderr) {
     await user.save()
 
     // 3. Create Sandbox & Execute
-    logger.info(`Starting E2B Sandbox for user ${userId}...`)
+    logger.info(`Starting E2B Sandbox for user ${userId} (language: ${language})...`)
     
     // Create sandbox instance
     const sandbox = await Sandbox.create({
@@ -59,7 +59,7 @@ export async function executeInSandbox(code, userId, onStdout, onStderr) {
     logger.info(`Sandbox ${sandbox.sandboxId} started. Executing code...`)
     
     const execution = await sandbox.runCode(code, {
-      language: 'python',
+      language: language,
       onStdout: onStdout ? (out) => onStdout(out.line) : undefined,
       onStderr: onStderr ? (err) => onStderr(err.line) : undefined
     })
