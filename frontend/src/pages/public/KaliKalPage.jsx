@@ -62,7 +62,7 @@ export default function KaliKalPage() {
             <h2 className="text-3xl font-bold text-red-200 mb-4 flex items-center gap-3"><Zap className="text-red-500"/> Phase 3: Neural Synthesizer Execution</h2>
             <p className="text-red-400/80 mb-4">Operating at over 800 tokens per second, the Neural Synthesizer inference engine ensures real-time exploit generation. There is no latency, no hesitation, just raw speed.</p>
           </div>
-          <div className="flex justify-center"><Neural EngineSVG /></div>
+          <div className="flex justify-center"><NeuralEngineSVG /></div>
         </motion.section>
 
         {/* Section 5: VISHWAKARMA (Llama-3.1-8b) */}
@@ -220,7 +220,7 @@ function StealthSVG() {
   )
 }
 
-function Neural EngineSVG() {
+function NeuralEngineSVG() {
   return (
     <svg viewBox="0 0 400 300" className="w-full">
       <GlowFilter />
