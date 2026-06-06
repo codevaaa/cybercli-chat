@@ -5577,18 +5577,7 @@ export default function ChatPage() {
               <>
 
 
-                {/* Workspace split toggle */}
-                <button
-                  onClick={() => setWorkspaceOpen(prev => !prev)}
-                  className={`p-2 rounded-xl border transition-all duration-200 ${
-                    workspaceOpen 
-                      ? 'bg-[#D97757]/20 border-[#D97757]/40 text-[#D97757]' 
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
-                  }`}
-                  title="Toggle Workspace Panel"
-                >
-                  <Terminal className="w-4 h-4" />
-                </button>
+
                 <button
                   onClick={() => setDeepResearchEnabled(prev => !prev)}
                   className={`p-2 rounded-xl border transition-all duration-200 ${
@@ -5673,7 +5662,7 @@ export default function ChatPage() {
         <div className="flex-1 flex overflow-hidden relative">
           
           {/* Chat Content Panel (Left/Main side) */}
-          <div className={`flex-1 flex flex-col min-w-0 h-full relative ${workspaceOpen && !isMobile ? 'w-[55%]' : 'w-full'}`}>
+          <div className="flex-1 flex flex-col min-w-0 h-full relative w-full">
             {/* Server Warming Up Banner */}
             {isWarmingUp && !window.electronAPI && (
               <div className="bg-[#7C3AED]/10 border-b border-[#7C3AED]/20 px-4 py-2.5 text-center text-xs text-[#ECECEC] flex items-center justify-center gap-2 animate-pulse z-50 flex-shrink-0">
@@ -5886,270 +5875,7 @@ export default function ChatPage() {
             </div>
           </div>
 
-          {/* Workspace Panel (Right side) */}
-          <AnimatePresence>
-            {workspaceOpen && (
-              <motion.div
-                initial={{ x: isMobile ? '100%' : 100, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: isMobile ? '100%' : 100, opacity: 0 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className={`${
-                  isMobile
-                    ? 'fixed inset-y-0 right-0 z-40 w-full sm:w-[85%] shadow-2xl animate-fade-in'
-                    : 'relative border-l border-white/[0.06]'
-                } h-full bg-[#0D0D14] flex flex-col overflow-hidden`}
-                style={{ width: isMobile ? undefined : workspaceWidth }}
-              >
-                {!isMobile && (
-                  <div
-                    onMouseDown={startResizing}
-                    className="absolute top-0 bottom-0 left-0 w-1.5 cursor-col-resize hover:bg-[#D97757]/40 active:bg-[#D97757] transition-colors z-50 flex items-center justify-center group"
-                    style={{ touchAction: 'none' }}
-                  >
-                    <div className="w-[1px] h-8 bg-white/10 group-hover:bg-[#D97757]/60 group-active:bg-[#D97757]" />
-                  </div>
-                )}
-                {/* Workspace Panel Header — Claude Code style */}
-                <div className="flex-shrink-0 bg-[#08080E] border-b border-white/[0.04]">
-                  {/* macOS traffic lights + breadcrumb */}
-                  <div className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.03]">
-                    <div className="flex items-center gap-1.5">
-                      <button onClick={() => setWorkspaceOpen(false)} className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 transition-colors" title="Close" />
-                      <div className="w-3 h-3 rounded-full bg-yellow-500/40" />
-                      <div className="w-3 h-3 rounded-full bg-emerald-500/40" />
-                    </div>
-                    <div className="flex items-center gap-1 text-[11px] text-gray-500 font-mono">
-                      <span className="text-gray-600">~</span>
-                      <span>/</span>
-                      <span className="text-gray-400">workspace</span>
-                      {daemonConnected && <span className="text-emerald-400/60 ml-1">● live</span>}
-                    </div>
-                    <div className="ml-auto flex items-center gap-1">
-                      <button onClick={() => setWorkspaceOpen(false)} className="p-1 rounded text-gray-600 hover:text-gray-400 transition-colors">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                  {/* Tab bar */}
-                  <div className="flex items-center px-2 gap-0.5 py-1">
-                    {[
-                      { id: 'terminal', label: 'Terminal', Icon: Terminal },
-                      { id: 'files', label: 'Files', Icon: FolderTree },
-                      { id: 'preview', label: 'Preview', Icon: FileCode },
-                      { id: 'git', label: 'Git', Icon: GitIcon },
-                    ].map(({ id, label, Icon }) => (
-                      <button
-                        key={id}
-                        onClick={() => setWorkspaceTab(id)}
-                        className={`flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-md transition-all ${
-                          workspaceTab === id
-                            ? 'bg-white/[0.06] text-white border border-white/[0.08]'
-                            : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
-                        }`}
-                      >
-                        <Icon className="w-3.5 h-3.5" />
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Workspace Panel Body */}
-                <div className="flex-1 overflow-hidden relative flex flex-col">
-                  {workspaceTab === 'terminal' ? (
-                    <div className="flex-1 flex flex-col overflow-hidden bg-[#020204] p-3 font-mono text-xs text-left">
-                      {/* Terminal scrollable logs */}
-                      <div className="flex-1 overflow-y-auto mb-2 space-y-1.5 pr-1">
-                        {terminalHistory.map((item, idx) => {
-                          if (item.type === 'input') {
-                            return (
-                              <div key={idx} className="flex items-start gap-1.5">
-                                <span className="text-emerald-400 font-bold select-none shrink-0">user@codeva:~/workspace$</span>
-                                <span className="text-gray-200 whitespace-pre-wrap select-all">{item.text}</span>
-                              </div>
-                            )
-                          } else if (item.type === 'error') {
-                            return (
-                              <pre key={idx} className="text-rose-400 whitespace-pre-wrap leading-relaxed select-text pl-1">{item.text}</pre>
-                            )
-                          } else {
-                            return (
-                              <pre key={idx} className="text-gray-300 whitespace-pre-wrap leading-relaxed select-text pl-1">{item.text}</pre>
-                            )
-                          }
-                        })}
-                        {terminalLoading && (
-                          <div className="text-amber-400 animate-pulse flex items-center gap-1.5 mt-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                            executing...
-                          </div>
-                        )}
-                      </div>
-
-
-
-                      {/* Terminal input bar */}
-                      <form onSubmit={handleTerminalSubmit} className="flex items-center gap-1.5 bg-black/50 border border-white/[0.08] rounded-lg p-2 flex-shrink-0">
-                        <span className="text-emerald-400 font-bold select-none text-[11px] shrink-0">$</span>
-                        <input
-                          type="text"
-                          value={terminalInput}
-                          onChange={(e) => setTerminalInput(e.target.value)}
-                          placeholder="Type command..."
-                          disabled={terminalLoading}
-                          className="flex-1 bg-transparent border-0 outline-none p-0 text-white font-mono text-[11px] focus:ring-0 placeholder-gray-600 disabled:cursor-not-allowed"
-                        />
-                      </form>
-                    </div>
-                  ) : workspaceTab === 'files' ? (
-                    <div className="flex-1 flex flex-col overflow-hidden bg-[#06060A]">
-                        <div className="flex-1 overflow-y-auto p-3 font-mono text-xs">
-                          <div className="space-y-0.5">
-                            {[
-                              { name: 'src/', type: 'dir', depth: 0 },
-                              { name: 'components/', type: 'dir', depth: 1 },
-                              { name: 'pages/', type: 'dir', depth: 1 },
-                              { name: 'hooks/', type: 'dir', depth: 1 },
-                              { name: 'index.css', type: 'file', depth: 1 },
-                              { name: 'main.jsx', type: 'file', depth: 1 },
-                              { name: 'package.json', type: 'file', depth: 0 },
-                              { name: 'vite.config.js', type: 'file', depth: 0 },
-                            ].map((item, i) => (
-                              <div
-                                key={i}
-                                className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-white/[0.04] cursor-pointer text-gray-400 hover:text-white transition-colors"
-                                style={{ paddingLeft: `${8 + item.depth * 16}px` }}
-                                onClick={() => item.type === 'file' && setPreviewFilePath(item.name) && setWorkspaceTab('preview')}
-                              >
-                                {item.type === 'dir'
-                                  ? <FolderTree className="w-3.5 h-3.5 text-yellow-500/70 shrink-0" />
-                                  : <FileCode className="w-3.5 h-3.5 text-blue-400/70 shrink-0" />
-                                }
-                                <span className={item.type === 'dir' ? 'text-yellow-200/80' : 'text-gray-300'}>{item.name}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <p className="text-[10px] text-gray-700 mt-4 px-2">File tree is populated from daemon. Click a file to open in Preview.</p>
-                        </div>
-                    </div>
-                  ) : workspaceTab === 'preview' ? (
-                    /* File Preview */
-                    <div className="flex-1 flex flex-col overflow-hidden bg-[#06060A]">
-                      {/* Path search / control bar */}
-                      <div className="p-2 border-b border-white/[0.04] flex items-center gap-2 flex-shrink-0">
-                        <input
-                          type="text"
-                          value={previewFilePath}
-                          onChange={(e) => setPreviewFilePath(e.target.value)}
-                          placeholder="Path to file (e.g. src/index.js)..."
-                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-accent font-mono"
-                        />
-                        <button
-                          onClick={() => handleLoadPreviewFile()}
-                          disabled={previewFileLoading}
-                          className="px-3 py-1 rounded-lg bg-accent text-white text-xs font-bold hover:bg-accent-dark disabled:bg-white/5 disabled:text-white/30 transition-all flex-shrink-0"
-                        >
-                          {previewFileLoading ? 'Loading...' : 'Load'}
-                        </button>
-                      </div>
-
-                      {/* Preview view area */}
-                      <div className="flex-1 overflow-auto">
-                        {previewFileLoading && (
-                          <div className="h-full flex items-center justify-center">
-                            <div className="w-6 h-6 rounded-full border-2 border-[#D97757] border-t-transparent animate-spin" />
-                          </div>
-                        )}
-
-                        {!previewFileLoading && previewFileError && (
-                          <div className="p-5 text-center flex flex-col items-center justify-center h-full gap-2">
-                            <AlertCircle className="w-8 h-8 text-rose-400" />
-                            <p className="text-xs text-rose-300 font-semibold">{previewFileError}</p>
-                          </div>
-                        )}
-
-                        {!previewFileLoading && !previewFileError && !previewFileContent && (
-                          <div className="p-5 text-center flex flex-col items-center justify-center h-full text-gray-500 gap-2">
-                            <FileCode className="w-8 h-8 opacity-30" />
-                            <p className="text-xs">No file loaded</p>
-                            <p className="text-[10px] max-w-xs leading-normal">Enter a file path above and click Load to view its content with syntax highlighting.</p>
-                          </div>
-                        )}
-
-                        {!previewFileLoading && !previewFileError && previewFileContent && (
-                          <div className="h-full select-text">
-                            {activePreviewFile?.endsWith('.diff') || previewFileContent.startsWith('diff') ? (
-                              <div className="font-mono text-xs p-4 space-y-0.5 whitespace-pre overflow-auto h-full text-left">
-                                {previewFileContent.split('\n').map((line, idx) => {
-                                  let colorClass = "text-gray-300"
-                                  if (line.startsWith('+')) colorClass = "text-emerald-400 bg-emerald-950/30 px-1 rounded-sm border-l-2 border-emerald-500"
-                                  else if (line.startsWith('-')) colorClass = "text-rose-400 bg-rose-950/30 px-1 rounded-sm border-l-2 border-rose-500"
-                                  return <div key={idx} className={colorClass}>{line}</div>
-                                })}
-                              </div>
-                            ) : activePreviewFile?.endsWith('.md') ? (
-                              <div className="prose-custom p-5 overflow-auto h-full text-gray-300 text-left">
-                                <ReactMarkdown>{previewFileContent}</ReactMarkdown>
-                              </div>
-                            ) : (
-                              <div className="overflow-auto h-full text-left">
-                                <SyntaxHighlighter
-                                  language={activePreviewFile?.split('.').pop() || 'javascript'}
-                                  style={oneDark}
-                                  customStyle={{ margin: 0, padding: '16px', background: '#050508', fontSize: '0.8125rem', height: '100%' }}
-                                  showLineNumbers={previewFileContent.split('\n').length > 3}
-                                >
-                                  {previewFileContent}
-                                </SyntaxHighlighter>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : workspaceTab === 'git' ? (
-                    /* Git Tab */
-                    <div className="flex-1 flex flex-col overflow-hidden bg-[#06060A] p-4 font-mono text-xs">
-
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                            <GitIcon className="w-4 h-4 text-orange-400" />
-                            <div>
-                              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Current Branch</p>
-                              <p className="text-sm font-bold text-white">main</p>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-sans">Staged Changes</p>
-                            <div className="space-y-1">
-                              {['M  src/index.js', 'A  src/components/Chat.jsx'].map((f, i) => (
-                                <div key={i} className="flex items-center gap-2 text-emerald-400">
-                                  <span className="text-emerald-500 font-bold">{f.slice(0, 1)}</span>
-                                  <span>{f.slice(3)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-sans">Unstaged</p>
-                            <div className="space-y-1">
-                              {['M  src/hooks/useTTS.js'].map((f, i) => (
-                                <div key={i} className="flex items-center gap-2 text-amber-400">
-                                  <span className="text-amber-500 font-bold">{f.slice(0, 1)}</span>
-                                  <span>{f.slice(3)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          <p className="text-[10px] text-gray-600 border-t border-white/[0.04] pt-3">Git data synced via workspace daemon. Run git commands from Terminal tab.</p>
-                        </div>
-                    </div>
-                  ) : null}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </main>
 
@@ -6203,7 +5929,6 @@ export default function ChatPage() {
                 {[
                   { key: 'Ctrl + /', desc: 'Toggle keyboard shortcuts dialog' },
                   { key: 'Ctrl + ,', desc: 'Open Settings panel' },
-                  { key: 'Ctrl + P', desc: 'Toggle Workspace panel' },
                   { key: 'Ctrl + Enter', desc: 'Submit chat query' },
                   { key: 'Esc', desc: 'Close dialogs' }
                 ].map(shortcut => (

@@ -3,7 +3,8 @@ import { Download, FileText, LayoutTemplate, Presentation, Check, Loader2 } from
 import jsPDF from 'jspdf';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import pptxgen from 'pptxgenjs';
-
+import html2canvas from 'html2canvas';
+import ReactMarkdown from 'react-markdown';
 export default function DocumentArtifact({ format, content, title = "Generated Document" }) {
   const [exporting, setExporting] = useState(false);
   const [exported, setExported] = useState(false);
@@ -17,27 +18,49 @@ export default function DocumentArtifact({ format, content, title = "Generated D
 
     try {
       if (format === 'pdf') {
-        const doc = new jsPDF();
-        let yPos = 20;
-        
-        doc.setFontSize(16);
-        doc.text(title, 20, yPos);
-        yPos += 15;
-        
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        const textLines = doc.splitTextToSize(getCleanText(), 170);
-        
-        textLines.forEach(line => {
-          if (yPos > 280) {
+        const element = document.getElementById(`pdf-container-${title.replace(/[^a-z0-9]/gi, '_')}`);
+        if (element) {
+          // Temporarily make it visible for html2canvas to capture properly
+          const originalPosition = element.style.position;
+          const originalLeft = element.style.left;
+          element.style.position = 'absolute';
+          element.style.left = '0';
+          element.style.top = '0';
+          element.style.zIndex = '-1';
+          
+          const canvas = await html2canvas(element, { 
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            windowWidth: 800
+          });
+          
+          element.style.position = originalPosition;
+          element.style.left = originalLeft;
+          element.style.zIndex = '';
+
+          const imgData = canvas.toDataURL('image/jpeg', 0.95);
+          
+          const doc = new jsPDF('p', 'mm', 'a4');
+          const pdfWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          
+          let heightLeft = pdfHeight;
+          let position = 0;
+          
+          doc.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+          heightLeft -= pageHeight;
+          
+          while (heightLeft >= 0) {
+            position = heightLeft - pdfHeight;
             doc.addPage();
-            yPos = 20;
+            doc.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pageHeight;
           }
-          doc.text(line, 20, yPos);
-          yPos += 7;
-        });
-        
-        doc.save(`${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+          
+          doc.save(`${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+        }
       } 
       else if (format === 'docx') {
         const children = [
@@ -139,6 +162,22 @@ export default function DocumentArtifact({ format, content, title = "Generated D
          exported ? <Check className="w-4 h-4 text-emerald-400" /> :
          <Download className="w-4 h-4" />}
       </button>
+
+      {/* Hidden container for PDF rendering */}
+      {format === 'pdf' && (
+        <div className="fixed top-[-9999px] left-[-9999px] overflow-hidden">
+          <div 
+            id={`pdf-container-${title.replace(/[^a-z0-9]/gi, '_')}`}
+            className="bg-white text-black p-10 w-[800px] prose prose-sm max-w-none prose-img:mx-auto prose-img:max-h-64"
+          >
+            <h1 className="text-3xl font-bold mb-6 text-gray-900 border-b pb-4">{title}</h1>
+            <ReactMarkdown>{getCleanText()}</ReactMarkdown>
+            <div className="mt-12 pt-4 border-t text-xs text-gray-400 text-center">
+              Generated securely via Codeva Neural Network
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

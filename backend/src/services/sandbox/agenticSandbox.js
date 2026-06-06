@@ -56,6 +56,28 @@ export async function executeInSandbox(code, userId, language = 'python', onStdo
       apiKey: process.env.E2B_API_KEY
     })
 
+    if (language === 'javascript' || language === 'node') {
+      const deps = new Set()
+      const requireRegex = /require\(['"]([^.\/][^'"]+)['"]\)/g
+      let match
+      while ((match = requireRegex.exec(code)) !== null) {
+        if (!match[1].startsWith('node:')) deps.add(match[1].split('/')[0])
+      }
+      const importRegex = /from\s+['"]([^.\/][^'"]+)['"]/g
+      while ((match = importRegex.exec(code)) !== null) {
+        if (!match[1].startsWith('node:')) deps.add(match[1].split('/')[0])
+      }
+      
+      const builtins = ['fs', 'path', 'crypto', 'http', 'https', 'url', 'os', 'child_process', 'util', 'stream', 'events']
+      const packagesToInstall = Array.from(deps).filter(d => !builtins.includes(d))
+      
+      if (packagesToInstall.length > 0) {
+        logger.info(`Installing dependencies in sandbox: ${packagesToInstall.join(' ')}`)
+        if (onStdout) onStdout(`[Sandbox] Installing dependencies: ${packagesToInstall.join(', ')}...\n`)
+        await sandbox.commands.run(`npm init -y && npm install ${packagesToInstall.join(' ')}`)
+      }
+    }
+
     logger.info(`Sandbox ${sandbox.sandboxId} started. Executing code...`)
     
     const execution = await sandbox.runCode(code, {
