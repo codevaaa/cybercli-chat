@@ -3530,6 +3530,7 @@ export default function ChatPage() {
   
   // Image Usage State
   const [imageUsage, setImageUsage] = useState(null)
+  const [kaliUsage, setKaliUsage] = useState(0)
 
   const fetchImageUsage = async () => {
     try {
@@ -5556,6 +5557,14 @@ export default function ChatPage() {
           
           <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' }}>
             {/* Limit UI */}
+            {activeNav === 'kali_kal' && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-900/20 border border-red-500/30 text-[11px] font-mono shadow-[0_0_10px_rgba(220,38,38,0.2)]">
+                <span className="text-red-500 font-bold tracking-widest">KALI_KAL:</span>
+                <span className="text-red-400 font-bold">
+                  {Math.max(0, 1000 - kaliUsage)} left
+                </span>
+              </div>
+            )}
             {imageUsage && imageUsage.limit !== 'unlimited' && (
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-medium mr-2 shadow-sm">
                 <span className="text-yellow-400">⚡ Images:</span>

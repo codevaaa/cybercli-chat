@@ -615,6 +615,7 @@ export default function KaliKalView({
       usage: kaliUsage,
       resetTime: getDailyResetTime()
     }))
+    window.dispatchEvent(new CustomEvent('kali-usage-update', { detail: kaliUsage }))
   }, [kaliUsage])
 
   // ── Listen to Terminal Stream ──
@@ -916,18 +917,29 @@ export default function KaliKalView({
                     <div className="space-y-1.5">
                       {kaliThreads.slice(0, 5).map(thread => (
                         <div key={thread._id} className="relative group/thread">
-                          <button
+                          <div
                             onClick={() => navigate(`/chat/${thread._id}`)}
-                            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-[#0D0208]/50 border border-red-900/20 hover:border-red-500/25 hover:bg-red-950/15 transition-all text-left"
+                            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-[#0D0208]/50 border border-red-900/20 hover:border-red-500/25 hover:bg-red-950/15 transition-all text-left cursor-pointer group/inner"
                           >
                             <div className="flex items-center gap-2.5 min-w-0 pr-10">
                               <Terminal className="w-3.5 h-3.5 text-red-500/30 group-hover/thread:text-red-500/60 transition-colors flex-shrink-0" />
                               <span className="text-[12px] text-red-400/60 group-hover/thread:text-red-400/80 truncate transition-colors">{thread.title}</span>
                             </div>
-                            <span className="text-[9px] text-red-500/25 font-mono flex-shrink-0 ml-2 group-hover/thread:opacity-0 transition-opacity">
-                              {new Date(thread.updatedAt || thread.createdAt).toLocaleDateString()}
-                            </span>
-                          </button>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] text-red-500/25 font-mono flex-shrink-0 group-hover/inner:hidden transition-opacity">
+                                {new Date(thread.updatedAt || thread.createdAt).toLocaleDateString()}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (handleDeleteThread) handleDeleteThread(thread._id);
+                                }}
+                                className="hidden group-hover/inner:flex p-1.5 text-red-500/50 hover:text-red-400 hover:bg-red-500/20 rounded transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -990,8 +1002,11 @@ export default function KaliKalView({
               /* Input form */
               <div className="relative">
                 <div className="flex items-end bg-[#0D0208]/90 border border-red-900/30 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(217,22,36,0.06)] focus-within:shadow-[0_0_30px_rgba(217,22,36,0.12)] focus-within:border-red-500/40 transition-all backdrop-blur-sm">
-                  {/* Prompt symbol */}
-                  <div className="pl-4 pb-3.5 pt-3.5 text-red-500/60 font-bold text-sm select-none">$</div>
+                  {/* Left Side: Prompt symbol & Model Selector */}
+                  <div className="flex items-center gap-1 pl-2 pb-2.5 pt-2.5 h-full">
+                    <div className="text-red-500/60 font-bold text-sm select-none mr-1 ml-2">$</div>
+                    <KaliModelSelector selected={selectedKaliModel} onSelect={setSelectedKaliModel} />
+                  </div>
 
                   {/* Textarea */}
                   <textarea
@@ -1031,11 +1046,10 @@ export default function KaliKalView({
                 {/* Bottom info */}
                 <div className="flex items-center justify-between mt-2 px-1">
                   <span className="text-[9px] text-red-500/25 uppercase tracking-[0.15em]">
-                    Kali_Kal • {selectedKaliModel === 'auto' ? 'Auto Routing' : (KALI_MODELS.find(m => m.id === selectedKaliModel) || KALI_MODELS[1]).tag} active
+                    Kali_Kal Autonomous System
                   </span>
                   <span className="text-[9px] text-red-500/20 uppercase tracking-[0.15em] flex gap-3">
                     {burnAfterRead && <span className="text-red-500">🔥 BURN ACTIVE</span>}
-                    {usageLimit - kaliUsage} requests remaining
                   </span>
                 </div>
               </div>
