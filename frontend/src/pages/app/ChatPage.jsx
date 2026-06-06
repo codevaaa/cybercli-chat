@@ -3520,6 +3520,7 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([])
   const [threads, setThreads] = useState([])
+  const [threadsLoading, setThreadsLoading] = useState(true)
   const [loading, setLoading] = useState(false)
   
   // Project & Style State
