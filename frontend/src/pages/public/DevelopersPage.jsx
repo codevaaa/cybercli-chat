@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 export default function DevelopersPage() {
   return (
@@ -40,20 +41,24 @@ export default function DevelopersPage() {
           </ScrollReveal>
           <ScrollReveal delay={0.2}>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link
-                to="/chat"
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold transition-all duration-200 hover:shadow-[0_0_20px_rgba(217,119,87,0.4)]"
-              >
-                Get Started Free
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                to="/api-reference"
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-xs font-semibold hover:bg-white/[0.06] transition-all"
-              >
-                <Terminal className="w-4 h-4 text-orange-400" />
-                Read API Reference
-              </Link>
+              <Tooltip content="Sign up and chat for free">
+                <Link
+                  to="/chat"
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold transition-all duration-200 hover:shadow-[0_0_20px_rgba(217,119,87,0.4)]"
+                >
+                  Get Started Free
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Tooltip>
+              <Tooltip content="View the API documentation">
+                <Link
+                  to="/api-reference"
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-xs font-semibold hover:bg-white/[0.06] transition-all"
+                >
+                  <Terminal className="w-4 h-4 text-orange-400" />
+                  Read API Reference
+                </Link>
+              </Tooltip>
             </div>
           </ScrollReveal>
         </section>
@@ -182,13 +187,15 @@ export default function DevelopersPage() {
                   We supply standardized JSON and event-streaming endpoints, built for massive concurrency, load balancing, and rate limiting compliance. Use the keys generated inside your developer console to deploy products.
                 </p>
                 <div className="flex gap-3">
-                  <Link
-                    to="/api-reference"
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-505 text-white text-xs font-bold transition-all hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                  >
-                    <Key className="w-4 h-4" />
-                    Generate API Keys
-                  </Link>
+                  <Tooltip content="Create new API keys">
+                    <Link
+                      to="/api-reference"
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-505 text-white text-xs font-bold transition-all hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                    >
+                      <Key className="w-4 h-4" />
+                      Generate API Keys
+                    </Link>
+                  </Tooltip>
                 </div>
               </div>
               <div className="w-full md:w-80 flex-shrink-0 bg-black/40 border border-white/[0.05] rounded-2xl p-4 font-mono text-[10px] text-left">
@@ -227,15 +234,19 @@ export default function DevelopersPage() {
                     <p className="text-[11px] text-gray-400 leading-normal mb-4 font-medium">{item.desc}</p>
                   </div>
                   {item.link.startsWith('http') ? (
-                    <a href={item.link} target="_blank" rel="noreferrer" className="text-[10px] text-orange-400 font-bold hover:text-orange-300 transition-colors inline-flex items-center gap-1">
-                      Visit site
-                      <ArrowRight className="w-3 h-3" />
-                    </a>
+                    <Tooltip content={`Visit ${item.title}`}>
+                      <a href={item.link} target="_blank" rel="noreferrer" className="text-[10px] text-orange-400 font-bold hover:text-orange-300 transition-colors inline-flex items-center gap-1">
+                        Visit site
+                        <ArrowRight className="w-3 h-3" />
+                      </a>
+                    </Tooltip>
                   ) : (
-                    <Link to={item.link} className="text-[10px] text-orange-400 font-bold hover:text-orange-300 transition-colors inline-flex items-center gap-1">
-                      Learn more
-                      <ArrowRight className="w-3 h-3" />
-                    </Link>
+                    <Tooltip content={`Go to ${item.title}`}>
+                      <Link to={item.link} className="text-[10px] text-orange-400 font-bold hover:text-orange-300 transition-colors inline-flex items-center gap-1">
+                        Learn more
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </Tooltip>
                   )}
                 </div>
               )

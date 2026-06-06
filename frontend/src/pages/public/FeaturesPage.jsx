@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { Tooltip } from '@components/ui/Tooltip'
 import { Cpu, Users, Shield, Mic, GitBranch, Globe, MessageSquare, Brain, Clock, Lock, Zap, Sparkles, BarChart3, Code, FileText, Image, Layers, Palette, Keyboard, Share2, BookOpen, Bell, Terminal, ArrowRight } from 'lucide-react'
 import ScrollReveal, { ScrollRevealGroup } from '@components/ui/ScrollReveal'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
@@ -100,40 +101,42 @@ export default function FeaturesPage() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {category.items.map((item, i) => (
                   <ScrollReveal key={item.title} delay={i * 0.07}>
-                    <Link to={`/features/${item.slug}`} className="block h-full">
-                      <motion.div
-                        className="card-glass p-6 h-full group cursor-pointer flex flex-col justify-between"
-                        whileHover={{ y: -5, scale: 1.01 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                      >
-                        <div>
-                          {/* Icon */}
-                          <motion.div
-                            className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 animate-transition"
-                            style={{ background: `${category.color}18`, border: `1px solid ${category.color}30` }}
-                            whileHover={{ rotate: 8, scale: 1.1 }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                          >
-                            <item.icon className="w-6 h-6" style={{ color: category.color }} />
-                          </motion.div>
+                    <Tooltip content={`Learn more about ${item.title}`}>
+                      <Link to={`/features/${item.slug}`} className="block h-full">
+                        <motion.div
+                          className="card-glass p-6 h-full group cursor-pointer flex flex-col justify-between"
+                          whileHover={{ y: -5, scale: 1.01 }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                        >
+                          <div>
+                            {/* Icon */}
+                            <motion.div
+                              className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 animate-transition"
+                              style={{ background: `${category.color}18`, border: `1px solid ${category.color}30` }}
+                              whileHover={{ rotate: 8, scale: 1.1 }}
+                              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                            >
+                              <item.icon className="w-6 h-6" style={{ color: category.color }} />
+                            </motion.div>
 
-                          <h3 className="text-base font-semibold text-foreground-primary mb-2 group-hover:text-accent transition-colors flex items-center gap-2">
-                            {item.title}
-                          </h3>
-                          <p className="text-sm text-foreground-muted leading-relaxed mb-4">{item.desc}</p>
-                        </div>
-
-                        <div>
-                          <div className="text-xs font-semibold text-accent flex items-center gap-1 group-hover:gap-2 transition-all mt-2">
-                            Learn more <ArrowRight className="w-3.5 h-3.5" />
+                            <h3 className="text-base font-semibold text-foreground-primary mb-2 group-hover:text-accent transition-colors flex items-center gap-2">
+                              {item.title}
+                            </h3>
+                            <p className="text-sm text-foreground-muted leading-relaxed mb-4">{item.desc}</p>
                           </div>
-                          
-                          {/* Bottom accent line on hover */}
-                          <div className="mt-4 h-px w-0 group-hover:w-full transition-all duration-500 rounded-full animate-transition"
-                            style={{ background: `linear-gradient(to right, ${category.color}, transparent)` }} />
-                        </div>
-                      </motion.div>
-                    </Link>
+
+                          <div>
+                            <div className="text-xs font-semibold text-accent flex items-center gap-1 group-hover:gap-2 transition-all mt-2">
+                              Learn more <ArrowRight className="w-3.5 h-3.5" />
+                            </div>
+                            
+                            {/* Bottom accent line on hover */}
+                            <div className="mt-4 h-px w-0 group-hover:w-full transition-all duration-500 rounded-full animate-transition"
+                              style={{ background: `linear-gradient(to right, ${category.color}, transparent)` }} />
+                          </div>
+                        </motion.div>
+                      </Link>
+                    </Tooltip>
                   </ScrollReveal>
                 ))}
               </div>

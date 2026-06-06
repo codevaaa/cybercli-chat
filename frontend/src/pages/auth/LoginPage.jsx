@@ -4,6 +4,7 @@ import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../stores/authStore.js'
 import { CodevaMark } from '../../components/ui/CodevaLogo'
+import { Tooltip } from '../../components/ui/Tooltip.jsx'
 import { supabase } from '../../lib/supabase.js'
 
 export default function LoginPage() {
@@ -99,9 +100,11 @@ export default function LoginPage() {
       >
         {/* Brand Mark Logo & Serif Heading */}
         <div className="flex flex-col items-center mb-8 text-center">
-          <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
-            <CodevaMark size={44} className="text-accent" />
-          </Link>
+          <Tooltip content="Return to Home" position="top">
+            <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
+              <CodevaMark size={44} className="text-accent" />
+            </Link>
+          </Tooltip>
           <h1 className="text-3xl font-serif font-medium text-foreground-primary tracking-tight mt-5">
             Welcome back
           </h1>
@@ -203,13 +206,15 @@ export default function LoginPage() {
                     boxShadow: focusedField === 'password' ? '0 0 0 2px rgba(217,119,87,0.06)' : 'none',
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-foreground-secondary/40 hover:text-foreground-primary transition-colors cursor-pointer"
-                >
-                  {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
-                </button>
+                <Tooltip content={showPassword ? 'Hide Password' : 'Show Password'} position="right">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-foreground-secondary/40 hover:text-foreground-primary transition-colors cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                  </button>
+                </Tooltip>
               </div>
             </div>
 

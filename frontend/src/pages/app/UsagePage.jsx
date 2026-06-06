@@ -1,42 +1,35 @@
-import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, BarChart3, Clock, Zap, MessageSquare, Cpu } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Skeleton } from '../../components/ui/Skeleton.jsx'
+import { Tooltip } from '../../components/ui/Tooltip.jsx'
 import api from '../../lib/api'
 
 export default function UsagePage() {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [stats, setStats] = useState({
+  const { data, isLoading: loading, error } = useQuery({
+    queryKey: ['usageStats'],
+    queryFn: async () => {
+      const [statsRes, historyRes] = await Promise.all([
+        api.get('/usage'),
+        api.get('/usage/history')
+      ])
+      return {
+        stats: statsRes.data,
+        history: historyRes.data.history || []
+      }
+    }
+  })
+
+  const stats = data?.stats || {
     total_messages: 0,
     total_tokens_in: 0,
     total_tokens_out: 0,
     current_plan: 'free',
     rate_limit_remaining: 50,
     rate_limit_total: 50
-  })
-  const [history, setHistory] = useState([])
-
-  useEffect(() => {
-    async function fetchUsage() {
-      try {
-        setLoading(true)
-        const [statsRes, historyRes] = await Promise.all([
-          api.get('/usage'),
-          api.get('/usage/history')
-        ])
-        setStats(statsRes.data)
-        setHistory(historyRes.data.history || [])
-        setError(null)
-      } catch (err) {
-        console.error('Error fetching usage data:', err)
-        setError('Failed to load usage statistics.')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchUsage()
-  }, [])
+  }
+  const history = data?.history || []
 
   // Calculate 7-day weekly usage data
   const today = new Date()
@@ -88,10 +81,24 @@ export default function UsagePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-24 pb-16 bg-background-primary text-foreground-primary flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-xs text-foreground-muted">Loading usage statistics...</p>
+      <div className="min-h-screen pt-24 pb-16 bg-background-primary text-foreground-primary">
+        <div className="section-padding">
+          <div className="container-custom max-w-4xl space-y-10">
+            <div className="space-y-4">
+              <Skeleton variant="text" width="40%" className="h-8" />
+              <Skeleton variant="text" width="60%" />
+            </div>
+            <div className="grid md:grid-cols-12 gap-6 mt-10">
+              <div className="md:col-span-8 card p-6 space-y-6">
+                <Skeleton variant="rectangular" className="w-full h-8" />
+                <Skeleton variant="rectangular" className="w-full h-32" />
+              </div>
+              <div className="md:col-span-4 card p-6 space-y-6">
+                <Skeleton variant="rectangular" className="w-full h-8" />
+                <Skeleton variant="rectangular" className="w-full h-32" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -105,7 +112,7 @@ export default function UsagePage() {
             <BarChart3 className="w-6 h-6" />
           </div>
           <h2 className="text-base font-bold">Error Loading Statistics</h2>
-          <p className="text-xs text-foreground-muted">{error}</p>
+          <p className="text-xs text-foreground-muted">{error.message || 'Failed to load'}</p>
           <Link to="/chat" className="mt-4 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-bold rounded-lg transition-colors">
             Back to chat
           </Link>
@@ -119,10 +126,12 @@ export default function UsagePage() {
       <div className="section-padding">
         <div className="container-custom max-w-4xl">
           <div>
-            <Link to="/chat" className="inline-flex items-center gap-2 text-xs font-semibold text-foreground-muted hover:text-foreground-primary transition-colors mb-4 group">
-              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
-              Back to chat
-            </Link>
+            <Tooltip content="Return to Chat" position="right">
+              <Link to="/chat" className="inline-flex items-center gap-2 text-xs font-semibold text-foreground-muted hover:text-foreground-primary transition-colors mb-4 group">
+                <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+                Back to chat
+              </Link>
+            </Tooltip>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight animate-fade-in">Usage Statistics</h1>
             <p className="text-xs text-foreground-muted mt-1 leading-normal">
               Monitor your compute gateway tokens, message history, and current limits.

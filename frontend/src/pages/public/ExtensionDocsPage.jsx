@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Tooltip } from '@components/ui/Tooltip'
 import { Code2, Terminal, Zap, Shield, Key, Download, ArrowRight, CheckCircle2 } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
@@ -124,8 +125,12 @@ export default function ExtensionDocsPage() {
 
         <ScrollReveal>
           <div className="flex items-center justify-center gap-4 mt-8">
-            <Link to="/help" className="px-5 py-2.5 rounded-xl bg-[#C96442] text-white text-sm font-semibold hover:bg-[#b9573a] transition-colors">Help Center</Link>
-            <Link to="/product" className="px-5 py-2.5 rounded-xl border border-white/[0.1] text-[#f5f4ef] text-sm font-medium hover:bg-white/5 transition-colors flex items-center gap-1.5">CyberCoder CLI <ArrowRight className="w-3.5 h-3.5" /></Link>
+            <Tooltip content="Visit the Help Center">
+              <Link to="/help" className="px-5 py-2.5 rounded-xl bg-[#C96442] text-white text-sm font-semibold hover:bg-[#b9573a] transition-colors">Help Center</Link>
+            </Tooltip>
+            <Tooltip content="Learn more about the CLI">
+              <Link to="/product" className="px-5 py-2.5 rounded-xl border border-white/[0.1] text-[#f5f4ef] text-sm font-medium hover:bg-white/5 transition-colors flex items-center gap-1.5">CyberCoder CLI <ArrowRight className="w-3.5 h-3.5" /></Link>
+            </Tooltip>
           </div>
         </ScrollReveal>
       </div>

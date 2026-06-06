@@ -4,6 +4,7 @@ import { Lock, Eye, EyeOff, ArrowRight, Loader2, Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../stores/authStore.js'
 import { CodevaMark } from '../../components/ui/CodevaLogo'
+import { Tooltip } from '../../components/ui/Tooltip.jsx'
 
 function getStrength(pw) {
   if (!pw) return { level: 0, label: '', color: '' }
@@ -52,9 +53,11 @@ export default function ResetPasswordPage() {
       >
         {/* Brand Mark Logo */}
         <div className="flex flex-col items-center mb-8">
-          <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
-            <CodevaMark size={56} />
-          </Link>
+          <Tooltip content="Return to Home" position="top">
+            <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
+              <CodevaMark size={56} />
+            </Link>
+          </Tooltip>
           <h1 className="text-3xl font-semibold text-foreground-primary tracking-tight font-serif mt-6">
             Choose a new password
           </h1>
@@ -148,13 +151,15 @@ export default function ResetPasswordPage() {
                           boxShadow: focusedField === 'password' ? '0 0 0 2px rgba(217,119,87,0.1)' : 'none',
                         }}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground-secondary transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                      <Tooltip content={showPassword ? 'Hide Password' : 'Show Password'} position="right">
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground-secondary transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </Tooltip>
                     </div>
                     {/* Strength indicator line */}
                     {password && (
@@ -194,13 +199,15 @@ export default function ResetPasswordPage() {
                           boxShadow: focusedField === 'confirm' ? '0 0 0 2px rgba(217,119,87,0.1)' : 'none',
                         }}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground-secondary transition-colors"
-                      >
-                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                      <Tooltip content={showConfirmPassword ? 'Hide Password' : 'Show Password'} position="right">
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground-secondary transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </Tooltip>
                     </div>
                   </div>
 

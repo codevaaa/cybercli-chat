@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { MODEL_CARDS } from './ModelsPage.jsx'
 import ScrollReveal from '@components/ui/ScrollReveal'
+import { Tooltip } from '@components/ui/Tooltip'
 
 // SOTA Comparison Data generator for private models
 function getComparisonData(modelName) {
@@ -183,14 +184,16 @@ export default function ModelDetailPage() {
                 {model.categories.includes('fast') && <Zap className="w-5 h-5 text-emerald-400 fill-emerald-400/20" />}
               </h1>
             </div>
-            <Link
-              to="/chat"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-xs font-bold transition-all hover:shadow-[0_0_20px_rgba(124,58,237,0.35)] cursor-pointer"
-              style={{ background: isEnt ? 'linear-gradient(135deg, #F59E0B, #D97757)' : isPro ? 'linear-gradient(135deg, #D97757, #B85D3D)' : 'linear-gradient(135deg, #4B5563, #1F2937)' }}
-            >
-              Start Chat
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <Tooltip content="Launch the interactive chat interface with this model">
+              <Link
+                to="/chat"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-xs font-bold transition-all hover:shadow-[0_0_20px_rgba(124,58,237,0.35)] cursor-pointer"
+                style={{ background: isEnt ? 'linear-gradient(135deg, #F59E0B, #D97757)' : isPro ? 'linear-gradient(135deg, #D97757, #B85D3D)' : 'linear-gradient(135deg, #4B5563, #1F2937)' }}
+              >
+                Start Chat
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </Tooltip>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 text-sm">

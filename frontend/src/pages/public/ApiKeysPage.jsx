@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Key, Copy, Check, Trash2, Plus, Shield, ArrowRight } from 'lucide-react'
 import api, { isLoggedIn } from '../../lib/api.js'
 import SEOHead from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 /**
  * /api-keys — Standalone API key management page. Works for both the website
@@ -75,12 +76,16 @@ export default function ApiKeysPage() {
             <h2 className="text-lg font-semibold text-[#f5f4ef] mb-2">Sign in to manage API keys</h2>
             <p className="text-sm text-gray-400 mb-6">You need a Codeva account to create and manage API keys.</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link to="/auth/login" className="px-6 py-2.5 rounded-xl bg-[#C96442] text-white text-sm font-semibold hover:bg-[#b9573a] transition-colors">
-                Sign in
-              </Link>
-              <Link to="/auth/signup" className="px-6 py-2.5 rounded-xl border border-white/[0.1] text-[#f5f4ef] text-sm font-medium hover:bg-white/5 transition-colors">
-                Create account
-              </Link>
+              <Tooltip content="Sign in to your account">
+                <Link to="/auth/login" className="px-6 py-2.5 rounded-xl bg-[#C96442] text-white text-sm font-semibold hover:bg-[#b9573a] transition-colors">
+                  Sign in
+                </Link>
+              </Tooltip>
+              <Tooltip content="Create a new account">
+                <Link to="/auth/signup" className="px-6 py-2.5 rounded-xl border border-white/[0.1] text-[#f5f4ef] text-sm font-medium hover:bg-white/5 transition-colors">
+                  Create account
+                </Link>
+              </Tooltip>
             </div>
           </div>
         ) : (
@@ -91,9 +96,11 @@ export default function ApiKeysPage() {
                 <p className="text-sm font-semibold text-emerald-300 mb-2">✓ API Key created! Copy it now — it won't be shown again.</p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 px-3 py-2 rounded-lg bg-black/30 border border-emerald-500/20 text-xs font-mono text-white break-all select-all">{generatedKey}</code>
-                  <button onClick={handleCopy} className="px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/30 transition-colors flex items-center gap-1.5">
-                    {copied ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
-                  </button>
+                  <Tooltip content="Copy to clipboard">
+                    <button onClick={handleCopy} className="px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/30 transition-colors flex items-center gap-1.5">
+                      {copied ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
+                    </button>
+                  </Tooltip>
                 </div>
                 <button onClick={() => setGeneratedKey(null)} className="text-xs text-emerald-400 hover:underline mt-3">Done, I've copied it</button>
               </div>
@@ -108,9 +115,11 @@ export default function ApiKeysPage() {
                 placeholder="Key name (e.g. VS Code Extension)"
                 className="flex-1 px-4 py-2.5 rounded-xl bg-[#211f1c] border border-white/[0.08] text-sm text-[#f5f4ef] placeholder:text-gray-500 focus:outline-none focus:border-[#C96442]"
               />
-              <button type="submit" disabled={loading || !newKeyName.trim()} className="px-5 py-2.5 rounded-xl bg-[#C96442] text-white text-sm font-semibold hover:bg-[#b9573a] transition-colors disabled:opacity-50 flex items-center gap-1.5">
-                <Plus className="w-4 h-4" /> Create
-              </button>
+              <Tooltip content="Create a new API key">
+                <button type="submit" disabled={loading || !newKeyName.trim()} className="px-5 py-2.5 rounded-xl bg-[#C96442] text-white text-sm font-semibold hover:bg-[#b9573a] transition-colors disabled:opacity-50 flex items-center gap-1.5">
+                  <Plus className="w-4 h-4" /> Create
+                </button>
+              </Tooltip>
             </form>
 
             {error && <p className="text-sm text-rose-400 mb-4">{error}</p>}

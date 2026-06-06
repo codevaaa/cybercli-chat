@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 /* ─── Data ─── */
 export const CATEGORIES = [
@@ -122,9 +123,11 @@ export function DocsSidebar({ activeSlug, onClose, isMobile = false }) {
             <BookOpen className="w-4 h-4 text-[#D97757]" />
             <span className="text-[15px] font-semibold text-[#ECECEC] tracking-tight">Documentation</span>
           </Link>
-          <button onClick={onClose} className="p-1 rounded hover:bg-white/5 text-[#A0A0A0]">
-            <X className="w-5 h-5" />
-          </button>
+          <Tooltip content="Close sidebar">
+            <button onClick={onClose} className="p-1 rounded hover:bg-white/5 text-[#A0A0A0]">
+              <X className="w-5 h-5" />
+            </button>
+          </Tooltip>
         </div>
       )}
 
@@ -295,12 +298,14 @@ export default function DocsPage() {
           {/* Mobile Top Bar */}
           <div className="lg:hidden flex items-center justify-between px-5 py-4 border-b border-white/[0.06] bg-[#0A0A0F]/80 backdrop-blur-md sticky top-0 z-20">
             <div className="flex items-center gap-3">
-              <button
-                className="p-1.5 rounded-lg bg-white/5 text-[#ECECEC] transition-colors"
-                onClick={() => setMobileSidebarOpen(true)}
-              >
-                <Menu className="w-5 h-5" />
-              </button>
+              <Tooltip content="Open sidebar">
+                <button
+                  className="p-1.5 rounded-lg bg-white/5 text-[#ECECEC] transition-colors"
+                  onClick={() => setMobileSidebarOpen(true)}
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              </Tooltip>
               <span className="text-[15px] font-semibold text-[#ECECEC] font-serif">Documentation</span>
             </div>
           </div>
@@ -400,13 +405,17 @@ export default function DocsPage() {
                   Can't find what you're looking for? Reach out to our support team or use our AI assistant.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
-                  <Link to="/contact" className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white/[0.05] border border-white/[0.1] text-[#ECECEC] text-[14px] font-semibold hover:bg-white/[0.08] transition-colors">
-                    Contact Support
-                  </Link>
-                  <Link to="/chat" className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#D97757] text-white text-[14px] font-semibold hover:bg-[#C4613A] transition-colors shadow-[0_0_20px_rgba(217,119,87,0.3)] flex items-center justify-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Ask AI Assistant
-                  </Link>
+                  <Tooltip content="Get in touch">
+                    <Link to="/contact" className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white/[0.05] border border-white/[0.1] text-[#ECECEC] text-[14px] font-semibold hover:bg-white/[0.08] transition-colors">
+                      Contact Support
+                    </Link>
+                  </Tooltip>
+                  <Tooltip content="Open AI Assistant">
+                    <Link to="/chat" className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#D97757] text-white text-[14px] font-semibold hover:bg-[#C4613A] transition-colors shadow-[0_0_20px_rgba(217,119,87,0.3)] flex items-center justify-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Ask AI Assistant
+                    </Link>
+                  </Tooltip>
                 </div>
               </div>
             </ScrollReveal>

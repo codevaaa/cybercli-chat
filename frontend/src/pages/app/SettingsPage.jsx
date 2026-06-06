@@ -7,6 +7,9 @@ import {
   Gift, Users
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Skeleton } from '../../components/ui/Skeleton.jsx'
+import { Tooltip } from '../../components/ui/Tooltip.jsx'
 import api from '../../lib/api.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import InviteFriendsModal from '../../components/invite/InviteFriendsModal.jsx'
@@ -480,22 +483,13 @@ function ConnectorsTab() {
 }
 
 function UsageTab() {
-  const [history, setHistory] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchUsage = async () => {
-      try {
-        const { data } = await api.get('/usage/history')
-        setHistory(data.history || [])
-      } catch (err) {
-        console.error('Failed to fetch usage history', err)
-      } finally {
-        setLoading(false)
-      }
+  const { data: history = [], isLoading: loading } = useQuery({
+    queryKey: ['usageHistory'],
+    queryFn: async () => {
+      const { data } = await api.get('/usage/history')
+      return data.history || []
     }
-    fetchUsage()
-  }, [])
+  })
 
   return (
     <div className="space-y-6">
@@ -505,7 +499,17 @@ function UsageTab() {
       </p>
 
       {loading ? (
-        <p className="text-sm text-foreground-muted">Loading analytics...</p>
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-border-subtle gap-4" style={{ background: 'var(--bg-secondary)' }}>
+              <div className="space-y-2">
+                <Skeleton variant="text" width="200px" />
+                <Skeleton variant="text" width="100px" />
+              </div>
+              <Skeleton variant="rectangular" width="80px" height="24px" className="rounded-full" />
+            </div>
+          ))}
+        </div>
       ) : history.length === 0 ? (
         <div className="p-6 text-center border border-border-subtle rounded-2xl" style={{ background: 'var(--bg-secondary)' }}>
           <Activity className="w-8 h-8 mx-auto text-foreground-muted mb-3 opacity-50" />
@@ -541,53 +545,50 @@ function UsageTab() {
 }
 
 function DeveloperTab() {
-  const [keys, setKeys] = useState([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [keyName, setKeyName] = useState('')
   const [newKey, setNewKey] = useState(null)
   const [error, setError] = useState(null)
   const [copySuccess, setCopySuccess] = useState(false)
 
-  const fetchKeys = async () => {
-    setLoading(true)
-    setError(null)
-    try {
+  const { data: keys = [], isLoading: loading } = useQuery({
+    queryKey: ['apiKeys'],
+    queryFn: async () => {
       const { data } = await api.get('/api-keys')
-      setKeys(data)
-    } catch (err) {
-      setError('Failed to fetch API keys.')
-    } finally {
-      setLoading(false)
+      return data || []
     }
-  }
+  })
 
-  useEffect(() => {
-    fetchKeys()
-  }, [])
+  const createMutation = useMutation({
+    mutationFn: async (name) => {
+      const { data } = await api.post('/api-keys', { name })
+      return data
+    },
+    onSuccess: (data) => {
+      setNewKey(data.key)
+      setKeyName('')
+      queryClient.invalidateQueries({ queryKey: ['apiKeys'] })
+    },
+    onError: (err) => setError(err.response?.data?.error || 'Failed to create API key.')
+  })
 
-  const handleCreate = async (e) => {
+  const revokeMutation = useMutation({
+    mutationFn: async (id) => await api.delete(`/api-keys/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['apiKeys'] }),
+    onError: () => setError('Failed to revoke API key.')
+  })
+
+  const handleCreate = (e) => {
     e.preventDefault()
     if (!keyName.trim()) return
     setError(null)
-    try {
-      const { data } = await api.post('/api-keys', { name: keyName.trim() })
-      setNewKey(data.key)
-      setKeyName('')
-      fetchKeys()
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create API key.')
-    }
+    createMutation.mutate(keyName.trim())
   }
 
-  const handleRevoke = async (id) => {
+  const handleRevoke = (id) => {
     if (!confirm('Are you sure you want to revoke this API key? This cannot be undone.')) return
     setError(null)
-    try {
-      await api.delete(`/api-keys/${id}`)
-      fetchKeys()
-    } catch (err) {
-      setError('Failed to revoke API key.')
-    }
+    revokeMutation.mutate(id)
   }
 
   const handleCopy = () => {
@@ -676,7 +677,18 @@ function DeveloperTab() {
       <div className="space-y-3 mt-6">
         <SectionHeading>Active Keys</SectionHeading>
         {loading ? (
-          <p className="text-sm text-foreground-muted">Loading keys...</p>
+          <div className="space-y-2">
+            {[1, 2].map(i => (
+              <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-border-subtle" style={{ background: 'var(--bg-secondary)' }}>
+                <div className="space-y-2">
+                  <Skeleton variant="text" width="150px" />
+                  <Skeleton variant="text" width="250px" />
+                  <Skeleton variant="text" width="180px" className="h-2" />
+                </div>
+                <Skeleton variant="rectangular" width="60px" height="30px" className="rounded-lg" />
+              </div>
+            ))}
+          </div>
         ) : keys.length === 0 ? (
           <p className="text-sm text-foreground-muted italic">No active API keys found.</p>
         ) : (
@@ -711,30 +723,29 @@ function DeveloperTab() {
 }
 
 function InviteTab({ onOpenModal }) {
-  const [referralLink, setReferralLink] = useState('')
   const [copied, setCopied] = useState(false)
-  const [stats, setStats] = useState({ totalSent: 0, totalAccepted: 0 })
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [listRes, statsRes] = await Promise.all([
-          api.get('/invite/list'),
-          api.get('/invite/stats')
-        ])
-        const invites = listRes.data || []
-        const inviteCode = invites.length > 0 ? invites[0].invite_code : ''
-        const link = inviteCode 
-          ? `${window.location.origin}/auth/signup?invite=${inviteCode}`
-          : `${window.location.origin}/auth/signup`
-        setReferralLink(link)
-        setStats(statsRes.data || { totalSent: 0, totalAccepted: 0 })
-      } catch (err) {
-        console.error(err)
+  const { data } = useQuery({
+    queryKey: ['inviteStats'],
+    queryFn: async () => {
+      const [listRes, statsRes] = await Promise.all([
+        api.get('/invite/list'),
+        api.get('/invite/stats')
+      ])
+      const invites = listRes.data || []
+      const inviteCode = invites.length > 0 ? invites[0].invite_code : ''
+      const link = inviteCode 
+        ? `${window.location.origin}/auth/signup?invite=${inviteCode}`
+        : `${window.location.origin}/auth/signup`
+      return {
+        referralLink: link,
+        stats: statsRes.data || { totalSent: 0, totalAccepted: 0 }
       }
     }
-    fetchStats()
-  }, [])
+  })
+
+  const referralLink = data?.referralLink || ''
+  const stats = data?.stats || { totalSent: 0, totalAccepted: 0 }
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralLink)

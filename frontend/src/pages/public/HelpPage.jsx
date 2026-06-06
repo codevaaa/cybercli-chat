@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Tooltip } from '@components/ui/Tooltip'
 import { Search, BookOpen, Terminal, Code2, Mic, Layers, Mail, MessageSquare, ChevronDown, ExternalLink } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import SEOHead from '@components/seo/SEOHead'
@@ -61,10 +62,12 @@ function FaqItem({ q, a }) {
   const [open, setOpen] = useState(false)
   return (
     <div className="border-b border-white/[0.05]">
-      <button onClick={() => setOpen(!open)} className="w-full py-4 flex items-center justify-between text-left group">
-        <span className="text-sm text-[#f5f4ef] group-hover:text-[#C96442] transition-colors">{q}</span>
-        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
+      <Tooltip content={open ? "Collapse answer" : "Expand answer"}>
+        <button onClick={() => setOpen(!open)} className="w-full py-4 flex items-center justify-between text-left group">
+          <span className="text-sm text-[#f5f4ef] group-hover:text-[#C96442] transition-colors">{q}</span>
+          <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      </Tooltip>
       <AnimatePresence>
         {open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
@@ -125,21 +128,27 @@ export default function HelpPage() {
 
         {/* Quick links */}
         <div className="mt-12 grid sm:grid-cols-3 gap-4">
-          <Link to="/docs" className="p-5 rounded-2xl border border-white/[0.06] bg-[#211f1c] hover:border-[#C96442]/30 transition-colors group">
-            <BookOpen className="w-5 h-5 text-[#C96442] mb-3" />
-            <h3 className="text-sm font-semibold text-[#f5f4ef] mb-1">Documentation</h3>
-            <p className="text-xs text-gray-400">Full guides and API reference</p>
-          </Link>
-          <Link to="/contact" className="p-5 rounded-2xl border border-white/[0.06] bg-[#211f1c] hover:border-[#C96442]/30 transition-colors group">
-            <Mail className="w-5 h-5 text-[#C96442] mb-3" />
-            <h3 className="text-sm font-semibold text-[#f5f4ef] mb-1">Contact Support</h3>
-            <p className="text-xs text-gray-400">Email us for help</p>
-          </Link>
-          <a href="mailto:cybermindcli@cybermindcli.com" className="p-5 rounded-2xl border border-white/[0.06] bg-[#211f1c] hover:border-[#C96442]/30 transition-colors group">
-            <MessageSquare className="w-5 h-5 text-[#C96442] mb-3" />
-            <h3 className="text-sm font-semibold text-[#f5f4ef] mb-1 flex items-center gap-1">Report a Bug</h3>
-            <p className="text-xs text-gray-400">Email Support</p>
-          </a>
+          <Tooltip content="Read the docs">
+            <Link to="/docs" className="p-5 rounded-2xl border border-white/[0.06] bg-[#211f1c] hover:border-[#C96442]/30 transition-colors group">
+              <BookOpen className="w-5 h-5 text-[#C96442] mb-3" />
+              <h3 className="text-sm font-semibold text-[#f5f4ef] mb-1">Documentation</h3>
+              <p className="text-xs text-gray-400">Full guides and API reference</p>
+            </Link>
+          </Tooltip>
+          <Tooltip content="Reach out to us">
+            <Link to="/contact" className="p-5 rounded-2xl border border-white/[0.06] bg-[#211f1c] hover:border-[#C96442]/30 transition-colors group">
+              <Mail className="w-5 h-5 text-[#C96442] mb-3" />
+              <h3 className="text-sm font-semibold text-[#f5f4ef] mb-1">Contact Support</h3>
+              <p className="text-xs text-gray-400">Email us for help</p>
+            </Link>
+          </Tooltip>
+          <Tooltip content="Send us an email">
+            <a href="mailto:cybermindcli@cybermindcli.com" className="p-5 rounded-2xl border border-white/[0.06] bg-[#211f1c] hover:border-[#C96442]/30 transition-colors group">
+              <MessageSquare className="w-5 h-5 text-[#C96442] mb-3" />
+              <h3 className="text-sm font-semibold text-[#f5f4ef] mb-1 flex items-center gap-1">Report a Bug</h3>
+              <p className="text-xs text-gray-400">Email Support</p>
+            </a>
+          </Tooltip>
         </div>
       </div>
     </div>

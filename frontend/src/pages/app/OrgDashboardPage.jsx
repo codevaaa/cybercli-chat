@@ -2,79 +2,90 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Users, Settings, CreditCard, Building, LogOut, Check, Mail, ShieldAlert } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Skeleton } from '../../components/ui/Skeleton.jsx'
+import { Tooltip } from '../../components/ui/Tooltip.jsx'
 import api from '../../lib/api.js'
 import SEOHead from '@components/seo/SEOHead'
 
 export default function OrgDashboardPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
-  const [orgs, setOrgs] = useState([])
-  const [activeOrg, setActiveOrg] = useState(null)
-  const [members, setMembers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole] = useState('member')
-  const [inviteMessage, setInviteMessage] = useState(null)
+  const queryClient = useQueryClient()
+
+  const { data: orgs = [], isLoading: orgsLoading } = useQuery({
+    queryKey: ['orgs'],
+    queryFn: async () => {
+      const { data } = await api.get('/orgs')
+      return data.organizations || []
+    }
+  })
+
+  const defaultOrgId = orgs[0]?._id
+  const currentOrgId = activeOrg?._id || defaultOrgId
+
+  const { data: orgDetails, isLoading: detailsLoading } = useQuery({
+    queryKey: ['orgDetails', currentOrgId],
+    queryFn: async () => {
+      if (!currentOrgId) return null
+      const { data } = await api.get(`/orgs/${currentOrgId}`)
+      return data
+    },
+    enabled: !!currentOrgId
+  })
 
   useEffect(() => {
-    fetchOrgs()
-  }, [])
-
-  const fetchOrgs = async () => {
-    try {
-      const { data } = await api.get('/orgs')
-      setOrgs(data.organizations || [])
-      if (data.organizations.length > 0) {
-        fetchOrgDetails(data.organizations[0]._id)
-      } else {
-        setLoading(false)
-      }
-    } catch (e) {
-      console.error(e)
-      setLoading(false)
+    if (orgDetails?.organization) {
+      setActiveOrg(orgDetails.organization)
+      setMembers(orgDetails.members || [])
     }
-  }
+  }, [orgDetails])
 
-  const fetchOrgDetails = async (orgId) => {
-    try {
-      const { data } = await api.get(`/orgs/${orgId}`)
-      setActiveOrg(data.organization)
-      setMembers(data.members || [])
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleInvite = async (e) => {
-    e.preventDefault()
-    setInviteMessage(null)
-    if (!activeOrg) return
-    try {
-      await api.post(`/orgs/${activeOrg._id}/members/invite`, { email: inviteEmail, role: inviteRole })
+  const inviteMutation = useMutation({
+    mutationFn: async (payload) => await api.post(`/orgs/${currentOrgId}/members/invite`, payload),
+    onSuccess: () => {
       setInviteMessage({ type: 'success', text: 'Member invited successfully.' })
       setInviteEmail('')
-      fetchOrgDetails(activeOrg._id) // Refresh list
-    } catch (e) {
-      setInviteMessage({ type: 'error', text: e.response?.data?.error || 'Failed to invite member.' })
+      queryClient.invalidateQueries({ queryKey: ['orgDetails', currentOrgId] })
+    },
+    onError: (err) => {
+      setInviteMessage({ type: 'error', text: err.response?.data?.error || 'Failed to invite member.' })
     }
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: async (memberId) => await api.delete(`/orgs/${currentOrgId}/members/${memberId}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orgDetails', currentOrgId] }),
+    onError: (err) => alert(err.response?.data?.error || 'Failed to remove member.')
+  })
+
+  const handleInvite = (e) => {
+    e.preventDefault()
+    setInviteMessage(null)
+    if (!currentOrgId) return
+    inviteMutation.mutate({ email: inviteEmail, role: inviteRole })
   }
 
-  const handleRemove = async (memberId) => {
-    if (!activeOrg || !window.confirm('Remove this member from the organization?')) return
-    try {
-      await api.delete(`/orgs/${activeOrg._id}/members/${memberId}`)
-      fetchOrgDetails(activeOrg._id) // Refresh list
-    } catch (e) {
-      alert(e.response?.data?.error || 'Failed to remove member.')
-    }
+  const handleRemove = (memberId) => {
+    if (!currentOrgId || !window.confirm('Remove this member from the organization?')) return
+    removeMutation.mutate(memberId)
   }
+
+  const loading = orgsLoading || detailsLoading
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1a1a18] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-t-[#c96442] border-r-[#c96442] border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#1a1a18] flex items-center justify-center p-6">
+        <div className="w-full max-w-6xl mx-auto space-y-8">
+          <Skeleton variant="rectangular" className="w-48 h-8 rounded-lg" />
+          <div className="flex gap-8">
+            <Skeleton variant="rectangular" className="w-64 h-[400px] rounded-xl hidden md:block" />
+            <div className="flex-1 space-y-6">
+              <Skeleton variant="rectangular" className="w-full h-32 rounded-xl" />
+              <Skeleton variant="rectangular" className="w-full h-64 rounded-xl" />
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -109,9 +120,11 @@ export default function OrgDashboardPage() {
       {/* Top Nav */}
       <div className="sticky top-0 z-20 bg-[#1a1a18]/90 backdrop-blur-sm border-b border-white/[0.08] px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/chat')} className="text-gray-400 hover:text-white transition-colors">
-            &larr; Back to Chat
-          </button>
+          <Tooltip content="Return to Chat" position="right">
+            <button onClick={() => navigate('/chat')} className="text-gray-400 hover:text-white transition-colors">
+              &larr; Back to Chat
+            </button>
+          </Tooltip>
           <div className="h-4 w-px bg-white/[0.1]"></div>
           <h1 className="text-lg font-serif" style={{ fontFamily: "'Instrument Serif', serif" }}>{activeOrg?.name}</h1>
           <span className="px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider bg-[#c96442]/10 text-[#c96442] border border-[#c96442]/20">
@@ -236,7 +249,9 @@ export default function OrgDashboardPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           {m.role !== 'owner' && (
-                             <button onClick={() => handleRemove(m.id)} className="text-xs text-rose-400 hover:text-rose-300">Remove</button>
+                             <Tooltip content="Remove Member" position="left">
+                               <button onClick={() => handleRemove(m.id)} className="text-xs text-rose-400 hover:text-rose-300">Remove</button>
+                             </Tooltip>
                           )}
                         </td>
                       </tr>

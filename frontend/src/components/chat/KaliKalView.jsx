@@ -487,7 +487,8 @@ export default function KaliKalView({
   handleDeleteThread,
   navigate,
   userPlan = 'free',
-  activeThreadId = null
+  activeThreadId = null,
+  startNewChat
 }) {
   const [selectedKaliModel, setSelectedKaliModel] = useState('auto')
   const [copiedIdx, setCopiedIdx] = useState(null)
@@ -629,6 +630,15 @@ export default function KaliKalView({
     window.addEventListener('kali-terminal-log', handleTerminalLog)
     return () => window.removeEventListener('kali-terminal-log', handleTerminalLog)
   }, [])
+
+  // ── Burn After Read Effect ──
+  useEffect(() => {
+    return () => {
+      if (burnAfterRead && activeThreadId && handleDeleteThread) {
+        handleDeleteThread(activeThreadId);
+      }
+    };
+  }, [burnAfterRead, activeThreadId, handleDeleteThread]);
 
   // ── Copy handler ──
   const handleCopy = useCallback((content, idx) => {
@@ -827,11 +837,15 @@ export default function KaliKalView({
 
             <button 
               onClick={() => {
-                if (burnAfterRead && activeThreadId && handleDeleteThread) {
+                if (activeThreadId && handleDeleteThread) {
                   handleDeleteThread(activeThreadId)
                 }
-                setKaliMessages([])
                 setSandboxLogs([])
+                if (startNewChat) {
+                  startNewChat()
+                } else {
+                  navigate('/chat')
+                }
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D0208] rounded border border-red-900/30 text-red-500/50 hover:text-red-400 hover:bg-red-950/20 transition-colors"
             >
@@ -1045,11 +1059,14 @@ export default function KaliKalView({
 
                 {/* Bottom info */}
                 <div className="flex items-center justify-between mt-2 px-1">
-                  <span className="text-[9px] text-red-500/25 uppercase tracking-[0.15em]">
-                    Kali_Kal Autonomous System
-                  </span>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[9px] text-red-500/25 uppercase tracking-[0.15em] hidden sm:inline">
+                      Kali_Kal Autonomous System
+                    </span>
+                    <UsageBar used={kaliUsage} limit={usageLimit} />
+                  </div>
                   <span className="text-[9px] text-red-500/20 uppercase tracking-[0.15em] flex gap-3">
-                    {burnAfterRead && <span className="text-red-500">🔥 BURN ACTIVE</span>}
+                    {burnAfterRead && <span className="text-red-500 font-bold animate-pulse">🔥 BURN ACTIVE</span>}
                   </span>
                 </div>
               </div>
@@ -1139,6 +1156,24 @@ export default function KaliKalView({
         }
         div[class*="overflow-y-auto"]::-webkit-scrollbar-thumb:hover {
           background: rgba(217, 22, 36, 0.3);
+        }
+
+        /* CRT Effects */
+        .crt-overlay {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+          background-size: 100% 2px, 3px 100%;
+          pointer-events: none;
+          z-index: 50;
+        }
+        .crt-curve {
+          animation: flicker 0.15s infinite;
+        }
+        @keyframes flicker {
+          0% { opacity: 0.98; }
+          50% { opacity: 1; }
+          100% { opacity: 0.98; }
         }
       `}</style>
     </div>

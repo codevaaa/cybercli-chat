@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Search, ChevronRight, CornerDownRight, ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import SEOHead from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 const SECTIONS = [
   { id: 'conversation-planning', label: '1. Plan your conversations' },
@@ -142,7 +143,7 @@ export default function UsageLimitBestPracticesPage() {
                 <section id="monitor-consumption" className="scroll-mt-24">
                   <h2 className="text-lg font-bold text-[#191919] mb-3">7. Monitor your consumption in Usage & Stats</h2>
                   <p className="mb-4">
-                    You can view your token count, active billing cycle, and message counts in the app dashboard under <a href="/usage" className="text-[#D97757] hover:underline font-semibold">Usage & Stats</a>. This helps you track when limits reset.
+                    You can view your token count, active billing cycle, and message counts in the app dashboard under <Tooltip content="View your current usage and token statistics"><a href="/usage" className="text-[#D97757] hover:underline font-semibold">Usage & Stats</a></Tooltip>. This helps you track when limits reset.
                   </p>
                 </section>
 
@@ -171,13 +172,14 @@ export default function UsageLimitBestPracticesPage() {
                 {!feedbackSubmitted ? (
                   <div className="flex justify-center gap-3">
                     {['😞', '😐', '😃'].map((emoji) => (
-                      <button
-                        key={emoji}
-                        onClick={() => setFeedbackSubmitted(true)}
-                        className="text-xl px-4 py-2 hover:bg-black/[0.03] rounded-xl border border-black/[0.06] bg-[#FAF8F5] transition-all transform hover:scale-105 active:scale-95"
-                      >
-                        {emoji}
-                      </button>
+                      <Tooltip key={emoji} content="Submit feedback">
+                        <button
+                          onClick={() => setFeedbackSubmitted(true)}
+                          className="text-xl px-4 py-2 hover:bg-black/[0.03] rounded-xl border border-black/[0.06] bg-[#FAF8F5] transition-all transform hover:scale-105 active:scale-95"
+                        >
+                          {emoji}
+                        </button>
+                      </Tooltip>
                     ))}
                   </div>
                 ) : (

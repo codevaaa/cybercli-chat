@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Chrome, Zap, Globe, FileText, Code2, Shield, ArrowRight, Download } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 /**
  * /chrome-extension — CyberCoder for Chrome product page.
@@ -36,12 +37,16 @@ export default function ChromeExtensionPage() {
               CyberCoder in Chrome summarizes pages, explains code, extracts data, translates content, and chats — all without leaving your browser. Free tier available.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a href="https://chromewebstore.google.com/search/cybercoder" target="_blank" rel="noopener noreferrer" className="px-7 py-3.5 bg-[#f5f4ef] text-[#1a1a18] rounded-xl font-bold transition-all hover:bg-white flex items-center gap-2">
-                <Download className="w-5 h-5" /> Add to Chrome
-              </a>
-              <Link to="/providers" className="px-7 py-3.5 border border-white/10 text-[#f5f4ef] rounded-xl font-medium hover:bg-white/5 transition-colors">
-                Connect a provider
-              </Link>
+              <Tooltip content="Download the Chrome Extension">
+                <a href="https://chromewebstore.google.com/search/cybercoder" target="_blank" rel="noopener noreferrer" className="px-7 py-3.5 bg-[#f5f4ef] text-[#1a1a18] rounded-xl font-bold transition-all hover:bg-white flex items-center gap-2">
+                  <Download className="w-5 h-5" /> Add to Chrome
+                </a>
+              </Tooltip>
+              <Tooltip content="Connect to an AI Provider">
+                <Link to="/providers" className="px-7 py-3.5 border border-white/10 text-[#f5f4ef] rounded-xl font-medium hover:bg-white/5 transition-colors">
+                  Connect a provider
+                </Link>
+              </Tooltip>
             </div>
           </div>
         </ScrollReveal>
@@ -94,12 +99,16 @@ export default function ChromeExtensionPage() {
             <h2 className="text-2xl font-serif font-normal text-[#f5f4ef] mb-4" style={{ fontFamily: "'Instrument Serif', serif" }}>CyberCoder can work in your browser and desktop</h2>
             <p className="text-sm text-gray-400 mb-6 max-w-md mx-auto">Use the Chrome extension for web tasks, the VS Code extension for coding, and the desktop app for everything else.</p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <Link to="/downloads" className="px-5 py-2.5 rounded-xl border border-white/[0.1] text-[#f5f4ef] text-sm font-medium hover:bg-white/5 transition-colors flex items-center gap-1.5">
-                <Download className="w-4 h-4" /> Desktop app
-              </Link>
-              <Link to="/product" className="px-5 py-2.5 rounded-xl border border-white/[0.1] text-[#f5f4ef] text-sm font-medium hover:bg-white/5 transition-colors flex items-center gap-1.5">
-                VS Code extension <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              <Tooltip content="Download Desktop App">
+                <Link to="/downloads" className="px-5 py-2.5 rounded-xl border border-white/[0.1] text-[#f5f4ef] text-sm font-medium hover:bg-white/5 transition-colors flex items-center gap-1.5">
+                  <Download className="w-4 h-4" /> Desktop app
+                </Link>
+              </Tooltip>
+              <Tooltip content="Get VS Code Extension">
+                <Link to="/product" className="px-5 py-2.5 rounded-xl border border-white/[0.1] text-[#f5f4ef] text-sm font-medium hover:bg-white/5 transition-colors flex items-center gap-1.5">
+                  VS Code extension <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </Tooltip>
             </div>
           </div>
         </ScrollReveal>

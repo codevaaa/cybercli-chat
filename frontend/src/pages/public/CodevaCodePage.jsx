@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { CodevaMark } from '../../components/ui/CodevaLogo'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 const FEATURES = [
   {
@@ -93,12 +94,16 @@ export default function CodevaCodePage() {
             transition={{ delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <button className="px-8 py-4 bg-[#D97757] hover:bg-[#c26549] text-white rounded-xl font-bold transition-all shadow-[0_0_30px_rgba(217,119,87,0.3)]">
-              npm install -g codeva
-            </button>
-            <Link to="/docs" className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-semibold transition-all">
-              Read the docs
-            </Link>
+            <Tooltip content="Copy installation command">
+              <button className="px-8 py-4 bg-[#D97757] hover:bg-[#c26549] text-white rounded-xl font-bold transition-all shadow-[0_0_30px_rgba(217,119,87,0.3)]">
+                npm install -g codeva
+              </button>
+            </Tooltip>
+            <Tooltip content="Read documentation">
+              <Link to="/docs" className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-semibold transition-all">
+                Read the docs
+              </Link>
+            </Tooltip>
           </motion.div>
           
           <motion.p
@@ -286,9 +291,11 @@ export default function CodevaCodePage() {
           <h2 className="text-4xl md:text-6xl font-serif mb-8" style={{ fontFamily: "'Instrument Serif', serif" }}>
             Start shipping faster.
           </h2>
-          <button className="px-10 py-5 bg-white text-black hover:bg-gray-200 rounded-xl font-bold text-lg transition-all">
-            Get Codeva Code
-          </button>
+          <Tooltip content="Download Codeva Code">
+            <button className="px-10 py-5 bg-white text-black hover:bg-gray-200 rounded-xl font-bold text-lg transition-all">
+              Get Codeva Code
+            </button>
+          </Tooltip>
         </div>
       </section>
 

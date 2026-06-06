@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Terminal, Key, Globe, Cpu, Zap, ArrowRight, ExternalLink } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 /**
  * /providers — Provider setup guide. Shows how to connect each AI provider
@@ -94,9 +95,11 @@ export default function ProvidersPage() {
                     </li>
                   ))}
                 </ol>
-                <a href={p.link.startsWith('/') ? undefined : p.link} target={p.link.startsWith('/') ? undefined : '_blank'} rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors" style={{ color: p.color }}>
-                  {p.link.startsWith('/') ? <Link to={p.link} className="flex items-center gap-1.5" style={{ color: p.color }}>Get started <ArrowRight className="w-3.5 h-3.5" /></Link> : <>{p.name} Console <ExternalLink className="w-3 h-3" /></>}
-                </a>
+                <Tooltip content={`Open ${p.name} link`}>
+                  <a href={p.link.startsWith('/') ? undefined : p.link} target={p.link.startsWith('/') ? undefined : '_blank'} rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors" style={{ color: p.color }}>
+                    {p.link.startsWith('/') ? <Link to={p.link} className="flex items-center gap-1.5" style={{ color: p.color }}>Get started <ArrowRight className="w-3.5 h-3.5" /></Link> : <>{p.name} Console <ExternalLink className="w-3 h-3" /></>}
+                  </a>
+                </Tooltip>
               </div>
             </ScrollReveal>
           ))}
@@ -107,8 +110,12 @@ export default function ProvidersPage() {
             <h3 className="text-lg font-semibold text-[#f5f4ef] mb-2">Need help?</h3>
             <p className="text-sm text-gray-400 mb-4">Check the Help Center or contact support.</p>
             <div className="flex items-center justify-center gap-4">
-              <Link to="/help" className="px-5 py-2 rounded-xl bg-[#C96442] text-white text-sm font-semibold hover:bg-[#b9573a] transition-colors">Help Center</Link>
-              <Link to="/docs" className="px-5 py-2 rounded-xl border border-white/[0.1] text-[#f5f4ef] text-sm font-medium hover:bg-white/5 transition-colors">Documentation</Link>
+              <Tooltip content="Visit our comprehensive Help Center">
+                <Link to="/help" className="px-5 py-2 rounded-xl bg-[#C96442] text-white text-sm font-semibold hover:bg-[#b9573a] transition-colors">Help Center</Link>
+              </Tooltip>
+              <Tooltip content="Read the technical documentation">
+                <Link to="/docs" className="px-5 py-2 rounded-xl border border-white/[0.1] text-[#f5f4ef] text-sm font-medium hover:bg-white/5 transition-colors">Documentation</Link>
+              </Tooltip>
             </div>
           </div>
         </ScrollReveal>

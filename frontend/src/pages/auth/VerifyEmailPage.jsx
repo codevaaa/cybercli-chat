@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Mail, RefreshCw, Check } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { CodevaMark } from '../../components/ui/CodevaLogo'
+import { Tooltip } from '../../components/ui/Tooltip.jsx'
 
 export default function VerifyEmailPage() {
   const [resent, setResent] = useState(false)
@@ -30,9 +31,11 @@ export default function VerifyEmailPage() {
       >
         {/* Brand Mark Logo */}
         <div className="flex flex-col items-center mb-8">
-          <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
-            <CodevaMark size={56} />
-          </Link>
+          <Tooltip content="Return to Home" position="top">
+            <Link to="/" className="flex items-center justify-center hover:opacity-90 transition-opacity">
+              <CodevaMark size={56} />
+            </Link>
+          </Tooltip>
           <h1 className="text-3xl font-semibold text-foreground-primary tracking-tight font-serif mt-6">
             Verify your email
           </h1>

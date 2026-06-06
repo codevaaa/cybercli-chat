@@ -8,6 +8,7 @@ import {
   GitBranch, Search, FileCode, Workflow, Bot
 } from 'lucide-react';
 import SEOHead from '@components/seo/SEOHead';
+import { Tooltip } from '@components/ui/Tooltip';
 
 /* Claude Code product page — matched to claude.com/product/claude-code */
 
@@ -160,13 +161,17 @@ export default function ClaudeCodePage() {
             </div>
 
             <div className="flex items-center justify-center gap-4 mt-5">
-              <Link to="/auth/signup" className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all hover:opacity-90" style={{ backgroundColor: '#f5f4ef', color: BG }}>
-                Get started
-              </Link>
-              <Link to="/downloads" className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all hover:bg-white/5 border" style={{ borderColor: BORDER, color: '#ccc' }}>
-                <Download className="w-5 h-5" />
-                Download desktop
-              </Link>
+              <Tooltip content="Sign up for a free account">
+                <Link to="/auth/signup" className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all hover:opacity-90" style={{ backgroundColor: '#f5f4ef', color: BG }}>
+                  Get started
+                </Link>
+              </Tooltip>
+              <Tooltip content="Download CyberCoder Desktop">
+                <Link to="/downloads" className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all hover:bg-white/5 border" style={{ borderColor: BORDER, color: '#ccc' }}>
+                  <Download className="w-5 h-5" />
+                  Download desktop
+                </Link>
+              </Tooltip>
             </div>
           </motion.div>
 
@@ -233,7 +238,9 @@ export default function ClaudeCodePage() {
           <motion.div {...fadeInUp} className="rounded-2xl border p-6 mb-4" style={{ backgroundColor: CARD, borderColor: BORDER }}>
             <h3 className="text-sm font-semibold text-[#f5f4ef] mb-2">{everywhere.m365.title}</h3>
             <p className="text-sm text-gray-400 max-w-md mb-4">{everywhere.m365.desc}</p>
-            <Link to="/upgrade" className="inline-block px-3.5 py-1.5 rounded-lg text-xs font-semibold mb-5 border" style={{ borderColor: BORDER, color: '#f5f4ef' }}>Upgrade</Link>
+            <Tooltip content="Upgrade your plan">
+              <Link to="/upgrade" className="inline-block px-3.5 py-1.5 rounded-lg text-xs font-semibold mb-5 border" style={{ borderColor: BORDER, color: '#f5f4ef' }}>Upgrade</Link>
+            </Tooltip>
             <div className="grid sm:grid-cols-2 gap-x-8 gap-y-1 max-w-md">
               {everywhere.m365.items.map((it) => (
                 <div key={it.label} className="flex items-center gap-2.5 py-2.5 border-b" style={{ borderColor: BORDER }}>
@@ -257,8 +264,8 @@ export default function ClaudeCodePage() {
               <motion.div key={c.tag} {...fadeInUp} className="rounded-2xl border p-6 flex flex-col" style={{ backgroundColor: CARD, borderColor: BORDER }}>
                 <h3 className="text-sm font-semibold text-[#f5f4ef] mb-2">{c.title}</h3>
                 <p className="text-sm text-gray-400 mb-4 flex-grow">{c.desc}</p>
-                {c.upgrade && <Link to="/upgrade" className="inline-block w-fit px-3.5 py-1.5 rounded-lg text-xs font-semibold border" style={{ borderColor: BORDER, color: '#f5f4ef' }}>Upgrade</Link>}
-                {c.desktop && <Link to="/downloads/windows" className="inline-flex w-fit items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#f5f4ef', color: BG }}><Download className="w-3.5 h-3.5" />Download for Windows</Link>}
+                {c.upgrade && <Tooltip content="Upgrade your plan"><Link to="/upgrade" className="inline-block w-fit px-3.5 py-1.5 rounded-lg text-xs font-semibold border" style={{ borderColor: BORDER, color: '#f5f4ef' }}>Upgrade</Link></Tooltip>}
+                {c.desktop && <Tooltip content="Download Desktop App"><Link to="/downloads/windows" className="inline-flex w-fit items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#f5f4ef', color: BG }}><Download className="w-3.5 h-3.5" />Download for Windows</Link></Tooltip>}
                 {c.items && (
                   <div className="space-y-0.5 mt-1">
                     {c.items.map((i) => (
@@ -273,7 +280,7 @@ export default function ClaudeCodePage() {
                     {c.dl.map((i) => (
                       <div key={i} className="flex items-center justify-between py-1.5">
                         <span className="text-sm text-gray-300">{i}</span>
-                        <Link to="/downloads" className="px-3 py-1 rounded-md text-xs font-semibold border" style={{ borderColor: BORDER, color: '#f5f4ef' }}>Download</Link>
+                        <Tooltip content="Download app"><Link to="/downloads" className="px-3 py-1 rounded-md text-xs font-semibold border" style={{ borderColor: BORDER, color: '#f5f4ef' }}>Download</Link></Tooltip>
                       </div>
                     ))}
                   </div>
@@ -328,8 +335,12 @@ export default function ClaudeCodePage() {
             <p className="text-gray-400">Install CyberCoder and start building with AI today.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/docs" className="px-6 py-3 rounded-lg font-medium border transition-all hover:bg-white/5" style={{ borderColor: BORDER, color: '#fff' }}>Read docs</Link>
-            <Link to="/auth/signup" className="px-6 py-3 rounded-lg font-semibold transition-all hover:opacity-90" style={{ backgroundColor: '#f5f4ef', color: BG }}>Get started</Link>
+            <Tooltip content="Read the documentation">
+              <Link to="/docs" className="px-6 py-3 rounded-lg font-medium border transition-all hover:bg-white/5" style={{ borderColor: BORDER, color: '#fff' }}>Read docs</Link>
+            </Tooltip>
+            <Tooltip content="Sign up for a free account">
+              <Link to="/auth/signup" className="px-6 py-3 rounded-lg font-semibold transition-all hover:opacity-90" style={{ backgroundColor: '#f5f4ef', color: BG }}>Get started</Link>
+            </Tooltip>
           </div>
         </div>
       </section>

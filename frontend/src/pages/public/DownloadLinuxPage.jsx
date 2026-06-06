@@ -7,6 +7,7 @@ import { Download, Check, ShieldCheck, ArrowLeft, Cpu, HardDrive, RefreshCw, Ter
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
 import { Link } from 'react-router-dom'
+import { Tooltip } from '@components/ui/Tooltip'
 
 const FEATURES = [
   'Global keyboard shortcuts (Ctrl+Alt+C toggle)',
@@ -55,10 +56,12 @@ export default function DownloadLinuxPage() {
       <div className="absolute bottom-0 left-0 w-1/2 h-[400px] bg-blue-500/5 blur-[150px] rounded-tr-full pointer-events-none" />
 
       <div className="max-w-[900px] mx-auto px-6 relative z-10">
-        <Link to="/downloads" className="inline-flex items-center gap-2 text-[#707070] hover:text-[#ECECEC] transition-colors text-sm mb-8">
-          <ArrowLeft className="w-4 h-4" />
-          All Downloads
-        </Link>
+        <Tooltip content="Back to Downloads">
+          <Link to="/downloads" className="inline-flex items-center gap-2 text-[#707070] hover:text-[#ECECEC] transition-colors text-sm mb-8">
+            <ArrowLeft className="w-4 h-4" />
+            All Downloads
+          </Link>
+        </Tooltip>
 
         <div className="mb-16">
           <ScrollReveal>
@@ -84,14 +87,16 @@ export default function DownloadLinuxPage() {
               <h3 className="text-xl font-semibold mb-2">AppImage (Recommended)</h3>
               <p className="text-[14px] text-[#0A0A0F]/70 mb-1">Version 0.1.0 (latest) · x64</p>
               <p className="text-[12px] text-[#0A0A0F]/50 mb-6">Works on any Linux distribution</p>
-              <button
-                onClick={() => handleDownload('appimage')}
-                disabled={downloadingAppImage}
-                className="w-full px-6 py-3 rounded-xl bg-[#0A0A0F] text-white hover:bg-[#1A1A22] transition-colors font-medium flex items-center justify-center gap-2"
-              >
-                {downloadingAppImage ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {downloadingAppImage ? 'Downloading...' : 'Download AppImage'}
-              </button>
+              <Tooltip content="Download AppImage">
+                <button
+                  onClick={() => handleDownload('appimage')}
+                  disabled={downloadingAppImage}
+                  className="w-full px-6 py-3 rounded-xl bg-[#0A0A0F] text-white hover:bg-[#1A1A22] transition-colors font-medium flex items-center justify-center gap-2"
+                >
+                  {downloadingAppImage ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {downloadingAppImage ? 'Downloading...' : 'Download AppImage'}
+                </button>
+              </Tooltip>
             </div>
 
             {/* Deb */}
@@ -99,14 +104,16 @@ export default function DownloadLinuxPage() {
               <h3 className="text-xl font-semibold text-[#ECECEC] mb-2">Debian / Ubuntu</h3>
               <p className="text-[14px] text-[#A0A0A0] mb-1">Version 0.1.0 (latest) · amd64</p>
               <p className="text-[12px] text-[#707070] mb-6">Install via dpkg or apt</p>
-              <button
-                onClick={() => handleDownload('deb')}
-                disabled={downloadingDeb}
-                className="w-full px-6 py-3 rounded-xl bg-[#1c1c24] border border-white/[0.1] hover:bg-white/[0.08] text-[#ECECEC] transition-colors font-medium flex items-center justify-center gap-2"
-              >
-                {downloadingDeb ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {downloadingDeb ? 'Downloading...' : 'Download .deb'}
-              </button>
+              <Tooltip content="Download .deb package">
+                <button
+                  onClick={() => handleDownload('deb')}
+                  disabled={downloadingDeb}
+                  className="w-full px-6 py-3 rounded-xl bg-[#1c1c24] border border-white/[0.1] hover:bg-white/[0.08] text-[#ECECEC] transition-colors font-medium flex items-center justify-center gap-2"
+                >
+                  {downloadingDeb ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {downloadingDeb ? 'Downloading...' : 'Download .deb'}
+                </button>
+              </Tooltip>
             </div>
           </div>
           <div className="flex items-center gap-2 text-[#707070] text-[12px] mb-12">

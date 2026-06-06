@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 const API_BASE = (() => {
   if (typeof window !== 'undefined') {
@@ -349,12 +350,14 @@ export default function SystemStatusPage() {
             <WifiOff className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <h2 className="text-lg font-bold text-white mb-2">Status Unavailable</h2>
             <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">{error}</p>
-            <button
-              onClick={() => { setLoading(true); setError(null); fetchStatus(true) }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-violet-600/20 text-violet-400 border border-violet-500/20 hover:bg-violet-600/30 transition-all"
-            >
-              <RefreshCw className="w-4 h-4" /> Retry
-            </button>
+            <Tooltip content="Attempt to fetch status again">
+              <button
+                onClick={() => { setLoading(true); setError(null); fetchStatus(true) }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-violet-600/20 text-violet-400 border border-violet-500/20 hover:bg-violet-600/30 transition-all"
+              >
+                <RefreshCw className="w-4 h-4" /> Retry
+              </button>
+            </Tooltip>
           </div>
         ) : data && (
           <>
@@ -396,14 +399,15 @@ export default function SystemStatusPage() {
                     {data.sla90Day?.toFixed(2)}%
                   </span>
                 </div>
-                <button
-                  onClick={() => fetchStatus(true)}
-                  disabled={refreshing}
-                  className="p-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] transition-all disabled:opacity-40"
-                  title="Refresh status"
-                >
-                  <RefreshCw className={`w-4 h-4 text-gray-400 ${refreshing ? 'animate-spin' : ''}`} />
-                </button>
+                <Tooltip content="Manually refresh system status">
+                  <button
+                    onClick={() => fetchStatus(true)}
+                    disabled={refreshing}
+                    className="p-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] transition-all disabled:opacity-40"
+                  >
+                    <RefreshCw className={`w-4 h-4 text-gray-400 ${refreshing ? 'animate-spin' : ''}`} />
+                  </button>
+                </Tooltip>
               </div>
             </motion.div>
 

@@ -5881,6 +5881,7 @@ export default function ChatPage() {
                   userPlan={userPlan}
                   activeThreadId={activeThreadId || activeThreadIdRef.current || creatingThreadRef.current}
                   handleDeleteThread={handleDeleteThread}
+                  startNewChat={startNewChat}
                 />
               ) : activeNav === 'cowork' || activeNav === 'code' ? (
                 <ComingSoonView 

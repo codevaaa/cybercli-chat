@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen, Clock, Tag, User } from 'lucide-react'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 export const BLOG_POSTS = [
   {
@@ -137,7 +138,8 @@ export default function BlogPage() {
       <div className="section-padding mb-12">
         <div className="container-custom">
           <ScrollReveal>
-            <Link to={`/blog/${BLOG_POSTS[0].slug}`} className="block group">
+            <Tooltip content={`Read ${BLOG_POSTS[0].title}`} position="top" wrapperClassName="block w-full">
+              <Link to={`/blog/${BLOG_POSTS[0].slug}`} className="block group">
               <motion.div
                 className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${BLOG_POSTS[0].gradient} border border-border-subtle p-8 lg:p-12`}
                 whileHover={{ y: -4 }}
@@ -186,7 +188,8 @@ export default function BlogPage() {
                   </div>
                 </div>
               </motion.div>
-            </Link>
+              </Link>
+            </Tooltip>
           </ScrollReveal>
         </div>
       </div>
@@ -197,7 +200,8 @@ export default function BlogPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {BLOG_POSTS.slice(1).map((post, i) => (
               <ScrollReveal key={post.slug} delay={i * 0.1}>
-                <Link to={`/blog/${post.slug}`} className="block group h-full">
+                <Tooltip content={`Read ${post.title}`} position="top" wrapperClassName="block h-full">
+                  <Link to={`/blog/${post.slug}`} className="block group h-full">
                   <motion.div
                     className={`relative h-full overflow-hidden rounded-2xl bg-gradient-to-br ${post.gradient} border border-border-subtle p-0 flex flex-col`}
                     whileHover={{ y: -4, borderColor: `${post.categoryColor}40` }}
@@ -239,7 +243,8 @@ export default function BlogPage() {
                       </div>
                     </div>
                   </motion.div>
-                </Link>
+                  </Link>
+                </Tooltip>
               </ScrollReveal>
             ))}
           </div>

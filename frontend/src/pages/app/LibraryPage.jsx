@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Search, Folder, MessageSquare, Pin, Tag, Clock, MoreVertical } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Tooltip } from '../../components/ui/Tooltip.jsx'
+import { Skeleton } from '../../components/ui/Skeleton.jsx'
+import api from '../../lib/api.js'
 
 const SAMPLE_CHATS = [
   { id: '1', title: 'Python async patterns', folder: 'Coding', pinned: true, tags: ['coding', 'python'], updated: '2m ago', messages: 24 },
@@ -13,10 +17,21 @@ const SAMPLE_CHATS = [
 const FOLDERS = ['All', 'Coding', 'Business', 'Personal', 'Research', 'Creative']
 
 export default function LibraryPage() {
+  const { data: libraryChats = [], isLoading } = useQuery({
+    queryKey: ['libraryChats'],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get('/library')
+        return data || SAMPLE_CHATS
+      } catch {
+        return SAMPLE_CHATS
+      }
+    }
+  })
   const [activeFolder, setActiveFolder] = useState('All')
   const [search, setSearch] = useState('')
 
-  const filtered = SAMPLE_CHATS.filter(c => {
+  const filtered = libraryChats.filter(c => {
     const matchesFolder = activeFolder === 'All' || c.folder === activeFolder
     const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase()) || c.tags.some(t => t.includes(search.toLowerCase()))
     return matchesFolder && matchesSearch
@@ -26,10 +41,12 @@ export default function LibraryPage() {
     <div className="min-h-screen pt-20 pb-12 bg-background-primary">
       <div className="section-padding">
         <div className="container-custom max-w-4xl">
-          <Link to="/chat" className="inline-flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground-primary transition-colors mb-8">
-            <ArrowLeft className="w-4 h-4" />
-            Back to chat
-          </Link>
+          <Tooltip content="Return to Chat" position="right">
+            <Link to="/chat" className="inline-flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground-primary transition-colors mb-8">
+              <ArrowLeft className="w-4 h-4" />
+              Back to chat
+            </Link>
+          </Tooltip>
 
           <h1 className="text-h2 mb-6">Library</h1>
 
@@ -63,7 +80,20 @@ export default function LibraryPage() {
           </div>
 
           <div className="space-y-2">
-            {filtered.map((chat) => (
+            {isLoading ? (
+              <>
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-background-secondary border border-border-subtle">
+                    <Skeleton variant="rectangular" width="40px" height="40px" className="rounded-lg flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton variant="text" width="40%" />
+                      <Skeleton variant="text" width="60%" className="h-3" />
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              filtered.map((chat) => (
               <Link
                 key={chat.id}
                 to={`/chat/${chat.id}`}
@@ -90,11 +120,13 @@ export default function LibraryPage() {
                     </span>
                   ))}
                 </div>
-                <button className="p-2 rounded-lg hover:bg-background-tertiary opacity-0 group-hover:opacity-100 transition-opacity">
-                  <MoreVertical className="w-4 h-4 text-foreground-muted" />
-                </button>
+                <Tooltip content="Options" position="left">
+                  <button className="p-2 rounded-lg hover:bg-background-tertiary opacity-0 group-hover:opacity-100 transition-opacity">
+                    <MoreVertical className="w-4 h-4 text-foreground-muted" />
+                  </button>
+                </Tooltip>
               </Link>
-            ))}
+            )))}
           </div>
         </div>
       </div>

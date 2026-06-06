@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
+import { Tooltip } from '@components/ui/Tooltip'
 import { Sparkles, Wrench, Bug, Zap, ArrowRight, Rss, BookOpen, Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
@@ -225,13 +226,17 @@ export default function ChangelogPage() {
             Everything new in Codeva — new features, improvements, and bug fixes delivered continuously.
           </p>
           <div className="flex items-center justify-center gap-5 mt-6 text-sm">
-            <Link to="/docs" className="inline-flex items-center gap-1 text-orange-400 hover:text-orange-350 transition-colors font-medium">
-              Read the docs <ArrowRight className="w-4 h-4" />
-            </Link>
+            <Tooltip content="Read the official Codeva documentation">
+              <Link to="/docs" className="inline-flex items-center gap-1 text-orange-400 hover:text-orange-350 transition-colors font-medium">
+                Read the docs <ArrowRight className="w-4 h-4" />
+              </Link>
+            </Tooltip>
             <span className="text-gray-700">|</span>
-            <Link to="/blog" className="inline-flex items-center gap-1 text-gray-450 hover:text-gray-300 transition-colors font-medium">
-              Read the blog <ArrowRight className="w-4 h-4" />
-            </Link>
+            <Tooltip content="Read the Codeva blog">
+              <Link to="/blog" className="inline-flex items-center gap-1 text-gray-450 hover:text-gray-300 transition-colors font-medium">
+                Read the blog <ArrowRight className="w-4 h-4" />
+              </Link>
+            </Tooltip>
           </div>
         </motion.div>
 
@@ -267,23 +272,25 @@ export default function ChangelogPage() {
                 placeholder="you@example.com"
                 className="flex-1 px-4 py-3 rounded-xl bg-black/40 border border-white/[0.06] text-white text-sm placeholder:text-gray-650 focus:outline-none focus:border-orange-500/50 transition-colors"
               />
-              <button
-                type="submit"
-                disabled={subscribed}
-                className="px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm transition-all duration-200 hover:shadow-[0_0_20px_rgba(217,119,87,0.4)] flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0"
-              >
-                {subscribed ? (
-                  <>
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    Subscribed!
-                  </>
-                ) : (
-                  <>
-                    Start for free
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
+              <Tooltip content="Subscribe to the Codeva newsletter">
+                <button
+                  type="submit"
+                  disabled={subscribed}
+                  className="px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm transition-all duration-200 hover:shadow-[0_0_20px_rgba(217,119,87,0.4)] flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0"
+                >
+                  {subscribed ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-400" />
+                      Subscribed!
+                    </>
+                  ) : (
+                    <>
+                      Start for free
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </Tooltip>
             </form>
           </div>
         </ScrollReveal>

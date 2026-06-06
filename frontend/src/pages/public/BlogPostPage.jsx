@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, Clock, User, Tag, Share2, Copy, Check } from 'lucide-react'
 import { BLOG_POSTS } from './BlogPage'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 // Full articles content (1500+ words each)
 const ARTICLES = {
@@ -771,10 +772,12 @@ export default function BlogPostPage() {
         <div className="container-custom max-w-4xl">
           {/* Back */}
           <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mb-10">
-            <Link to="/blog" className="inline-flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground-primary transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Blog
-            </Link>
+            <Tooltip content="Return to blog list" position="right">
+              <Link to="/blog" className="inline-flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground-primary transition-colors">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Blog
+              </Link>
+            </Tooltip>
           </motion.div>
 
           {/* Header */}
@@ -808,9 +811,11 @@ export default function BlogPostPage() {
                   <p className="text-xs text-foreground-muted">Founder, Codeva · {post.date}</p>
                 </div>
               </div>
-              <button onClick={handleCopy} className="flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground-primary transition-colors px-3 py-1.5 rounded-lg border border-border-subtle hover:border-border-medium">
-                {copied ? <><Check className="w-4 h-4 text-green-400" />Copied!</> : <><Share2 className="w-4 h-4" />Copy link</>}
-              </button>
+              <Tooltip content="Copy link to this article">
+                <button onClick={handleCopy} className="flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground-primary transition-colors px-3 py-1.5 rounded-lg border border-border-subtle hover:border-border-medium">
+                  {copied ? <><Check className="w-4 h-4 text-green-400" />Copied!</> : <><Share2 className="w-4 h-4" />Copy link</>}
+                </button>
+              </Tooltip>
             </div>
           </motion.div>
 
@@ -856,12 +861,14 @@ export default function BlogPostPage() {
             <h3 className="text-xl font-semibold text-foreground-primary mb-6">More from Codeva</h3>
             <div className="grid sm:grid-cols-2 gap-4">
               {BLOG_POSTS.filter(p => p.slug !== slug).map(p => (
-                <Link key={p.slug} to={`/blog/${p.slug}`}
-                  className="group p-5 rounded-xl border border-border-subtle hover:border-accent/20 bg-background-secondary hover:bg-background-elevated transition-all">
-                  <span className="text-xs font-medium" style={{ color: p.categoryColor }}>{p.category}</span>
-                  <h4 className="text-sm font-semibold text-foreground-primary mt-1 group-hover:text-accent transition-colors line-clamp-2">{p.title}</h4>
-                  <p className="text-xs text-foreground-muted mt-1">{p.readTime}</p>
-                </Link>
+                <Tooltip key={p.slug} content={`Read ${p.title}`} position="top" wrapperClassName="block h-full">
+                  <Link to={`/blog/${p.slug}`}
+                    className="group h-full block p-5 rounded-xl border border-border-subtle hover:border-accent/20 bg-background-secondary hover:bg-background-elevated transition-all">
+                    <span className="text-xs font-medium" style={{ color: p.categoryColor }}>{p.category}</span>
+                    <h4 className="text-sm font-semibold text-foreground-primary mt-1 group-hover:text-accent transition-colors line-clamp-2">{p.title}</h4>
+                    <p className="text-xs text-foreground-muted mt-1">{p.readTime}</p>
+                  </Link>
+                </Tooltip>
               ))}
             </div>
           </div>

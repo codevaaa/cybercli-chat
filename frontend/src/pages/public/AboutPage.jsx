@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Shield, Target, Heart, Zap, Globe, Award, Code2, Lock, Github, ShieldAlert } from 'lucide-react'
 import ScrollReveal, { ScrollRevealGroup } from '@components/ui/ScrollReveal'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 import { useAuthStore } from '@stores/authStore.js'
 import SystemOrchestration from '@components/landing/SystemOrchestration'
 
@@ -437,9 +438,11 @@ export default function AboutPage() {
                 Ready to experience the future of AI?
               </h2>
               <p className="text-foreground-muted mb-8">Join thousands of researchers, developers, and creators already using Codeva.</p>
-              <Link to={user ? "/chat" : "/auth/signup"} className="btn-primary inline-flex">
-                Get started for free <ArrowRight className="w-4 h-4" />
-              </Link>
+              <Tooltip content="Start chatting now!" position="top">
+                <Link to={user ? "/chat" : "/auth/signup"} className="btn-primary inline-flex">
+                  Get started for free <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Tooltip>
             </div>
           </ScrollReveal>
         </div>

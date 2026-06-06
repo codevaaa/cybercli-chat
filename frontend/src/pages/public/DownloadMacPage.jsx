@@ -7,6 +7,7 @@ import { Download, Apple, Check, ShieldCheck, ArrowLeft, Cpu, HardDrive, Refresh
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
 import { Link } from 'react-router-dom'
+import { Tooltip } from '@components/ui/Tooltip'
 
 const FEATURES = [
   'Native macOS title bar with traffic lights',
@@ -48,10 +49,12 @@ export default function DownloadMacPage() {
       <div className="absolute bottom-0 left-0 w-1/2 h-[400px] bg-blue-500/5 blur-[150px] rounded-tr-full pointer-events-none" />
 
       <div className="max-w-[900px] mx-auto px-6 relative z-10">
-        <Link to="/downloads" className="inline-flex items-center gap-2 text-[#707070] hover:text-[#ECECEC] transition-colors text-sm mb-8">
-          <ArrowLeft className="w-4 h-4" />
-          All Downloads
-        </Link>
+        <Tooltip content="Back to Downloads">
+          <Link to="/downloads" className="inline-flex items-center gap-2 text-[#707070] hover:text-[#ECECEC] transition-colors text-sm mb-8">
+            <ArrowLeft className="w-4 h-4" />
+            All Downloads
+          </Link>
+        </Tooltip>
 
         <div className="mb-16">
           <ScrollReveal>
@@ -78,14 +81,16 @@ export default function DownloadMacPage() {
                 <p className="text-[14px] text-[#0A0A0F]/70 mb-1">Version 0.1.0 (latest) · Universal (Intel + Apple Silicon)</p>
                 <p className="text-[12px] text-[#0A0A0F]/50">Requires macOS 12.0 or later</p>
               </div>
-              <button
-                onClick={handleDownload}
-                disabled={downloading}
-                className="px-8 py-4 rounded-xl bg-[#0A0A0F] text-white hover:bg-[#1A1A22] transition-colors font-medium flex items-center gap-2 whitespace-nowrap"
-              >
-                {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {downloading ? 'Downloading...' : 'Download for Mac'}
-              </button>
+              <Tooltip content="Download for macOS">
+                <button
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className="px-8 py-4 rounded-xl bg-[#0A0A0F] text-white hover:bg-[#1A1A22] transition-colors font-medium flex items-center gap-2 whitespace-nowrap"
+                >
+                  {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {downloading ? 'Downloading...' : 'Download for Mac'}
+                </button>
+              </Tooltip>
             </div>
             <div className="mt-6 pt-6 border-t border-[#0A0A0F]/10 flex items-center gap-2 text-[12px] text-[#0A0A0F]/50">
               <ShieldCheck className="w-3.5 h-3.5" />

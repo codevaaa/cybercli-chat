@@ -7,6 +7,7 @@ import { Download, Monitor, Check, ShieldCheck, ArrowLeft, Cpu, HardDrive, Refre
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
 import { Link } from 'react-router-dom'
+import { Tooltip } from '@components/ui/Tooltip'
 
 const FEATURES = [
   'Global keyboard shortcuts (Ctrl+Alt+C toggle)',
@@ -49,10 +50,12 @@ export default function DownloadWindowsPage() {
 
       <div className="max-w-[900px] mx-auto px-6 relative z-10">
         {/* Breadcrumb */}
-        <Link to="/downloads" className="inline-flex items-center gap-2 text-[#707070] hover:text-[#ECECEC] transition-colors text-sm mb-8">
-          <ArrowLeft className="w-4 h-4" />
-          All Downloads
-        </Link>
+        <Tooltip content="Back to Downloads">
+          <Link to="/downloads" className="inline-flex items-center gap-2 text-[#707070] hover:text-[#ECECEC] transition-colors text-sm mb-8">
+            <ArrowLeft className="w-4 h-4" />
+            All Downloads
+          </Link>
+        </Tooltip>
 
         {/* Hero */}
         <div className="mb-16">
@@ -81,14 +84,16 @@ export default function DownloadWindowsPage() {
                 <p className="text-[14px] text-[#0A0A0F]/70 mb-1">Version 0.1.0 (latest) · 64-bit</p>
                 <p className="text-[12px] text-[#0A0A0F]/50">Requires Windows 10 or later</p>
               </div>
-              <button
-                onClick={handleDownload}
-                disabled={downloading}
-                className="px-8 py-4 rounded-xl bg-[#0A0A0F] text-white hover:bg-[#1A1A22] transition-colors font-medium flex items-center gap-2 whitespace-nowrap"
-              >
-                {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {downloading ? 'Downloading...' : 'Download for Windows'}
-              </button>
+              <Tooltip content="Download for Windows">
+                <button
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className="px-8 py-4 rounded-xl bg-[#0A0A0F] text-white hover:bg-[#1A1A22] transition-colors font-medium flex items-center gap-2 whitespace-nowrap"
+                >
+                  {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {downloading ? 'Downloading...' : 'Download for Windows'}
+                </button>
+              </Tooltip>
             </div>
             <div className="mt-6 pt-6 border-t border-[#0A0A0F]/10 flex items-center gap-2 text-[12px] text-[#0A0A0F]/50">
               <ShieldCheck className="w-3.5 h-3.5" />

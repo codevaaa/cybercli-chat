@@ -6,6 +6,7 @@ import {
   ArrowUpRight, Smartphone
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { Tooltip } from '@components/ui/Tooltip'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
 import { API_BASE } from '@lib/api'
@@ -56,10 +57,11 @@ function DownloadCard({ os, primary }) {
 
   return (
     <ScrollReveal>
-      <a
-        href={downloadUrl}
-        download
-        className="block p-7 rounded-2xl border transition-all duration-300 group flex flex-col h-full"
+      <Tooltip content={`Download for ${meta.name}`}>
+        <a
+          href={downloadUrl}
+          download
+          className="block p-7 rounded-2xl border transition-all duration-300 group flex flex-col h-full"
         style={{
           backgroundColor: primary ? CREAM : CARD,
           borderColor: primary ? 'transparent' : BORDER,
@@ -79,8 +81,9 @@ function DownloadCard({ os, primary }) {
           Download {meta.ext}
           <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
-        <p className="text-center text-[11px] mt-3" style={{ color: primary ? 'rgba(26,26,24,0.5)' : '#707070' }}>Requires {meta.req}</p>
-      </a>
+          <p className="text-center text-[11px] mt-3" style={{ color: primary ? 'rgba(26,26,24,0.5)' : '#707070' }}>Requires {meta.req}</p>
+        </a>
+      </Tooltip>
     </ScrollReveal>
   )
 }
@@ -92,9 +95,11 @@ function MobileRow({ label, store, href }) {
         <Smartphone className="w-4 h-4" style={{ color: ACCENT }} />
         <span className="text-sm" style={{ color: CREAM }}>{label}</span>
       </div>
-      <a href={href} target="_blank" rel="noopener noreferrer" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors hover:bg-white/5" style={{ borderColor: BORDER, color: CREAM }}>
-        {store}
-      </a>
+      <Tooltip content={`Get Codeva on the ${store}`}>
+        <a href={href} target="_blank" rel="noopener noreferrer" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors hover:bg-white/5" style={{ borderColor: BORDER, color: CREAM }}>
+          {store}
+        </a>
+      </Tooltip>
     </div>
   )
 }
@@ -116,8 +121,10 @@ function ExtensionCard({ title, desc, icon: Icon, href, label, to }) {
   const style = { backgroundColor: CARD, borderColor: BORDER }
   return (
     <ScrollReveal>
-      {to ? <Link to={to} className={cls} style={style}>{inner}</Link>
-          : <a href={href} target="_blank" rel="noopener noreferrer" className={cls} style={style}>{inner}</a>}
+      <Tooltip content={`View ${title}`}>
+        {to ? <Link to={to} className={cls} style={style}>{inner}</Link>
+            : <a href={href} target="_blank" rel="noopener noreferrer" className={cls} style={style}>{inner}</a>}
+      </Tooltip>
     </ScrollReveal>
   )
 }
@@ -126,10 +133,12 @@ function FAQItem({ question, answer }) {
   const [open, setOpen] = useState(false)
   return (
     <div className="border-b" style={{ borderColor: BORDER }}>
-      <button onClick={() => setOpen(!open)} className="w-full py-5 flex items-center justify-between text-left">
-        <span className="text-[15px] font-medium" style={{ color: CREAM }}>{question}</span>
-        {open ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-      </button>
+      <Tooltip content={open ? "Collapse FAQ" : "Expand FAQ"}>
+        <button onClick={() => setOpen(!open)} className="w-full py-5 flex items-center justify-between text-left">
+          <span className="text-[15px] font-medium" style={{ color: CREAM }}>{question}</span>
+          {open ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+        </button>
+      </Tooltip>
       {open && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="pb-5 text-[14px] text-gray-400 leading-relaxed max-w-3xl">
           {answer}
@@ -203,9 +212,11 @@ export default function DownloadsPage() {
               <code className="flex-1 px-4 py-3 rounded-xl font-mono text-[13px]" style={{ backgroundColor: '#16140f', border: `1px solid ${BORDER}`, color: '#e0a98f' }}>
                 npm install -g @codeva_chat/cli
               </code>
-              <button onClick={() => navigator.clipboard.writeText('npm install -g @codeva_chat/cli')} className="px-4 py-3 rounded-xl text-[13px] transition-colors hover:bg-white/10" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: CREAM }}>
-                Copy
-              </button>
+              <Tooltip content="Copy install command">
+                <button onClick={() => navigator.clipboard.writeText('npm install -g @codeva_chat/cli')} className="px-4 py-3 rounded-xl text-[13px] transition-colors hover:bg-white/10" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: CREAM }}>
+                  Copy
+                </button>
+              </Tooltip>
             </div>
           </div>
         </Section>

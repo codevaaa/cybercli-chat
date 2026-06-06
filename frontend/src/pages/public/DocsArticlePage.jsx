@@ -6,6 +6,7 @@ import {
   ChevronRight, Menu, Clock, Calendar, ThumbsUp, ThumbsDown, Sparkles, Hash, ArrowLeft, ArrowRight, Zap, Bug
 } from 'lucide-react'
 import { CATEGORIES, DocsSidebar } from './DocsPage'
+import { Tooltip } from '@components/ui/Tooltip'
 
 /* ─── Callout Components ─── */
 export function Note({ children }) {
@@ -1108,12 +1109,14 @@ export default function DocsArticlePage() {
           {/* Top bar */}
           <div className="flex items-center justify-between px-5 lg:px-8 py-3 border-b border-border-subtle bg-background-primary/80 backdrop-blur-md sticky top-28 z-20">
             <div className="flex items-center gap-3">
-              <button
-                className="lg:hidden p-1.5 rounded-lg hover:bg-background-tertiary text-foreground-muted transition-colors"
-                onClick={() => setMobileSidebarOpen(true)}
-              >
-                <Menu className="w-4 h-4" />
-              </button>
+              <Tooltip content="Open sidebar">
+                <button
+                  className="lg:hidden p-1.5 rounded-lg hover:bg-background-tertiary text-foreground-muted transition-colors"
+                  onClick={() => setMobileSidebarOpen(true)}
+                >
+                  <Menu className="w-4 h-4" />
+                </button>
+              </Tooltip>
               <nav className="flex items-center gap-1.5 text-xs text-foreground-muted">
                 <Link to="/" className="hover:text-foreground-primary transition-colors">Home</Link>
                 <ChevronRight className="w-3 h-3" />
@@ -1130,13 +1133,15 @@ export default function DocsArticlePage() {
                 <span className="text-foreground-secondary line-clamp-1 max-w-[200px]">{article.title}</span>
               </nav>
             </div>
-            <Link
-              to="/chat"
-              className="flex items-center gap-1.5 text-xs font-medium text-accent hover:text-accent/80 transition-colors border border-accent/20 px-3 py-1.5 rounded-lg hover:bg-accent/10"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Ask AI
-            </Link>
+            <Tooltip content="Open AI Assistant">
+              <Link
+                to="/chat"
+                className="flex items-center gap-1.5 text-xs font-medium text-accent hover:text-accent/80 transition-colors border border-accent/20 px-3 py-1.5 rounded-lg hover:bg-accent/10"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Ask AI
+              </Link>
+            </Tooltip>
           </div>
 
           {/* Content + ToC */}
@@ -1227,28 +1232,32 @@ export default function DocsArticlePage() {
               >
                 <p className="text-sm font-medium text-foreground-primary mb-3">Was this article helpful?</p>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setHelpfulVote('yes')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-all duration-200 ${
-                      helpfulVote === 'yes'
-                        ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
-                        : 'border-border-subtle text-foreground-muted hover:border-border-medium hover:text-foreground-primary'
-                    }`}
-                  >
-                    <ThumbsUp className="w-4 h-4" />
-                    Yes
-                  </button>
-                  <button
-                    onClick={() => setHelpfulVote('no')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-all duration-200 ${
-                      helpfulVote === 'no'
-                        ? 'border-red-500/50 bg-red-500/10 text-red-400'
-                        : 'border-border-subtle text-foreground-muted hover:border-border-medium hover:text-foreground-primary'
-                    }`}
-                  >
-                    <ThumbsDown className="w-4 h-4" />
-                    No
-                  </button>
+                  <Tooltip content="Yes, this helped">
+                    <button
+                      onClick={() => setHelpfulVote('yes')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-all duration-200 ${
+                        helpfulVote === 'yes'
+                          ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
+                          : 'border-border-subtle text-foreground-muted hover:border-border-medium hover:text-foreground-primary'
+                      }`}
+                    >
+                      <ThumbsUp className="w-4 h-4" />
+                      Yes
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="No, it didn't">
+                    <button
+                      onClick={() => setHelpfulVote('no')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-all duration-200 ${
+                        helpfulVote === 'no'
+                          ? 'border-red-500/50 bg-red-500/10 text-red-400'
+                          : 'border-border-subtle text-foreground-muted hover:border-border-medium hover:text-foreground-primary'
+                      }`}
+                    >
+                      <ThumbsDown className="w-4 h-4" />
+                      No
+                    </button>
+                  </Tooltip>
                   <AnimatePresence>
                     {helpfulVote && (
                       <motion.span
@@ -1273,32 +1282,36 @@ export default function DocsArticlePage() {
                   className="mt-8 grid grid-cols-2 gap-4"
                 >
                   {prevArticle ? (
-                    <Link
-                      to={`/docs/${prevArticle.slug}`}
-                      className="group flex flex-col gap-1 p-4 rounded-xl border border-border-subtle bg-background-secondary hover:border-accent/25 transition-all duration-200"
-                    >
-                      <span className="flex items-center gap-1 text-[11px] text-foreground-muted group-hover:text-accent transition-colors">
-                        <ArrowLeft className="w-3 h-3" />
-                        Previous
-                      </span>
-                      <span className="text-sm font-medium text-foreground-secondary group-hover:text-foreground-primary transition-colors line-clamp-2">
-                        {prevArticle.title}
-                      </span>
-                    </Link>
+                    <Tooltip content="Previous Article">
+                      <Link
+                        to={`/docs/${prevArticle.slug}`}
+                        className="group flex flex-col gap-1 p-4 rounded-xl border border-border-subtle bg-background-secondary hover:border-accent/25 transition-all duration-200"
+                      >
+                        <span className="flex items-center gap-1 text-[11px] text-foreground-muted group-hover:text-accent transition-colors">
+                          <ArrowLeft className="w-3 h-3" />
+                          Previous
+                        </span>
+                        <span className="text-sm font-medium text-foreground-secondary group-hover:text-foreground-primary transition-colors line-clamp-2">
+                          {prevArticle.title}
+                        </span>
+                      </Link>
+                    </Tooltip>
                   ) : <div />}
                   {nextArticle ? (
-                    <Link
-                      to={`/docs/${nextArticle.slug}`}
-                      className="group flex flex-col gap-1 p-4 rounded-xl border border-border-subtle bg-background-secondary hover:border-accent/25 transition-all duration-200 text-right"
-                    >
-                      <span className="flex items-center justify-end gap-1 text-[11px] text-foreground-muted group-hover:text-accent transition-colors">
-                        Next
-                        <ArrowRight className="w-3 h-3" />
-                      </span>
-                      <span className="text-sm font-medium text-foreground-secondary group-hover:text-foreground-primary transition-colors line-clamp-2">
-                        {nextArticle.title}
-                      </span>
-                    </Link>
+                    <Tooltip content="Next Article">
+                      <Link
+                        to={`/docs/${nextArticle.slug}`}
+                        className="group flex flex-col gap-1 p-4 rounded-xl border border-border-subtle bg-background-secondary hover:border-accent/25 transition-all duration-200 text-right"
+                      >
+                        <span className="flex items-center justify-end gap-1 text-[11px] text-foreground-muted group-hover:text-accent transition-colors">
+                          Next
+                          <ArrowRight className="w-3 h-3" />
+                        </span>
+                        <span className="text-sm font-medium text-foreground-secondary group-hover:text-foreground-primary transition-colors line-clamp-2">
+                          {nextArticle.title}
+                        </span>
+                      </Link>
+                    </Tooltip>
                   ) : <div />}
                 </motion.div>
               )}

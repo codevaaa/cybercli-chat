@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom'
+import { Tooltip } from '@components/ui/Tooltip'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Users, Mic, GitBranch, Cpu, Globe, Shield, Brain, FileText, ChevronDown, ChevronUp, Check, Star, Zap } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -367,10 +368,12 @@ export default function FeatureDetailPage() {
       <div className="section-padding mb-16">
         <div className="container-custom max-w-5xl">
           <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mb-10">
-            <Link to="/features" className="inline-flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground-primary transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              All Features
-            </Link>
+            <Tooltip content="Back to all features">
+              <Link to="/features" className="inline-flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground-primary transition-colors">
+                <ArrowLeft className="w-4 h-4" />
+                All Features
+              </Link>
+            </Tooltip>
           </motion.div>
 
           <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${feature.gradient} border border-border-subtle p-10 lg:p-16 mb-12`}>
@@ -466,13 +469,15 @@ export default function FeatureDetailPage() {
                 <Icon className="w-8 h-8" style={{ color: feature.iconColor }} />
               </motion.div>
               <p className="text-foreground-muted text-sm">{feature.title} — Live Demo</p>
-              <Link
-                to={user ? "/chat" : "/auth/signup"}
-                className="flex items-center gap-2 text-sm font-semibold px-6 py-3 rounded-xl text-white transition-all hover:opacity-90 hover:scale-105"
-                style={{ background: feature.iconColor }}
-              >
-                Try it free <ArrowRight className="w-4 h-4" />
-              </Link>
+              <Tooltip content="Sign up for free">
+                <Link
+                  to={user ? "/chat" : "/auth/signup"}
+                  className="flex items-center gap-2 text-sm font-semibold px-6 py-3 rounded-xl text-white transition-all hover:opacity-90 hover:scale-105"
+                  style={{ background: feature.iconColor }}
+                >
+                  Try it free <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Tooltip>
             </div>
           </motion.div>
         </div>
@@ -503,15 +508,17 @@ export default function FeatureDetailPage() {
                 transition={{ delay: i * 0.05 }}
                 className="card-glass rounded-2xl overflow-hidden"
               >
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-6 text-left hover:bg-white/[0.02] transition-colors"
-                >
-                  <span className="font-semibold text-foreground-primary pr-4">{item.q}</span>
-                  {openFaq === i
-                    ? <ChevronUp className="w-5 h-5 text-foreground-muted flex-shrink-0" />
-                    : <ChevronDown className="w-5 h-5 text-foreground-muted flex-shrink-0" />}
-                </button>
+                <Tooltip content={openFaq === i ? "Collapse answer" : "Expand answer"}>
+                  <button
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="w-full flex items-center justify-between p-6 text-left hover:bg-white/[0.02] transition-colors"
+                  >
+                    <span className="font-semibold text-foreground-primary pr-4">{item.q}</span>
+                    {openFaq === i
+                      ? <ChevronUp className="w-5 h-5 text-foreground-muted flex-shrink-0" />
+                      : <ChevronDown className="w-5 h-5 text-foreground-muted flex-shrink-0" />}
+                  </button>
+                </Tooltip>
                 {openFaq === i && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
@@ -538,13 +545,13 @@ export default function FeatureDetailPage() {
               if (!rel) return null
               const RelIcon = rel.icon
               return (
-                <Link
-                  key={relSlug}
-                  to={`/features/${relSlug}`}
-                  className="card-glass p-6 rounded-2xl group hover:border-accent/20 transition-all block"
-                >
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                <Tooltip key={relSlug} content={`Learn more about ${RELATED_LABELS[relSlug]}`}>
+                  <Link
+                    to={`/features/${relSlug}`}
+                    className="card-glass p-6 rounded-2xl group hover:border-accent/20 transition-all block"
+                  >
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
                     style={{ background: `${rel.iconColor}18`, border: `1px solid ${rel.iconColor}30` }}
                   >
                     <RelIcon className="w-5 h-5" style={{ color: rel.iconColor }} />
@@ -556,7 +563,8 @@ export default function FeatureDetailPage() {
                   <div className="flex items-center gap-1 mt-3 text-xs font-medium" style={{ color: rel.iconColor }}>
                     Learn more <ArrowRight className="w-3 h-3" />
                   </div>
-                </Link>
+                  </Link>
+                </Tooltip>
               )
             })}
           </div>
@@ -586,19 +594,23 @@ export default function FeatureDetailPage() {
               Join thousands of users who have already upgraded their AI experience. Free forever.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to={user ? "/chat" : "/auth/signup"}
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-white font-semibold text-sm transition-all hover:opacity-90 hover:scale-105"
-                style={{ background: feature.iconColor }}
-              >
-                Get started free <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                to="/features"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-foreground-primary font-semibold text-sm border border-border-subtle hover:border-accent/30 transition-all"
-              >
-                View all features
-              </Link>
+              <Tooltip content="Sign up for free">
+                <Link
+                  to={user ? "/chat" : "/auth/signup"}
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-white font-semibold text-sm transition-all hover:opacity-90 hover:scale-105"
+                  style={{ background: feature.iconColor }}
+                >
+                  Get started free <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Tooltip>
+              <Tooltip content="See all features">
+                <Link
+                  to="/features"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-foreground-primary font-semibold text-sm border border-border-subtle hover:border-accent/30 transition-all"
+                >
+                  View all features
+                </Link>
+              </Tooltip>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-8">
               {['No credit card required', 'Free forever plan', 'GDPR compliant'].map(item => (

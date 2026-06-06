@@ -3,6 +3,7 @@ import { MapPin, Clock, DollarSign, Briefcase, ArrowRight, Users, Zap, Heart } f
 import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 const OPEN_ROLES = [
   {
@@ -139,12 +140,14 @@ export default function CareersPage() {
                         ))}
                       </div>
                     </div>
-                    <Link
-                      to="/contact"
-                      className="btn-secondary text-sm whitespace-nowrap flex items-center gap-2 flex-shrink-0"
-                    >
-                      Apply now <ArrowRight className="w-4 h-4" />
-                    </Link>
+                    <Tooltip content={`Apply for ${role.title}`} position="top">
+                      <Link
+                        to="/contact"
+                        className="btn-secondary text-sm whitespace-nowrap flex items-center gap-2 flex-shrink-0"
+                      >
+                        Apply now <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    </Tooltip>
                   </div>
                 </motion.div>
               </ScrollReveal>
@@ -155,9 +158,11 @@ export default function CareersPage() {
             <div className="mt-12 text-center card-glass p-10 max-w-2xl mx-auto">
               <h3 className="text-xl font-semibold text-foreground-primary mb-2">Don't see your role?</h3>
               <p className="text-sm text-foreground-muted mb-6">We're always looking for exceptional people. Send us a note about what you'd love to work on.</p>
-              <Link to="/contact" className="btn-primary inline-flex">
-                Get in touch <ArrowRight className="w-4 h-4" />
-              </Link>
+              <Tooltip content="Contact us">
+                <Link to="/contact" className="btn-primary inline-flex">
+                  Get in touch <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Tooltip>
             </div>
           </ScrollReveal>
         </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Settings, Volume2, Mic, Zap, Check } from 'lucide-react'
+import { Tooltip } from '../../components/ui/Tooltip.jsx'
 import { useTTS } from '../../hooks/useTTS.js'
 
 export default function VoiceSettingsPage() {
@@ -52,9 +53,11 @@ export default function VoiceSettingsPage() {
       <header className="sticky top-0 z-40 bg-background-secondary/80 backdrop-blur-lg border-b border-border-subtle">
         <div className="container-custom px-4 py-4">
           <div className="flex items-center gap-4">
-            <Link to="/settings" className="p-2 rounded-lg hover:bg-background-tertiary transition-colors">
-              <ArrowLeft className="w-5 h-5 text-foreground-primary" />
-            </Link>
+            <Tooltip content="Return to Settings" position="right">
+              <Link to="/settings" className="p-2 rounded-lg hover:bg-background-tertiary transition-colors">
+                <ArrowLeft className="w-5 h-5 text-foreground-primary" />
+              </Link>
+            </Tooltip>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shadow-[0_0_15px_rgba(217,119,87,0.2)]">
                 <Volume2 className="w-5 h-5 text-accent" />

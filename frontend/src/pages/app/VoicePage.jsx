@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Mic, MicOff, Volume2, Settings, Play, Pause, User, Zap, ArrowRight } from 'lucide-react'
+import { Tooltip } from '../../components/ui/Tooltip.jsx'
 import tts from '../../lib/tts.js'
 
 const VOICES = [
@@ -44,10 +45,12 @@ export default function VoicePage() {
     <div className="min-h-screen pt-20 pb-12 bg-background-primary">
       <div className="section-padding">
         <div className="container-custom max-w-4xl">
-          <Link to="/chat" className="inline-flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground-primary transition-colors mb-8">
-            <ArrowLeft className="w-4 h-4" />
-            Back to chat
-          </Link>
+          <Tooltip content="Return to Chat" position="right">
+            <Link to="/chat" className="inline-flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground-primary transition-colors mb-8">
+              <ArrowLeft className="w-4 h-4" />
+              Back to chat
+            </Link>
+          </Tooltip>
 
           <h1 className="text-h2 mb-2">Voice Chat</h1>
           <p className="text-foreground-muted mb-8">Hold Spacebar to talk. The AI listens, thinks, and responds automatically.</p>

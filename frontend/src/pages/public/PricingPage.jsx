@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import { isLoggedIn } from '../../lib/api.js'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
+import { Tooltip } from '@components/ui/Tooltip'
 
 /* ── Plan cards (mirror backend config/plans.js tiers) ── */
 const PLANS = [
@@ -195,16 +196,18 @@ export default function PricingPage() {
                   <span className="text-3xl font-bold text-white">{p.price}</span>
                   <span className="text-gray-500 text-xs">{p.period}</span>
                 </div>
-                <Link
-                  to={planHref(p)}
-                  className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 mb-6 ${
-                    p.popular
-                      ? 'bg-orange-600 text-white hover:bg-orange-500'
-                      : 'bg-white/[0.05] border border-white/[0.08] text-white hover:bg-white/[0.08]'
-                  }`}
-                >
-                  {p.cta} <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                <Tooltip content={`Select the ${p.name} plan`}>
+                  <Link
+                    to={planHref(p)}
+                    className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 mb-6 ${
+                      p.popular
+                        ? 'bg-orange-600 text-white hover:bg-orange-500'
+                        : 'bg-white/[0.05] border border-white/[0.08] text-white hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    {p.cta} <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </Tooltip>
                 <ul className="space-y-2.5 flex-grow">
                   {p.features.map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-xs text-gray-400">

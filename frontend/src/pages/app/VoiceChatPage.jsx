@@ -4,6 +4,7 @@ import { ArrowLeft, Settings, Volume2, LogOut, ChevronLeft, ChevronRight } from 
 import { useTTS } from '../../hooks/useTTS.js'
 import { API_BASE } from '../../lib/api.js'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Tooltip } from '../../components/ui/Tooltip.jsx'
 
 const VOICE_MODELS = [
   { id: 'gemini_flash',  label: 'Sahadeva (Gemini Flash)', desc: 'AI Native Voice — Fast & Friendly', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
@@ -467,13 +468,15 @@ export default function VoiceChatPage() {
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-white/[0.04] bg-[#14141c]/60 backdrop-blur-xl relative z-10">
         <div className="flex items-center gap-3">
-          <Link
-            to="/chat"
-            onClick={handleEndSession}
-            className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors border border-transparent hover:border-white/5"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
+          <Tooltip content="Return to Chat" position="right">
+            <Link
+              to="/chat"
+              onClick={handleEndSession}
+              className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors border border-transparent hover:border-white/5"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+          </Tooltip>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-[#D97757]/15 flex items-center justify-center border border-[#D97757]/20">
               <Volume2 className="w-4 h-4 text-[#D97757]" />
@@ -484,13 +487,15 @@ export default function VoiceChatPage() {
             </div>
           </div>
         </div>
-        <Link
-          to="/voice-settings"
-          onClick={handleEndSession}
-          className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors border border-transparent hover:border-white/5"
-        >
-          <Settings className="w-5 h-5" />
-        </Link>
+        <Tooltip content="Voice Settings" position="left">
+          <Link
+            to="/voice-settings"
+            onClick={handleEndSession}
+            className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors border border-transparent hover:border-white/5"
+          >
+            <Settings className="w-5 h-5" />
+          </Link>
+        </Tooltip>
       </header>
 
       {/* Main */}
