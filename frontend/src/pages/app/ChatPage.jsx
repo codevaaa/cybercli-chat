@@ -27,6 +27,8 @@ import KaliKalView from '../../components/chat/KaliKalView.jsx'
 import MatrixRain from '../../components/chat/MatrixRain.jsx'
 import KaliKalBanner from '../../components/chat/KaliKalBanner.jsx'
 import DocumentArtifact from '../../components/chat/DocumentArtifact.jsx'
+import { Skeleton } from '../../components/ui/Skeleton.jsx'
+import { Tooltip } from '../../components/ui/Tooltip.jsx'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -4122,6 +4124,8 @@ export default function ChatPage() {
       setThreads(data.threads || [])
     } catch (err) {
       console.error('Failed to load threads:', err)
+    } finally {
+      setThreadsLoading(false)
     }
   }
 
@@ -5194,21 +5198,35 @@ export default function ChatPage() {
                 </p>
               )}
 
-              {pinnedThreads.length > 0 && (
-                <div className="mb-2">
-                  <p className="text-[10px] font-semibold text-foreground-muted px-2 mb-1">Pinned</p>
-                  {pinnedThreads.map(t => (
-                    <ThreadItem
-                      key={t._id}
-                      thread={t}
-                      isActive={activeThreadId === t._id && activeNav === 'chats'}
-                      onSelect={() => { navigate(`/chat/${t._id}`); setActiveNav('chats') }}
-                      onDelete={(e) => handleDeleteThread(t._id, e)}
-                      onPin={(e) => handlePinThread(t._id, e)}
-                    />
+              {threadsLoading ? (
+                <div className="px-2 space-y-4 mt-4">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="flex gap-3 items-center">
+                      <Skeleton variant="rectangular" className="w-5 h-5 opacity-40" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton variant="text" width="80%" className="opacity-50" />
+                        <Skeleton variant="text" width="40%" className="opacity-30 h-2" />
+                      </div>
+                    </div>
                   ))}
                 </div>
-              )}
+              ) : (
+                <>
+                  {pinnedThreads.length > 0 && (
+                    <div className="mb-2">
+                      <p className="text-[10px] font-semibold text-foreground-muted px-2 mb-1">Pinned</p>
+                      {pinnedThreads.map(t => (
+                        <ThreadItem
+                          key={t._id}
+                          thread={t}
+                          isActive={activeThreadId === t._id && activeNav === 'chats'}
+                          onSelect={() => { navigate(`/chat/${t._id}`); setActiveNav('chats') }}
+                          onDelete={(e) => handleDeleteThread(t._id, e)}
+                          onPin={(e) => handlePinThread(t._id, e)}
+                        />
+                      ))}
+                    </div>
+                  )}
 
               <div className="space-y-0.5">
                 {recentThreads.map(t => (
@@ -5223,8 +5241,10 @@ export default function ChatPage() {
                 ))}
               </div>
 
-              {threads.length === 0 && (
+              {threads.length === 0 && !threadsLoading && (
                 <p className="text-xs text-foreground-muted text-center mt-6">No conversations yet</p>
+              )}
+                </>
               )}
             </div>
 

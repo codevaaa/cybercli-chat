@@ -1,71 +1,80 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Plus, FolderOpen, Calendar, MessageSquare, Cpu, Trash2, X } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Skeleton } from '../ui/Skeleton.jsx'
+import { Tooltip } from '../ui/Tooltip.jsx'
 import api from '../../lib/api.js'
 
 export default function ProjectsPage() {
   const navigate = useNavigate()
-  const [projects, setProjects] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [createModalOpen, setCreateModalOpen] = useState(false)
-  const [newProject, setNewProject] = useState({ name: '', description: '', model: 'Madhav' })
-  const [submitting, setSubmitting] = useState(false)
+  const queryClient = useQueryClient()
 
-  const fetchProjects = async () => {
-    setLoading(true)
-    try {
+  const { data: projects = [], isLoading: loading } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
       const { data } = await api.get('/projects')
-      if (data?.success) {
-        setProjects(data.projects)
-      }
-    } catch (err) {
-      console.error('Failed to fetch projects:', err)
-    } finally {
-      setLoading(false)
+      return data?.projects || []
     }
-  }
+  })
 
-  useEffect(() => {
-    fetchProjects()
-  }, [])
+  const createMutation = useMutation({
+    mutationFn: async (newProj) => {
+      const { data } = await api.post('/projects', newProj)
+      return data.project
+    },
+    onMutate: async (newProj) => {
+      await queryClient.cancelQueries({ queryKey: ['projects'] })
+      const previousProjects = queryClient.getQueryData(['projects'])
+      const optimisticProject = { _id: Date.now().toString(), ...newProj, updatedAt: new Date().toISOString() }
+      queryClient.setQueryData(['projects'], old => [optimisticProject, ...(old || [])])
+      return { previousProjects }
+    },
+    onError: (err, newProj, context) => {
+      queryClient.setQueryData(['projects'], context.previousProjects)
+      alert(err.response?.data?.error || 'Failed to create project')
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    }
+  })
 
-  const handleCreateProject = async (e) => {
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => await api.delete(`/projects/${id}`),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['projects'] })
+      const previousProjects = queryClient.getQueryData(['projects'])
+      queryClient.setQueryData(['projects'], old => old.filter(p => p._id !== id && p.id !== id))
+      return { previousProjects }
+    },
+    onError: (err, id, context) => {
+      queryClient.setQueryData(['projects'], context.previousProjects)
+      alert('Failed to delete project')
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    }
+  })
+
+  const handleCreateProject = (e) => {
     e.preventDefault()
     if (!newProject.name.trim()) return
-    setSubmitting(true)
-    try {
-      const { data } = await api.post('/projects', {
-        name: newProject.name,
-        description: newProject.description,
-        model: newProject.model
-      })
-      if (data?.success) {
-        setProjects(prev => [data.project, ...prev])
+    createMutation.mutate(newProject, {
+      onSuccess: () => {
         setNewProject({ name: '', description: '', model: 'Madhav' })
         setCreateModalOpen(false)
       }
-    } catch (err) {
-      console.error('Failed to create project:', err)
-      alert(err.response?.data?.error || 'Failed to create project')
-    } finally {
-      setSubmitting(false)
-    }
+    })
   }
 
-  const handleDeleteProject = async (id, e) => {
+  const handleDeleteProject = (id, e) => {
     e.stopPropagation()
     if (!confirm('Are you sure you want to delete this project?')) return
-    try {
-      const { data } = await api.delete(`/projects/${id}`)
-      if (data?.success) {
-        setProjects(prev => prev.filter(p => p._id !== id && p.id !== id))
-      }
-    } catch (err) {
-      console.error('Failed to delete project:', err)
-      alert(err.response?.data?.error || 'Failed to delete project')
-    }
+    deleteMutation.mutate(id)
   }
+
+  const submitting = createMutation.isPending
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Unknown'
@@ -98,27 +107,29 @@ export default function ProjectsPage() {
                 Organize your chats, files, and configurations inside isolated context workspaces.
               </p>
             </div>
-            <button
-              onClick={() => setCreateModalOpen(true)}
-              className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-accent hover:bg-accent-light text-white text-xs font-bold transition-all shadow-[0_0_12px_rgba(124,58,237,0.2)]"
-            >
-              <Plus className="w-4 h-4" />
-              New Project
-            </button>
+            <Tooltip content="Create a new isolated context" position="left">
+              <button
+                onClick={() => setCreateModalOpen(true)}
+                className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-accent hover:bg-accent-light text-white text-xs font-bold transition-all shadow-[0_0_12px_rgba(124,58,237,0.2)]"
+              >
+                <Plus className="w-4 h-4" />
+                New Project
+              </button>
+            </Tooltip>
           </div>
 
           {/* Skeletons or list */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[1, 2, 3].map((n) => (
-                <div key={n} className="card p-6 animate-pulse space-y-4">
-                  <div className="w-9 h-9 rounded-xl bg-white/5" />
-                  <div className="h-4 bg-white/10 rounded w-2/3" />
-                  <div className="h-3 bg-white/5 rounded w-full" />
-                  <div className="h-3 bg-white/5 rounded w-4/5" />
+                <div key={n} className="card p-6 space-y-4">
+                  <Skeleton variant="rectangular" className="w-9 h-9" />
+                  <Skeleton variant="text" width="60%" />
+                  <Skeleton variant="text" />
+                  <Skeleton variant="text" width="80%" />
                   <div className="pt-4 border-t border-border-subtle/50 flex justify-between">
-                    <div className="h-3 bg-white/5 rounded w-1/4" />
-                    <div className="h-3 bg-white/5 rounded w-1/4" />
+                    <Skeleton variant="text" width="30%" />
+                    <Skeleton variant="text" width="30%" />
                   </div>
                 </div>
               ))}
@@ -136,12 +147,14 @@ export default function ProjectsPage() {
                       <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
                         <FolderOpen className="w-4 h-4 text-accent" />
                       </div>
-                      <button
-                        onClick={(e) => handleDeleteProject(proj._id || proj.id, e)}
-                        className="p-1.5 rounded-lg text-foreground-muted hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <Tooltip content="Delete Project" position="top">
+                        <button
+                          onClick={(e) => handleDeleteProject(proj._id || proj.id, e)}
+                          className="p-1.5 rounded-lg text-foreground-muted hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
                     </div>
                     <h3 className="text-base font-bold text-foreground-primary mb-2 group-hover:text-accent transition-colors">
                       {proj.name}

@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Mail, User, Calendar, Zap, Check, Loader2, Pencil } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@stores/authStore.js'
+import { Skeleton } from '../ui/Skeleton.jsx'
+import { Tooltip } from '../ui/Tooltip.jsx'
 import api from '../../lib/api.js'
 
 function initialsFrom(name = '', email = '') {
@@ -23,11 +26,21 @@ export default function ProfilePage() {
     messagesSent: 0,
     threadsCreated: 0,
   })
-  const [statsLoading, setStatsLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [draftName, setDraftName] = useState('')
-  const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  const queryClient = useQueryClient()
+
+  // Fetch real stats from the backend.
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['profileStats'],
+    queryFn: async () => {
+      const { data } = await api.get('/auth/me/stats')
+      return data
+    },
+    staleTime: 5 * 60 * 1000 // 5 mins
+  })
 
   // Populate from the authenticated user.
   useEffect(() => {
@@ -45,45 +58,46 @@ export default function ProfilePage() {
     setDraftName(name)
   }, [user])
 
-  // Fetch real stats from the backend.
   useEffect(() => {
-    let active = true
-    setStatsLoading(true)
-    api
-      .get('/auth/me/stats')
-      .then(({ data }) => {
-        if (!active) return
-        setProfile((p) => ({
-          ...p,
-          messagesSent: data.messagesSent ?? 0,
-          threadsCreated: data.threadsCreated ?? 0,
-          plan: (data.plan && data.plan[0].toUpperCase() + data.plan.slice(1)) || p.plan,
-        }))
-      })
-      .catch(() => {/* keep zeros on failure */})
-      .finally(() => { if (active) setStatsLoading(false) })
-    return () => { active = false }
-  }, [])
+    if (stats) {
+      setProfile((p) => ({
+        ...p,
+        messagesSent: stats.messagesSent ?? p.messagesSent,
+        threadsCreated: stats.threadsCreated ?? p.threadsCreated,
+        plan: (stats.plan && stats.plan[0].toUpperCase() + stats.plan.slice(1)) || p.plan,
+      }))
+    }
+  }, [stats])
 
-  const handleSaveName = async () => {
+  const saveNameMutation = useMutation({
+    mutationFn: async (nextName) => await updateName?.(nextName),
+    onMutate: () => {
+      // Optimistically update UI could be done here if updateName didn't handle local state
+    },
+    onSuccess: (res, nextName) => {
+      if (res?.success !== false) {
+        setProfile((p) => ({ ...p, name: nextName }))
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      }
+    },
+    onSettled: () => {
+      setEditing(false)
+    }
+  })
+
+  const handleSaveName = () => {
     const next = draftName.trim()
     if (!next || next === profile.name) {
       setEditing(false)
       return
     }
-    setSaving(true)
-    try {
-      const res = await updateName?.(next)
-      if (res?.success !== false) {
-        setProfile((p) => ({ ...p, name: next }))
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2000)
-      }
-    } finally {
-      setSaving(false)
-      setEditing(false)
-    }
+    saveNameMutation.mutate(next)
   }
+
+  const saving = saveNameMutation.isPending
+
+
 
   const initials = initialsFrom(profile.name, profile.email)
 
@@ -152,13 +166,15 @@ export default function ProfilePage() {
                   )}
                 </div>
                 {!editing && (
-                  <button
-                    onClick={() => { setDraftName(profile.name); setEditing(true) }}
-                    className="p-1.5 text-foreground-muted hover:text-accent hover:bg-white/5 rounded-lg transition-colors"
-                    title="Edit display name"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
+                  <Tooltip content="Edit Name" position="top">
+                    <button
+                      onClick={() => { setDraftName(profile.name); setEditing(true) }}
+                      className="p-1.5 text-foreground-muted hover:text-accent hover:bg-white/5 rounded-lg transition-colors"
+                      title="Edit display name"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 )}
               </div>
 
@@ -200,7 +216,7 @@ function StatCard({ label, value, loading }) {
   return (
     <div className="text-center p-4 rounded-xl bg-background-tertiary">
       <div className="text-2xl font-bold text-foreground-primary h-8 flex items-center justify-center">
-        {loading ? <Loader2 className="w-4 h-4 animate-spin text-foreground-muted" /> : value.toLocaleString()}
+        {loading ? <Skeleton variant="rectangular" className="w-12 h-6" /> : value.toLocaleString()}
       </div>
       <div className="text-xs text-foreground-muted mt-1">{label}</div>
     </div>

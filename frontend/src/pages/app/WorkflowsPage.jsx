@@ -1,72 +1,80 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Plus, Cpu, Play, Trash2, X, FileText } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Skeleton } from '../ui/Skeleton.jsx'
+import { Tooltip } from '../ui/Tooltip.jsx'
 import api from '../../lib/api.js'
 
 export default function WorkflowsPage() {
   const navigate = useNavigate()
-  const [workflows, setWorkflows] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [createModalOpen, setCreateModalOpen] = useState(false)
-  const [newWorkflow, setNewWorkflow] = useState({ name: '', description: '', prompt: '', model: 'Madhav' })
-  const [submitting, setSubmitting] = useState(false)
+  const queryClient = useQueryClient()
 
-  const fetchWorkflows = async () => {
-    setLoading(true)
-    try {
+  const { data: workflows = [], isLoading: loading } = useQuery({
+    queryKey: ['workflows'],
+    queryFn: async () => {
       const { data } = await api.get('/workflows')
-      if (data?.success) {
-        setWorkflows(data.workflows)
-      }
-    } catch (err) {
-      console.error('Failed to fetch workflows:', err)
-    } finally {
-      setLoading(false)
+      return data?.workflows || []
     }
-  }
+  })
 
-  useEffect(() => {
-    fetchWorkflows()
-  }, [])
+  const createMutation = useMutation({
+    mutationFn: async (newWf) => {
+      const { data } = await api.post('/workflows', newWf)
+      return data.workflow
+    },
+    onMutate: async (newWf) => {
+      await queryClient.cancelQueries({ queryKey: ['workflows'] })
+      const previousWorkflows = queryClient.getQueryData(['workflows'])
+      const optimisticWf = { _id: Date.now().toString(), ...newWf }
+      queryClient.setQueryData(['workflows'], old => [optimisticWf, ...(old || [])])
+      return { previousWorkflows }
+    },
+    onError: (err, newWf, context) => {
+      queryClient.setQueryData(['workflows'], context.previousWorkflows)
+      alert(err.response?.data?.error || 'Failed to create workflow')
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflows'] })
+    }
+  })
 
-  const handleCreateWorkflow = async (e) => {
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => await api.delete(`/workflows/${id}`),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['workflows'] })
+      const previousWorkflows = queryClient.getQueryData(['workflows'])
+      queryClient.setQueryData(['workflows'], old => old.filter(w => w._id !== id && w.id !== id))
+      return { previousWorkflows }
+    },
+    onError: (err, id, context) => {
+      queryClient.setQueryData(['workflows'], context.previousWorkflows)
+      alert('Failed to delete workflow')
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflows'] })
+    }
+  })
+
+  const handleCreateWorkflow = (e) => {
     e.preventDefault()
     if (!newWorkflow.name.trim() || !newWorkflow.prompt.trim()) return
-    setSubmitting(true)
-    try {
-      const { data } = await api.post('/workflows', {
-        name: newWorkflow.name,
-        description: newWorkflow.description,
-        prompt: newWorkflow.prompt,
-        model: newWorkflow.model
-      })
-      if (data?.success) {
-        setWorkflows(prev => [data.workflow, ...prev])
+    createMutation.mutate(newWorkflow, {
+      onSuccess: () => {
         setNewWorkflow({ name: '', description: '', prompt: '', model: 'Madhav' })
         setCreateModalOpen(false)
       }
-    } catch (err) {
-      console.error('Failed to create workflow:', err)
-      alert(err.response?.data?.error || 'Failed to create workflow')
-    } finally {
-      setSubmitting(false)
-    }
+    })
   }
 
-  const handleDeleteWorkflow = async (id, e) => {
+  const handleDeleteWorkflow = (id, e) => {
     e.stopPropagation()
     if (!confirm('Are you sure you want to delete this workflow template?')) return
-    try {
-      const { data } = await api.delete(`/workflows/${id}`)
-      if (data?.success) {
-        setWorkflows(prev => prev.filter(w => w._id !== id && w.id !== id))
-      }
-    } catch (err) {
-      console.error('Failed to delete workflow:', err)
-      alert(err.response?.data?.error || 'Failed to delete workflow')
-    }
+    deleteMutation.mutate(id)
   }
+
+  const submitting = createMutation.isPending
 
   const handleRunWorkflow = (promptText) => {
     navigate(`/chat?prompt=${encodeURIComponent(promptText)}`)
@@ -88,26 +96,28 @@ export default function WorkflowsPage() {
                 Save your standard prompt templates and run them with one click inside the Chat interface.
               </p>
             </div>
-            <button
-              onClick={() => setCreateModalOpen(true)}
-              className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-accent hover:bg-accent-light text-white text-xs font-bold transition-all shadow-[0_0_12px_rgba(124,58,237,0.2)]"
-            >
-              <Plus className="w-4 h-4" />
-              New Workflow
-            </button>
+            <Tooltip content="Create a new workflow template" position="left">
+              <button
+                onClick={() => setCreateModalOpen(true)}
+                className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-accent hover:bg-accent-light text-white text-xs font-bold transition-all shadow-[0_0_12px_rgba(124,58,237,0.2)]"
+              >
+                <Plus className="w-4 h-4" />
+                New Workflow
+              </button>
+            </Tooltip>
           </div>
 
           {/* Skeletons or list */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[1, 2, 3].map((n) => (
-                <div key={n} className="card p-6 animate-pulse space-y-4">
-                  <div className="w-9 h-9 rounded-xl bg-white/5" />
-                  <div className="h-4 bg-white/10 rounded w-2/3" />
-                  <div className="h-3 bg-white/5 rounded w-full" />
+                <div key={n} className="card p-6 space-y-4">
+                  <Skeleton variant="rectangular" className="w-9 h-9" />
+                  <Skeleton variant="text" width="50%" />
+                  <Skeleton variant="text" />
                   <div className="pt-4 border-t border-border-subtle/50 space-y-3">
-                    <div className="h-3 bg-white/5 rounded w-1/3" />
-                    <div className="h-8 bg-white/5 rounded w-full" />
+                    <Skeleton variant="text" width="30%" />
+                    <Skeleton variant="rectangular" className="w-full h-8" />
                   </div>
                 </div>
               ))}
@@ -124,12 +134,14 @@ export default function WorkflowsPage() {
                       <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
                         <FileText className="w-4 h-4 text-accent" />
                       </div>
-                      <button
-                        onClick={(e) => handleDeleteWorkflow(wf._id || wf.id, e)}
-                        className="p-1.5 rounded-lg text-foreground-muted hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <Tooltip content="Delete Workflow" position="top">
+                        <button
+                          onClick={(e) => handleDeleteWorkflow(wf._id || wf.id, e)}
+                          className="p-1.5 rounded-lg text-foreground-muted hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
                     </div>
                     <h3 className="text-base font-bold text-foreground-primary mb-2">
                       {wf.name}
