@@ -465,16 +465,6 @@ function UsageBar({ used, limit }) {
 //  MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════
 
-const getDailyResetTime = () => {
-  const now = new Date()
-  const resetTime = new Date(now)
-  resetTime.setHours(0, 30, 0, 0) // 12:30 AM
-  if (now < resetTime) {
-    // If it's before 12:30 AM today, the last reset happened yesterday
-    resetTime.setDate(resetTime.getDate() - 1)
-  }
-  return resetTime.getTime()
-}
 
 export default function KaliKalView({
   threads = [],
@@ -488,7 +478,10 @@ export default function KaliKalView({
   navigate,
   userPlan = 'free',
   activeThreadId = null,
-  startNewChat
+  startNewChat,
+  kaliUsageFromBackend = 0,
+  kaliLimitFromBackend = 20,
+  onUsageRefresh,
 }) {
   const [selectedKaliModel, setSelectedKaliModel] = useState('auto')
   const [copiedIdx, setCopiedIdx] = useState(null)
@@ -565,22 +558,8 @@ export default function KaliKalView({
     }
   }, [])
   
-  const [kaliUsage, setKaliUsage] = useState(() => {
-    try {
-      const stored = localStorage.getItem('kali_usage_data')
-      if (stored) {
-        const data = JSON.parse(stored)
-        // If the reset time matches the current period's reset time, keep usage
-        if (data.resetTime === getDailyResetTime()) {
-          return data.usage || 0
-        }
-      }
-      // If we're in a new period, or no data exists, reset to 0
-      return 0
-    } catch {
-      return 0
-    }
-  })
+  // Use real backend usage data instead of localStorage
+  const kaliUsage = kaliUsageFromBackend
   const [isCreating, setIsCreating] = useState(false)
   const [sandboxLogs, setSandboxLogs] = useState([])
 
@@ -594,13 +573,11 @@ export default function KaliKalView({
 
   // Filter messages to only show kali_kal thread messages
   const kaliMessages = useMemo(() => {
-    // If there's an active kali thread and messages belong to it, show them
-    // Otherwise, messages from ChatPage are already scoped to active thread
     return messages
   }, [messages])
 
-  // Ensure usage limit fallback
-  const usageLimit = 1000; // Unlimited for now or use config if available
+  // Real usage limit from backend
+  const usageLimit = kaliLimitFromBackend
   const isOverLimit = kaliUsage >= usageLimit
 
   // ── Auto-scroll ──
@@ -610,14 +587,7 @@ export default function KaliKalView({
     }
   }, [kaliMessages, loading])
 
-  // ── Persist usage ──
-  useEffect(() => {
-    localStorage.setItem('kali_usage_data', JSON.stringify({
-      usage: kaliUsage,
-      resetTime: getDailyResetTime()
-    }))
-    window.dispatchEvent(new CustomEvent('kali-usage-update', { detail: kaliUsage }))
-  }, [kaliUsage])
+
 
   // ── Listen to Terminal Stream ──
   useEffect(() => {
@@ -682,7 +652,7 @@ export default function KaliKalView({
           // Small delay for navigation to settle, then send
           setTimeout(async () => {
             const success = await handleSend(userText, routingModel)
-            if (success) setKaliUsage(prev => prev + 1)
+            if (success && onUsageRefresh) onUsageRefresh()
           }, 300)
         }
       } catch (err) {
@@ -697,9 +667,9 @@ export default function KaliKalView({
     // Active thread exists — send directly
     setSandboxLogs([]) // Clear old logs
     const success = await handleSend(userText, routingModel)
-    if (success) setKaliUsage(prev => prev + 1)
+    if (success && onUsageRefresh) onUsageRefresh()
     if (typeof textOverride !== 'string') setInput('')
-  }, [input, loading, isOverLimit, activeKaliThread, isCreating, handleCreateThread, handleSend, setInput, selectedKaliModel])
+  }, [input, loading, isOverLimit, activeKaliThread, isCreating, handleCreateThread, handleSend, setInput, selectedKaliModel, onUsageRefresh])
 
   // ── Quick action handler ──
   const handleQuickAction = useCallback((prompt) => {

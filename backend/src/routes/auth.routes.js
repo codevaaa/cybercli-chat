@@ -87,9 +87,30 @@ router.post('/sync', requireAuth, async (req, res, next) => {
   }
 })
 
-// Get currently logged in user info
-router.get('/me', requireAuth, (req, res) => {
-  res.json({ user: req.user })
+// Get currently logged in user info + usage counters
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    const { getKaliUsage, getSandboxUsage, getKaliLimit, getSandboxLimit } = await import('../utils/usageHelper.js')
+    const userDoc = await User.findOne({ supabase_id: req.user.id }).lean()
+    const plan = userDoc?.plan || req.user.plan || 'free'
+
+    const [kali, sandbox] = await Promise.all([
+      getKaliUsage(req.user.id, plan),
+      getSandboxUsage(req.user.id, plan),
+    ])
+
+    res.json({
+      user: req.user,
+      plan,
+      usage: {
+        kali,
+        sandbox,
+      },
+    })
+  } catch (err) {
+    // Fallback: return basic user info even if usage lookup fails
+    res.json({ user: req.user, plan: req.user.plan || 'free' })
+  }
 })
 
 // Get profile stats (message + thread counts) for the logged-in user

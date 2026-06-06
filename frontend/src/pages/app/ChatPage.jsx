@@ -3534,6 +3534,7 @@ export default function ChatPage() {
   // Image Usage State
   const [imageUsage, setImageUsage] = useState(null)
   const [kaliUsage, setKaliUsage] = useState(0)
+  const [kaliLimit, setKaliLimit] = useState(20)
 
   const fetchImageUsage = async () => {
     try {
@@ -3879,13 +3880,22 @@ export default function ChatPage() {
 
   // User plan (drives voice deep-research gating: Pro/Max research before reply)
   const [userPlan, setUserPlan] = useState('free')
-  useEffect(() => {
-    let cancelled = false
+
+  // Fetch user plan + real usage counters from backend
+  const fetchUsageData = useCallback(async () => {
     if (!isLoggedIn()) return
-    api.get('/auth/me/stats')
-      .then(({ data }) => { if (!cancelled && data?.plan) setUserPlan(String(data.plan).toLowerCase()) })
-      .catch(() => {})
-    return () => { cancelled = true }
+    try {
+      const { data } = await api.get('/auth/me')
+      if (data?.plan) setUserPlan(String(data.plan).toLowerCase())
+      if (data?.usage?.kali) {
+        setKaliUsage(data.usage.kali.used || 0)
+        setKaliLimit(data.usage.kali.limit || 20)
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    fetchUsageData()
   }, [])
 
   // Inline Speech to Text state
@@ -5601,7 +5611,7 @@ export default function ChatPage() {
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-900/20 border border-red-500/30 text-[11px] font-mono shadow-[0_0_10px_rgba(220,38,38,0.2)]">
                 <span className="text-red-500 font-bold tracking-widest">KALI_KAL:</span>
                 <span className="text-red-400 font-bold">
-                  {Math.max(0, 1000 - kaliUsage)} left
+                  {Math.max(0, kaliLimit - kaliUsage)} left
                 </span>
               </div>
             )}
@@ -5902,6 +5912,9 @@ export default function ChatPage() {
                   activeThreadId={activeThreadId || activeThreadIdRef.current || creatingThreadRef.current}
                   handleDeleteThread={handleDeleteThread}
                   startNewChat={() => { navigate('/kali-kal'); setMessages([]); }}
+                  kaliUsageFromBackend={kaliUsage}
+                  kaliLimitFromBackend={kaliLimit}
+                  onUsageRefresh={fetchUsageData}
                 />
               ) : activeNav === 'cowork' || activeNav === 'code' ? (
                 <ComingSoonView 

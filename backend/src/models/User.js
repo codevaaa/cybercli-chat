@@ -44,6 +44,10 @@ const userSchema = new mongoose.Schema({
   // E2B Sandbox Usage tracking
   sandbox_executions_count: { type: Number, default: 0 },
   sandbox_last_execution_date: { type: Date, default: null },
+
+  // Kali Kal Usage tracking (daily reset)
+  kali_usage_count: { type: Number, default: 0 },
+  kali_last_usage_date: { type: Date, default: null },
 }, { timestamps: true })
 
 userSchema.methods.isBanned = function isBanned() {

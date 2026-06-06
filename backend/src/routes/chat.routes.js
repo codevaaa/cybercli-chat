@@ -324,16 +324,15 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     return res.status(404).json({ error: 'Thread not found' })
   }
 
-  // --- Kali_Kal Mode Rate Limiting ---
-  if (thread.mode === 'kali_kal') {
-    const User = (await import('../models/User.js')).default
-    const userObj = await User.findOne({ supabase_id: req.user.id })
-    const plan = userObj?.plan || 'free'
-    const limit = (plan === 'pro' || plan === 'max' || plan === 'enterprise') ? 100 : 10
-    
-    const count = await Message.countDocuments({ thread_id: thread._id, role: 'assistant' })
-    if (count >= limit) {
-      return res.status(403).json({ error: `Kali_Kal Mode limit reached (${limit} responses). Upgrade to Pro for more.` })
+  // --- Kali_Kal Mode Usage Enforcement (daily reset, plan-based limits) ---
+  if (thread.mode === 'kali_kal' || thread.mode === 'kalikal') {
+    const { checkAndIncrementKali } = await import('../utils/usageHelper.js')
+    const usage = await checkAndIncrementKali(req.user.id, req.user.plan)
+    if (!usage.allowed) {
+      return res.status(403).json({
+        error: `Kali_Kal daily limit reached (${usage.limit} requests). Upgrade your plan for more.`,
+        usage: { used: usage.used, limit: usage.limit, remaining: 0 },
+      })
     }
   }
 
