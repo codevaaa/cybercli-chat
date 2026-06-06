@@ -16,8 +16,10 @@ import api from '../../lib/api.js'
 
 // ─── Kali-compatible models (kali: true in EXTRA_MODELS) ────────────────────
 const KALI_MODELS = [
-  { id: 'openrouter/dolphin-venice-free', name: 'Kali',        tag: 'Kali (Dolphin)', color: '#FF0055', desc: 'True uncensored 24B entity. Zero filters, maximum chaos.' },
-  { id: 'huggingface/NousResearch/Hermes-3-Llama-3.1-8B',  name: 'Rudra',       tag: 'Rudra (Hermes)', color: '#EF4444', desc: 'Raw unconstrained intelligence at speed.' },
+  { id: 'auto', name: 'Auto', tag: 'Auto Selector', color: '#8B5CF6', desc: 'Automatically selects the best model based on your query.' },
+  { id: 'openrouter/qwen-2.5-coder-32b-free', name: 'Kalikal1',        tag: 'Kalikal1 (Qwen Coder)', color: '#FF0055', desc: '100% Free Fullstack monster. Ultra-fast coding.' },
+  { id: 'cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast',  name: 'Rudra1',       tag: 'Rudra1 (Fast 70B)', color: '#EF4444', desc: 'Raw unconstrained intelligence at speed.' },
+  { id: 'groq/llama-3.3-70b', name: 'Danav1', tag: 'Danav1 (Groq 70B)', color: '#F59E0B', desc: 'Lightning-fast versatile reasoning.' },
   { id: 'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b', name: 'Ashwatthama', tag: 'Ashwatthama (Dolphin 70B)', color: '#38B2AC', desc: 'The free warrior. Uncensored high-parameter intelligence.' },
 ]
 
@@ -487,7 +489,7 @@ export default function KaliKalView({
   userPlan = 'free',
   activeThreadId = null
 }) {
-  const [selectedKaliModel, setSelectedKaliModel] = useState('huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b')
+  const [selectedKaliModel, setSelectedKaliModel] = useState('auto')
   const [copiedIdx, setCopiedIdx] = useState(null)
   
   const [kaliUsage, setKaliUsage] = useState(() => {
@@ -578,6 +580,13 @@ export default function KaliKalView({
     if (!rawText.trim() || loading || isOverLimit) return
 
     const userText = rawText.trim()
+    
+    // Auto-Routing Logic
+    let routingModel = selectedKaliModel;
+    if (routingModel === 'auto') {
+      const isTask = /code|script|build|create|hack|exploit|analyze|write|generate|function|component|app|web|html|react/i.test(userText) || userText.length > 50;
+      routingModel = isTask ? 'openrouter/qwen-2.5-coder-32b-free' : 'groq/llama-3.3-70b';
+    }
 
     // If no active kali thread, create one first
     if (!activeKaliThread && !isCreating) {
@@ -588,7 +597,7 @@ export default function KaliKalView({
         if (threadId) {
           // Small delay for navigation to settle, then send
           setTimeout(async () => {
-            const success = await handleSend(userText, selectedKaliModel)
+            const success = await handleSend(userText, routingModel)
             if (success) setKaliUsage(prev => prev + 1)
           }, 300)
         }
@@ -603,7 +612,7 @@ export default function KaliKalView({
 
     // Active thread exists — send directly
     setSandboxLogs([]) // Clear old logs
-    const success = await handleSend(userText, selectedKaliModel)
+    const success = await handleSend(userText, routingModel)
     if (success) setKaliUsage(prev => prev + 1)
     if (typeof textOverride !== 'string') setInput('')
   }, [input, loading, isOverLimit, activeKaliThread, isCreating, handleCreateThread, handleSend, setInput, selectedKaliModel])
@@ -889,7 +898,7 @@ export default function KaliKalView({
                 {/* Bottom info */}
                 <div className="flex items-center justify-between mt-2 px-1">
                   <span className="text-[9px] text-red-500/25 uppercase tracking-[0.15em]">
-                    Kali_Kal • {(KALI_MODELS.find(m => m.id === selectedKaliModel) || KALI_MODELS[0]).tag} active
+                    Kali_Kal • {selectedKaliModel === 'auto' ? 'Auto Routing' : (KALI_MODELS.find(m => m.id === selectedKaliModel) || KALI_MODELS[1]).tag} active
                   </span>
                   <span className="text-[9px] text-red-500/20 uppercase tracking-[0.15em]">
                     {usageLimit - kaliUsage} requests remaining
