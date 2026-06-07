@@ -104,14 +104,12 @@ export default function CliLoginPage() {
       const apiKey = data.key
       setGeneratedKey(apiKey)
 
-      // Send key to local HTTP server
-      const localResponse = await fetch(`http://127.0.0.1:${port}/auth?token=${encodeURIComponent(apiKey)}`)
-      if (localResponse.ok) {
-        setAuthStatus('success')
-      } else {
-        // Fallback to manual display
-        setAuthStatus('manual')
-      }
+      // Send key to local HTTP server by redirecting the browser directly
+      // This bypasses HTTPS to HTTP Mixed Content blocking
+      window.location.href = `http://127.0.0.1:${port}/auth?token=${encodeURIComponent(apiKey)}`
+      
+      // Show success in case they navigate back
+      setAuthStatus('success')
     } catch (err) {
       console.error('Failed to automatically authorize CLI:', err)
       setAuthStatus('manual')
