@@ -59,6 +59,12 @@ export const MODEL_TIER_MAP = {
   'opencode/minimax-m2.5': 'reasoning',
   'apifreellm/claude-3.5-sonnet': 'reasoning',
 
+  // Codeva Mythological Personas (The Swarm)
+  'codeva-madhav-v1': 'reasoning',
+  'codeva-kali-v1': 'reasoning',
+  'codeva-arjun-v1': 'fast',
+  'codeva-abhimanyu-v1': 'reasoning',
+
   // ── New free OpenRouter models ──
   // Strong coding models kept on 'balanced' so FREE users get real power.
   'openrouter/qwen3-coder-free': 'balanced',

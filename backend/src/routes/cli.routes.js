@@ -4,7 +4,7 @@ import CLISession from '../models/CLISession.js'
 import KnowledgeGraph from '../models/KnowledgeGraph.js'
 import UsageAnalytics from '../models/UsageAnalytics.js'
 import ApiKey from '../models/ApiKey.js'
-import orchestrator from '../services/llm/ModelOrchestrator.js'
+import { llmGateway } from '../services/llm/gateway.js'
 import { authenticateCLI } from '../middleware/auth.js'
 import { createClient } from '@supabase/supabase-js'
 
@@ -256,14 +256,17 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
       res.setHeader('Cache-Control', 'no-cache')
       res.setHeader('Connection', 'keep-alive')
 
-      const stream = orchestrator.streamCompletion({
-        prompt,
-        messages: messages || [{ role: 'user', content: prompt }],
-        preferredModel: model,
+      const normalizedMessages = messages || [{ role: 'user', content: prompt }]
+      if (enhancedSystem) {
+        normalizedMessages.unshift({ role: 'system', content: enhancedSystem })
+      }
+      
+      const stream = llmGateway.complete({
+        messages: normalizedMessages,
+        model: model,
         temperature,
-        maxTokens: max_tokens,
-        system: enhancedSystem,
-        userPlan: analytics.quota.plan
+        plan: analytics.quota.plan,
+        isKaliKal: false // Or true if scanning
       })
 
       let fullContent = ''
@@ -297,23 +300,32 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
 
           res.write('data: [DONE]\n\n')
           res.end()
-        } else {
-          fullContent += chunk.content
-          tokenCount += chunk.content.length
-          res.write(`data: ${JSON.stringify({ content: chunk.content, model: chunk.model })}\n\n`)
+        } else if (chunk.type === 'token') {
+          fullContent += chunk.content || ''
+          tokenCount += (chunk.content || '').length
+          res.write(`data: ${JSON.stringify({ content: chunk.content, model: chunk.model || model })}\n\n`)
+        } else if (chunk.type === 'error') {
+          res.write(`data: ${JSON.stringify({ error: chunk.content })}\n\n`)
+          res.end()
+          return
         }
       }
     } else {
-      // Non-streaming response
-      const result = await orchestrator.chatCompletion({
-        prompt,
-        messages: messages || [{ role: 'user', content: prompt }],
-        preferredModel: model,
+      const normalizedMessages = messages || [{ role: 'user', content: prompt }]
+      if (enhancedSystem) {
+        normalizedMessages.unshift({ role: 'system', content: enhancedSystem })
+      }
+
+      const result = await llmGateway.completeNonStream({
+        messages: normalizedMessages,
+        model: model,
         temperature,
-        maxTokens: max_tokens,
-        system: enhancedSystem,
-        userPlan: analytics.quota.plan
+        plan: analytics.quota.plan
       })
+
+      if (result.error) {
+        return res.status(502).json({ error: result.error })
+      }
 
       // Track usage
       await session.addAIInteraction(
@@ -402,7 +414,11 @@ router.get('/models', authenticateCLI, async (req, res, next) => {
       .eq('id', session.user_id)
       .single()
 
-    const models = orchestrator.getAvailableModels(user?.plan || 'free')
+    const { getPlan, MODEL_TIER_MAP } = await import('../config/plans.js')
+    const plan = getPlan(user?.plan || 'free')
+    const models = Object.entries(MODEL_TIER_MAP)
+      .filter(([, tier]) => plan.allowedTiers.includes(tier))
+      .map(([id, tier]) => ({ id, name: id, tier }))
 
     res.json({
       models,

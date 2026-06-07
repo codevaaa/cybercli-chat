@@ -88,8 +88,30 @@ const MODEL_MAP = {
   'openrouter/qwen-2.5-coder-32b-free': { provider: 'openrouter', model: 'qwen/qwen-2.5-coder-32b-instruct:free', purpose: 'coding' },
   'mistral/mistral-large-latest': { provider: 'mistral', model: 'mistral-large-latest', purpose: 'reasoning' },
   
-  // Codeva Proprietary models
-  'codeva/abhimanyu': { provider: 'cloudflare', model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', purpose: 'reasoning' },
+  // Codeva Mythological Personas (The Swarm)
+  // Madhav Base (4 models)
+  'codeva-madhav-v1': { provider: 'gemini', model: 'gemini-2.5-pro', purpose: 'reasoning' },
+  'codeva-madhav-fallback-1': { provider: 'llm7', model: 'qwen3-235b', purpose: 'reasoning' },
+  'codeva-madhav-fallback-2': { provider: 'openrouter', model: 'nvidia/nemotron-3-ultra-550b-a55b:free', purpose: 'reasoning' },
+  'codeva-madhav-fallback-3': { provider: 'apifreellm', model: 'apifreellm', purpose: 'reasoning' },
+
+  // Kali Base (4 models)
+  'codeva-kali-v1': { provider: 'openrouter', model: 'qwen/qwen3.7-max', purpose: 'reasoning' },
+  'codeva-kali-fallback-1': { provider: 'opencode', model: 'deepseek-v4-flash-free', purpose: 'reasoning' },
+  'codeva-kali-fallback-2': { provider: 'groq', model: 'qwen/qwen3-32b', purpose: 'reasoning' },
+  'codeva-kali-fallback-3': { provider: 'mistral', model: 'codestral-latest', purpose: 'reasoning' },
+
+  // Arjun Base (4 models)
+  'codeva-arjun-v1': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'speed' },
+  'codeva-arjun-fallback-1': { provider: 'cerebras', model: 'gpt-oss-120b', purpose: 'speed' },
+  'codeva-arjun-fallback-2': { provider: 'cerebras', model: 'zai-glm-4.7', purpose: 'speed' },
+  'codeva-arjun-fallback-3': { provider: 'groq', model: 'groq/compound', purpose: 'speed' },
+
+  // Abhimanyu Base (4 models)
+  'codeva-abhimanyu-v1': { provider: 'llm7', model: 'kimi-k2.6', purpose: 'reasoning' },
+  'codeva-abhimanyu-fallback-1': { provider: 'opencode', model: 'minimax-m3-free', purpose: 'reasoning' },
+  'codeva-abhimanyu-fallback-2': { provider: 'mistral', model: 'mistral-medium-latest', purpose: 'reasoning' },
+  'codeva-abhimanyu-fallback-3': { provider: 'gemini', model: 'gemini-2.5-flash', purpose: 'reasoning' },
 
   // LLM7 models
   'llm7/deepseek-v3.1:671b-terminus': { provider: 'llm7', model: 'deepseek-v3.1:671b-terminus', purpose: 'reasoning' },
@@ -229,6 +251,13 @@ const KALI_FALLBACK_CHAIN = [
   'groq/llama-3.1-70b',
   'groq/llama-3.1-8b',
 ]
+
+const FALLBACK_CHAINS = {
+  'codeva-madhav-v1': ['codeva-madhav-fallback-1', 'codeva-madhav-fallback-2', 'codeva-madhav-fallback-3'],
+  'codeva-kali-v1': ['codeva-kali-fallback-1', 'codeva-kali-fallback-2', 'codeva-kali-fallback-3'],
+  'codeva-arjun-v1': ['codeva-arjun-fallback-1', 'codeva-arjun-fallback-2', 'codeva-arjun-fallback-3'],
+  'codeva-abhimanyu-v1': ['codeva-abhimanyu-fallback-1', 'codeva-abhimanyu-fallback-2', 'codeva-abhimanyu-fallback-3'],
+}
 
 /**
  * Heuristic task → tier classifier. Cheap models for simple tasks, stronger
@@ -495,11 +524,11 @@ export const llmGateway = {
         }
       }
 
-      let activeFallbackChain = totalChars > 25000
+      let activeFallbackChain = FALLBACK_CHAINS[activeModelId] || (totalChars > 25000
         ? ['gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini']
-        : FALLBACK_CHAIN
+        : FALLBACK_CHAIN)
         
-      if (isKaliKal) {
+      if (isKaliKal && !FALLBACK_CHAINS[activeModelId]) {
         activeFallbackChain = KALI_FALLBACK_CHAIN
       }
 
@@ -583,7 +612,7 @@ export const llmGateway = {
     // Prune context to prevent provider token crashes
     enriched = pruneContextWindow(enriched, 24000)
 
-    const targetModel = MODEL_MAP[activeModelId] || (isKaliKal ? MODEL_MAP[KALI_FALLBACK_CHAIN[0]] : MODEL_MAP[FALLBACK_CHAIN[0]])
+    const targetModel = MODEL_MAP[activeModelId] || (isKaliKal && !FALLBACK_CHAINS[activeModelId] ? MODEL_MAP[KALI_FALLBACK_CHAIN[0]] : MODEL_MAP[FALLBACK_CHAIN[0]])
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
     let directGeminiFailed = false
