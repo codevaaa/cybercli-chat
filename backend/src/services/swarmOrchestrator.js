@@ -1,4 +1,5 @@
 import { MemoryManager } from './memory.js';
+import { SecretScanner } from './secretScanner.js';
 import fetch from 'node-fetch'; // or global fetch depending on node version
 
 // Environment variables should hold these keys
@@ -23,7 +24,10 @@ const ENDPOINTS = {
 /**
  * Generic API Call wrapper for LLMs
  */
-async function callAgent(provider, model, systemPrompt, userPrompt, usageTracker = null) {
+async function callAgent(provider, model, rawSystemPrompt, rawUserPrompt, usageTracker = null) {
+  // 🛡️ 100% Secure Coding: Redact any accidentally exposed secrets before hitting the LLM
+  const systemPrompt = SecretScanner.redact(rawSystemPrompt);
+  const userPrompt = SecretScanner.redact(rawUserPrompt);
   const url = provider === 'huggingface' ? ENDPOINTS.huggingface + model : ENDPOINTS[provider];
   const headers = {
     'Authorization': `Bearer ${KEYS[provider]}`,
@@ -92,24 +96,24 @@ export class SwarmOrchestrator {
     // 1. Planner
     onEvent({ type: 'status', message: '🤔 Trinity Planner is analyzing the task...' });
     const plan = await callAgent('groq', 'llama-3.1-70b-versatile', 
-      'You are the Planner Agent. Break this task into small logic steps.', prompt, usageTracker);
+      'You are the Planner Agent. Break this task into small logic steps. You ONLY have Read-Only tools available (read_file, list_dir, grep, semantic_search). DO NOT attempt to write code.', prompt, usageTracker);
     MemoryManager.updatePlan(sessionId, plan);
 
     // 2. Context
     onEvent({ type: 'status', message: '📂 Context Agent is reading your codebase...' });
     const contextInfo = await callAgent('opencode', 'qwen3.6-plus-free',
-      `You are Context Agent. Extract important variables given this plan: ${plan}`, prompt, usageTracker);
+      `You are Context Agent. Extract important variables given this plan: ${plan}. You ONLY have Read-Only tools available.`, prompt, usageTracker);
     MemoryManager.updateContext(sessionId, contextInfo, []);
 
     // 3. Developer
     onEvent({ type: 'status', message: '💻 Developer Agent is writing the code...' });
     const devCode = await callAgent('opencode', 'minimax-m3-free',
-      `You are Developer Agent. Write code based on Context: ${contextInfo}`, prompt, usageTracker);
+      `You are Developer Agent. Write code based on Context: ${contextInfo}. You have full Read/Write access (write_file, edit, run_command).`, prompt, usageTracker);
 
     // 4. Synthesizer
     onEvent({ type: 'status', message: '✨ Synthesizing final output...' });
     const finalOutput = await callAgent('opencode', 'deepseek-v4-flash-free',
-      `You are the Synthesizer. Review Developer Code: ${devCode}. Give the final perfect output to the user.`, prompt, usageTracker);
+      `You are the Synthesizer. Review Developer Code: ${devCode}. Give the final perfect output to the user. Do not use tools.`, prompt, usageTracker);
     
     MemoryManager.appendHistory(sessionId, 'assistant', finalOutput);
     return finalOutput;
