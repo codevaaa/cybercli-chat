@@ -4,7 +4,7 @@ import CLISession from '../models/CLISession.js'
 import KnowledgeGraph from '../models/KnowledgeGraph.js'
 import UsageAnalytics from '../models/UsageAnalytics.js'
 import ApiKey from '../models/ApiKey.js'
-import { llmGateway } from '../services/llm/gateway.js'
+import { SwarmOrchestrator } from '../services/swarmOrchestrator.js'
 import { authenticateCLI } from '../middleware/auth.js'
 import { createClient } from '@supabase/supabase-js'
 
@@ -250,113 +250,55 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
 
     const startTime = Date.now()
 
-    if (stream) {
-      // Streaming response
-      res.setHeader('Content-Type', 'text/event-stream')
-      res.setHeader('Cache-Control', 'no-cache')
-      res.setHeader('Connection', 'keep-alive')
+      if (stream) {
+        // Streaming response for CLI and VS Code
+        res.setHeader('Content-Type', 'text/event-stream')
+        res.setHeader('Cache-Control', 'no-cache')
+        res.setHeader('Connection', 'keep-alive')
 
-      const normalizedMessages = messages || [{ role: 'user', content: prompt }]
-      if (enhancedSystem) {
-        normalizedMessages.unshift({ role: 'system', content: enhancedSystem })
-      }
-      
-      const stream = llmGateway.complete({
-        messages: normalizedMessages,
-        model: model,
-        temperature,
-        plan: analytics.quota.plan,
-        isKaliKal: false // Or true if scanning
-      })
+        const onEvent = (event) => {
+          // Send status events to the client (e.g. "Kimi is reading files...")
+          res.write(`data: ${JSON.stringify({ type: 'status', content: event.message })}\n\n`)
+        };
 
-      let fullContent = ''
-      let tokenCount = 0
+        const finalOutput = await SwarmOrchestrator.processRequest(model || 'trinity', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, onEvent);
 
-      for await (const chunk of stream) {
-        if (chunk.done) {
-          // Track usage
-          const duration = Date.now() - startTime
-          const estimatedTokens = Math.ceil(fullContent.length / 4)
-          const cost = estimatedTokens * 0.00001 // Rough estimate
-
-          await session.addAIInteraction(
-            'chat',
-            prompt,
-            model || 'auto',
-            Math.ceil(prompt.length / 4),
-            estimatedTokens,
-            cost,
-            duration
-          )
-
-          await analytics.trackUsage(
-            model || 'auto',
-            'unknown',
-            Math.ceil(prompt.length / 4),
-            estimatedTokens,
-            cost,
-            duration
-          )
-
-          res.write('data: [DONE]\n\n')
-          res.end()
-        } else if (chunk.type === 'token') {
-          fullContent += chunk.content || ''
-          tokenCount += (chunk.content || '').length
-          res.write(`data: ${JSON.stringify({ content: chunk.content, model: chunk.model || model })}\n\n`)
-        } else if (chunk.type === 'error') {
-          res.write(`data: ${JSON.stringify({ error: chunk.content })}\n\n`)
-          res.end()
-          return
+        // To simulate streaming diffs like Claude Code, we can stream the final output in small chunks
+        const chunkSize = 15;
+        for (let i = 0; i < finalOutput.length; i += chunkSize) {
+          const chunk = finalOutput.slice(i, i + chunkSize);
+          res.write(`data: ${JSON.stringify({ type: 'token', content: chunk })}\n\n`);
+          // A tiny artificial delay to make the terminal type out smoothly like Claude
+          await new Promise(r => setTimeout(r, 10));
         }
+
+        // Track usage (orchestrator handles this internally via tracking now, but we close the session here)
+        const duration = Date.now() - startTime
+        await session.addAIInteraction(
+          'chat',
+          prompt,
+          model || 'auto',
+          Math.ceil((prompt || '').length / 4),
+          Math.ceil(finalOutput.length / 4),
+          0.00001,
+          duration
+        )
+
+        res.write('data: [DONE]\n\n')
+        res.end()
+      } else {
+        const finalOutput = await SwarmOrchestrator.processRequest(model || 'trinity', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, () => {});
+
+        res.json({
+          content: finalOutput,
+          model: model || 'trinity',
+          provider: 'cybermind-cloud',
+          tokens: { input: 0, output: 0 },
+          cost: 0,
+          duration_ms: Date.now() - startTime,
+          complexity: 'high'
+        })
       }
-    } else {
-      const normalizedMessages = messages || [{ role: 'user', content: prompt }]
-      if (enhancedSystem) {
-        normalizedMessages.unshift({ role: 'system', content: enhancedSystem })
-      }
-
-      const result = await llmGateway.completeNonStream({
-        messages: normalizedMessages,
-        model: model,
-        temperature,
-        plan: analytics.quota.plan
-      })
-
-      if (result.error) {
-        return res.status(502).json({ error: result.error })
-      }
-
-      // Track usage
-      await session.addAIInteraction(
-        'chat',
-        prompt,
-        result.model,
-        result.tokens.input,
-        result.tokens.output,
-        result.cost,
-        result.duration_ms
-      )
-
-      await analytics.trackUsage(
-        result.model,
-        result.provider,
-        result.tokens.input,
-        result.tokens.output,
-        result.cost,
-        result.duration_ms
-      )
-
-      res.json({
-        content: result.content,
-        model: result.model,
-        provider: result.provider,
-        tokens: result.tokens,
-        cost: result.cost,
-        duration_ms: result.duration_ms,
-        complexity: result.complexity
-      })
-    }
   } catch (error) {
     next(error)
   }

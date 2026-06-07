@@ -56,12 +56,12 @@ const UsageAnalyticsSchema = new mongoose.Schema({
     last_used: { type: Date, default: Date.now }
   }],
   
-  // Quota tracking
+  // Quota tracking (Token based like Claude)
   quota: {
     plan: { type: String, default: 'free' },
-    monthly_limit: { type: Number, default: 100 },
-    used_this_month: { type: Number, default: 0 },
-    remaining: { type: Number, default: 100 },
+    monthly_token_limit: { type: Number, default: 500000 },
+    tokens_used_this_month: { type: Number, default: 0 },
+    pay_as_you_go_enabled: { type: Boolean, default: false },
     resets_at: Date
   },
   
@@ -89,8 +89,7 @@ UsageAnalyticsSchema.methods.trackUsage = async function(model, provider, tokens
   this.total_tokens_input += tokensIn
   this.total_tokens_output += tokensOut
   this.total_cost += cost
-  this.quota.used_this_month += 1
-  this.quota.remaining = Math.max(0, this.quota.monthly_limit - this.quota.used_this_month)
+  this.quota.tokens_used_this_month += (tokensIn + tokensOut)
   
   // Update model usage
   const modelEntry = this.model_usage.find(m => m.model === model)
@@ -183,14 +182,13 @@ UsageAnalyticsSchema.methods.trackFeature = async function(featureName) {
 }
 
 // Method to reset quota
-UsageAnalyticsSchema.methods.resetQuota = async function(newPlan, monthlyLimit) {
+UsageAnalyticsSchema.methods.resetQuota = async function(newPlan, monthlyTokenLimit) {
   const now = new Date()
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
   
   this.quota.plan = newPlan
-  this.quota.monthly_limit = monthlyLimit
-  this.quota.used_this_month = 0
-  this.quota.remaining = monthlyLimit
+  this.quota.monthly_token_limit = monthlyTokenLimit
+  this.quota.tokens_used_this_month = 0
   this.quota.resets_at = nextMonth
   this.current_period_start = now
   this.current_period_end = nextMonth
@@ -212,9 +210,9 @@ UsageAnalyticsSchema.statics.getOrCreate = async function(userId) {
       current_period_end: nextMonth,
       quota: {
         plan: 'free',
-        monthly_limit: 100,
-        used_this_month: 0,
-        remaining: 100,
+        monthly_token_limit: 500000,
+        tokens_used_this_month: 0,
+        pay_as_you_go_enabled: false,
         resets_at: nextMonth
       }
     })
