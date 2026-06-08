@@ -281,7 +281,34 @@ export class SwarmOrchestrator {
     if (opts.tools && opts.tools.length > 0) {
       onEvent({ type: 'status', message: `🤖 Agentic Loop Active: Proxying to ${tier} model...` });
       
-      // Determine the best model and provider based on the tier requested
+      const tryProxy = async (prov, mod) => {
+        const res = await callAgent(prov, mod, 'You are CyberCoder, a fullstack agentic coding assistant running inside a terminal.', opts.messages, usageTracker, opts);
+        if (typeof res === 'string' && (res.includes('"error"') || res.includes('[Agent Error:'))) {
+          throw new Error(res);
+        }
+        return res;
+      };
+
+      if (tier.toLowerCase() === 'trinity' || tier.toLowerCase() === 'default') {
+        const fallbacks = [
+          { provider: 'groq', model: 'llama-3.3-70b-versatile' },
+          { provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct:free' },
+          { provider: 'huggingface', model: 'google/gemma-4-12B-it' }
+        ];
+
+        for (const fb of fallbacks) {
+          try {
+            return await tryProxy(fb.provider, fb.model);
+          } catch (err) {
+            onEvent({ type: 'status', message: `⚠️ ${fb.provider} failed, auto-falling back to next free model...` });
+            continue; // try next
+          }
+        }
+        // If all fail, return final error from the last one
+        return await tryProxy('opencode', 'deepseek-v4-flash');
+      }
+
+      // For paid/pro tiers (Madhav, Kali, Abhimanyu)
       let provider = 'opencode';
       let model = 'deepseek-v4-flash';
       
@@ -289,11 +316,9 @@ export class SwarmOrchestrator {
         case 'madhav': provider = 'huggingface'; model = 'deepseek-ai/DeepSeek-V4-Pro'; break;
         case 'kali': provider = 'llm7'; model = 'deepseek-v4-flash'; break;
         case 'abhimanyu': provider = 'llm7'; model = 'qwen3-235b'; break;
-        case 'trinity': provider = 'groq'; model = 'llama-3.3-70b-versatile'; break;
       }
       
-      // Pass the entire message history and tools directly to the model
-      return await callAgent(provider, model, 'You are CyberCoder, a fullstack agentic coding assistant running inside a terminal.', opts.messages, usageTracker, opts);
+      return await tryProxy(provider, model).catch(e => e.message);
     }
 
     // Legacy pipeline for older clients or non-tool requests
