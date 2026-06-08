@@ -9,7 +9,8 @@ const KEYS = {
   llm7: process.env.LLM7_API_KEY || '',
   openrouter: process.env.OPENROUTER_API_KEY || '',
   mistral: process.env.MISTRAL_API_KEY || '',
-  groq: process.env.GROQ_API_KEY || ''
+  groq: process.env.GROQ_API_KEY || '',
+  gemini: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
 };
 
 const ENDPOINTS = {
@@ -18,7 +19,8 @@ const ENDPOINTS = {
   llm7: 'https://api.llm7.io/v1/chat/completions',
   openrouter: 'https://openrouter.ai/api/v1/chat/completions',
   mistral: 'https://api.mistral.ai/v1/chat/completions',
-  groq: 'https://api.groq.com/openai/v1/chat/completions'
+  groq: 'https://api.groq.com/openai/v1/chat/completions',
+  gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
 };
 
 /**
@@ -323,20 +325,24 @@ export class SwarmOrchestrator {
       if (tier.toLowerCase() === 'trinity' || tier.toLowerCase() === 'default') {
         const fallbacks = [
           { provider: 'groq', model: 'llama-3.3-70b-versatile' },
-          { provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct:free' },
-          { provider: 'huggingface', model: 'google/gemma-4-12B-it' }
+          { provider: 'gemini', model: 'gemini-1.5-flash' },
+          { provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct:free' }
         ];
 
+        let errorMessages = [];
         for (const fb of fallbacks) {
           try {
             return await tryProxy(fb.provider, fb.model);
           } catch (err) {
-            onEvent({ type: 'status', message: `⚠️ ${fb.provider} failed, auto-falling back to next free model...` });
+            errorMessages.push(`${fb.provider} error: ${err.message}`);
+            onEvent({ type: 'status', message: `⚠️ ${fb.provider} failed, auto-falling back...` });
             continue; // try next
           }
         }
-        // If all fail, return final error from the last one
-        return await tryProxy('opencode', 'deepseek-v4-flash');
+        
+        // If all free fallbacks fail, DO NOT try Opencode (since it costs money and throws CreditsError).
+        // Instead, tell the user exactly why the free models failed so they can fix their .env keys.
+        throw new Error(`ALL FREE PROVIDERS FAILED. Please check your backend .env API keys. Details: ${errorMessages.join(' | ')}`);
       }
 
       // For paid/pro tiers (Madhav, Kali, Abhimanyu)
