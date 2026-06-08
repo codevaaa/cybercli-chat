@@ -329,20 +329,21 @@ export class SwarmOrchestrator {
           { provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct:free' }
         ];
 
-        let errorMessages = [];
+        let failedAttempts = 0;
         for (const fb of fallbacks) {
           try {
             return await tryProxy(fb.provider, fb.model);
           } catch (err) {
-            errorMessages.push(`${fb.provider} error: ${err.message}`);
-            onEvent({ type: 'status', message: `⚠️ ${fb.provider} failed, auto-falling back...` });
-            continue; // try next
+            failedAttempts++;
+            if (failedAttempts === 1) {
+               onEvent({ type: 'status', message: `⚠️ Trinity Engine load high, balancing to secondary cluster...` });
+            }
+            continue; // try next transparently
           }
         }
         
-        // If all free fallbacks fail, DO NOT try Opencode (since it costs money and throws CreditsError).
-        // Instead, tell the user exactly why the free models failed so they can fix their .env keys.
-        throw new Error(`ALL FREE PROVIDERS FAILED. Please check your backend .env API keys. Details: ${errorMessages.join(' | ')}`);
+        // If all fallbacks fail, return a professional, white-labeled error without exposing Groq/Gemini.
+        throw new Error(`The Trinity AI Engine is currently overwhelmed or unavailable due to high server load. Please try again later or upgrade to the Kali tier.`);
       }
 
       // For paid/pro tiers (Madhav, Kali, Abhimanyu)
