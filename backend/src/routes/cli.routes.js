@@ -274,31 +274,48 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
           res.write(`data: ${JSON.stringify({ type: 'status', content: event.message })}\n\n`)
         };
 
-        const finalOutput = await SwarmOrchestrator.processRequest(model || 'trinity', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, onEvent, { messages, tools });
+        try {
+          const finalOutput = await SwarmOrchestrator.processRequest(model || 'trinity', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, onEvent, { messages, tools });
 
-        if (finalOutput && finalOutput.tool_calls) {
-          res.write(`data: ${JSON.stringify({ type: 'tool_calls', toolCalls: finalOutput.tool_calls })}\n\n`);
-        } else {
-          const outputText = typeof finalOutput === 'string' ? finalOutput : (finalOutput?.textOutput || '');
-          // To simulate streaming diffs like Claude Code, we can stream the final output in small chunks
-          const chunkSize = 15;
-          for (let i = 0; i < outputText.length; i += chunkSize) {
-            const chunk = outputText.slice(i, i + chunkSize);
-            res.write(`data: ${JSON.stringify({ type: 'token', content: chunk })}\n\n`);
-            // A tiny artificial delay to make the terminal type out smoothly like Claude
-            await new Promise(r => setTimeout(r, 10));
+          if (finalOutput && finalOutput.tool_calls) {
+            res.write(`data: ${JSON.stringify({ type: 'tool_calls', toolCalls: finalOutput.tool_calls })}\n\n`);
+          } else {
+            const outputText = typeof finalOutput === 'string' ? finalOutput : (finalOutput?.textOutput || '');
+            if (!outputText && !(finalOutput && finalOutput.tool_calls)) {
+              res.write(`data: ${JSON.stringify({ type: 'token', content: '[Agent returned an empty response. Please try again.]' })}\n\n`);
+            } else {
+              const chunkSize = 15;
+              for (let i = 0; i < outputText.length; i += chunkSize) {
+                const chunk = outputText.slice(i, i + chunkSize);
+                res.write(`data: ${JSON.stringify({ type: 'token', content: chunk })}\n\n`);
+                await new Promise(r => setTimeout(r, 10));
+              }
+            }
           }
+        } catch (orchestratorError) {
+          console.error('SwarmOrchestrator error:', orchestratorError);
+          res.write(`data: ${JSON.stringify({ type: 'token', content: `[Agent Error: ${orchestratorError.message}]` })}\n\n`);
         }
 
-        // Track usage (orchestrator handles this internally via tracking now, but we close the session here)
+        // Send usage event to CLI
+        if (finalOutput && finalOutput.tokens) {
+          res.write(`data: ${JSON.stringify({ 
+            type: 'usage', 
+            inputTokens: finalOutput.tokens.input || 0, 
+            outputTokens: finalOutput.tokens.output || 0,
+            cost: finalOutput.cost || 0
+          })}\n\n`);
+        }
+
+        // Track usage for old legacy sessions (orchestrator handles this internally via tracking now)
         const duration = Date.now() - startTime
         await session.addAIInteraction(
           'chat',
           prompt,
           model || 'auto',
-          Math.ceil((prompt || '').length / 4),
-          Math.ceil(finalOutput.length / 4),
-          0.00001,
+          finalOutput?.tokens?.input || Math.ceil((prompt || '').length / 4),
+          finalOutput?.tokens?.output || Math.ceil((finalOutput?.textOutput || '').length / 4),
+          finalOutput?.cost || 0.00001,
           duration
         )
 
@@ -432,6 +449,56 @@ router.get('/stats', authenticateCLI, async (req, res, next) => {
           total_commands: analytics.total_commands
         }
       }
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// Get usage graphs data for Web Dashboard
+router.get('/usage/graphs', authenticateCLI, async (req, res, next) => {
+  try {
+    const { session } = req
+    const analytics = await UsageAnalytics.getOrCreate(session.user_id)
+
+    // Format daily usage for charting (last 30 days)
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+    const dailyData = analytics.daily_usage
+      .filter(d => new Date(d.date) >= thirtyDaysAgo)
+      .map(d => ({
+        date: d.date.toISOString().split('T')[0],
+        tokens: d.tokens_input + d.tokens_output,
+        cost: d.cost,
+        requests: d.requests_count
+      }))
+
+    // Format model breakdown
+    const modelBreakdown = analytics.model_usage.map(m => ({
+      model: m.model,
+      tokens: m.total_tokens,
+      cost: m.total_cost,
+      percentage: analytics.total_tokens_input + analytics.total_tokens_output > 0 
+        ? ((m.total_tokens / (analytics.total_tokens_input + analytics.total_tokens_output)) * 100).toFixed(1)
+        : 0
+    }))
+
+    res.json({
+      success: true,
+      totals: {
+        total_tokens: analytics.total_tokens_input + analytics.total_tokens_output,
+        total_cost: analytics.total_cost,
+        total_requests: analytics.total_requests
+      },
+      quota: {
+        limit: analytics.quota.monthly_token_limit,
+        used: analytics.quota.tokens_used_this_month,
+        remaining: Math.max(0, analytics.quota.monthly_token_limit - analytics.quota.tokens_used_this_month),
+        percentage: ((analytics.quota.tokens_used_this_month / analytics.quota.monthly_token_limit) * 100).toFixed(1)
+      },
+      daily_chart: dailyData,
+      model_breakdown: modelBreakdown
     })
   } catch (error) {
     next(error)

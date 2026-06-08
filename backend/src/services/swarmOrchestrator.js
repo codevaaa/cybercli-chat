@@ -73,8 +73,22 @@ async function callAgent(provider, model, rawSystemPrompt, rawUserPrompt, usageT
     } else {
       const choice = data.choices?.[0];
       if (choice?.message?.tool_calls) {
+        tokensIn = data.usage?.prompt_tokens || 0;
+        tokensOut = data.usage?.completion_tokens || 0;
+        let toolCost = 0;
+        if (provider === 'groq' || provider === 'huggingface' || model.includes(':free')) {
+          toolCost = (tokensIn / 1000) * 0.0001 + (tokensOut / 1000) * 0.0002;
+        } else if (model.includes('deepseek-v4-flash') || model.includes('qwen3')) {
+          toolCost = (tokensIn / 1000) * 0.0005 + (tokensOut / 1000) * 0.001;
+        } else if (model.includes('DeepSeek-V4-Pro')) {
+          toolCost = (tokensIn / 1000) * 0.002 + (tokensOut / 1000) * 0.005;
+        }
+
         if (usageTracker && usageTracker.trackUsage) {
-          await usageTracker.trackUsage(model, provider, data.usage?.prompt_tokens || 0, data.usage?.completion_tokens || 0, 0, timeTaken);
+          await usageTracker.trackUsage(model, provider, tokensIn, tokensOut, toolCost, timeTaken);
+        }
+        if (opts.returnFull) {
+          return { tool_calls: choice.message.tool_calls, textOutput: choice.message.content || '', tokens: { input: tokensIn, output: tokensOut }, cost: toolCost, provider, model };
         }
         return { tool_calls: choice.message.tool_calls, textOutput: choice.message.content || '' };
       }
@@ -83,8 +97,23 @@ async function callAgent(provider, model, rawSystemPrompt, rawUserPrompt, usageT
       tokensOut = data.usage?.completion_tokens || 0;
     }
 
+    let cost = 0;
+    // Calculate cost (fake or real based on provider/model)
+    if (provider === 'groq' || provider === 'huggingface' || model.includes(':free')) {
+      // Fake cost for free models: $0.0001 per 1k input, $0.0002 per 1k output
+      cost = (tokensIn / 1000) * 0.0001 + (tokensOut / 1000) * 0.0002;
+    } else if (model.includes('deepseek-v4-flash') || model.includes('qwen3')) {
+      cost = (tokensIn / 1000) * 0.0005 + (tokensOut / 1000) * 0.001; // Paid tiers
+    } else if (model.includes('deepseek-ai/DeepSeek-V4-Pro')) {
+      cost = (tokensIn / 1000) * 0.002 + (tokensOut / 1000) * 0.005; // Pro tier
+    }
+
     if (usageTracker && usageTracker.trackUsage) {
-      await usageTracker.trackUsage(model, provider, tokensIn, tokensOut, 0, timeTaken);
+      await usageTracker.trackUsage(model, provider, tokensIn, tokensOut, cost, timeTaken);
+    }
+
+    if (opts.returnFull) {
+      return { textOutput, tokens: { input: tokensIn, output: tokensOut }, cost, provider, model };
     }
 
     return textOutput;
@@ -282,9 +311,11 @@ export class SwarmOrchestrator {
       onEvent({ type: 'status', message: `🤖 Agentic Loop Active: Proxying to ${tier} model...` });
       
       const tryProxy = async (prov, mod) => {
-        const res = await callAgent(prov, mod, 'You are CyberCoder, a fullstack agentic coding assistant running inside a terminal.', opts.messages, usageTracker, opts);
-        if (typeof res === 'string' && (res.includes('"error"') || res.includes('[Agent Error:'))) {
-          throw new Error(res);
+        const res = await callAgent(prov, mod, 'You are CyberCoder, a fullstack agentic coding assistant running inside a terminal.', opts.messages, usageTracker, { ...opts, returnFull: true });
+        
+        const errorCheckStr = typeof res === 'string' ? res : (res.textOutput || '');
+        if (errorCheckStr && (errorCheckStr.includes('"error"') || errorCheckStr.includes('[Agent Error:'))) {
+          throw new Error(errorCheckStr);
         }
         return res;
       };
