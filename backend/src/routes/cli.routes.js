@@ -251,7 +251,7 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
 
     const plan = (user?.plan || 'free').toLowerCase()
     if (plan === 'free' && ['madhav', 'abhimanyu'].includes((model || '').toLowerCase())) {
-      return res.status(403).json({ error: 'Access Denied: The requested model is only available on PRO tiers. Please upgrade at https://opencode.ai/go' })
+      return res.status(403).json({ error: 'Access Denied: The requested model is only available on PRO tiers. Please upgrade at https://opencode.ai/zen' })
     }
 
     // Get user context
