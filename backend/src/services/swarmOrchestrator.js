@@ -273,10 +273,30 @@ export class SwarmOrchestrator {
     return finalOutput;
   }
 
-  /**
-   * Main Router Endpoint
-   */
   static async processRequest(tier, sessionId, prompt, usageTracker, onEvent, opts = {}) {
+    // 🚀 THE VIBED CODER UPGRADE 🚀
+    // If the CLI passes `tools`, it means it's running the advanced Agentic ReAct Loop (`agent-loop.ts`).
+    // We MUST bypass the legacy linear pipeline (Planner->Context->Dev->Synthesizer) to allow the 
+    // CLI to recursively think -> call tool -> parse error -> think again continuously.
+    if (opts.tools && opts.tools.length > 0) {
+      onEvent({ type: 'status', message: `🤖 Agentic Loop Active: Proxying to ${tier} model...` });
+      
+      // Determine the best model and provider based on the tier requested
+      let provider = 'opencode';
+      let model = 'deepseek-v4-flash';
+      
+      switch (tier.toLowerCase()) {
+        case 'madhav': provider = 'huggingface'; model = 'deepseek-ai/DeepSeek-V4-Pro'; break;
+        case 'kali': provider = 'llm7'; model = 'deepseek-v4-flash'; break;
+        case 'abhimanyu': provider = 'llm7'; model = 'qwen3-235b'; break;
+        case 'trinity': provider = 'opencode'; model = 'deepseek-v4-flash'; break;
+      }
+      
+      // Pass the entire message history and tools directly to the model
+      return await callAgent(provider, model, 'You are CyberCoder, a fullstack agentic coding assistant running inside a terminal.', opts.messages, usageTracker, opts);
+    }
+
+    // Legacy pipeline for older clients or non-tool requests
     switch (tier.toLowerCase()) {
       case 'madhav': return await this.runMadhav(sessionId, prompt, usageTracker, onEvent, opts);
       case 'kali': return await this.runKali(sessionId, prompt, usageTracker, onEvent, opts);
