@@ -289,7 +289,7 @@ export class SwarmOrchestrator {
         case 'madhav': provider = 'huggingface'; model = 'deepseek-ai/DeepSeek-V4-Pro'; break;
         case 'kali': provider = 'llm7'; model = 'deepseek-v4-flash'; break;
         case 'abhimanyu': provider = 'llm7'; model = 'qwen3-235b'; break;
-        case 'trinity': provider = 'opencode'; model = 'deepseek-v4-flash'; break;
+        case 'trinity': provider = 'groq'; model = 'llama-3.3-70b-versatile'; break;
       }
       
       // Pass the entire message history and tools directly to the model
