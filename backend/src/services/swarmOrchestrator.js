@@ -347,16 +347,20 @@ export class SwarmOrchestrator {
       }
 
       // For paid/pro tiers (Madhav, Kali, Abhimanyu)
-      let provider = 'opencode';
-      let model = 'deepseek-v4-flash';
+      let provider = 'gemini';
+      let model = 'gemini-1.5-flash';
       
       switch (tier.toLowerCase()) {
-        case 'madhav': provider = 'huggingface'; model = 'deepseek-ai/DeepSeek-V4-Pro'; break;
-        case 'kali': provider = 'llm7'; model = 'deepseek-v4-flash'; break;
-        case 'abhimanyu': provider = 'llm7'; model = 'qwen3-235b'; break;
+        case 'madhav': provider = 'openrouter'; model = 'meta-llama/llama-3.3-70b-instruct:free'; break;
+        case 'kali': provider = 'gemini'; model = 'gemini-1.5-flash'; break;
+        case 'abhimanyu': provider = 'groq'; model = 'llama-3.3-70b-versatile'; break;
       }
       
-      return await tryProxy(provider, model).catch(e => e.message);
+      try {
+        return await tryProxy(provider, model);
+      } catch (e) {
+        throw new Error(`The ${tier} AI Engine is currently undergoing maintenance or experiencing high load. Please try again later.`);
+      }
     }
 
     // Legacy pipeline for older clients or non-tool requests
