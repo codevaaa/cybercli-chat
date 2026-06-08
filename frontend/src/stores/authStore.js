@@ -105,6 +105,25 @@ export const useAuthStore = create(
             localStorage.setItem('sb-access-token', data.session.access_token)
             localStorage.setItem('user_name', data.user?.user_metadata?.name || data.user?.email || '')
             localStorage.setItem('user_email', data.user?.email || '')
+
+            // Explicit DB Check for strict login enforcement
+            try {
+              const { default: api } = await import('../lib/api.js')
+              const { data: checkData } = await api.post('/auth/check-user')
+              if (!checkData.exists) {
+                await supabase.auth.signOut()
+                throw new Error('Account not found. Please sign up.')
+              }
+              if (checkData.banned) {
+                await supabase.auth.signOut()
+                throw new Error('This account has been suspended.')
+              }
+            } catch (err) {
+              if (err.message === 'Account not found. Please sign up.' || err.message === 'This account has been suspended.') {
+                throw err
+              }
+              // Ignore network errors so we don't completely lock users out if DB is slow
+            }
           }
           set({ session: data.session, user: data.user, loading: false })
           dispatchAuthSync(data.session)
@@ -124,7 +143,7 @@ export const useAuthStore = create(
             password,
             options: {
               data: { name },
-              emailRedirectTo: `${window.location.origin}/auth/callback`,
+              emailRedirectTo: `${window.location.origin}/auth/callback?action=signup`,
             },
           })
           if (error) throw error
@@ -133,6 +152,14 @@ export const useAuthStore = create(
             localStorage.setItem('sb-access-token', data.session.access_token)
             localStorage.setItem('user_name', data.user?.user_metadata?.name || data.user?.email || '')
             localStorage.setItem('user_email', data.user?.email || '')
+            
+            // Sync user to DB immediately if session is returned
+            try {
+              const { default: api } = await import('../lib/api.js')
+              await api.post('/auth/sync', { platform: 'web' })
+            } catch (e) {
+              console.error('Failed to sync new user:', e)
+            }
           }
           set({ session: data.session, user: data.user, loading: false })
           dispatchAuthSync(data.session)

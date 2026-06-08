@@ -64,12 +64,12 @@ export default function SignupPage() {
     setLocalError(null)
     try {
       let nextPath = '/chat'
-      let callbackQuery = `?next=${encodeURIComponent(nextPath)}`
+      let callbackQuery = `?action=signup&next=${encodeURIComponent(nextPath)}`
       
       if (redirect === 'cli' && port) {
-        callbackQuery = `?redirect=cli&port=${port}`
+        callbackQuery = `?action=signup&redirect=cli&port=${port}`
       } else if (redirect === 'desktop') {
-        callbackQuery = `?redirect=desktop`
+        callbackQuery = `?action=signup&redirect=desktop`
       }
 
       const redirectTo = `${window.location.origin}/auth/callback${callbackQuery}`

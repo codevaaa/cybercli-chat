@@ -44,13 +44,13 @@ export default function LoginPage() {
     clearError()
     try {
       let nextPath = '/chat'
-      let callbackQuery = `?next=${encodeURIComponent(nextPath)}`
+      let callbackQuery = `?action=login&next=${encodeURIComponent(nextPath)}`
       
       if (redirect === 'cli' && port) {
         // Pass redirect and port directly to AuthCallbackPage so it intercepts it
-        callbackQuery = `?redirect=cli&port=${port}`
+        callbackQuery = `?action=login&redirect=cli&port=${port}`
       } else if (redirect === 'desktop') {
-        callbackQuery = `?redirect=desktop`
+        callbackQuery = `?action=login&redirect=desktop`
       }
 
       const redirectTo = `${window.location.origin}/auth/callback${callbackQuery}`

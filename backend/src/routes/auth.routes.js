@@ -87,6 +87,24 @@ router.post('/sync', requireAuth, async (req, res, next) => {
   }
 })
 
+// Check if a user actually exists in the MongoDB registry (useful after Supabase OAuth login)
+router.post('/check-user', requireAuth, async (req, res, next) => {
+  try {
+    const { id } = req.user
+    if (!id) return res.status(401).json({ error: 'Unauthorized' })
+
+    const user = await User.findOne({ supabase_id: id }).lean()
+    if (!user) {
+      return res.json({ exists: false })
+    }
+    
+    const isBanned = user.status === 'banned' || user.status === 'suspended'
+    res.json({ exists: true, banned: isBanned, status: user.status })
+  } catch (err) {
+    next(err)
+  }
+})
+
 // Get currently logged in user info + usage counters
 router.get('/me', requireAuth, async (req, res) => {
   try {

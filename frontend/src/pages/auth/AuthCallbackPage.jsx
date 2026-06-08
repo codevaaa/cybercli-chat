@@ -105,6 +105,36 @@ export default function AuthCallbackPage() {
           // Initialize auth store to sync session details and state
           await initialize()
 
+          // IMPORTANT: Auth Overhaul Logic
+          const action = params.get('action') || hashParams.get('action') || 'login'
+          try {
+            // Import api client dynamically to avoid circular dependencies if any
+            const { default: api } = await import('../../lib/api.js')
+            
+            if (action === 'login') {
+              const { data } = await api.post('/auth/check-user')
+              if (!data.exists) {
+                // strict enforcement: force signup
+                await useAuthStore.getState().signOut()
+                navigate('/auth/signup?error=not_found')
+                return
+              }
+              if (data.banned) {
+                await useAuthStore.getState().signOut()
+                throw new Error('This account has been suspended.')
+              }
+            } else if (action === 'signup') {
+              // Create user in MongoDB
+              await api.post('/auth/sync', { platform: isCliRedirect ? 'cli' : (redirectParam ? 'desktop' : 'web') })
+            }
+          } catch (syncErr) {
+            console.error('Auth sync/check error:', syncErr)
+            if (action === 'login' && syncErr.response?.status === 403) {
+               await useAuthStore.getState().signOut()
+               throw new Error(syncErr.response.data?.reason || 'Account suspended')
+            }
+          }
+
           // Small delay for showing success checkmark
           setTimeout(() => {
             navigate(next)

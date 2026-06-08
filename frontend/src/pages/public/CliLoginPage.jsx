@@ -52,7 +52,7 @@ export default function CliLoginPage() {
       const nextPath = isDesktop
         ? `/login?redirect=desktop`
         : `/login?redirect=cli&port=${port}`
-      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+      const redirectTo = `${window.location.origin}/auth/callback?action=login&next=${encodeURIComponent(nextPath)}`
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo }
@@ -112,6 +112,8 @@ export default function CliLoginPage() {
       setAuthStatus('success')
     } catch (err) {
       console.error('Failed to automatically authorize CLI:', err)
+      const errorMsg = err.response?.data?.error || err.response?.data?.reason || err.message
+      setLocalError('Authorization failed: ' + errorMsg)
       setAuthStatus('manual')
     }
   }
@@ -236,7 +238,8 @@ export default function CliLoginPage() {
                           const { data } = await api.post('/api-keys', { name: 'CyberCoder CLI (Manual)' })
                           setGeneratedKey(data.key)
                         } catch (err) {
-                          setLocalError('Failed to generate key')
+                          const errorMsg = err.response?.data?.error || err.response?.data?.reason || err.message
+                          setLocalError('Failed to generate key: ' + errorMsg)
                         }
                       }}
                       className="w-full bg-[#1A1A24] border border-white/[0.08] hover:border-white/[0.16] text-white rounded-lg py-3 px-4 font-semibold transition-colors flex items-center justify-center gap-2"
