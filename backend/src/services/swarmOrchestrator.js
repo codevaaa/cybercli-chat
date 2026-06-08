@@ -10,7 +10,8 @@ const KEYS = {
   openrouter: process.env.OPENROUTER_API_KEY || '',
   mistral: process.env.MISTRAL_API_KEY || '',
   groq: process.env.GROQ_API_KEY || '',
-  gemini: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
+  gemini: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
+  nvidia: process.env.NVIDIA_API_KEY || ''
 };
 
 const ENDPOINTS = {
@@ -317,7 +318,14 @@ export class SwarmOrchestrator {
         const res = await callAgent(prov, mod, 'You are CyberCoder, a fullstack agentic coding assistant running inside a terminal.', opts.messages, usageTracker, { ...opts, returnFull: true });
         
         const errorCheckStr = typeof res === 'string' ? res : (res.textOutput || '');
-        if (errorCheckStr && (errorCheckStr.includes('"error"') || errorCheckStr.includes('[Agent Error:'))) {
+        if (errorCheckStr && (
+          errorCheckStr.includes('"error"') || 
+          errorCheckStr.includes('[Agent Error:') ||
+          errorCheckStr.includes('"status":401') ||
+          errorCheckStr.includes('"Unauthorized"') ||
+          errorCheckStr.includes('Authentication failed') ||
+          errorCheckStr.includes('"detail":')
+        )) {
           throw new Error(errorCheckStr);
         }
         return res;
