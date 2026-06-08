@@ -224,7 +224,8 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
       temperature,
       max_tokens,
       stream = false,
-      system
+      system,
+      tools
     } = req.body
 
     if (!prompt && !messages) {
@@ -239,6 +240,18 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
         quota: analytics.quota,
         upgrade_url: `${process.env.FRONTEND_URL}/pricing`
       })
+    }
+
+    // Check plan for premium models
+    const { data: user } = await supabase
+      .from('users')
+      .select('plan')
+      .eq('id', session.user_id)
+      .single()
+
+    const plan = (user?.plan || 'free').toLowerCase()
+    if (plan === 'free' && ['madhav', 'abhimanyu'].includes((model || '').toLowerCase())) {
+      return res.status(403).json({ error: 'Access Denied: The requested model is only available on PRO tiers. Please upgrade at https://opencode.ai/go' })
     }
 
     // Get user context
@@ -261,15 +274,20 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
           res.write(`data: ${JSON.stringify({ type: 'status', content: event.message })}\n\n`)
         };
 
-        const finalOutput = await SwarmOrchestrator.processRequest(model || 'trinity', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, onEvent);
+        const finalOutput = await SwarmOrchestrator.processRequest(model || 'trinity', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, onEvent, { messages, tools });
 
-        // To simulate streaming diffs like Claude Code, we can stream the final output in small chunks
-        const chunkSize = 15;
-        for (let i = 0; i < finalOutput.length; i += chunkSize) {
-          const chunk = finalOutput.slice(i, i + chunkSize);
-          res.write(`data: ${JSON.stringify({ type: 'token', content: chunk })}\n\n`);
-          // A tiny artificial delay to make the terminal type out smoothly like Claude
-          await new Promise(r => setTimeout(r, 10));
+        if (finalOutput && finalOutput.tool_calls) {
+          res.write(`data: ${JSON.stringify({ type: 'tool_calls', toolCalls: finalOutput.tool_calls })}\n\n`);
+        } else {
+          const outputText = typeof finalOutput === 'string' ? finalOutput : (finalOutput?.textOutput || '');
+          // To simulate streaming diffs like Claude Code, we can stream the final output in small chunks
+          const chunkSize = 15;
+          for (let i = 0; i < outputText.length; i += chunkSize) {
+            const chunk = outputText.slice(i, i + chunkSize);
+            res.write(`data: ${JSON.stringify({ type: 'token', content: chunk })}\n\n`);
+            // A tiny artificial delay to make the terminal type out smoothly like Claude
+            await new Promise(r => setTimeout(r, 10));
+          }
         }
 
         // Track usage (orchestrator handles this internally via tracking now, but we close the session here)
@@ -287,10 +305,11 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
         res.write('data: [DONE]\n\n')
         res.end()
       } else {
-        const finalOutput = await SwarmOrchestrator.processRequest(model || 'trinity', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, () => {});
+        const finalOutput = await SwarmOrchestrator.processRequest(model || 'trinity', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, () => {}, { messages, tools });
 
         res.json({
-          content: finalOutput,
+          content: typeof finalOutput === 'string' ? finalOutput : (finalOutput?.textOutput || ''),
+          tool_calls: finalOutput?.tool_calls,
           model: model || 'trinity',
           provider: 'cybermind-cloud',
           tokens: { input: 0, output: 0 },

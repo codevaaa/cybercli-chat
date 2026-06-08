@@ -24,10 +24,10 @@ const ENDPOINTS = {
 /**
  * Generic API Call wrapper for LLMs
  */
-async function callAgent(provider, model, rawSystemPrompt, rawUserPrompt, usageTracker = null) {
+async function callAgent(provider, model, rawSystemPrompt, rawUserPrompt, usageTracker = null, opts = {}) {
   // 🛡️ 100% Secure Coding: Redact any accidentally exposed secrets before hitting the LLM
   const systemPrompt = SecretScanner.redact(rawSystemPrompt);
-  const userPrompt = SecretScanner.redact(rawUserPrompt);
+  const userPrompt = typeof rawUserPrompt === 'string' ? SecretScanner.redact(rawUserPrompt) : rawUserPrompt;
   const url = provider === 'huggingface' ? ENDPOINTS.huggingface + model : ENDPOINTS[provider];
   const headers = {
     'Authorization': `Bearer ${KEYS[provider]}`,
@@ -40,13 +40,19 @@ async function callAgent(provider, model, rawSystemPrompt, rawUserPrompt, usageT
     body = JSON.stringify({ inputs: `${systemPrompt}\n\n${userPrompt}` });
   } else {
     // OpenAI compatible format (used by OpenRouter, Groq, Opencode, LLM7, Mistral)
+    const msgs = [{ role: 'system', content: systemPrompt }];
+    if (Array.isArray(userPrompt)) {
+      // If userPrompt is an array of messages, append them
+      msgs.push(...userPrompt);
+    } else {
+      msgs.push({ role: 'user', content: userPrompt });
+    }
+    
     body = JSON.stringify({
       model: model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
-      temperature: 0.2
+      messages: msgs,
+      temperature: 0.2,
+      ...(opts.tools && { tools: opts.tools })
     });
   }
 
@@ -65,7 +71,14 @@ async function callAgent(provider, model, rawSystemPrompt, rawUserPrompt, usageT
       tokensIn = Math.ceil((systemPrompt.length + userPrompt.length) / 4);
       tokensOut = Math.ceil(textOutput.length / 4);
     } else {
-      textOutput = data.choices?.[0]?.message?.content || JSON.stringify(data);
+      const choice = data.choices?.[0];
+      if (choice?.message?.tool_calls) {
+        if (usageTracker && usageTracker.trackUsage) {
+          await usageTracker.trackUsage(model, provider, data.usage?.prompt_tokens || 0, data.usage?.completion_tokens || 0, 0, timeTaken);
+        }
+        return { tool_calls: choice.message.tool_calls, textOutput: choice.message.content || '' };
+      }
+      textOutput = choice?.message?.content || JSON.stringify(data);
       tokensIn = data.usage?.prompt_tokens || 0;
       tokensOut = data.usage?.completion_tokens || 0;
     }
@@ -86,29 +99,43 @@ async function callAgent(provider, model, rawSystemPrompt, rawUserPrompt, usageT
  */
 export class SwarmOrchestrator {
   
-/**
+  /**
    * Run the Trinity Tier (Free)
    */
-  static async runTrinity(sessionId, prompt, usageTracker, onEvent = () => {}) {
-    MemoryManager.appendHistory(sessionId, 'user', prompt);
+  static async runTrinity(sessionId, prompt, usageTracker, onEvent = () => {}, opts = {}) {
+    const isToolContinuation = opts.messages && opts.messages.length > 0 && opts.messages[opts.messages.length - 1].role === 'tool';
+    
+    if (!isToolContinuation) {
+      MemoryManager.appendHistory(sessionId, 'user', prompt);
+    }
     const sessionContext = JSON.stringify(MemoryManager.getSwarmContext(sessionId));
 
-    // 1. Planner
-    onEvent({ type: 'status', message: '🤔 Trinity Planner is analyzing the task...' });
-    const plan = await callAgent('groq', 'llama-3.1-70b-versatile', 
-      'You are the Planner Agent. Break this task into small logic steps. You ONLY have Read-Only tools available (read_file, list_dir, grep, semantic_search). DO NOT attempt to write code.', prompt, usageTracker);
-    MemoryManager.updatePlan(sessionId, plan);
+    let plan = MemoryManager.getSwarmContext(sessionId)?.plan;
+    let contextInfo = MemoryManager.getSwarmContext(sessionId)?.context;
 
-    // 2. Context
-    onEvent({ type: 'status', message: '📂 Context Agent is reading your codebase...' });
-    const contextInfo = await callAgent('opencode', 'qwen3.6-plus-free',
-      `You are Context Agent. Extract important variables given this plan: ${plan}. You ONLY have Read-Only tools available.`, prompt, usageTracker);
-    MemoryManager.updateContext(sessionId, contextInfo, []);
+    if (!isToolContinuation) {
+      // 1. Planner
+      onEvent({ type: 'status', message: '🤔 Trinity Planner is analyzing the task...' });
+      plan = await callAgent('groq', 'llama-3.1-70b-versatile', 
+        'You are the Planner Agent. Break this task into small logic steps. You ONLY have Read-Only tools available (read_file, list_dir, grep, semantic_search). DO NOT attempt to write code.', prompt, usageTracker);
+      MemoryManager.updatePlan(sessionId, plan);
 
-    // 3. Developer
+      // 2. Context
+      onEvent({ type: 'status', message: '📂 Context Agent is reading your codebase...' });
+      contextInfo = await callAgent('opencode', 'qwen3.6-plus-free',
+        `You are Context Agent. Extract important variables given this plan: ${plan}. You ONLY have Read-Only tools available.`, prompt, usageTracker);
+      MemoryManager.updateContext(sessionId, contextInfo, []);
+    }
+
+    // 3. Developer (Now supports tools and continuation)
     onEvent({ type: 'status', message: '💻 Developer Agent is writing the code...' });
-    const devCode = await callAgent('opencode', 'minimax-m3-free',
-      `You are Developer Agent. Write code based on Context: ${contextInfo}. You have full Read/Write access (write_file, edit, run_command).`, prompt, usageTracker);
+    const devPrompt = isToolContinuation ? opts.messages : prompt;
+    const devCode = await callAgent('groq', 'llama-3.1-70b-versatile',
+      `You are Developer Agent. Write code based on Context: ${contextInfo}. You have full Read/Write access (write_file, edit, run_command).`, devPrompt, usageTracker, opts);
+
+    if (devCode && devCode.tool_calls) {
+      return devCode; // Pause swarm and return tool calls to CLI
+    }
 
     // 4. Synthesizer
     onEvent({ type: 'status', message: '✨ Synthesizing final output...' });
@@ -122,19 +149,27 @@ export class SwarmOrchestrator {
   /**
    * Run the Abhimanyu Tier (Basic Paid)
    */
-  static async runAbhimanyu(sessionId, prompt, usageTracker, onEvent = () => {}) {
-    MemoryManager.appendHistory(sessionId, 'user', prompt);
-
-    onEvent({ type: 'status', message: '🧠 Abhimanyu is planning the approach...' });
-    const plan = await callAgent('groq', 'llama-3.1-70b-versatile', 'Plan this:', prompt, usageTracker);
-    MemoryManager.updatePlan(sessionId, plan);
+  static async runAbhimanyu(sessionId, prompt, usageTracker, onEvent = () => {}, opts = {}) {
+    const isToolContinuation = opts.messages && opts.messages.length > 0 && opts.messages[opts.messages.length - 1].role === 'tool';
+    if (!isToolContinuation) {
+      MemoryManager.appendHistory(sessionId, 'user', prompt);
+      onEvent({ type: 'status', message: '🧠 Abhimanyu is planning the approach...' });
+      const plan = await callAgent('groq', 'llama-3.1-70b-versatile', 'Plan this:', prompt, usageTracker);
+      MemoryManager.updatePlan(sessionId, plan);
+    }
+    
+    let plan = MemoryManager.getSwarmContext(sessionId)?.plan || '';
 
     onEvent({ type: 'status', message: '⚡ Fetching context and writing code in parallel...' });
-    const contextPromise = callAgent('openrouter', 'moonshotai/kimi-k2.6:free', 'Read codebase context.', plan + prompt, usageTracker);
-    const devPromise = callAgent('huggingface', 'google/gemma-4-12B-it', 'Write code.', plan + prompt, usageTracker);
+    const contextPromise = isToolContinuation ? Promise.resolve(MemoryManager.getSwarmContext(sessionId)?.context) : callAgent('openrouter', 'moonshotai/kimi-k2.6:free', 'Read codebase context.', plan + prompt, usageTracker);
+    
+    const devPrompt = isToolContinuation ? opts.messages : plan + prompt;
+    const devPromise = callAgent('huggingface', 'google/gemma-4-12B-it', 'Write code.', devPrompt, usageTracker, opts);
     
     const [context, code] = await Promise.all([contextPromise, devPromise]);
-    MemoryManager.updateContext(sessionId, context, []);
+    if (!isToolContinuation) MemoryManager.updateContext(sessionId, context, []);
+
+    if (code && code.tool_calls) return code;
 
     onEvent({ type: 'status', message: '🛡️ Reviewing code logic...' });
     const review = await callAgent('opencode', 'nemotron-3-ultra-free', 'Review this code:', code, usageTracker);
@@ -150,16 +185,26 @@ export class SwarmOrchestrator {
   /**
    * Run the Kali Tier (Standard Paid)
    */
-  static async runKali(sessionId, prompt, usageTracker, onEvent = () => {}) {
-    MemoryManager.appendHistory(sessionId, 'user', prompt);
+  static async runKali(sessionId, prompt, usageTracker, onEvent = () => {}, opts = {}) {
+    const isToolContinuation = opts.messages && opts.messages.length > 0 && opts.messages[opts.messages.length - 1].role === 'tool';
+    if (!isToolContinuation) {
+      MemoryManager.appendHistory(sessionId, 'user', prompt);
+      onEvent({ type: 'status', message: '🗡️ Kali is dissecting the request...' });
+      const plan = await callAgent('groq', 'mixtral-8x7b-32768', 'Plan this:', prompt, usageTracker);
+      MemoryManager.updatePlan(sessionId, plan);
+    }
     
-    onEvent({ type: 'status', message: '🗡️ Kali is dissecting the request...' });
-    const plan = await callAgent('groq', 'mixtral-8x7b-32768', 'Plan this:', prompt, usageTracker);
+    let plan = MemoryManager.getSwarmContext(sessionId)?.plan || '';
     
     onEvent({ type: 'status', message: '🔍 Parallel execution: Context retrieval & Code Generation...' });
-    const contextP = callAgent('openrouter', 'moonshotai/kimi-k2.6:free', 'Context summary', prompt, usageTracker);
-    const devP = callAgent('mistral', 'codestral-latest', 'Write code', prompt + "\nPlan: " + plan, usageTracker);
+    const contextP = isToolContinuation ? Promise.resolve(MemoryManager.getSwarmContext(sessionId)?.context) : callAgent('openrouter', 'moonshotai/kimi-k2.6:free', 'Context summary', prompt, usageTracker);
+    
+    const devPrompt = isToolContinuation ? opts.messages : prompt + "\nPlan: " + plan;
+    const devP = callAgent('mistral', 'codestral-latest', 'Write code', devPrompt, usageTracker, opts);
     const [context, code] = await Promise.all([contextP, devP]);
+    if (!isToolContinuation) MemoryManager.updateContext(sessionId, context, []);
+
+    if (code && code.tool_calls) return code;
     
     onEvent({ type: 'status', message: '🔒 Running security analysis on generated code...' });
     const review = await callAgent('opencode', 'nemotron-3-super-free', 'Security check this code:', code, usageTracker);
@@ -175,29 +220,41 @@ export class SwarmOrchestrator {
   /**
    * Run the MADHAV Tier (Pro Paid - Opus Killer)
    */
-  static async runMadhav(sessionId, prompt, usageTracker, onEvent = () => {}) {
-    MemoryManager.appendHistory(sessionId, 'user', prompt);
+  static async runMadhav(sessionId, prompt, usageTracker, onEvent = () => {}, opts = {}) {
+    const isToolContinuation = opts.messages && opts.messages.length > 0 && opts.messages[opts.messages.length - 1].role === 'tool';
     
-    // Step 1
-    onEvent({ type: 'status', message: '👑 Madhav Planner & Tool Router initializing...' });
-    const planP = callAgent('groq', 'llama-3.1-70b-versatile', 'You are the Planner.', prompt, usageTracker);
-    const toolP = callAgent('mistral', 'mistral-vibe-cli-with-tools', 'You are the Tool Router.', prompt, usageTracker);
-    const [plan, tools] = await Promise.all([planP, toolP]);
-    MemoryManager.updatePlan(sessionId, plan);
+    if (!isToolContinuation) {
+      MemoryManager.appendHistory(sessionId, 'user', prompt);
+      
+      // Step 1
+      onEvent({ type: 'status', message: '👑 Madhav Planner & Tool Router initializing...' });
+      const planP = callAgent('groq', 'llama-3.1-70b-versatile', 'You are the Planner.', prompt, usageTracker);
+      const toolP = callAgent('mistral', 'mistral-vibe-cli-with-tools', 'You are the Tool Router.', prompt, usageTracker);
+      const [plan, tools] = await Promise.all([planP, toolP]);
+      MemoryManager.updatePlan(sessionId, plan);
 
-    // Step 2
-    onEvent({ type: 'status', message: '📚 Context Agent (Kimi) scanning deep workspace memory...' });
-    const context = await callAgent('llm7', 'kimi-k2.6', 'Read the massive context.', tools + prompt, usageTracker);
-    MemoryManager.updateContext(sessionId, context, []);
+      // Step 2
+      onEvent({ type: 'status', message: '📚 Context Agent (Kimi) scanning deep workspace memory...' });
+      const context = await callAgent('llm7', 'kimi-k2.6', 'Read the massive context.', tools + prompt, usageTracker);
+      MemoryManager.updateContext(sessionId, context, []);
+    }
+
+    const plan = MemoryManager.getSwarmContext(sessionId)?.plan || '';
+    const context = MemoryManager.getSwarmContext(sessionId)?.context || '';
 
     // Step 3
     onEvent({ type: 'status', message: '⚙️ Swarm executing: Dev (DeepSeek 671B), Sec (Llama 3.3 70B), Review (Nemotron 550B)...' });
-    const devP = callAgent('llm7', 'deepseek-v3.1:671b-terminus', 'Algorithmic code writer.', plan + context, usageTracker);
-    const secP = callAgent('openrouter', 'meta-llama/llama-3.3-70b-instruct:free', 'Security tester.', plan + context, usageTracker);
-    const reviewP = callAgent('huggingface', 'nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16', 'Instruction adherence reviewer.', plan + context, usageTracker);
+    const devPrompt = isToolContinuation ? opts.messages : plan + context;
+    const devP = callAgent('llm7', 'deepseek-v3.1:671b-terminus', 'Algorithmic code writer.', devPrompt, usageTracker, opts);
+    
+    const secP = isToolContinuation ? Promise.resolve('') : callAgent('openrouter', 'meta-llama/llama-3.3-70b-instruct:free', 'Security tester.', plan + context, usageTracker);
+    const reviewP = isToolContinuation ? Promise.resolve('') : callAgent('huggingface', 'nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16', 'Instruction adherence reviewer.', plan + context, usageTracker);
     
     const [code, security, review] = await Promise.all([devP, secP, reviewP]);
-    MemoryManager.addSecurityAlert(sessionId, security);
+
+    if (code && code.tool_calls) return code;
+
+    if (!isToolContinuation) MemoryManager.addSecurityAlert(sessionId, security);
 
     // Step 4
     onEvent({ type: 'status', message: '✨ Madhav CEO (DeepSeek-V4-Pro) synthesizing the ultimate response...' });
@@ -219,13 +276,13 @@ export class SwarmOrchestrator {
   /**
    * Main Router Endpoint
    */
-  static async processRequest(tier, sessionId, prompt, usageTracker, onEvent) {
+  static async processRequest(tier, sessionId, prompt, usageTracker, onEvent, opts = {}) {
     switch (tier.toLowerCase()) {
-      case 'madhav': return await this.runMadhav(sessionId, prompt, usageTracker, onEvent);
-      case 'kali': return await this.runKali(sessionId, prompt, usageTracker, onEvent);
-      case 'abhimanyu': return await this.runAbhimanyu(sessionId, prompt, usageTracker, onEvent);
-      case 'trinity': return await this.runTrinity(sessionId, prompt, usageTracker, onEvent);
-      default: return await this.runTrinity(sessionId, prompt, usageTracker, onEvent);
+      case 'madhav': return await this.runMadhav(sessionId, prompt, usageTracker, onEvent, opts);
+      case 'kali': return await this.runKali(sessionId, prompt, usageTracker, onEvent, opts);
+      case 'abhimanyu': return await this.runAbhimanyu(sessionId, prompt, usageTracker, onEvent, opts);
+      case 'trinity': return await this.runTrinity(sessionId, prompt, usageTracker, onEvent, opts);
+      default: return await this.runTrinity(sessionId, prompt, usageTracker, onEvent, opts);
     }
   }
 }
