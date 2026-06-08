@@ -39,24 +39,34 @@ router.get('/', async (req, res, next) => {
 
 // POST /api/v1/api-keys
 router.post('/', async (req, res, next) => {
-  try {
-    const { name } = req.body
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-      return res.status(400).json({ error: 'Name is required' })
-    }
-    if (name.trim().length > 80) {
-      return res.status(400).json({ error: 'Name must be 80 characters or fewer' })
-    }
+  const { name } = req.body
+  if (!name || typeof name !== 'string' || name.trim() === '') {
+    return res.status(400).json({ error: 'Name is required' })
+  }
+  if (name.trim().length > 80) {
+    return res.status(400).json({ error: 'Name must be 80 characters or fewer' })
+  }
 
+  try {
     const count = await ApiKey.countDocuments({ user_id: req.user.id })
     if (count >= MAX_KEYS_PER_USER) {
       return res.status(409).json({
         error: `You have reached the maximum of ${MAX_KEYS_PER_USER} API keys. Revoke one before creating another.`,
       })
     }
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to count API keys' })
+  }
 
-    const { rawKey, key_hash, key_prefix, last4 } = ApiKey.generate()
+  let generated;
+  try {
+    generated = ApiKey.generate()
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to generate key metadata' })
+  }
+  const { rawKey, key_hash, key_prefix, last4 } = generated
 
+  try {
     const newKey = await ApiKey.create({
       user_id: req.user.id,
       name: name.trim(),
@@ -77,6 +87,30 @@ router.post('/', async (req, res, next) => {
       is_active: newKey.is_active,
     })
   } catch (err) {
+    if (err.code === 11000 && err.message.includes('key_1')) {
+      try {
+        await ApiKey.collection.dropIndex('key_1')
+        const newKey = await ApiKey.create({
+          user_id: req.user.id,
+          name: name.trim(),
+          key_hash,
+          key_prefix,
+          last4,
+          is_active: true,
+        })
+        return res.status(201).json({
+          _id: newKey._id,
+          name: newKey.name,
+          key: rawKey,
+          key_prefix: newKey.key_prefix,
+          last4: newKey.last4,
+          created_at: newKey.created_at,
+          is_active: newKey.is_active,
+        })
+      } catch (retryErr) {
+        err = retryErr
+      }
+    }
     console.error('[API Keys Route Create Error]:', err)
     res.status(500).json({ error: err.message || 'Failed to create API key due to database error' })
   }
