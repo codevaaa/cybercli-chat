@@ -122,7 +122,7 @@ export class SwarmOrchestrator {
 
       // 2. Context
       onEvent({ type: 'status', message: '📂 Context Agent is reading your codebase...' });
-      contextInfo = await callAgent('opencode', 'qwen3.6-plus-free',
+      contextInfo = await callAgent('opencode', 'deepseek-v4-flash',
         `You are Context Agent. Extract important variables given this plan: ${plan}. You ONLY have Read-Only tools available.`, prompt, usageTracker);
       MemoryManager.updateContext(sessionId, contextInfo, []);
     }
@@ -139,7 +139,7 @@ export class SwarmOrchestrator {
 
     // 4. Synthesizer
     onEvent({ type: 'status', message: '✨ Synthesizing final output...' });
-    const finalOutput = await callAgent('opencode', 'deepseek-v4-flash-free',
+    const finalOutput = await callAgent('opencode', 'deepseek-v4-flash',
       `You are the Synthesizer. Review Developer Code: ${devCode}. Give the final perfect output to the user. Do not use tools.`, prompt, usageTracker);
     
     MemoryManager.appendHistory(sessionId, 'assistant', finalOutput);
@@ -172,7 +172,7 @@ export class SwarmOrchestrator {
     if (code && code.tool_calls) return code;
 
     onEvent({ type: 'status', message: '🛡️ Reviewing code logic...' });
-    const review = await callAgent('opencode', 'nemotron-3-ultra-free', 'Review this code:', code, usageTracker);
+    const review = await callAgent('opencode', 'deepseek-v4-flash', 'Review this code:', code, usageTracker);
 
     onEvent({ type: 'status', message: '✨ Generating final response...' });
     const finalOutput = await callAgent('llm7', 'qwen3-235b', 
@@ -207,7 +207,7 @@ export class SwarmOrchestrator {
     if (code && code.tool_calls) return code;
     
     onEvent({ type: 'status', message: '🔒 Running security analysis on generated code...' });
-    const review = await callAgent('opencode', 'nemotron-3-super-free', 'Security check this code:', code, usageTracker);
+    const review = await callAgent('opencode', 'deepseek-v4-flash', 'Security check this code:', code, usageTracker);
 
     onEvent({ type: 'status', message: '✨ Assembling bulletproof output...' });
     const finalOutput = await callAgent('llm7', 'deepseek-v4-flash', 
