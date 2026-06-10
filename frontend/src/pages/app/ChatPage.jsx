@@ -85,6 +85,7 @@ const NAV_ITEMS = [
   { id: 'artifacts', label: 'Artifacts', icon: Layers        },
   { id: 'kali_kal',  label: 'Kali_Kal',  icon: Terminal      },
   { id: 'voice',     label: 'Voice',     icon: Radio         },
+  { id: 'api_keys',  label: 'API Keys',  icon: Code2         },
   { id: 'customize', label: 'Customize', icon: Sliders       },
 ]
 
@@ -5171,7 +5172,9 @@ export default function ChatPage() {
                 <button
                   key={item.id}
                   onClick={() => {
-                    if (item.id === 'voice') {
+                    if (item.id === 'api_keys') {
+                      navigate('/api-keys')
+                    } else if (item.id === 'voice') {
                       setVoiceChatOpen(true)
                     } else if (item.id === 'search') {
                       setIsSearchModalOpen(true)

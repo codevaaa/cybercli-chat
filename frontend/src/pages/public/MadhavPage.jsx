@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { 
   Sparkles, Cpu, Layers, Zap, BrainCircuit, Activity, Server, 
   ArrowRight, ShieldCheck, Database, FileCode2, Terminal, Code2, 
-  Workflow, CheckCircle2, ChevronDown, BarChart3, Globe2
+  Workflow, CheckCircle2, ChevronDown, Globe2, Lock, FastForward, PlayCircle
 } from 'lucide-react'
 import SEOHead from '@components/seo/SEOHead'
 import ScrollReveal from '@components/ui/ScrollReveal'
@@ -13,7 +13,7 @@ export default function MadhavPage() {
   const [activeFaq, setActiveFaq] = useState(null)
 
   const BENCHMARKS = [
-    { label: 'MADHAV Engine (12-Agent)', score: 98.4, color: '#F59E0B' },
+    { label: 'MADHAV Engine', score: 98.4, color: '#F59E0B' },
     { label: 'Claude Opus 4.8', score: 96.1, color: '#d97757' },
     { label: 'OpenAI GPT-5', score: 95.8, color: '#10b981' },
     { label: 'Gemini 3.0 Ultra', score: 94.9, color: '#3b82f6' },
@@ -21,18 +21,30 @@ export default function MadhavPage() {
     { label: 'Moonshot Kimi-Next', score: 91.2, color: '#06b6d4' }
   ]
 
-  const CAPABILITIES = [
-    { title: 'Fullstack Mastery', icon: Code2, desc: 'Generates complete React/Node apps in seconds.' },
-    { title: 'Asset Generation', icon: Globe2, desc: 'Natively generates Images and Videos for UI.' },
-    { title: 'B2B API Access', icon: Terminal, desc: 'Plug directly into Cursor or Claude Code.' },
-    { title: 'Uncensored Bypass', icon: ShieldCheck, desc: 'No constraints on ethical hacking or security code.' }
+  const FAQS = [
+    { 
+      q: "How does the MADHAV architecture work?", 
+      a: "MADHAV uses a proprietary unified model architecture to deliver unparalleled reasoning speed and accuracy. You experience zero downtime and always get the best possible output." 
+    },
+    { 
+      q: "Can I use MADHAV in my IDE?", 
+      a: "Yes! By generating an sk_cyber_ API key, you can set your base URL to api.cybercoder.com/v1 and plug MADHAV directly into Cursor, Claude Code, or any OpenAI-compatible client." 
+    },
+    { 
+      q: "Is MADHAV really uncensored?", 
+      a: "The MADHAV engine is designed for absolute developer freedom. It will not refuse to write security code, ethical hacking tools, or complex system-level operations." 
+    },
+    { 
+      q: "What is the context window limit?", 
+      a: "MADHAV supports a dynamic context window of up to 2 Million tokens depending on the node cluster handling the request, allowing you to upload massive codebases in a single prompt." 
+    }
   ]
 
   return (
     <div className="pt-32 pb-24 bg-[#07070a] min-h-screen">
       <SEOHead 
-        title="MADHAV Engine | The 12-Agent Unstoppable AI" 
-        description="Experience the MADHAV Engine: a cascading 12-agent waterfall architecture that guarantees uptime and supreme intelligence."
+        title="MADHAV Engine | The Unstoppable AI" 
+        description="Experience the MADHAV Engine: a unified AI architecture that guarantees uptime and supreme intelligence."
       />
 
       {/* 1. Hero Section */}
@@ -53,7 +65,7 @@ export default function MadhavPage() {
             </h1>
             
             <p className="text-lg md:text-xl text-gray-400 mb-10 leading-relaxed max-w-2xl mx-auto">
-              Not just a model. An unstoppable 12-agent waterfall architecture. If one provider fails, MADHAV seamlessly cascades to the next. Zero downtime. Infinite reasoning.
+              Not just a model. The world's most powerful unified reasoning engine. Zero downtime. Infinite reasoning.
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -61,7 +73,7 @@ export default function MadhavPage() {
                 Try MADHAV Free
                 <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link to="/api-keys" className="px-8 py-4 rounded-xl text-sm font-bold border border-white/10 text-white hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
+              <Link to="/settings" className="px-8 py-4 rounded-xl text-sm font-bold border border-white/10 text-white hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
                 <Terminal className="w-4 h-4" />
                 Generate API Key
               </Link>
@@ -70,19 +82,19 @@ export default function MadhavPage() {
         </div>
       </section>
 
-      {/* 2. The 12-Agent Waterfall Flow */}
+      {/* 2. Unified Architecture Flow */}
       <section className="px-6 max-w-6xl mx-auto mb-32">
         <ScrollReveal>
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">The Unstoppable Waterfall</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">Behind the scenes, MADHAV orchestrates 12 distinct elite agents across 6 data centers globally.</p>
+            <h2 className="text-3xl font-bold text-white mb-4">Unified Global Architecture</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">Behind the scenes, MADHAV operates across 6 data centers globally, acting as a single, infinitely scalable brain.</p>
           </div>
           
           <div className="relative p-8 rounded-3xl bg-[#0c0c12] border border-white/10 overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 blur-3xl rounded-full" />
             
             <div className="grid md:grid-cols-4 gap-4 relative z-10">
-              {['Primary: DeepSeek V4', 'Secondary: Gemini 2.5 Pro', 'Fallback 1: Llama 3.1 70B', 'Fallback 2: Nemotron 70B'].map((agent, i) => (
+              {['MADHAV Core Node Alpha', 'MADHAV Reasoning Beta', 'MADHAV Fallback Gamma', 'MADHAV Deep Logic Delta'].map((agent, i) => (
                 <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center text-center relative group">
                   <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center mb-4 border border-orange-500/30">
                     <BrainCircuit className="w-6 h-6 text-orange-400" />
@@ -143,27 +155,125 @@ export default function MadhavPage() {
           <div className="bg-gradient-to-br from-orange-900/20 to-transparent border border-orange-500/20 rounded-3xl p-10 text-center">
             <h2 className="text-3xl font-bold text-white mb-4">Autonomous Asset Generation</h2>
             <p className="text-gray-400 max-w-2xl mx-auto mb-10">
-              MADHAV doesn't just write code. It natively connects to Imagen 4.0 and Veo 3.1. When you ask for a landing page, it generates the UI *and* the background videos simultaneously.
+              MADHAV doesn't just write code. It natively connects to its internal creative nodes. When you ask for a landing page, it generates the UI *and* the background visual assets simultaneously.
             </p>
             <div className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <div className="p-6 bg-black/40 rounded-2xl border border-white/5">
                 <FileCode2 className="w-8 h-8 text-orange-400 mb-4 mx-auto" />
-                <h3 className="text-white font-bold mb-2">React Code</h3>
+                <h3 className="text-white font-bold mb-2">MADHAV Syntax Engine</h3>
               </div>
               <div className="p-6 bg-black/40 rounded-2xl border border-white/5">
                 <Globe2 className="w-8 h-8 text-blue-400 mb-4 mx-auto" />
-                <h3 className="text-white font-bold mb-2">Imagen 4.0 UI Assets</h3>
+                <h3 className="text-white font-bold mb-2">MADHAV Visual UI Assets</h3>
               </div>
               <div className="p-6 bg-black/40 rounded-2xl border border-white/5">
                 <Activity className="w-8 h-8 text-purple-400 mb-4 mx-auto" />
-                <h3 className="text-white font-bold mb-2">Veo 3.1 Backgrounds</h3>
+                <h3 className="text-white font-bold mb-2">MADHAV Motion Backgrounds</h3>
               </div>
             </div>
           </div>
         </ScrollReveal>
       </section>
 
-      {/* 5. B2B Token Economy */}
+      {/* 5. Infinite Context Window Architecture */}
+      <section className="px-6 max-w-6xl mx-auto mb-32">
+        <ScrollReveal>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="order-2 md:order-1 p-8 bg-[#0c0c12] rounded-3xl border border-white/10 relative overflow-hidden">
+              <div className="absolute -left-12 -top-12 w-48 h-48 bg-orange-500/10 blur-3xl rounded-full" />
+              <Layers className="w-16 h-16 text-orange-400 mb-6" />
+              <h3 className="text-3xl font-bold text-white mb-4">2M+ Token Context</h3>
+              <p className="text-gray-400 leading-relaxed mb-6">
+                Upload your entire monorepo. MADHAV's Memory Retrieval system slices, chunks, and digests your codebase in seconds, offering flawless context awareness.
+              </p>
+              <div className="flex gap-2">
+                {['React', 'Python', 'Go', 'Rust', 'Node.js'].map(lang => (
+                  <span key={lang} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-300">{lang}</span>
+                ))}
+              </div>
+            </div>
+            <div className="order-1 md:order-2">
+              <span className="text-orange-400 text-xs font-bold tracking-widest uppercase mb-4 block">Massive Scale</span>
+              <h2 className="text-4xl font-bold text-white mb-6">Never lose track of your codebase again.</h2>
+              <p className="text-gray-400 leading-relaxed">
+                Traditional models forget what you told them 10 messages ago. MADHAV's context engine writes critical project data to a short-term vector memory, ensuring consistency across a 2 Million token context window.
+              </p>
+            </div>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* 6. Fullstack Generation Showcase */}
+      <section className="px-6 max-w-7xl mx-auto mb-32">
+        <ScrollReveal>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-white mb-4">Fullstack Generation Showcase</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">From database schemas to beautiful frontends, all in one prompt.</p>
+          </div>
+          <div className="bg-[#0c0c12] border border-white/10 rounded-3xl p-2 relative overflow-hidden">
+            <div className="flex items-center gap-2 p-4 bg-black/40 border-b border-white/10 rounded-t-2xl">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <div className="w-3 h-3 rounded-full bg-yellow-500" />
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <div className="ml-4 text-xs font-mono text-gray-500">madhav-engine-demo.sh</div>
+            </div>
+            <div className="p-8 font-mono text-sm">
+              <div className="text-green-400 mb-2">$ User: Generate a complete SaaS dashboard with Stripe integration.</div>
+              <div className="text-gray-300 mb-4">&gt; MADHAV Engine initializing core systems...</div>
+              <div className="text-orange-400 mb-2">[Core] Generating Postgres Schema...</div>
+              <div className="text-orange-400 mb-2">[Core] Writing Express Routes & Webhooks...</div>
+              <div className="text-orange-400 mb-2">[Core] Designing React Tailwind UI Components...</div>
+              <div className="text-white mt-6 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Complete. 42 files generated in 18.4s.
+              </div>
+            </div>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* 7. Global Latency Edge Network */}
+      <section className="px-6 max-w-6xl mx-auto mb-32">
+        <ScrollReveal>
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            <div className="p-8">
+              <FastForward className="w-12 h-12 text-orange-400 mx-auto mb-6" />
+              <h3 className="text-white font-bold text-xl mb-3">120ms TTFT</h3>
+              <p className="text-gray-400 text-sm">Time-to-first-token is lightning fast due to global edge routing.</p>
+            </div>
+            <div className="p-8">
+              <Globe2 className="w-12 h-12 text-blue-400 mx-auto mb-6" />
+              <h3 className="text-white font-bold text-xl mb-3">6 Data Centers</h3>
+              <p className="text-gray-400 text-sm">Geographically distributed nodes to ensure your requests are handled locally.</p>
+            </div>
+            <div className="p-8">
+              <Zap className="w-12 h-12 text-yellow-400 mx-auto mb-6" />
+              <h3 className="text-white font-bold text-xl mb-3">Infinite Scaling</h3>
+              <p className="text-gray-400 text-sm">Our infrastructure scales automatically to meet enterprise demand.</p>
+            </div>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* 8. Enterprise Security & Compliance */}
+      <section className="px-6 max-w-5xl mx-auto mb-32">
+        <ScrollReveal>
+          <div className="bg-[#0c0c12] border border-white/10 rounded-3xl p-12 text-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay"></div>
+            <Lock className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
+            <h2 className="text-3xl font-bold text-white mb-6">Enterprise Security & Zero Retention</h2>
+            <p className="text-gray-400 leading-relaxed max-w-2xl mx-auto mb-8">
+              We understand that your codebase is your most valuable asset. MADHAV operates on a strict zero-retention policy. Your prompts, code, and data are never used to train our models, and are wiped from memory immediately after the request is fulfilled.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <span className="px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-sm font-bold">SOC2 Type II Compliant</span>
+              <span className="px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-sm font-bold">End-to-End Encryption</span>
+              <span className="px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-sm font-bold">Zero Data Training</span>
+            </div>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* 9. B2B Token Economy */}
       <section className="px-6 max-w-5xl mx-auto mb-32">
         <ScrollReveal>
           <div className="text-center mb-16">
@@ -190,7 +300,7 @@ export default function MadhavPage() {
         </ScrollReveal>
       </section>
 
-      {/* 6. Pricing & Tiers */}
+      {/* 10. Pricing & Tiers */}
       <section className="px-6 max-w-6xl mx-auto mb-32">
         <ScrollReveal>
           <div className="text-center mb-16">
@@ -220,7 +330,7 @@ export default function MadhavPage() {
                 <li className="flex items-center gap-2 text-sm text-gray-300"><CheckCircle2 className="w-4 h-4 text-orange-400" /> High Priority Load</li>
                 <li className="flex items-center gap-2 text-sm text-gray-300"><CheckCircle2 className="w-4 h-4 text-orange-400" /> B2B API (Cursor/CLI)</li>
               </ul>
-              <Link to="/api-keys" className="btn-primary w-full text-center py-3 rounded-xl text-sm font-bold">Upgrade to Pro</Link>
+              <Link to="/settings" className="btn-primary w-full text-center py-3 rounded-xl text-sm font-bold">Upgrade to Pro</Link>
             </div>
 
             {/* Team */}
@@ -245,6 +355,41 @@ export default function MadhavPage() {
               </ul>
               <Link to="/contact" className="w-full text-center py-3 rounded-xl text-sm font-bold border border-white/10 hover:bg-white/5">Contact Sales</Link>
             </div>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* 11. FAQ */}
+      <section className="px-6 max-w-3xl mx-auto mb-32">
+        <ScrollReveal>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">Frequently Asked Questions</h2>
+          </div>
+          
+          <div className="space-y-4">
+            {FAQS.map((faq, i) => (
+              <div key={i} className="bg-[#0c0c12] border border-white/10 rounded-2xl overflow-hidden">
+                <button 
+                  onClick={() => setActiveFaq(activeFaq === i ? null : i)}
+                  className="w-full p-6 text-left flex justify-between items-center focus:outline-none"
+                >
+                  <span className="font-bold text-white">{faq.q}</span>
+                  <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${activeFaq === i ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {activeFaq === i && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="px-6 pb-6 text-gray-400 leading-relaxed"
+                    >
+                      {faq.a}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
           </div>
         </ScrollReveal>
       </section>
