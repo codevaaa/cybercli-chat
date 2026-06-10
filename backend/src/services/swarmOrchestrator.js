@@ -348,11 +348,14 @@ export class SwarmOrchestrator {
       ];
 
       let failedAttempts = 0;
+      let lastErrors = [];
       for (const fb of fallbacks) {
         try {
           return await tryProxy(fb.provider, fb.model);
         } catch (err) {
           failedAttempts++;
+          lastErrors.push(`[${fb.provider}]: ${err.message}`);
+          console.error(`[Load Balancer] ${fb.provider} node failed:`, err.message);
           if (failedAttempts === 1) {
              onEvent({ type: 'status', message: `⚠️ ${tier} Engine load high, balancing to secondary cluster...` });
           }
@@ -360,7 +363,8 @@ export class SwarmOrchestrator {
         }
       }
       
-      // If all fallbacks fail, return a professional, white-labeled error.
+      // If all fallbacks fail, log the full error cascade and return the white-labeled error.
+      console.error(`🚨 FATAL: All nodes in LB Pool failed. Cascade:\n`, lastErrors.join('\n'));
       throw new Error(`The ${tier} AI Engine is currently overwhelmed or unavailable due to high server load. Please try again later.`);
     }
 
