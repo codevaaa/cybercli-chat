@@ -52,7 +52,7 @@ export default function SignupPage() {
       } else if (redirect === 'desktop') {
         window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
       } else {
-        navigate('/chat')
+        navigate(redirect || '/chat')
       }
     }
   }, [session, loading, redirect, port, navigate])
@@ -63,7 +63,7 @@ export default function SignupPage() {
     clearError()
     setLocalError(null)
     try {
-      let nextPath = '/chat'
+      let nextPath = redirect || '/chat'
       let callbackQuery = `?action=signup&next=${encodeURIComponent(nextPath)}`
       
       if (redirect === 'cli' && port) {

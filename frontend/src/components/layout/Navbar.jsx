@@ -425,7 +425,7 @@ export default function Navbar() {
             ) : (
               <>
                 <Link
-                  to="/auth/login"
+                  to={`/auth/login?redirect=${encodeURIComponent(location.pathname)}`}
                   className={`text-[13px] font-medium transition-colors px-3 py-1.5 rounded-md ${
                     isLightTheme
                       ? 'text-[#666666] hover:text-[#191919] hover:bg-black/5'
@@ -629,14 +629,14 @@ export default function Navbar() {
                 ) : (
                   <>
                     <Link
-                      to="/auth/signup"
+                      to={`/auth/signup?redirect=${encodeURIComponent(location.pathname)}`}
                       onClick={() => setMobileOpen(false)}
                       className="block btn-primary text-center text-sm font-semibold w-full"
                     >
                       Get Started — It's Free
                     </Link>
                     <Link
-                      to="/auth/login"
+                      to={`/auth/login?redirect=${encodeURIComponent(location.pathname)}`}
                       onClick={() => setMobileOpen(false)}
                       className="block text-center px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.06] w-full"
                     >

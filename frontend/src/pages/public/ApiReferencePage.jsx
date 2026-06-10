@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Copy, Check, Lock, Globe, MessageSquare, Settings, List, Users, BookOpen, Terminal, Sparkles, Code, ChevronRight } from 'lucide-react'
+import { Copy, Check, Lock, Terminal, ChevronRight, Zap, Code2, Globe2, Sparkles, BookOpen } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
@@ -8,12 +8,12 @@ import SEOHead from '@components/seo/SEOHead'
 const BASE_URL = 'https://api.codeva.chat'
 
 const SECTIONS = [
-  { id: 'welcome', label: 'Welcome' },
-  { id: 'auth', label: 'Authentication' },
-  { id: 'chat-completions', label: 'Chat Completions' },
-  { id: 'council-mode', label: 'Council Mode' },
-  { id: 'list-models', label: 'List Models' },
-  { id: 'account-usage', label: 'Account & Usage' },
+  { id: 'welcome', label: 'Welcome', icon: Sparkles },
+  { id: 'auth', label: 'Authentication', icon: Lock },
+  { id: 'chat-completions', label: 'Chat Completions', icon: Zap },
+  { id: 'council-mode', label: 'Council Mode', icon: BookOpen },
+  { id: 'list-models', label: 'List Models', icon: Globe2 },
+  { id: 'account-usage', label: 'Account & Usage', icon: Terminal },
 ]
 
 const LANGUAGES = [
@@ -83,7 +83,7 @@ for chunk in stream:
     desc: 'Query multiple expert models simultaneously and retrieve a single synthesized consensus answer.',
     params: [
       { name: 'content', type: 'string', required: true, desc: 'The prompt to submit to the debating council.' },
-      { name: 'models', type: 'array', required: false, default: '["openrouter/gpt-4o-mini", "groq/llama-3.1-8b", "gemini/gemini-2.5-flash"]', desc: 'List of model IDs to participate in the council debate.' },
+      { name: 'models', type: 'array', required: false, default: '["openrouter/gpt-4o-mini", "groq/llama-3.1-8b"]', desc: 'List of model IDs to participate.' },
       { name: 'synthesize', type: 'boolean', required: false, default: 'true', desc: 'If true, compiles responses into a final consensus.' }
     ],
     code: {
@@ -183,7 +183,7 @@ export default function ApiReferencePage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrollPos = window.scrollY + 200
+      const scrollPos = window.scrollY + 250
       for (const section of SECTIONS) {
         const el = sectionRefs[section.id]?.current
         if (el) {
@@ -196,7 +196,7 @@ export default function ApiReferencePage() {
         }
       }
     }
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -212,133 +212,135 @@ export default function ApiReferencePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#07070a] text-gray-300 font-sans antialiased overflow-x-hidden">
-      {/* Background design */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.015]"
-        style={{
-          backgroundImage: `radial-gradient(ellipse at 50% -20%, #D97757 0%, transparent 60%),
-                            linear-gradient(#fff 1px, transparent 1px),
-                            linear-gradient(90deg, #fff 1px, transparent 1px)`,
-          backgroundSize: '100% 100%, 40px 40px, 40px 40px'
-        }}
+    <div className="min-h-screen bg-background-primary text-foreground-primary font-sans antialiased selection:bg-accent/20 selection:text-accent">
+      <SEOHead 
+        title="API Reference | Codeva" 
+        description="Integrate the world's most advanced AI models directly into your applications with the Codeva API."
       />
       
+      {/* Background design */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden select-none">
+        <div className="absolute top-0 right-0 w-[800px] h-[600px] bg-accent/5 rounded-full blur-[150px] opacity-40 mix-blend-screen" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px] opacity-20 mix-blend-screen" />
+      </div>
+      
       {/* Page Header */}
-      <header className="relative pt-32 pb-16 border-b border-white/[0.04] bg-[#0A0A0F]/60 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 text-center">
+      <header className="relative pt-32 pb-12 border-b border-border-subtle bg-background-elevated/40 backdrop-blur-xl sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col items-start">
           <ScrollReveal>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-orange-500/20 bg-orange-500/5 text-orange-400 text-xs font-semibold mb-4 tracking-wide">
-              <Terminal className="w-3.5 h-3.5" />
-              The Gateway
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/20 bg-accent/5 text-accent text-xs font-semibold mb-4 tracking-wide shadow-[0_0_15px_rgba(217,119,87,0.1)]">
+              <Code2 className="w-4 h-4" />
+              Developer API
             </div>
           </ScrollReveal>
-          <ScrollReveal delay={0.08}>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
+          <ScrollReveal delay={0.05}>
+            <h1 className="text-4xl md:text-5xl font-serif font-medium text-foreground-primary mb-4 tracking-tight">
               API Reference
             </h1>
           </ScrollReveal>
-          <ScrollReveal delay={0.15}>
-            <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
-              Programmatic access to the Codeva multi-provider AI orchestrator, enabling custom tool calls, parallel debate, and low-latency LLM gateway endpoints.
+          <ScrollReveal delay={0.1}>
+            <p className="text-foreground-secondary/80 max-w-2xl text-sm md:text-base leading-relaxed">
+              Integrate Codeva's unified reasoning engine into your stack. Build powerful applications with streaming chat completions and automated council debates.
             </p>
           </ScrollReveal>
         </div>
       </header>
 
       {/* Main Grid Workspace */}
-      <div className="max-w-7xl mx-auto px-6 flex flex-col lg:flex-row gap-8 py-10 relative">
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col lg:flex-row gap-12 py-12 relative z-10">
         
         {/* Sticky Sidebar Left */}
-        <aside className="w-full lg:w-60 flex-shrink-0 lg:sticky lg:top-24 lg:h-[calc(100vh-8rem)] overflow-y-auto pr-2 pb-6 border-b lg:border-b-0 lg:border-r border-white/[0.05]">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest px-3 mb-3">Endpoints</h3>
-          <nav className="space-y-1">
-            {SECTIONS.map((sec) => (
-              <button
-                key={sec.id}
-                onClick={() => handleScrollTo(sec.id)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-sm font-medium transition-all group ${
-                  activeSection === sec.id
-                    ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
-                    : 'text-gray-400 hover:bg-white/[0.03] hover:text-white border border-transparent'
-                }`}
-              >
-                <span>{sec.label}</span>
-                <ChevronRight className={`w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity ${activeSection === sec.id ? 'opacity-100 text-orange-400' : 'text-gray-500'}`} />
-              </button>
-            ))}
-          </nav>
+        <aside className="w-full lg:w-64 flex-shrink-0 lg:sticky lg:top-80 lg:h-[calc(100vh-22rem)] overflow-y-auto pr-4 pb-6 hidden lg:block custom-scrollbar">
+          <div className="space-y-1 relative">
+            <div className="absolute left-0 top-0 bottom-0 w-px bg-border-subtle" />
+            
+            {SECTIONS.map((sec) => {
+              const isActive = activeSection === sec.id
+              const Icon = sec.icon
+              return (
+                <button
+                  key={sec.id}
+                  onClick={() => handleScrollTo(sec.id)}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-left text-sm font-medium transition-all group relative overflow-hidden ${
+                    isActive
+                      ? 'text-accent bg-accent/5'
+                      : 'text-foreground-secondary hover:text-foreground-primary hover:bg-background-secondary/50'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div 
+                      layoutId="sidebar-active"
+                      className="absolute left-0 top-0 bottom-0 w-[2px] bg-accent rounded-r-full"
+                    />
+                  )}
+                  <div className="flex items-center gap-3">
+                    <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-accent' : 'text-foreground-secondary/50 group-hover:text-foreground-secondary'}`} />
+                    <span>{sec.label}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
         </aside>
 
         {/* 2-Column Split Pane Content */}
-        <main className="flex-1 space-y-24 pb-20">
+        <main className="flex-1 space-y-32 pb-32">
           
           {/* Welcome section */}
-          <section ref={sectionRefs.welcome} className="scroll-mt-28 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div className="lg:col-span-7 space-y-4">
-              <h2 className="text-2xl font-bold text-white tracking-tight">Introduction</h2>
-              <p className="text-sm leading-relaxed text-gray-400">
-                The Codeva API allows you to integrate state-of-the-art language processing, code synthesis, and multi-model consensus checks straight into your applications.
-              </p>
-              <p className="text-sm leading-relaxed text-gray-400">
-                All requests must be sent securely via HTTPS. Formats are standard JSON, and responses utilize standard HTTP return codes. If you have questions, join our developer Discord.
-              </p>
-            </div>
-            <div className="lg:col-span-5 border border-white/[0.05] bg-[#0c0c12]/80 backdrop-blur rounded-2xl p-5 space-y-3">
-              <div className="flex items-center gap-2 text-white font-semibold text-sm">
-                <Terminal className="w-4 h-4 text-orange-400" />
-                <span>Base Environment URL</span>
+          <section ref={sectionRefs.welcome} className="scroll-mt-80 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+            <div className="lg:col-span-6 space-y-5">
+              <h2 className="text-3xl font-serif font-medium text-foreground-primary tracking-tight">Introduction</h2>
+              <div className="space-y-4 text-sm leading-relaxed text-foreground-secondary/80">
+                <p>
+                  The Codeva API provides seamless access to the world's most capable models through a single, unified gateway. Drop our endpoints into your app to enable advanced multi-agent orchestration.
+                </p>
+                <p>
+                  We follow REST semantics. All requests and responses are formatted as standard JSON, making integration trivial from any programming language.
+                </p>
               </div>
-              <code className="block text-xs font-mono p-3 rounded-xl bg-black/40 border border-white/[0.04] text-orange-400 break-all select-all">
-                {BASE_URL}
-              </code>
+            </div>
+            <div className="lg:col-span-6">
+              <div className="border border-border-subtle bg-background-secondary/40 backdrop-blur-xl rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center gap-2 text-foreground-primary font-medium text-sm mb-4">
+                  <Terminal className="w-4 h-4 text-accent" />
+                  <span>Base URL</span>
+                </div>
+                <div className="flex items-center justify-between p-4 rounded-xl bg-background-primary border border-border-subtle shadow-inner">
+                  <code className="text-sm font-mono text-accent select-all">
+                    {BASE_URL}
+                  </code>
+                  <button onClick={() => handleCopyText(BASE_URL, 'code')} className="p-1.5 rounded-md text-foreground-secondary/50 hover:text-foreground-primary hover:bg-background-secondary transition-all">
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
 
           {/* Authentication section */}
-          <section ref={sectionRefs.auth} className="scroll-mt-28 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div className="lg:col-span-7 space-y-4">
-              <h2 className="text-2xl font-bold text-white tracking-tight">Authentication</h2>
-              <p className="text-sm leading-relaxed text-gray-400">
-                All protected endpoints require a Bearer token inside the HTTP `Authorization` header.
-              </p>
-              <p className="text-sm leading-relaxed text-gray-400">
-                You can generate API keys directly inside the chat user dashboard under the API Keys settings panel. Keep your API keys confidential and do not share them in public repositories.
-              </p>
-              
-              {/* Table of Headers */}
-              <div className="overflow-hidden border border-white/[0.05] rounded-xl mt-4">
-                <table className="w-full text-xs text-left border-collapse">
-                  <thead>
-                    <tr className="bg-white/[0.02] border-b border-white/[0.05] text-gray-500 font-semibold uppercase tracking-wider">
-                      <th className="px-4 py-2.5">Header Name</th>
-                      <th className="px-4 py-2.5">Type</th>
-                      <th className="px-4 py-2.5">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/[0.03]">
-                    <tr>
-                      <td className="px-4 py-3 font-mono text-orange-400 font-semibold">Authorization</td>
-                      <td className="px-4 py-3 text-gray-400">string</td>
-                      <td className="px-4 py-3 text-gray-400">Bearer token format (e.g. `Bearer sk_cyber_...`)</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-mono text-gray-400">Content-Type</td>
-                      <td className="px-4 py-3 text-gray-400">string</td>
-                      <td className="px-4 py-3 text-gray-400">Must be set to `application/json`</td>
-                    </tr>
-                  </tbody>
-                </table>
+          <section ref={sectionRefs.auth} className="scroll-mt-80 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+            <div className="lg:col-span-6 space-y-5">
+              <h2 className="text-3xl font-serif font-medium text-foreground-primary tracking-tight">Authentication</h2>
+              <div className="space-y-4 text-sm leading-relaxed text-foreground-secondary/80">
+                <p>
+                  Authenticate your requests by providing your secret API key in the `Authorization` header as a Bearer token. 
+                </p>
+                <p>
+                  To obtain a key, navigate to the API Keys section within your Codeva Dashboard. Treat these keys as highly sensitive secrets—never commit them to public version control.
+                </p>
               </div>
             </div>
             
-            <div className="lg:col-span-5 border border-white/[0.05] bg-[#0c0c12]/80 backdrop-blur rounded-2xl p-5 space-y-3.5">
-              <div className="flex items-center gap-2 text-white font-semibold text-sm">
-                <Lock className="w-4 h-4 text-orange-400" />
-                <span>Example Header Authorization</span>
+            <div className="lg:col-span-6">
+              <div className="border border-border-subtle bg-background-secondary/40 backdrop-blur-xl rounded-2xl overflow-hidden shadow-sm">
+                <div className="flex items-center gap-2 px-5 py-4 border-b border-border-subtle bg-background-elevated/20">
+                  <Lock className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm font-medium text-foreground-primary">Authorization Header</span>
+                </div>
+                <pre className="p-5 bg-background-primary text-sm font-mono text-foreground-secondary overflow-x-auto leading-relaxed select-all">
+                  <span className="text-accent">Authorization</span>: Bearer <span className="text-emerald-400">sk_codeva_...</span>
+                </pre>
               </div>
-              <pre className="p-3.5 rounded-xl bg-black/40 border border-white/[0.04] text-xs font-mono text-gray-300 overflow-x-auto leading-relaxed select-all">
-                Authorization: Bearer sk_cyber_7c3aed...
-              </pre>
             </div>
           </section>
 
@@ -347,49 +349,52 @@ export default function ApiReferencePage() {
             const ep = ENDPOINTS_DATA[epKey]
             const isPost = ep.method === 'POST'
             const methodColor = isPost 
-              ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' 
-              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              ? 'bg-accent/10 text-accent border-accent/20' 
+              : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
 
             return (
-              <section key={epKey} ref={sectionRefs[epKey]} className="scroll-mt-28 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start border-t border-white/[0.04] pt-12">
+              <section key={epKey} ref={sectionRefs[epKey]} className="scroll-mt-80 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start pt-10 border-t border-border-subtle/50">
                 
                 {/* Left Column: Docs & Params */}
-                <div className="lg:col-span-7 space-y-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className={`px-2 py-0.5 rounded-lg text-xs font-bold font-mono border ${methodColor}`}>
-                      {ep.method}
-                    </span>
-                    <code className="text-white text-sm font-semibold font-mono bg-white/[0.03] px-2 py-1 rounded-md border border-white/[0.04]">
-                      {ep.path}
-                    </code>
+                <div className="lg:col-span-5 space-y-6">
+                  <div>
+                    <h3 className="text-2xl font-serif font-medium text-foreground-primary mb-4 capitalize">
+                      {epKey.replace('-', ' ')}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-bold font-mono border ${methodColor}`}>
+                        {ep.method}
+                      </span>
+                      <code className="text-foreground-secondary text-sm font-mono tracking-tight">
+                        {ep.path}
+                      </code>
+                    </div>
+                    <p className="text-sm leading-relaxed text-foreground-secondary/80">
+                      {ep.desc}
+                    </p>
                   </div>
-                  
-                  <p className="text-sm leading-relaxed text-gray-400">
-                    {ep.desc}
-                  </p>
 
                   {ep.params.length > 0 && (
-                    <div className="mt-6 space-y-4">
-                      <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Request Parameters</h4>
-                      <div className="overflow-hidden border border-white/[0.05] rounded-xl">
-                        <table className="w-full text-xs text-left border-collapse">
-                          <thead>
-                            <tr className="bg-white/[0.02] border-b border-white/[0.05] text-gray-500 font-semibold uppercase tracking-wider">
-                              <th className="px-4 py-2.5">Field</th>
-                              <th className="px-4 py-2.5">Type</th>
-                              <th className="px-4 py-2.5">Description</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-white/[0.03]">
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-semibold text-foreground-secondary uppercase tracking-widest">Parameters</h4>
+                      <div className="border border-border-subtle rounded-xl overflow-hidden bg-background-secondary/20">
+                        <table className="w-full text-left border-collapse">
+                          <tbody className="divide-y divide-border-subtle text-sm">
                             {ep.params.map(p => (
-                              <tr key={p.name}>
-                                <td className="px-4 py-3 font-mono font-semibold text-gray-200">
-                                  {p.name} {p.required && <span className="text-rose-400">*</span>}
+                              <tr key={p.name} className="hover:bg-background-secondary/40 transition-colors">
+                                <td className="p-4 align-top w-1/3 border-r border-border-subtle/50">
+                                  <div className="font-mono font-medium text-foreground-primary">{p.name}</div>
+                                  <div className="text-xs text-foreground-secondary/60 mt-1">{p.type}</div>
+                                  {p.required && <div className="text-[10px] font-bold text-red-400 uppercase tracking-wider mt-2">Required</div>}
                                 </td>
-                                <td className="px-4 py-3 font-mono text-gray-500 text-[11px]">{p.type}</td>
-                                <td className="px-4 py-3 text-gray-400 leading-normal">
+                                <td className="p-4 align-top text-foreground-secondary/80 leading-relaxed">
                                   {p.desc}
-                                  {p.default && <div className="text-[10px] text-gray-600 mt-0.5">Default: {p.default}</div>}
+                                  {p.default && (
+                                    <div className="mt-3">
+                                      <span className="text-xs text-foreground-secondary/50 uppercase tracking-widest font-semibold mr-2">Default:</span>
+                                      <code className="px-1.5 py-0.5 rounded text-[11px] bg-background-elevated border border-border-subtle text-foreground-primary font-mono">{p.default}</code>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             ))}
@@ -401,20 +406,20 @@ export default function ApiReferencePage() {
                 </div>
 
                 {/* Right Column: Code Snippet Card */}
-                <div className="lg:col-span-5 space-y-5">
+                <div className="lg:col-span-7 space-y-6">
                   
-                  {/* Snippet Card */}
-                  <div className="border border-white/[0.06] bg-[#0d0d12]/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.05] bg-white/[0.02]">
-                      <div className="flex items-center gap-1.5">
+                  {/* Request Snippet Card */}
+                  <div className="border border-border-subtle bg-[#111111] shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden group">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04] bg-white/[0.02]">
+                      <div className="flex items-center gap-1">
                         {LANGUAGES.map((lang) => (
                           <button
                             key={lang.id}
                             onClick={() => setActiveTab(lang.id)}
-                            className={`text-xs px-2.5 py-1 rounded-md font-medium transition-colors ${
+                            className={`text-[11px] px-3 py-1.5 rounded-md font-medium transition-all uppercase tracking-wider ${
                               activeTab === lang.id
-                                ? 'bg-orange-500/10 text-orange-400'
-                                : 'text-gray-500 hover:text-gray-300'
+                                ? 'bg-white/10 text-white shadow-sm'
+                                : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                             }`}
                           >
                             {lang.label}
@@ -423,29 +428,28 @@ export default function ApiReferencePage() {
                       </div>
                       <button
                         onClick={() => handleCopyText(ep.code[activeTab], 'code')}
-                        className="text-gray-500 hover:text-white transition-colors p-1"
+                        className="text-gray-500 hover:text-white transition-colors p-1.5 rounded-md hover:bg-white/5 opacity-0 group-hover:opacity-100"
                       >
-                        {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                       </button>
                     </div>
-
-                    <pre className="p-4 text-xs font-mono text-orange-200 overflow-x-auto leading-relaxed select-all max-h-[280px]">
+                    <pre className="p-5 text-sm font-mono text-[#D4D4D4] overflow-x-auto leading-[1.6] select-all max-h-[400px] custom-scrollbar">
                       {ep.code[activeTab]}
                     </pre>
                   </div>
 
-                  {/* Response Card */}
-                  <div className="border border-white/[0.06] bg-[#09090c]/90 rounded-2xl overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.04] bg-white/[0.01]">
-                      <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Example Response</span>
+                  {/* Response Snippet Card */}
+                  <div className="border border-border-subtle bg-[#0A0A0A] rounded-2xl overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 px-4 py-2 flex items-center justify-end w-full bg-gradient-to-b from-[#0A0A0A] to-transparent">
+                      <span className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest absolute left-4 top-3">Response</span>
                       <button
                         onClick={() => handleCopyText(JSON.stringify(ep.response, null, 2), 'response')}
-                        className="text-gray-500 hover:text-white transition-colors p-1"
+                        className="text-gray-600 hover:text-gray-300 transition-colors p-1 rounded hover:bg-white/5 opacity-0 group-hover:opacity-100"
                       >
                         {copiedResponse ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                       </button>
                     </div>
-                    <pre className="p-4 text-xs font-mono text-gray-400 overflow-x-auto leading-relaxed max-h-[220px]">
+                    <pre className="p-5 pt-10 text-sm font-mono text-emerald-500/80 overflow-x-auto leading-relaxed max-h-[300px] custom-scrollbar">
                       {JSON.stringify(ep.response, null, 2)}
                     </pre>
                   </div>
@@ -456,25 +460,24 @@ export default function ApiReferencePage() {
           })}
 
           {/* Account and Usage section */}
-          <section ref={sectionRefs['account-usage']} className="scroll-mt-28 border-t border-white/[0.04] pt-12 space-y-6">
-            <div className="max-w-2xl">
-              <h2 className="text-2xl font-bold text-white tracking-tight">Account & Usage Policy</h2>
-              <p className="text-sm leading-relaxed text-gray-400 mt-2">
-                All developer accounts are bound by standard rate limits. High-frequency users or enterprise callers can contact sales to configure customized SLA guarantees, high-bandwidth compute nodes, and specialized dedicated channels.
+          <section ref={sectionRefs['account-usage']} className="scroll-mt-80 pt-10 border-t border-border-subtle/50 space-y-8">
+            <div className="max-w-2xl space-y-4">
+              <h2 className="text-3xl font-serif font-medium text-foreground-primary tracking-tight">Account & Limits</h2>
+              <p className="text-sm leading-relaxed text-foreground-secondary/80">
+                To maintain high availability across our unified gateway, rate limits are strictly enforced at the API key level. Reach out to enterprise support if you need dedicated high-throughput pipelines.
               </p>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
-                { plan: 'Free', limit: '50 req / hour', latency: 'Standard speed', desc: 'Ideal for basic testing.' },
-                { plan: 'Pro', limit: '500 req / hour', latency: 'Priority queueing', desc: 'Perfect for power-users.' },
-                { plan: 'Developer', limit: '1500 req / hour', latency: 'Dedicated queueing', desc: 'Custom key integrations.' }
+                { plan: 'Free Tier', limit: '50 RPM', desc: 'Standard queueing. Ideal for testing and side projects.' },
+                { plan: 'Pro Tier', limit: '500 RPM', desc: 'Priority routing. Fit for individual power users.' },
+                { plan: 'Enterprise', limit: 'Custom', desc: 'Dedicated capacity and guaranteed SLAs.' }
               ].map(plan => (
-                <div key={plan.plan} className="border border-white/[0.04] bg-white/[0.01] rounded-2xl p-5 hover:border-white/[0.08] transition-colors">
-                  <div className="text-sm font-bold text-white mb-1">{plan.plan}</div>
-                  <div className="text-xs text-orange-400 font-semibold mb-2">{plan.limit}</div>
-                  <div className="text-[11px] text-gray-400 font-medium mb-1">{plan.latency}</div>
-                  <div className="text-[10px] text-gray-600 leading-normal">{plan.desc}</div>
+                <div key={plan.plan} className="border border-border-subtle bg-background-elevated/40 backdrop-blur-sm rounded-2xl p-6 hover:shadow-lg hover:border-accent/30 transition-all duration-300">
+                  <div className="text-base font-semibold text-foreground-primary mb-2">{plan.plan}</div>
+                  <div className="inline-block px-2.5 py-1 rounded bg-accent/10 text-accent text-xs font-bold font-mono mb-4 border border-accent/20">{plan.limit}</div>
+                  <div className="text-sm text-foreground-secondary/80 leading-relaxed">{plan.desc}</div>
                 </div>
               ))}
             </div>

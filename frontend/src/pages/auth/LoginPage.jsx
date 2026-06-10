@@ -30,7 +30,7 @@ export default function LoginPage() {
         window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token)}`
         return
       } else {
-        navigate('/chat')
+        navigate(redirect || '/chat')
         return
       }
     }
@@ -43,7 +43,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     clearError()
     try {
-      let nextPath = '/chat'
+      let nextPath = redirect || '/chat'
       let callbackQuery = `?action=login&next=${encodeURIComponent(nextPath)}`
       
       if (redirect === 'cli' && port) {
@@ -80,7 +80,7 @@ export default function LoginPage() {
           window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
         }
       } else {
-        navigate('/chat')
+        navigate(redirect || '/chat')
       }
     }
   }

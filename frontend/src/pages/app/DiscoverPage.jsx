@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Compass, Search, Sparkles, Code2, BookOpen, Layers, Check } from 'lucide-react'
+import { ArrowLeft, Compass, Search, Sparkles, Code2, BookOpen, Layers } from 'lucide-react'
+import { Tooltip } from '@components/ui/Tooltip.jsx'
 
 export default function DiscoverPage() {
   const navigate = useNavigate()
@@ -71,109 +72,128 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-16 bg-background-primary text-foreground-primary">
-      <div className="section-padding">
-        <div className="container-custom max-w-5xl">
-          {/* Header row */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
-            <div>
-              <Link to="/chat" className="inline-flex items-center gap-2 text-xs font-semibold text-foreground-muted hover:text-foreground-primary transition-colors mb-4 group">
-                <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
-                Back to chat
-              </Link>
-              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-2">
-                <Compass className="w-7 h-7 text-accent" />
-                Discover prompts
-              </h1>
-              <p className="text-xs text-foreground-muted mt-1 leading-normal">
-                Browse through curated, expert-tested prompts designed for maximum accuracy.
-              </p>
-            </div>
-
-            {/* Search Bar */}
-            <div className="relative w-full md:w-80">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search templates..."
-                className="w-full bg-background-secondary text-sm text-foreground-primary placeholder:text-foreground-muted border border-border-subtle rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-accent"
-              />
-            </div>
+    <div className="min-h-screen pt-24 pb-16 bg-background-primary text-foreground-primary selection:bg-accent/20 selection:text-accent font-sans">
+      <div className="max-w-6xl mx-auto px-6 lg:px-12">
+        {/* Header row */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+          <div>
+            <Link to="/chat" className="inline-flex items-center gap-2 text-xs font-medium text-foreground-secondary hover:text-foreground-primary transition-colors mb-4 group">
+              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+              Return to Workspace
+            </Link>
+            <h1 className="text-3xl md:text-4xl font-serif font-medium tracking-tight flex items-center gap-3 text-foreground-primary">
+              <div className="p-2 rounded-xl bg-accent/10 border border-accent/20 shadow-sm">
+                <Compass className="w-6 h-6 text-accent" />
+              </div>
+              Discover
+            </h1>
+            <p className="text-sm text-foreground-secondary/80 mt-3 leading-relaxed max-w-lg">
+              Browse through curated, expert-tested prompts designed to maximize the reasoning capabilities of Codeva models.
+            </p>
           </div>
 
-          {/* Category Tabs */}
-          <div className="flex flex-wrap items-center gap-2.5 mb-8 border-b border-border-subtle/30 pb-4">
-            {categories.map(c => {
-              const Icon = c.icon
-              const isActive = activeTab === c.id
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => setActiveTab(c.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-accent/15 border border-accent/30 text-accent'
-                      : 'bg-background-tertiary border border-border-subtle text-foreground-muted hover:text-foreground-primary'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{c.label}</span>
-                </button>
-              )}
+          {/* Search Bar */}
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-secondary/50" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search templates..."
+              className="w-full bg-background-elevated/50 text-sm text-foreground-primary placeholder:text-foreground-secondary/40 border border-border-subtle rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:border-accent transition-all shadow-inner"
+            />
+          </div>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex flex-wrap items-center gap-3 mb-10 border-b border-border-subtle/50 pb-5">
+          {categories.map(c => {
+            const Icon = c.icon
+            const isActive = activeTab === c.id
+            return (
+              <button
+                key={c.id}
+                onClick={() => setActiveTab(c.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-foreground-primary text-background-primary shadow-md'
+                    : 'bg-background-elevated border border-border-subtle text-foreground-secondary hover:text-foreground-primary hover:border-border-medium'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{c.label}</span>
+              </button>
             )}
-          </div>
-
-          {/* Cards Grid */}
-          <motion.div layout className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <AnimatePresence mode="popLayout">
-              {filteredPacks.map((pack) => (
-                <motion.div
-                  key={pack.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="card p-6 flex flex-col justify-between hover:border-white/[0.12] transition-all group cursor-pointer"
-                  onClick={() => handleRunPrompt(pack.prompt)}
-                >
-                  <div>
-                    <div className="flex justify-between items-center mb-4 text-[10px] font-extrabold uppercase tracking-widest">
-                      <span className="text-accent">{pack.category}</span>
-                      <span className="px-2.5 py-0.5 rounded-full border border-border-subtle text-foreground-muted">
-                        {pack.difficulty}
-                      </span>
-                    </div>
-                    <h3 className="text-sm font-bold text-foreground-primary mb-2 group-hover:text-accent transition-colors">
-                      {pack.title}
-                    </h3>
-                    <p className="text-xs text-foreground-muted leading-relaxed font-medium line-clamp-3">
-                      {pack.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-border-subtle/50 mt-6 flex justify-between items-center text-[11px] font-bold text-accent">
-                    <span>Try prompt</span>
-                    <Sparkles className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-
-          {/* Empty State */}
-          {filteredPacks.length === 0 && (
-            <div className="text-center py-20 card flex flex-col items-center justify-center gap-4">
-              <Search className="w-12 h-12 text-foreground-muted opacity-30" />
-              <h3 className="text-base font-bold text-foreground-primary">No prompts match your search</h3>
-              <p className="text-xs text-foreground-muted max-w-xs leading-normal">
-                Try using a different query or select a different filter category tab above.
-              </p>
-            </div>
           )}
         </div>
+
+        {/* Cards Grid */}
+        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <AnimatePresence mode="popLayout">
+            {filteredPacks.map((pack) => (
+              <motion.div
+                key={pack.id}
+                layout
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="bg-background-elevated/40 backdrop-blur-sm border border-border-subtle hover:border-accent/30 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 group cursor-pointer hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]"
+                onClick={() => handleRunPrompt(pack.prompt)}
+              >
+                <div>
+                  <div className="flex justify-between items-center mb-5 text-[10px] font-bold uppercase tracking-widest">
+                    <span className="text-accent flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                      {pack.category}
+                    </span>
+                    <span className="px-2.5 py-1 rounded-md bg-background-primary border border-border-subtle text-foreground-secondary/70 shadow-sm">
+                      {pack.difficulty}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-serif font-medium text-foreground-primary mb-2 group-hover:text-accent transition-colors">
+                    {pack.title}
+                  </h3>
+                  <p className="text-sm text-foreground-secondary/80 leading-relaxed line-clamp-3">
+                    {pack.description}
+                  </p>
+                </div>
+
+                <div className="pt-5 mt-6 border-t border-border-subtle/50 flex justify-between items-center text-xs font-semibold text-accent opacity-80 group-hover:opacity-100 transition-opacity">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Use this prompt
+                  </span>
+                  <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
+                    <ArrowLeft className="w-3 h-3 text-accent rotate-180" />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Empty State */}
+        {filteredPacks.length === 0 && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="text-center py-24 bg-background-elevated/20 border border-border-subtle border-dashed rounded-3xl flex flex-col items-center justify-center gap-4 mt-8"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-background-primary border border-border-subtle shadow-sm flex items-center justify-center mb-2">
+              <Search className="w-8 h-8 text-foreground-secondary/40" />
+            </div>
+            <h3 className="text-xl font-serif font-medium text-foreground-primary">No prompts found</h3>
+            <p className="text-sm text-foreground-secondary/70 max-w-sm leading-relaxed mb-4">
+              We couldn't find any templates matching "{searchQuery}". Try using a different term or category.
+            </p>
+            <button
+              onClick={() => { setSearchQuery(''); setActiveTab('all'); }}
+              className="px-6 py-2.5 rounded-xl bg-background-primary border border-border-subtle text-foreground-primary text-sm font-medium hover:border-accent/50 hover:text-accent transition-all shadow-sm cursor-pointer"
+            >
+              Clear filters
+            </button>
+          </motion.div>
+        )}
       </div>
     </div>
   )
