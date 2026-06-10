@@ -275,7 +275,7 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
         };
 
         try {
-          const finalOutput = await SwarmOrchestrator.processRequest(model || 'trinity', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, onEvent, { messages, tools });
+          const finalOutput = await SwarmOrchestrator.processRequest(model || 'madhav', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, onEvent, { messages, tools });
 
           if (finalOutput && finalOutput.tool_calls) {
             res.write(`data: ${JSON.stringify({ type: 'tool_calls', toolCalls: finalOutput.tool_calls })}\n\n`);
@@ -322,16 +322,10 @@ router.post('/complete', authenticateCLI, async (req, res, next) => {
         res.write('data: [DONE]\n\n')
         res.end()
       } else {
-        const finalOutput = await SwarmOrchestrator.processRequest(model || 'trinity', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, () => {}, { messages, tools });
+        const finalOutput = await SwarmOrchestrator.processRequest(model || 'madhav', session.session_id, prompt || messages[messages.length - 1]?.content, analytics, () => {}, { messages, tools });
 
+        const usageData = await analytics.getAnalytics(session.user_id);
         res.json({
-          content: typeof finalOutput === 'string' ? finalOutput : (finalOutput?.textOutput || ''),
-          tool_calls: finalOutput?.tool_calls,
-          model: model || 'trinity',
-          provider: 'cybermind-cloud',
-          tokens: { input: 0, output: 0 },
-          cost: 0,
-          duration_ms: Date.now() - startTime,
           complexity: 'high'
         })
       }

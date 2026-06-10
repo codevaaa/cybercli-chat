@@ -31,6 +31,7 @@ const MENU_GROUPS = [
       img: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=400&h=300'
     },
     items: [
+      { label: 'MADHAV Engine', href: '/madhav', desc: 'Unstoppable 12-Model AI Cascade', icon: 'Sparkles' },
       { label: 'CyberCoder CLI', href: '/product', desc: 'Terminal AI coding assistant - Better than Claude Code', icon: 'Terminal' },
       { label: 'Codeva', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
       { label: 'Kali_Kal Mode', href: '/kali-kal', desc: 'Uncensored Cyber AI Engine', icon: 'Terminal' },
@@ -203,6 +204,7 @@ export default function Navbar() {
   const subNavItems = [
     { label: 'Overview', href: '/' },
     { label: 'Features', href: '/features' },
+    { label: 'MADHAV Engine', href: '/madhav' },
     { label: 'Models', href: '/models' },
     { label: 'Council Mode', href: '/council-mode' },
     { label: 'CyberCoder CLI', href: '/product' },
@@ -285,10 +287,10 @@ export default function Navbar() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.98 }}
                       transition={{ duration: 0.2, ease: 'easeOut' }}
-                      className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 ${group.featured ? 'w-[640px]' : group.columns === 2 ? 'w-[500px]' : 'w-80'} bg-[#0a0a0f]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_24px_50px_rgba(0,0,0,0.8)] overflow-hidden flex`}
+                      className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 ${(group.featured && group.columns === 2) ? 'w-[800px]' : group.featured ? 'w-[640px]' : group.columns === 2 ? 'w-[500px]' : 'w-80'} bg-[#0a0a0f]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_24px_50px_rgba(0,0,0,0.8)] overflow-hidden flex`}
                     >
                       {/* Left: Link Grid */}
-                      <div className={`p-3 w-full grid ${group.columns === 2 && !group.featured ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5 flex-1`}>
+                      <div className={`p-3 w-full grid ${group.columns === 2 ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5 flex-1`}>
                         {group.items.map((item) => {
                           const IconComponent = ICON_MAP[item.icon]
                           return (

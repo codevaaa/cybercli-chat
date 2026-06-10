@@ -30,9 +30,51 @@ export const checkTokenLimit = async (req, res, next) => {
     const used = analytics.quota.tokens_used_this_month;
     const limit = analytics.quota.monthly_token_limit;
     const payAsYouGo = analytics.quota.pay_as_you_go_enabled;
+    const userPlan = analytics.quota.plan || 'free';
 
-    // Check if limit is reached
-    if (used >= limit && !payAsYouGo) {
+    // Daily Request Limit Check
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dailyEntry = analytics.daily_usage?.find(d => 
+      new Date(d.date).getTime() === today.getTime()
+    );
+    const dailyRequests = dailyEntry ? dailyEntry.requests_count : 0;
+
+    const FREE_DAILY_LIMIT = 50;
+    
+    if (userPlan === 'free' && dailyRequests >= FREE_DAILY_LIMIT) {
+      const resetTime = new Date(today);
+      resetTime.setDate(resetTime.getDate() + 1);
+      
+      res.setHeader('X-RateLimit-Limit', FREE_DAILY_LIMIT);
+      res.setHeader('X-RateLimit-Remaining', 0);
+      res.setHeader('X-RateLimit-Reset', Math.floor(resetTime.getTime() / 1000));
+      
+      return res.status(429).json({
+        error: {
+          status: 429,
+          message: 'Daily request limit exceeded. Upgrade your plan or wait until tomorrow.',
+          code: 'DAILY_LIMIT_EXCEEDED',
+          retry_after_seconds: Math.floor((resetTime.getTime() - Date.now()) / 1000)
+        }
+      });
+    }
+
+    // Set Rate Limit Headers for Free users
+    if (userPlan === 'free') {
+      const resetTime = new Date(today);
+      resetTime.setDate(resetTime.getDate() + 1);
+      res.setHeader('X-RateLimit-Limit', FREE_DAILY_LIMIT);
+      res.setHeader('X-RateLimit-Remaining', Math.max(0, FREE_DAILY_LIMIT - dailyRequests));
+      res.setHeader('X-RateLimit-Reset', Math.floor(resetTime.getTime() / 1000));
+    } else {
+       // Pro/Enterprise users
+       res.setHeader('X-RateLimit-Limit', 'Unlimited');
+       res.setHeader('X-RateLimit-Remaining', 'Unlimited');
+    }
+
+    // Check if monthly token limit is reached
+    if (used >= limit && !payAsYouGo && userPlan !== 'enterprise') {
       return res.status(403).json({
         error: 'Monthly token limit reached.',
         code: 'QUOTA_EXCEEDED',

@@ -574,23 +574,23 @@ node daemon.js --key=sk_cyber_live_YOUR_API_KEY`}</code>
                 <tbody className="divide-y divide-border-subtle">
                   <tr>
                     <td className="p-3 font-semibold text-foreground-primary">API Request Rate Limit</td>
-                    <td className="p-3">50 requests / hour</td>
-                    <td className="p-3 text-accent font-bold">500 requests / hour</td>
+                    <td className="p-3">50 requests / day</td>
+                    <td className="p-3 text-accent font-bold">Unlimited (PAYG)</td>
                   </tr>
                   <tr>
                     <td className="p-3 font-semibold text-foreground-primary">Available Models</td>
-                    <td className="p-3">Gemini 2.5 Flash, LLaMA 3.1 8B</td>
-                    <td className="p-3">Gemini 2.5 Pro, LLaMA 3.1 70b, Council Mode</td>
+                    <td className="p-3">MADHAV Engine (Standard Load)</td>
+                    <td className="p-3">MADHAV Engine (High Priority Load)</td>
                   </tr>
                   <tr>
-                    <td className="p-3 font-semibold text-foreground-primary">CLI Daemon Access</td>
+                    <td className="p-3 font-semibold text-foreground-primary">B2B Developer API Access</td>
                     <td className="p-3 text-red-500 font-medium">Disabled</td>
-                    <td className="p-3 text-green-600 dark:text-green-400 font-semibold">Enabled</td>
+                    <td className="p-3 text-green-600 dark:text-green-400 font-semibold">Enabled (Cursor / Claude Code)</td>
                   </tr>
                   <tr>
-                    <td className="p-3 font-semibold text-foreground-primary">Unlimited TTS (Voices)</td>
-                    <td className="p-3">Standard Gemini TTS only</td>
-                    <td className="p-3">25+ premium ElevenLabs voices</td>
+                    <td className="p-3 font-semibold text-foreground-primary">Pricing</td>
+                    <td className="p-3">$0/mo</td>
+                    <td className="p-3">Pro ($15/mo), Team ($40/mo), Enterprise (Custom)</td>
                   </tr>
                 </tbody>
               </table>

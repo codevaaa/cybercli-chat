@@ -53,6 +53,7 @@ import ExtensionDocsPage from '@pages/public/ExtensionDocsPage'
 import CliLoginPage from '@pages/public/CliLoginPage'
 import CliSubscribePage from '@pages/public/CliSubscribePage'
 import KaliKalPage from '@pages/public/KaliKalPage'
+import MadhavPage from '@pages/public/MadhavPage'
 
 import SignupPage from '@pages/auth/SignupPage'
 import LoginPage from '@pages/auth/LoginPage'
@@ -84,7 +85,7 @@ const PUBLIC_PATHS = [
   '/product', '/login', '/subscribe', '/council-mode',
   '/legal/consumer-terms', '/legal/commercial-terms', '/legal/privacy', '/legal/aup',
   '/responsible-disclosure-policy', '/trust', '/research', '/company', '/usage-limit-best-practices',
-  '/kali-kal', '/kalikal', '/kali'
+  '/kali-kal', '/kalikal', '/kali', '/madhav'
 ]
 const AUTH_PATHS = [
   '/auth/signup', '/auth/login', '/auth/forgot-password',
@@ -145,6 +146,7 @@ function App() {
           <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
           <Route path="/features" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
           <Route path="/features/:slug" element={<PublicLayout><FeatureDetailPage /></PublicLayout>} />
+          <Route path="/madhav" element={<PublicLayout><MadhavPage /></PublicLayout>} />
           <Route path="/models" element={<PublicLayout><ModelsPage /></PublicLayout>} />
           <Route path="/models/*" element={<PublicLayout><ModelDetailPage /></PublicLayout>} />
           <Route path="/pricing" element={<PublicLayout><PricingPage /></PublicLayout>} />

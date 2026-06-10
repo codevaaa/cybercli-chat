@@ -534,13 +534,13 @@ function ModelCard({ model, index }) {
         <LiveDot />
         <div className="flex gap-2">
           <Link
-            to={`/models/${model.id}`}
+            to={model.name === 'Madhav' ? '/madhav' : `/models/${model.id}`}
             className="px-3 py-2 rounded-xl text-xs font-semibold border border-white/[0.06] text-gray-400 hover:text-white hover:bg-white/[0.03] transition-colors"
           >
             Details
           </Link>
           <Link
-            to="/chat"
+            to={model.name === 'Madhav' ? '/madhav' : '/chat'}
             className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl text-white transition-all hover:shadow-[0_0_15px_rgba(124,58,237,0.3)]"
               style={{
                 background: isEnt ? 'linear-gradient(135deg, #F59E0B, #D97757)' : isPro ? 'linear-gradient(135deg, #D97757, #B85D3D)' : 'linear-gradient(135deg, #4B5563, #1F2937)',
