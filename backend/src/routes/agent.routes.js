@@ -47,6 +47,7 @@ router.post('/complete', async (req, res, next) => {
 
     // Map Codeva friendly names to gateway model ids
     const MODEL_NAME_MAP = {
+      'ravan': 'codeva-ravan-v1',
       'abhimanyu': 'cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast',
       'madhav': 'llm7/deepseek-v3.1:671b-terminus',
       'yudhishthir': 'nvidia/llama-3.1-nemotron-70b',
@@ -140,6 +141,7 @@ router.get('/models', async (req, res) => {
 
   const models = [
     { id: 'auto', name: 'Auto (recommended)', description: 'Routes to the best model for the task', tier: 'fast' },
+    { id: 'codeva/ravan', name: 'Ravan', description: 'God-Tier Brute Force Coder (Claude Fable 5)', tier: 'reasoning' },
     { id: 'codeva/abhimanyu', name: 'Abhimanyu (Default)', description: 'The All-Rounder Prodigy (Cloudflare 70B + FLUX)', tier: 'fast' },
     { id: 'codeva/madhav', name: 'Madhav', description: 'Supreme intelligence — deep reasoning (Opus tier)', tier: 'reasoning' },
     { id: 'codeva/yudhishthir', name: 'Yudhishthir', description: 'Rules and alignment (Sonnet tier)', tier: 'reasoning' },

@@ -34,6 +34,7 @@ import { Tooltip } from '../../components/ui/Tooltip.jsx'
 
 const MODELS = [
   { id: 'codeva/abhimanyu',                    name: 'Abhimanyu (Default)',  tag: 'Abhimanyu', color: '#EC4899', desc: 'The All-Rounder Prodigy (Cloudflare 70B + FLUX)', kali: false },
+  { id: 'codeva-ravan-v1',                     name: 'Ravan',                tag: 'Ravan',     color: '#EF4444', desc: 'God-Tier brute force coder. Unimaginable coding power and elite intelligence.', kali: false },
   { id: 'opencode/deepseek-v4-pro',            name: 'Madhav',               tag: 'Madhav',    color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
   { id: 'groq/llama-3.1-8b',                   name: 'Arjun',                tag: 'Arjun',     color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise.', kali: false },
 ]
@@ -5132,7 +5133,7 @@ export default function ChatPage() {
                   ))}
                 </div>
               ) : (
-                <a href="/" className="flex items-center gap-2.5">
+                <Link to="/" className="flex items-center gap-2.5">
                   <motion.div
                     className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ background: 'rgba(217,119,87,0.15)' }}
@@ -5143,7 +5144,7 @@ export default function ChatPage() {
                     <span className="font-semibold text-sm leading-tight text-foreground-primary">Codeva</span>
                     <span className="text-[9px] text-foreground-muted leading-none tracking-wide">by Codeva</span>
                   </div>
-                </a>
+                </Link>
               )}
               <button
                 onClick={() => setSidebarOpen(false)}
@@ -5544,9 +5545,9 @@ export default function ChatPage() {
               >
                 <Menu className="w-4 h-4" />
               </button>
-              <a href="/" className="flex items-center group transition-opacity hover:opacity-90">
+              <Link to="/" className="flex items-center group transition-opacity hover:opacity-90">
                 <CodevaWordmark size={24} />
-              </a>
+              </Link>
             </div>
           )}
 
