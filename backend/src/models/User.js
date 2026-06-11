@@ -18,6 +18,10 @@ const userSchema = new mongoose.Schema({
   provider: { type: String, default: 'email' }, // email | google | etc.
 
   plan: { type: String, enum: ['free', 'pro', 'max', 'team', 'enterprise'], default: 'free' },
+  
+  // API & Billing
+  credits: { type: Number, default: 1000 },
+  totalUsedTokens: { type: Number, default: 0 },
 
   // Moderation / abuse handling
   status: { type: String, enum: ['active', 'banned', 'suspended'], default: 'active', index: true },

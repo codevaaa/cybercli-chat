@@ -76,6 +76,7 @@ import ProjectsPage from '@pages/app/ProjectsPage'
 import UsagePage from '@pages/app/UsagePage'
 import WorkflowsPage from '@pages/app/WorkflowsPage'
 import DiscoverPage from '@pages/app/DiscoverPage'
+import PlaygroundPage from '@pages/app/PlaygroundPage'
 
 const PUBLIC_PATHS = [
   '/', '/features', '/models', '/pricing', '/contact', '/about',
@@ -111,13 +112,8 @@ function App() {
 
   const navigate = useNavigate()
 
-  // Redirect logged-in users from root to chat, and prevent desktop app from showing marketing pages
+  // Prevent desktop app from showing marketing pages
   useEffect(() => {
-    if (session && location.pathname === '/') {
-      navigate('/chat', { replace: true })
-      return
-    }
-
     if (window.electronAPI) {
       const isMarketingPath = PUBLIC_PATHS.includes(location.pathname) && !location.pathname.startsWith('/auth')
       if (isMarketingPath) {
@@ -225,6 +221,7 @@ function App() {
           <Route path="/usage" element={<ProtectedRoute><UsagePage /></ProtectedRoute>} />
           <Route path="/workflows" element={<ProtectedRoute><WorkflowsPage /></ProtectedRoute>} />
           <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
+          <Route path="/playground" element={<ProtectedRoute><PlaygroundPage /></ProtectedRoute>} />
         </Routes>
         </ErrorBoundary>
       </main>

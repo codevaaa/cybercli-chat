@@ -50,6 +50,18 @@ const apiKeySchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  permissions: {
+    type: [String],
+    default: ['chat', 'completions']
+  },
+  rateLimit: {
+    type: Number,
+    default: 60 // requests per minute
+  },
+  expires_at: {
+    type: Date,
+    default: null
+  }
 })
 
 /** Hash a raw API key into its stored representation. */
@@ -59,15 +71,15 @@ apiKeySchema.statics.hashKey = function hashKey(rawKey) {
 
 /**
  * Generate a fresh key, returning both the one-time plaintext value and the
- * persisted metadata fields. Format: sk_cyber_<48 hex chars>.
+ * persisted metadata fields. Format: sk_codeva_<48 hex chars>.
  */
 apiKeySchema.statics.generate = function generate() {
   const randomHex = crypto.randomBytes(24).toString('hex')
-  const rawKey = `sk_cyber_${randomHex}`
+  const rawKey = `sk-codeva-${randomHex}`
   return {
     rawKey,
     key_hash: this.hashKey(rawKey),
-    key_prefix: rawKey.slice(0, 14), // sk_cyber_ + 5 chars
+    key_prefix: rawKey.slice(0, 15), // sk-codeva- + 5 chars
     last4: rawKey.slice(-4),
   }
 }
