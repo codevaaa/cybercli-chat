@@ -5,7 +5,7 @@ import {
   Sparkles, Cpu, CreditCard, History, 
   BookOpen, Terminal, Rss, Gift, 
   Building2, Briefcase, Mail, Bot, Code2,
-  FolderOpen, Layers, Globe, Brain
+  FolderOpen, Layers, Globe, Brain, Flame
 } from 'lucide-react'
 import { useAuthStore } from '@stores/authStore.js'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -17,7 +17,7 @@ const ICON_MAP = {
   Sparkles, Cpu, CreditCard, History,
   BookOpen, Terminal, Rss, Gift,
   Building2, Briefcase, Mail, Bot, Code2,
-  FolderOpen, Layers, Globe, Brain, MessageSquare
+  FolderOpen, Layers, Globe, Brain, MessageSquare, Flame
 }
 
 const MENU_GROUPS = [
@@ -32,6 +32,7 @@ const MENU_GROUPS = [
     },
     items: [
       { label: 'MADHAV Engine', href: '/madhav', desc: 'Unstoppable 12-Model AI Cascade', icon: 'Sparkles' },
+      { label: 'RAVAN Engine', href: '/ravan', desc: '10-Headed Dashanan Architecture', icon: 'Flame' },
       { label: 'CyberCoder CLI', href: '/product', desc: 'Terminal AI coding assistant - Better than Claude Code', icon: 'Terminal' },
       { label: 'Codeva', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
       { label: 'Kali_Kal Mode', href: '/kali-kal', desc: 'Uncensored Cyber AI Engine', icon: 'Terminal' },
@@ -205,6 +206,7 @@ export default function Navbar() {
     { label: 'Overview', href: '/' },
     { label: 'Features', href: '/features' },
     { label: 'MADHAV Engine', href: '/madhav' },
+    { label: 'RAVAN Engine', href: '/ravan' },
     { label: 'Models', href: '/models' },
     { label: 'Council Mode', href: '/council-mode' },
     { label: 'CyberCoder CLI', href: '/product' },
