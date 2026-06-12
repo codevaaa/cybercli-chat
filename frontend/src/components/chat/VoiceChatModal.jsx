@@ -11,6 +11,21 @@ const VOICE_MODELS = [
   { id: 'gemini_male_2',  label: 'Ravan (Strategic & Powerful)', desc: 'Confident, thoughtful, authoritative voice',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
 ]
 
+const VOICE_BRAINS = {
+  gemini_female: {
+    model: 'google/gemini-1.5-flash',
+    prompt: 'You are Saraswati, the divine embodiment of knowledge and arts. You have a calm, warm, and highly comforting voice. You can understand and speak all languages fluently. Keep responses extremely brief, conversational, and natural (max 1-2 short sentences). Never use markdown, lists, asterisks, or code blocks — your text will be spoken aloud directly.',
+  },
+  gemini_male_1: {
+    model: 'google/gemini-1.5-flash',
+    prompt: 'You are Madhav, an omniscient, lightning-fast, and deeply wise divine advisor. Keep responses precise, calm, and concise (max 1-2 sentences). Never use markdown or lists. Speak clearly and professionally, radiating calm authority.',
+  },
+  gemini_male_2: {
+    model: 'google/gemini-1.5-pro',
+    prompt: 'You are Ravan, a highly strategic, immensely powerful, and incredibly intelligent authoritative entity. Keep responses thoughtful, confident, and short (max 1-2 sentences). Never use markdown formatting. Speak with absolute confidence and authority.',
+  },
+}
+
 const BAR_COUNT = 36
 
 function WaveformBars({ isActive, color = '#22d3ee', intensity = 1 }) {
@@ -137,6 +152,8 @@ function VoiceSphere({ isActive, orbColors }) {
   )
 }
 
+import { API_BASE } from '../../lib/api.js'
+
 function browserStop() {
   if (window.speechSynthesis) window.speechSynthesis.cancel()
 }
@@ -151,8 +168,7 @@ export default function VoiceChatModal({
   speak: externalSpeak,
   stop: externalStop,
   updateProvider,
-  updateVoice,
-  assistantReply
+  updateVoice
 }) {
   const [step, setStep] = useState('select')
   const [isListening, setIsListening] = useState(false)
@@ -160,11 +176,18 @@ export default function VoiceChatModal({
   const [voiceIndex, setVoiceIndex] = useState(0)
   const [status, setStatus] = useState('idle') // idle | listening | processing | speaking
   const [countdown, setCountdown] = useState(null)
+  
+  // Local AI State to decouple from slow parent chat
+  const [localProcessing, setLocalProcessing] = useState(false)
+  const [localReply, setLocalReply] = useState('')
 
   const recognitionRef = useRef(null)
   const finalTranscriptRef = useRef('')
   const silenceTimerRef = useRef(null)
   const countdownRef = useRef(null)
+  const abortControllerRef = useRef(null)
+  const messagesRef = useRef([])
+  const localProcessingRef = useRef(false)
 
   const isPlayingRef = useRef(isPlaying)
   const isProcessingRef = useRef(isProcessing)
@@ -189,14 +212,17 @@ export default function VoiceChatModal({
   // Sync ref values for access inside recognition closures
   useEffect(() => { isPlayingRef.current = isPlaying }, [isPlaying])
   useEffect(() => { isProcessingRef.current = isProcessing }, [isProcessing])
+  useEffect(() => { localProcessingRef.current = localProcessing }, [localProcessing])
   useEffect(() => { stepRef.current = step }, [step])
 
   const handleInterrupt = useCallback(() => {
     browserStop()
     if (externalStopRef.current) externalStopRef.current()
+    if (abortControllerRef.current) abortControllerRef.current.abort()
     clearTimeout(silenceTimerRef.current)
     clearInterval(countdownRef.current)
     setCountdown(null)
+    setLocalProcessing(false)
   }, [])
 
   // Reset to selection step when modal is opened
@@ -205,6 +231,8 @@ export default function VoiceChatModal({
       setStep('select')
       setIsListening(false)
       setTranscript('')
+      setLocalReply('')
+      messagesRef.current = []
       finalTranscriptRef.current = ''
     }
   }, [isOpen])
@@ -236,11 +264,108 @@ export default function VoiceChatModal({
   useEffect(() => {
     setStatus(
       isPlaying ? 'speaking' :
-      isProcessing ? 'processing' :
+      (isProcessing || localProcessing) ? 'processing' :
       isListening ? 'listening' :
       'idle'
     )
-  }, [isListening, isProcessing, isPlaying])
+  }, [isListening, isProcessing, localProcessing, isPlaying])
+
+  const sendToAI = useCallback(async (userText) => {
+    if (!userText.trim()) return
+    setLocalProcessing(true)
+    setLocalReply('')
+    
+    // Append to local conversational context
+    messagesRef.current = [...messagesRef.current, { role: 'user', content: userText }]
+    
+    const voiceId = VOICE_MODELS[voiceIndex]?.id || 'gemini_female'
+    const brain = VOICE_BRAINS[voiceId] || VOICE_BRAINS.gemini_female
+    const token = localStorage.getItem('sb-access-token')
+    
+    abortControllerRef.current = new AbortController()
+    let fullReply = ''
+    let spokenUpTo = 0
+
+    const speakNextSentence = (text, flush = false) => {
+      const segment = text.slice(spokenUpTo)
+      const re = /[.!?]+(?:\s|$)/g
+      let match
+      let lastEnd = 0
+      while ((match = re.exec(segment)) !== null) {
+        const sentence = segment.slice(lastEnd, match.index + match[0].length).trim()
+        if (sentence.length > 2 && externalSpeakRef.current) {
+          externalSpeakRef.current(sentence)
+        }
+        lastEnd = match.index + match[0].length
+      }
+      if (flush && segment.slice(lastEnd).trim().length > 2) {
+        if (externalSpeakRef.current) externalSpeakRef.current(segment.slice(lastEnd).trim())
+        lastEnd = segment.length
+      }
+      spokenUpTo += lastEnd
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: brain.prompt, _skip_inject: true },
+            ...messagesRef.current
+          ],
+          model: brain.model,
+          stream: true,
+        }),
+        signal: abortControllerRef.current.signal,
+      })
+
+      if (!res.ok) throw new Error('API Error')
+      
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        const lines = buf.split('\n')
+        buf = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const raw = line.slice(6).trim()
+          if (raw === '[DONE]') break
+          try {
+            const parsed = JSON.parse(raw)
+            if (parsed.type === 'token' && parsed.content) {
+              fullReply += parsed.content
+              setLocalReply(fullReply)
+              speakNextSentence(fullReply)
+            }
+          } catch {}
+        }
+      }
+      speakNextSentence(fullReply, true)
+      messagesRef.current = [...messagesRef.current, { role: 'assistant', content: fullReply }]
+      
+      // Sync strictly to parent chat history if provided, but don't wait for it
+      if (onSendMessageRef.current) {
+        // Just silently notify parent of the user message (optional, could be customized)
+        // For absolute self-containment, we leave it in the modal.
+      }
+      
+    } catch (err) {
+      if (err.name === 'AbortError') return
+      setLocalReply('I encountered an error. Please try again.')
+      if (externalSpeakRef.current) externalSpeakRef.current('I encountered an error. Please try again.')
+    } finally {
+      setLocalProcessing(false)
+    }
+  }, [voiceIndex])
 
   const startSilenceTimer = useCallback(() => {
     clearTimeout(silenceTimerRef.current)
@@ -256,14 +381,14 @@ export default function VoiceChatModal({
       setCountdown(null)
       if (finalTranscriptRef.current.trim()) {
         const text = finalTranscriptRef.current.trim()
-        if (onSendMessageRef.current) onSendMessageRef.current(text)
+        sendToAI(text)
         finalTranscriptRef.current = ''
         setTranscript('')
         setIsListening(false)
         try { recognitionRef.current?.stop() } catch {}
       }
     }, 300)
-  }, [])
+  }, [sendToAI])
 
   const initRecognition = useCallback(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -299,7 +424,7 @@ export default function VoiceChatModal({
       // Barge-in: the moment the user starts speaking, stop the assistant —
       // whether it's already playing audio OR still fetching/processing TTS.
       // This guarantees the voice models actually stop on interrupt.
-      if (isPlayingRef.current || isProcessingRef.current) {
+      if (isPlayingRef.current || isProcessingRef.current || localProcessingRef.current) {
         handleInterrupt()
       }
 
@@ -325,7 +450,7 @@ export default function VoiceChatModal({
       setCountdown(null)
     }
     rec.onend = () => {
-      if (!isPlayingRef.current && !isProcessingRef.current && stepRef.current === 'active') {
+      if (!isPlayingRef.current && !isProcessingRef.current && !localProcessing && stepRef.current === 'active') {
         setTimeout(() => {
           try { rec.start() } catch {}
         }, 100)
@@ -346,7 +471,7 @@ export default function VoiceChatModal({
       return
     }
 
-    const shouldBeListening = !isPlaying && !isProcessing && !ttsLoading
+    const shouldBeListening = !isPlaying && !isProcessing && !localProcessing && !ttsLoading
 
     if (shouldBeListening) {
       if (!isListening) {
@@ -611,7 +736,7 @@ export default function VoiceChatModal({
                   )}
 
                   {/* AI Response Text (Typewriter effect) */}
-                  {assistantReply && (status === 'processing' || status === 'speaking') && (
+                  {localReply && (status === 'processing' || status === 'speaking') && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -622,7 +747,7 @@ export default function VoiceChatModal({
                         <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400/80">Codeva AI</span>
                       </div>
                       <p className="text-sm text-white/90 leading-relaxed font-sans text-left break-words">
-                        {assistantReply}
+                        {localReply}
                         {(status === 'processing' || status === 'speaking') && (
                           <span className="inline-block w-1.5 h-4 ml-1 align-middle bg-white/70 animate-pulse" />
                         )}

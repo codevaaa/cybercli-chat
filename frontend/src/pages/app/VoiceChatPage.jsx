@@ -13,17 +13,17 @@ const VOICE_MODELS = [
 ]
 
 const VOICE_BRAINS = {
-  gemini_flash: {
-    model: 'gemini/gemini-2.5-flash',
-    prompt: 'You are Sahadeva, a warm, friendly conversational AI voice assistant. Keep responses brief and natural (max 1-2 short sentences). Never use markdown, lists, asterisks, or code blocks — your text will be spoken aloud.',
+  gemini_female: {
+    model: 'google/gemini-1.5-flash',
+    prompt: 'You are Saraswati, the divine embodiment of knowledge and arts. You have a calm, warm, and highly comforting voice. You can understand and speak all languages fluently. Keep responses extremely brief, conversational, and natural (max 1-2 short sentences). Never use markdown, lists, asterisks, or code blocks — your text will be spoken aloud directly.',
   },
-  gemini_pro: {
-    model: 'gemini/gemini-2.5-pro',
-    prompt: 'You are Sahadeva Pro, an advanced analytical voice assistant. Keep responses precise and concise (max 1-2 sentences). Never use markdown or lists. Speak clearly and professionally.',
+  gemini_male_1: {
+    model: 'google/gemini-1.5-flash',
+    prompt: 'You are Madhav, an omniscient, lightning-fast, and deeply wise divine advisor. Keep responses precise, calm, and concise (max 1-2 sentences). Never use markdown or lists. Speak clearly and professionally, radiating calm authority.',
   },
-  mistral_large: {
-    model: 'mistral/mistral-large-latest',
-    prompt: 'You are Vayu, a technical and wise strategic advisor. Keep responses thoughtful and short (max 1-2 sentences). Never use markdown formatting. Speak with confidence and authority.',
+  gemini_male_2: {
+    model: 'google/gemini-1.5-pro',
+    prompt: 'You are Ravan, a highly strategic, immensely powerful, and incredibly intelligent authoritative entity. Keep responses thoughtful, confident, and short (max 1-2 sentences). Never use markdown formatting. Speak with absolute confidence and authority.',
   },
 }
 
@@ -163,8 +163,8 @@ export default function VoiceChatPage() {
     // Stop any ongoing recognition while AI thinks
     try { recognitionRef.current?.stop() } catch {}
 
-    const voiceId = VOICE_MODELS[voiceIndexRef.current]?.id || 'gemini_flash'
-    const brain = VOICE_BRAINS[voiceId] || VOICE_BRAINS.gemini_flash
+    const voiceId = VOICE_MODELS[voiceIndexRef.current]?.id || 'gemini_female'
+    const brain = VOICE_BRAINS[voiceId] || VOICE_BRAINS.gemini_female
 
     // Add user turn to history
     messagesRef.current = [...messagesRef.current, { role: 'user', content: userText }]
