@@ -67,6 +67,7 @@ console.log('Supabase Key:', process.env.SUPABASE_SERVICE_KEY ? 'SET' : 'NOT SET
 console.log('MongoDB URI:', process.env.MONGODB_URI ? 'SET' : 'NOT SET')
 
 const app = express()
+app.set('trust proxy', 1) // Trust first proxy (Render/Vercel) to fix express-rate-limit X-Forwarded-For issue
 const PORT = process.env.PORT || 3000
 
 // Security middleware — hardened CSP + additional headers
