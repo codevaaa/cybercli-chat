@@ -7,9 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Tooltip } from '../../components/ui/Tooltip.jsx'
 
 const VOICE_MODELS = [
-  { id: 'gemini_flash',  label: 'Sahadeva (Gemini Flash)', desc: 'AI Native Voice — Fast & Friendly', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
-  { id: 'gemini_pro',    label: 'Sahadeva Pro (Gemini Pro)', desc: 'Advanced AI Voice — Analytical', color: '#8B5CF6', orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'] },
-  { id: 'mistral_large', label: 'Vayu (Mistral Large)', desc: 'Technical & Expressive Advisor',    color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
+  { id: 'gemini_female',  label: 'Saraswati (Fast & Natural)', desc: 'Warm, highly responsive divine voice', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
+  { id: 'gemini_male_1',  label: 'Madhav (Omniscient)', desc: 'Lightning-fast, precise, warm divine voice',  color: '#8B5CF6', orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'] },
+  { id: 'gemini_male_2',  label: 'Ravan (Strategic & Powerful)', desc: 'Confident, thoughtful, authoritative voice',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
 ]
 
 const VOICE_BRAINS = {
@@ -296,8 +296,9 @@ export default function VoiceChatPage() {
     }
 
     rec.onresult = (event) => {
-      // If AI is speaking, interrupt it
-      if (isPlayingRef.current) {
+      // If AI is speaking or thinking, interrupt it INSTANTLY
+      if (isPlayingRef.current || isProcessingRef.current) {
+        abortControllerRef.current?.abort()
         stop()
         clearTimeout(silenceTimerRef.current)
         clearInterval(countdownRef.current)
@@ -309,10 +310,10 @@ export default function VoiceChatPage() {
         const t = event.results[i][0].transcript
         if (event.results[i].isFinal) {
           finalTranscriptRef.current += t
-          // Start silence countdown
+          // Start silence countdown (snappier, 400ms)
           clearTimeout(silenceTimerRef.current)
           clearInterval(countdownRef.current)
-          let remaining = 0.8
+          let remaining = 0.4
           setCountdown(remaining)
           countdownRef.current = setInterval(() => {
             remaining -= 0.1
@@ -327,7 +328,7 @@ export default function VoiceChatPage() {
               setTranscript('')
               sendToAI(toSend)
             }
-          }, 800)
+          }, 400)
         } else {
           interim += t
           // Cancel countdown while still speaking
@@ -517,7 +518,7 @@ export default function VoiceChatPage() {
               >
                 <div className="text-center">
                   <h2 className="text-2xl font-bold text-white tracking-tight">Choose your voice partner</h2>
-                  <p className="text-xs text-gray-400 mt-1">Select a persona to begin hands-free conversation.</p>
+                  <p className="text-xs text-gray-400 mt-1">Tap the sphere below to begin hands-free conversation.</p>
                 </div>
 
                 {/* Voice carousel */}
@@ -529,9 +530,12 @@ export default function VoiceChatPage() {
                     </div>
                   </button>
 
-                  <div className="flex flex-col items-center justify-center w-2/4">
-                    <VoiceSphere isActive={true} orbColors={selectedVoice.orbColors} />
-                    <div className="text-center h-12 mt-5">
+                  <div className="flex flex-col items-center justify-center w-2/4 relative group cursor-pointer" onClick={handleStartSession}>
+                    <div className="absolute inset-0 bg-white/5 rounded-full blur-2xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="scale-[1.15] mb-2 hover:scale-[1.2] transition-transform">
+                      <VoiceSphere isActive={true} orbColors={selectedVoice.orbColors} />
+                    </div>
+                    <div className="text-center h-12 mt-6">
                       <h3 className="text-lg font-bold text-white">{selectedVoice.label}</h3>
                       <p className="text-xs text-white/50 mt-0.5">{selectedVoice.desc}</p>
                     </div>
@@ -546,17 +550,10 @@ export default function VoiceChatPage() {
                 </div>
 
                 {error && (
-                  <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2 text-center max-w-xs">
+                  <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2 text-center max-w-xs mt-4">
                     {error}
                   </p>
                 )}
-
-                <button
-                  onClick={handleStartSession}
-                  className="w-full max-w-[200px] py-3 rounded-full font-bold text-black bg-white hover:bg-white/95 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg mt-2"
-                >
-                  Start Session
-                </button>
               </motion.div>
             ) : (
               <motion.div

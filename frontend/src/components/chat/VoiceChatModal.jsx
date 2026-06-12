@@ -6,9 +6,9 @@ import CodevaMark from '../ui/CodevaLogo.jsx'
 
 
 const VOICE_MODELS = [
-  { id: 'gemini_female',  label: 'Kushi (Fast & Natural)', desc: 'Warm, highly responsive human girl voice', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
-  { id: 'gemini_male_1',  label: 'Rudra (Fast JARVIS-like)', desc: 'Lightning-fast, precise, warm male voice',  color: '#8B5CF6', orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'] },
-  { id: 'gemini_male_2',  label: 'Sankalp (Fast & Expressive)', desc: 'Confident, thoughtful, warm human man voice',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
+  { id: 'gemini_female',  label: 'Saraswati (Fast & Natural)', desc: 'Warm, highly responsive divine voice', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
+  { id: 'gemini_male_1',  label: 'Madhav (Omniscient)', desc: 'Lightning-fast, precise, warm divine voice',  color: '#8B5CF6', orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'] },
+  { id: 'gemini_male_2',  label: 'Ravan (Strategic & Powerful)', desc: 'Confident, thoughtful, authoritative voice',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
 ]
 
 const BAR_COUNT = 36
@@ -473,8 +473,9 @@ export default function VoiceChatModal({
             {step === 'select' ? (
               <div className="w-full flex flex-col items-center gap-6">
                 {/* Header */}
-                <div className="text-center max-w-md">
-                  <h2 className="text-3xl font-bold text-white tracking-tight font-sans">Try voice mode for free</h2>
+                <div className="text-center mt-2 relative z-20">
+                  <h2 className="text-3xl font-extrabold text-white tracking-tight">Choose your partner</h2>
+                  <p className="text-sm text-gray-400 mt-2">Tap the sphere below to begin hands-free conversation.</p>
                 </div>
 
                 {/* Slider Carousel */}
@@ -491,12 +492,15 @@ export default function VoiceChatModal({
                     </div>
                   </div>
 
-                  {/* Center Voice Sphere & Details */}
-                  <div className="flex flex-col items-center justify-center w-2/4">
-                    {/* Cloudy sky visualizer sphere */}
-                    <VoiceSphere isActive={true} orbColors={selectedVoice.orbColors} />
-
-                    {/* Center label */}
+                  {/* Center Selected Voice */}
+                  <div 
+                    className="flex flex-col items-center justify-center w-2/4 relative z-20 cursor-pointer group"
+                    onClick={handleContinue}
+                  >
+                    <div className="absolute inset-0 bg-white/5 rounded-full blur-2xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="scale-[1.2] mb-4 hover:scale-[1.25] transition-transform">
+                      <VoiceSphere isActive={true} orbColors={selectedVoice.orbColors} />
+                    </div>
                     <div className="text-center h-14 mt-6">
                       <h3 className="text-xl font-bold text-white tracking-wide flex items-center justify-center gap-2">
                         {selectedVoice.label}
@@ -523,15 +527,7 @@ export default function VoiceChatModal({
                   </div>
                 </div>
 
-                {/* Continue Button */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleContinue}
-                  className="w-full max-w-[240px] py-3.5 rounded-full font-bold text-black bg-white hover:bg-white/95 transition-all shadow-lg hover:shadow-xl mt-6 flex items-center justify-center gap-2 relative z-20"
-                >
-                  <span>Continue</span>
-                </motion.button>
+                {/* Continue Button removed for instant tap-to-start */}
 
                 {/* Back to chat link */}
                 <button

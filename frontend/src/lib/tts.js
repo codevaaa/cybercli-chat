@@ -26,12 +26,18 @@ class TTSService {
     this.browserVoices = []
     this.geminiApiKey = null
 
-    // Track the currently playing audio + in-flight request so stop()/barge-in
-    // can immediately halt everything (this is what makes interrupt feel instant).
+    // Prefetching & Playback Queue
+    this.queue = []
+    this.isFetching = false
+    this.isPlaying = false
+
     this.activeAudio = null
     this.activeAudioUrl = null
-    this.activeController = null
+    this.activeFetchController = null
     this.stopped = false
+
+    // State callback
+    this.onStateChange = null
 
     // Load browser voices
     if ('speechSynthesis' in window) {
@@ -41,10 +47,19 @@ class TTSService {
     }
   }
 
+  _notifyState() {
+    if (this.onStateChange) {
+      const isActuallyPlaying = this.isPlaying || (this.queue.length > 0)
+      this.onStateChange({
+        isPlaying: isActuallyPlaying,
+        isLoading: this.isFetching && !this.isPlaying
+      })
+    }
+  }
+
   setProvider(provider) {
     if (TTS_PROVIDERS[provider]) {
       this.currentProvider = provider
-      // Set a default voice for the provider if none selected
       if (provider === 'gemini') {
         this.currentVoice = 'gemini_female'
       } else if (provider === 'browser' && this.browserVoices.length > 0) {
@@ -90,12 +105,10 @@ class TTSService {
     }))
   }
 
-  // Google Gemini TTS
-  async speakWithGemini(text) {
-    // A stop()/interrupt may have fired before this sentence started — bail out.
-    if (this.stopped) return
+  async fetchGeminiAudio(text) {
+    if (this.stopped) return null
     const controller = new AbortController()
-    this.activeController = controller
+    this.activeFetchController = controller
     try {
       const token = localStorage.getItem('sb-access-token')
       const clientKey = this.geminiApiKey || localStorage.getItem('client_gemini_api_key')
@@ -111,38 +124,26 @@ class TTSService {
         body: JSON.stringify({
           text,
           voice_id: this.currentVoice || 'gemini_female',
-          speed: 1.15, // Forced fast but natural human speed
+          speed: 1.15,
         }),
       })
 
-      if (!response.ok) {
-        throw new Error(`Gemini TTS API status ${response.status}`)
-      }
-
-      const audioBlob = await response.blob()
-      if (this.stopped) return // interrupted while the audio was downloading
-      return this.playAudio(audioBlob)
+      if (!response.ok) throw new Error(`Gemini TTS API status ${response.status}`)
+      return await response.blob()
     } catch (error) {
-      if (error?.name === 'AbortError' || this.stopped) return
-      console.error('Gemini TTS error:', error)
-      // Fallback to browser TTS, preserving the requested voice gender.
-      return this.speakWithBrowser(text)
+      if (error?.name === 'AbortError' || this.stopped) return null
+      console.error('Gemini TTS fetch error:', error)
+      throw error
     } finally {
-      if (this.activeController === controller) this.activeController = null
+      if (this.activeFetchController === controller) this.activeFetchController = null
     }
   }
 
-  /**
-   * Pick a browser voice that matches the requested gender so the Edge/browser
-   * fallback doesn't make a "female" agent sound male. We infer the desired
-   * gender from the selected Gemini voice id (…_female / …_male_*).
-   */
   pickBrowserVoice(voices) {
     if (!voices || voices.length === 0) return null
     const wantMale = /male/.test(this.currentVoice) && !/female/.test(this.currentVoice)
     const wantFemale = /female/.test(this.currentVoice)
 
-    // Common gendered voice-name hints across platforms (Windows/Edge/Chrome/macOS).
     const femaleHints = ['female', 'aoede', 'zira', 'aria', 'jenny', 'samantha', 'victoria', 'susan', 'hazel', 'eva', 'sonia', 'michelle', 'libby', 'fiona', 'tessa', 'karen', 'moira', 'serena', 'google uk english female']
     const maleHints = ['male', 'charon', 'puck', 'david', 'guy', 'mark', 'george', 'ryan', 'james', 'daniel', 'alex', 'fred', 'oliver', 'google uk english male']
 
@@ -154,7 +155,6 @@ class TTSService {
       let s = 0
       if (wantFemale && femaleHints.some(h => n.includes(h))) s += 10
       if (wantMale && maleHints.some(h => n.includes(h))) s += 10
-      // Penalize the opposite gender so we never cross over.
       if (wantFemale && maleHints.some(h => n.includes(h))) s -= 8
       if (wantMale && femaleHints.some(h => n.includes(h))) s -= 8
       if (prefersLang(v)) s += 3
@@ -166,57 +166,30 @@ class TTSService {
     return sorted[0] || voices[0]
   }
 
-  // Browser Native TTS (Web Speech API)
   async speakWithBrowser(text) {
     if (this.stopped) return
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (!('speechSynthesis' in window)) {
-        reject(new Error('Browser does not support speech synthesis'))
+        resolve()
         return
       }
 
-      // Cancel any ongoing speech
       window.speechSynthesis.cancel()
-
       const utterance = new SpeechSynthesisUtterance(text)
-
-      // Find a gender-appropriate voice (fixes the "all 3 sound male" fallback bug).
       const voices = window.speechSynthesis.getVoices()
       const selectedVoice = (this.currentProvider === 'browser'
         ? voices.find(v => v.name === this.currentVoice)
         : this.pickBrowserVoice(voices)) || voices[0]
-      if (selectedVoice) {
-        utterance.voice = selectedVoice
-      }
+      
+      if (selectedVoice) utterance.voice = selectedVoice
+      utterance.rate = this.currentProvider === 'gemini' ? 1.15 : this.currentSpeed
+      utterance.pitch = this.currentProvider === 'gemini' ? 1.0 : this.currentPitch
 
-      if (this.currentProvider === 'gemini') {
-        utterance.rate = 1.15 // Forced fast but natural human speed
-        utterance.pitch = 1.0 // Natural pitch
-      } else {
-        utterance.rate = this.currentSpeed
-        utterance.pitch = this.currentPitch
-      }
-
-      // Safety timeout: resolve if onend doesn't fire within expected duration
       const duration = Math.max(6000, text.length * 120)
-      const safetyTimeout = setTimeout(() => {
-        console.warn('Browser SpeechSynthesis safety timeout reached');
-        resolve()
-      }, duration)
+      const safetyTimeout = setTimeout(() => resolve(), duration)
 
-      utterance.onend = () => {
-        clearTimeout(safetyTimeout)
-        resolve()
-      }
-      utterance.onerror = (event) => {
-        clearTimeout(safetyTimeout)
-        // 'interrupted'/'canceled' are expected during barge-in — treat as resolve.
-        if (event.error === 'interrupted' || event.error === 'canceled' || this.stopped) {
-          resolve()
-        } else {
-          reject(new Error(event.error))
-        }
-      }
+      utterance.onend = () => { clearTimeout(safetyTimeout); resolve() }
+      utterance.onerror = () => { clearTimeout(safetyTimeout); resolve() }
 
       window.speechSynthesis.speak(utterance)
     })
@@ -224,51 +197,101 @@ class TTSService {
 
   async playAudio(audioBlob) {
     if (this.stopped) return
-    // Ensure browser treats the response as WAV audio regardless of server Content-Type header
     const wavBlob = new Blob([audioBlob], { type: 'audio/wav' })
     const audioUrl = URL.createObjectURL(wavBlob)
     const audio = new Audio(audioUrl)
     this.activeAudio = audio
     this.activeAudioUrl = audioUrl
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const cleanup = () => {
         URL.revokeObjectURL(audioUrl)
         if (this.activeAudio === audio) { this.activeAudio = null; this.activeAudioUrl = null }
       }
       audio.onended = () => { cleanup(); resolve() }
-      audio.onerror = () => { cleanup(); this.stopped ? resolve() : reject(new Error('Audio playback failed')) }
-      audio.play().catch((e) => { cleanup(); this.stopped ? resolve() : reject(e) })
+      audio.onerror = () => { cleanup(); resolve() }
+      audio.play().catch(() => { cleanup(); resolve() })
     })
   }
 
-  async speak(text) {
+  // Enqueues text and immediately pumps queue
+  speak(text) {
     if (!text || !text.trim()) return
-    // A fresh speak() clears the stopped flag so a new turn can play.
     this.stopped = false
+    this.queue.push({ text, blob: null, fetching: false, error: false })
+    this._notifyState()
+    this.pumpQueue()
+  }
 
-    switch (this.currentProvider) {
-      case 'gemini':
-        return this.speakWithGemini(text)
-      case 'browser':
-        return this.speakWithBrowser(text)
-      default:
-        return this.speakWithBrowser(text)
+  async pumpQueue() {
+    if (this.stopped) return
+
+    // 1. Prefetch Worker
+    if (!this.isFetching && this.currentProvider === 'gemini') {
+      this.isFetching = true
+      this._notifyState()
+      for (let i = 0; i < this.queue.length; i++) {
+        const item = this.queue[i]
+        if (!item.blob && !item.fetching && !item.error && !this.stopped) {
+          item.fetching = true
+          try {
+             item.blob = await this.fetchGeminiAudio(item.text)
+          } catch(e) {
+             item.error = true
+          }
+        }
+      }
+      this.isFetching = false
+      this._notifyState()
+    }
+
+    // 2. Playback Worker
+    if (!this.isPlaying && this.queue.length > 0 && !this.stopped) {
+      const item = this.queue[0]
+      
+      if (this.currentProvider === 'browser') {
+        this.isPlaying = true
+        this._notifyState()
+        this.queue.shift()
+        await this.speakWithBrowser(item.text)
+        this.isPlaying = false
+        this._notifyState()
+        this.pumpQueue()
+      } else {
+        if (item.blob) {
+          this.isPlaying = true
+          this._notifyState()
+          this.queue.shift()
+          await this.playAudio(item.blob)
+          this.isPlaying = false
+          this._notifyState()
+          this.pumpQueue()
+        } else if (item.error) {
+          // Fallback to browser
+          this.isPlaying = true
+          this._notifyState()
+          this.queue.shift()
+          await this.speakWithBrowser(item.text)
+          this.isPlaying = false
+          this._notifyState()
+          this.pumpQueue()
+        } else {
+          // Still fetching, wait and check again quickly
+          setTimeout(() => this.pumpQueue(), 20)
+        }
+      }
     }
   }
 
   stop() {
-    // Mark stopped FIRST so any in-flight async work bails out immediately.
     this.stopped = true
-
-    // Abort an in-flight TTS fetch (stops audio that hasn't started yet).
-    if (this.activeController) {
-      try { this.activeController.abort() } catch {}
-      this.activeController = null
+    this.queue = []
+    
+    if (this.activeFetchController) {
+      try { this.activeFetchController.abort() } catch {}
+      this.activeFetchController = null
     }
 
-    // Stop the active Gemini audio element (created via new Audio(), NOT in DOM —
-    // this is the bug that made interrupt fail to stop the voice).
     if (this.activeAudio) {
       try {
         this.activeAudio.pause()
@@ -280,13 +303,15 @@ class TTSService {
       this.activeAudioUrl = null
     }
 
-    // Stop browser speech synthesis.
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel()
     }
 
-    // Belt-and-suspenders: pause any <audio> elements that ARE in the DOM.
     document.querySelectorAll('audio').forEach(audio => { try { audio.pause() } catch {} })
+
+    this.isPlaying = false
+    this.isFetching = false
+    this._notifyState()
   }
 }
 
