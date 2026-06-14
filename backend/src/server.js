@@ -47,6 +47,7 @@ import v1Routes from './routes/v1.routes.js'
 import agentRoutes from './routes/agent.routes.js'
 import statusRoutes from './routes/status.routes.js'
 import orgRoutes from './routes/org.routes.js'
+import huntRoutes from './routes/hunt.routes.js'
 import http from 'http'
 import { WebSocketServer } from 'ws'
 import ApiKey from './models/ApiKey.js'
@@ -229,6 +230,7 @@ app.use('/api/v1/downloads', downloadsRoutes)
 app.use('/api/v1/agent', agentRoutes)
 app.use('/api/v1/status', statusRoutes)
 app.use('/api/v1/orgs', orgRoutes)
+app.use('/api/v1/hunt', huntRoutes)
 app.use('/v1', v1Routes)
 
 

@@ -33,6 +33,9 @@ const electronAPI = {
   // Landing → Main transition
   openMainWindow: () => ipcRenderer.invoke('landing:open-main'),
 
+  // Kali_Kal Bug Bounty Hunter window (MAX plan only)
+  openHunter: () => ipcRenderer.invoke('hunter:open'),
+
   // File system
   readFile: (path: string) => ipcRenderer.invoke('fs:read-file', path),
   writeFile: (path: string, content: string) => ipcRenderer.invoke('fs:write-file', path, content),

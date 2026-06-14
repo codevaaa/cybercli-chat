@@ -5169,7 +5169,7 @@ export default function ChatPage() {
 
             {/* Nav items */}
             <div className="px-2 pb-3 flex-shrink-0">
-              {NAV_ITEMS.filter(item => !!window.electronAPI ? ['search', 'projects', 'artifacts', 'customize'].includes(item.id) : true).map(item => (
+              {NAV_ITEMS.filter(item => !!window.electronAPI ? ['search', 'chats', 'projects', 'artifacts', 'kali_kal', 'voice', 'customize'].includes(item.id) : true).map(item => (
                 <button
                   key={item.id}
                   onClick={() => {
@@ -5203,6 +5203,44 @@ export default function ChatPage() {
                 </button>
               ))}
             </div>
+
+            <div className="border-t border-border-subtle my-1 mx-3 flex-shrink-0" />
+
+            {/* Bug Hunter button — Desktop MAX plan only */}
+            {!!window.electronAPI && (
+              <div className="px-3 pb-3 flex-shrink-0">
+                <button
+                  onClick={() => window.electronAPI?.openHunter?.()}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-bold transition-all group"
+                  style={{
+                    background: 'rgba(217,22,36,0.08)',
+                    border: '1px solid rgba(217,22,36,0.25)',
+                    color: '#ef4444',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(217,22,36,0.15)'
+                    e.currentTarget.style.boxShadow = '0 0 12px rgba(217,22,36,0.2)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'rgba(217,22,36,0.08)'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }}
+                >
+                  <span style={{ fontSize: 14 }}>💀</span>
+                  <span className="flex-1 text-left tracking-wide uppercase" style={{ fontSize: 11, letterSpacing: '0.1em' }}>Bug Hunter</span>
+                  <span style={{
+                    fontSize: 8,
+                    fontWeight: 'bold',
+                    padding: '1px 5px',
+                    borderRadius: 3,
+                    background: 'rgba(217,22,36,0.2)',
+                    color: 'rgba(239,68,68,0.7)',
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                  }}>MAX</span>
+                </button>
+              </div>
+            )}
 
             <div className="border-t border-border-subtle my-1 mx-3 flex-shrink-0" />
 

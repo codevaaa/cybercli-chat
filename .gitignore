@@ -45,3 +45,19 @@ coverage/
 # Sub-repos (managed separately)
 cybercoder/
 mobile/
+
+# Noise files
+*.mp3
+*.wav
+test_ravan.js
+backend/test_ravan.js
+noiz_*.mp3
+
+# Hunter engine Python cache
+hunter-engine/__pycache__/
+hunter-engine/**/__pycache__/
+hunter-engine/**/*.pyc
+hunter-engine/.claude/
+
+# E2B / hunt session temp data
+backend/src/services/hunt/sessions/

@@ -34,6 +34,7 @@ const FRONTEND_DEV_URL = 'http://localhost:5173'
 let mainWindow: BrowserWindow | null = null
 let landingWindow: BrowserWindow | null = null
 let loginWindow: BrowserWindow | null = null
+let hunterWindow: BrowserWindow | null = null
 
 // ─── Prevent multiple instances ─────────────────────────────
 
@@ -121,8 +122,40 @@ function createLoginWindow(): BrowserWindow {
   return win
 }
 
-function createMainWindow(): BrowserWindow {
+function createHunterWindow(): BrowserWindow {
   const win = new BrowserWindow({
+    width: 1100,
+    height: 760,
+    minWidth: 900,
+    minHeight: 600,
+    show: false,
+    frame: false,
+    backgroundColor: '#050002',
+    icon: path.join(RESOURCES_DIR, 'icon.png'),
+    title: 'Kali_Kal // Bug Bounty Hunter',
+    webPreferences: {
+      preload: PRELOAD_PATH,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  })
+
+  const hunterPath = path.join(RENDERER_DIR, 'kalikal-hunter.html')
+  win.loadFile(hunterPath).catch((err) => {
+    console.error('[Codeva] Failed to load hunter:', err)
+  })
+
+  win.once('ready-to-show', () => win.show())
+
+  win.on('closed', () => {
+    hunterWindow = null
+  })
+
+  return win
+}
+
+function createMainWindow(): BrowserWindow {  const win = new BrowserWindow({
     width: 1280,
     height: 860,
     minWidth: 900,
@@ -516,6 +549,17 @@ ipcMain.handle('app:get-info', () => ({
   platform: process.platform,
   isPackaged: app.isPackaged,
 }))
+
+// Open Kali_Kal Hunter window (MAX plan users)
+ipcMain.handle('hunter:open', () => {
+  console.log('[Codeva] IPC: hunter:open received')
+  if (!hunterWindow || hunterWindow.isDestroyed()) {
+    hunterWindow = createHunterWindow()
+  } else {
+    hunterWindow.show()
+    hunterWindow.focus()
+  }
+})
 
 // File system
 ipcMain.handle('fs:read-file', async (_event, filePath: string) => {

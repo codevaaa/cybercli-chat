@@ -1,0 +1,16 @@
+# E2B Template Configuration
+# Build with: e2b template build
+# This creates a persistent sandbox image with all 250+ tools pre-installed
+# so there's zero installation time when starting a hunt
+
+[template]
+dockerfile = "Dockerfile"
+name = "codeva-hunter-v1"
+start_cmd = "/bin/bash"
+
+# Keep sandbox alive for 30 min during active hunt
+# (E2B charges per second of compute time, not idle time)
+[runtime]
+memory_mb = 2048
+vcpu = 2
+timeout_seconds = 1800
