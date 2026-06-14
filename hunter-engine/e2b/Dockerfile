@@ -29,18 +29,24 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     libssl-dev libffi-dev libxml2-dev libxslt1-dev \
     build-essential pkg-config \
     dnsutils whois netcat-openbsd traceroute \
-    nmap masscan \
-    nikto \
-    sqlmap \
-    hydra \
-    john \
-    hashcat \
-    wfuzz \
-    dirb \
-    whatweb \
-    chromium-browser \
-    tcpdump \
-    2>/dev/null && apt-get clean && rm -rf /var/lib/apt/lists/*
+    nmap tcpdump && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Security tools (some may not be available, use || true)
+RUN apt-get update -qq && \
+    (apt-get install -y nikto wfuzz whatweb || true) && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install masscan separately
+RUN apt-get update -qq && apt-get install -y masscan 2>/dev/null || \
+    (git clone -q --depth 1 https://github.com/robertdavidgraham/masscan /tmp/masscan && \
+     cd /tmp/masscan && make -j4 2>/dev/null && cp bin/masscan /usr/local/bin/ && \
+     rm -rf /tmp/masscan) || true
+
+# sqlmap, hydra, john
+RUN apt-get update -qq && \
+    (apt-get install -y sqlmap hydra john || true) && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ── Go 1.22 ─────────────────────────────────────────────────────
 RUN curl -sL https://go.dev/dl/go1.22.3.linux-amd64.tar.gz | tar -xz -C /usr/local
