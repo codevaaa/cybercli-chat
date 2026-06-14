@@ -1,125 +1,205 @@
-name: Build Desktop App
+name: Build Desktop App — Codeva v0.5.0
 
 on:
   push:
     branches: [ main ]
     tags: [ 'v*' ]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Version tag (e.g. v0.5.0)'
+        required: false
 
 permissions:
   contents: write
 
+# ── Shared setup step ────────────────────────────────────────────────────────
+env:
+  NODE_VERSION: '22'
+
 jobs:
+  # ── Windows ─────────────────────────────────────────────────────────────────
   build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
 
       - name: Install desktop dependencies
         working-directory: desktop
         run: npm ci --legacy-peer-deps
 
-      - name: Build frontend
-        working-directory: frontend
-        run: npm ci --legacy-peer-deps && npm run build
-
-      - name: Build desktop
+      - name: Typecheck
         working-directory: desktop
-        run: npm run build
+        run: npx tsc --noEmit
+        continue-on-error: true
 
-      - name: Build Windows installer
+      - name: Build desktop (electron-vite)
         working-directory: desktop
-        run: npm run dist:win
+        run: npx electron-vite build
+
+      - name: Verify kalikal-hunter.html included
+        working-directory: desktop
+        run: |
+          if (Test-Path "dist/renderer/kalikal-hunter.html") {
+            Write-Host "✓ kalikal-hunter.html present in build"
+          } else {
+            Write-Host "⚠ kalikal-hunter.html missing — copying manually"
+            Copy-Item "src/renderer/kalikal-hunter.html" "dist/renderer/kalikal-hunter.html"
+          }
+
+      - name: Package Windows installer (NSIS x64)
+        working-directory: desktop
+        run: npx electron-builder --win --x64
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: CyberCli-Windows
-          path: desktop/release/*.exe
+          name: Codeva-Windows-x64
+          path: |
+            desktop/release/*.exe
+            desktop/release/*.exe.blockmap
+          if-no-files-found: warn
 
+  # ── macOS ────────────────────────────────────────────────────────────────────
   build-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
 
       - name: Install desktop dependencies
         working-directory: desktop
         run: npm ci --legacy-peer-deps
 
-      - name: Build frontend
-        working-directory: frontend
-        run: npm ci --legacy-peer-deps && npm run build
-
-      - name: Build desktop
+      - name: Typecheck
         working-directory: desktop
-        run: npm run build
+        run: npx tsc --noEmit
+        continue-on-error: true
 
-      - name: Build macOS DMG
+      - name: Build desktop (electron-vite)
         working-directory: desktop
-        run: npm run dist:mac
+        run: npx electron-vite build
+
+      - name: Verify kalikal-hunter.html included
+        working-directory: desktop
+        run: |
+          if [ -f "dist/renderer/kalikal-hunter.html" ]; then
+            echo "✓ kalikal-hunter.html present"
+          else
+            echo "⚠ Copying kalikal-hunter.html manually"
+            cp src/renderer/kalikal-hunter.html dist/renderer/kalikal-hunter.html
+          fi
+
+      - name: Package macOS DMG (universal — Intel + Apple Silicon)
+        working-directory: desktop
+        run: npx electron-builder --mac --universal
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: CyberCli-macOS
-          path: desktop/release/*.dmg
+          name: Codeva-macOS-Universal
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+          if-no-files-found: warn
 
+  # ── Linux ────────────────────────────────────────────────────────────────────
   build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
+
+      - name: Install system dependencies (for electron-builder)
+        run: sudo apt-get install -y --no-install-recommends rpm fakeroot
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
 
       - name: Install desktop dependencies
         working-directory: desktop
         run: npm ci --legacy-peer-deps
 
-      - name: Build frontend
-        working-directory: frontend
-        run: npm ci --legacy-peer-deps && npm run build
-
-      - name: Build desktop
+      - name: Typecheck
         working-directory: desktop
-        run: npm run build
+        run: npx tsc --noEmit
+        continue-on-error: true
 
-      - name: Build Linux packages
+      - name: Build desktop (electron-vite)
         working-directory: desktop
-        run: npm run dist:linux
+        run: npx electron-vite build
+
+      - name: Verify kalikal-hunter.html included
+        working-directory: desktop
+        run: |
+          if [ -f "dist/renderer/kalikal-hunter.html" ]; then
+            echo "✓ kalikal-hunter.html present"
+          else
+            echo "⚠ Copying kalikal-hunter.html manually"
+            cp src/renderer/kalikal-hunter.html dist/renderer/kalikal-hunter.html
+          fi
+
+      - name: Package Linux (AppImage + deb)
+        working-directory: desktop
+        run: npx electron-builder --linux AppImage deb --x64
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: CyberCli-Linux
+          name: Codeva-Linux-x64
           path: |
             desktop/release/*.AppImage
             desktop/release/*.deb
+          if-no-files-found: warn
 
+  # ── GitHub Release (tag pushes only) ─────────────────────────────────────────
   release:
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
@@ -127,28 +207,71 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all artifacts
+      - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Create Release
+      - name: List artifacts
+        run: find artifacts -type f | sort
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          name: "Codeva Desktop ${{ github.ref_name }}"
+          body: |
+            ## Codeva Desktop ${{ github.ref_name }}
+
+            ### What's New
+            - 🔥 **Bug Bounty Hunter Engine** — autonomous recon to report
+            - ☁ **Cloud execution** — 300+ tools via E2B sandbox (Windows/Mac/Linux)
+            - 🤖 **5 parallel AI agents** — Scout, Crawler, Scanner, Fuzzer, Exploiter
+            - ⛓ **Web3 auditing** — Slither + Mythril + Foundry (Immunefi payouts)
+            - 🧠 **CybersecurityMCP** — 754 skills mapped to MITRE ATT&CK
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | Windows  | `Codeva-win-x64.exe` |
+            | macOS    | `Codeva-mac-universal.dmg` |
+            | Linux    | `Codeva-linux-x64.AppImage` or `.deb` |
+
+            ### Setup Bug Bounty Engine
+            ```
+            # Add to backend .env:
+            E2B_API_KEY=your_key  # https://e2b.dev (free tier)
+            ```
           files: artifacts/**/*
           draft: false
           prerelease: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload to Cloudflare R2 CDN
-        if: ${{ env.R2_ENABLED == 'true' }}
+        if: ${{ vars.R2_ENABLED == 'true' }}
         env:
-          R2_ENABLED: ${{ vars.R2_ENABLED }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           npm install -g wrangler
-          wrangler r2 object put cybercli-downloads/CyberCli-win-x64.exe --file=artifacts/CyberCli-Windows/CyberCli-win-x64.exe --content-type=application/octet-stream
-          wrangler r2 object put cybercli-downloads/CyberCli-mac-universal.dmg --file=artifacts/CyberCli-macOS/CyberCli-mac-universal.dmg --content-type=application/octet-stream
-          wrangler r2 object put cybercli-downloads/CyberCli-linux-x64.AppImage --file=artifacts/CyberCli-Linux/CyberCli-linux-x64.AppImage --content-type=application/octet-stream
-          wrangler r2 object put cybercli-downloads/CyberCli-linux-x64.deb --file=artifacts/CyberCli-Linux/CyberCli-linux-x64.deb --content-type=application/octet-stream
+          TAG=${{ github.ref_name }}
+          # Windows
+          wrangler r2 object put cybercli-downloads/${TAG}/Codeva-win-x64.exe \
+            --file="$(find artifacts -name '*.exe' | head -1)" \
+            --content-type=application/octet-stream 2>/dev/null || true
+          # macOS
+          wrangler r2 object put cybercli-downloads/${TAG}/Codeva-mac-universal.dmg \
+            --file="$(find artifacts -name '*.dmg' | head -1)" \
+            --content-type=application/octet-stream 2>/dev/null || true
+          # Linux AppImage
+          wrangler r2 object put cybercli-downloads/${TAG}/Codeva-linux-x64.AppImage \
+            --file="$(find artifacts -name '*.AppImage' | head -1)" \
+            --content-type=application/octet-stream 2>/dev/null || true
+          # Linux deb
+          wrangler r2 object put cybercli-downloads/${TAG}/Codeva-linux-x64.deb \
+            --file="$(find artifacts -name '*.deb' | head -1)" \
+            --content-type=application/octet-stream 2>/dev/null || true
+          # Latest symlinks
+          wrangler r2 object put cybercli-downloads/latest/Codeva-win-x64.exe \
+            --file="$(find artifacts -name '*.exe' | head -1)" \
+            --content-type=application/octet-stream 2>/dev/null || true

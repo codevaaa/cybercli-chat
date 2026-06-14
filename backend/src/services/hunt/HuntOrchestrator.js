@@ -25,6 +25,7 @@ import {
 import { CloudExecutor, detectExecutionMode } from './CloudExecutor.js'
 import { AgentSwarm } from './AgentSwarm.js'
 import { buildEnhancedPrompt } from './SkillsLoader.js'
+import CybersecurityMCP from './CybersecurityMCP.js'
 
 // ── Agent system prompts (derived from hunter-engine/agents/*.md) ────────────
 
@@ -221,28 +222,36 @@ export class HuntOrchestrator {
   async analyzeRecon(reconData) {
     this.log('ANALYZE', 'AI analyzing attack surface...')
 
+    // Get MITRE ATT&CK aligned context for recon phase
+    const tacticCtx = await CybersecurityMCP.getTacticContext('analyze')
+
     const prompt = `Analyze this recon data for ${this.target} and produce a prioritized hunt plan.
 
 ## Stats
 - Subdomains found: ${reconData.subdomains}
 - Live hosts: ${reconData.live_hosts}
 - Total URLs: ${reconData.urls}
+- Nuclei findings: ${reconData.nuclei_count || 0}
+- XSS parameters: ${reconData.xss_params || 0}
+- SQLi parameters: ${reconData.sqli_params || 0}
+- API endpoints: ${reconData.api_endpoints || 0}
 
-## Live Hosts Sample (httpx with tech detection)
+## Live Hosts Sample (tech detection)
 ${reconData.live_sample || '(none)'}
 
-## Subdomain Sample
-${reconData.subs_sample || '(none)'}
-
-## URL Sample  
-${reconData.urls_sample || '(none)'}
-
 ## Nuclei Findings
-${reconData.nuclei_hits?.join('\n') || '(none)'}
+${reconData.nuclei_sample?.join('\n') || '(none)'}
 
-Produce a prioritized attack plan. Only reference data that actually appears above.`
+## Secrets Found
+${reconData.secrets?.join('\n') || '(none)'}
 
-    const analysis = await this.llm(prompt, 'codeva-ravan-v1', RECON_ANALYST_PROMPT)
+Produce a prioritized attack plan based ONLY on data above.`
+
+    const system = tacticCtx
+      ? `${RECON_ANALYST_PROMPT}\n\n## MITRE ATT&CK CONTEXT\n${tacticCtx.slice(0, 3000)}`
+      : RECON_ANALYST_PROMPT
+
+    const analysis = await this.llm(prompt, 'codeva-ravan-v1', system)
     this.log('ANALYZE', 'Attack surface analyzed')
     return analysis
   }
@@ -272,24 +281,32 @@ Produce a prioritized attack plan. Only reference data that actually appears abo
     this.log('VALIDATE', `Running 7-Question Gate on ${rawFindings.length} findings...`)
     const validated = []
 
+    // Load triage skill from CybersecurityMCP
+    const triageCtx = await CybersecurityMCP.getTacticContext('validate')
+    const gateSystem = triageCtx
+      ? `${KALIKAL_7Q_GATE_PROMPT}\n\n## TRIAGE CONTEXT\n${triageCtx.slice(0, 2000)}`
+      : KALIKAL_7Q_GATE_PROMPT
+
     for (const finding of rawFindings) {
-      this.log('VALIDATE', `Checking: [${finding.category}] ${finding.evidence.slice(0, 80)}`)
+      this.log('VALIDATE', `Checking: [${finding.category}] ${(finding.evidence || '').slice(0, 80)}`)
+
+      // Get technique-specific skill context
+      const techCtx = await CybersecurityMCP.getSkill(finding.category, 1500)
 
       const prompt = `[${finding.category.toUpperCase()}] ${finding.evidence}
 Tool: ${finding.tool || 'unknown'}
 Target: ${this.target}
+${techCtx ? `\nTechnique context:\n${techCtx.slice(0, 800)}` : ''}
 
 Run the 7-Question Gate on this finding.`
 
-      const result = await this.llm(prompt, 'codeva-kali-v1', KALIKAL_7Q_GATE_PROMPT)
+      const result = await this.llm(prompt, 'codeva-kali-v1', gateSystem)
 
-      // Parse verdict
       const verdictMatch = result.match(/VERDICT:\s*(SUBMIT|CHAIN|DROP)/i)
       const verdict = verdictMatch?.[1]?.toUpperCase() || 'DROP'
 
       validated.push({ ...finding, verdict, gate_result: result })
-
-      this.log('VALIDATE', `→ ${verdict}: ${finding.category} @ ${finding.evidence.slice(0, 60)}`)
+      this.log('VALIDATE', `→ ${verdict}: ${finding.category}`)
     }
 
     const submittable = validated.filter(f => f.verdict === 'SUBMIT' || f.verdict === 'CHAIN')

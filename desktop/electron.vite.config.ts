@@ -31,9 +31,10 @@ export default defineConfig({
       outDir: 'dist/renderer',
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'src/renderer/index.html'),
-          landing: resolve(__dirname, 'src/renderer/landing.html'),
-          login: resolve(__dirname, 'src/renderer/login.html'),
+          index:          resolve(__dirname, 'src/renderer/index.html'),
+          landing:        resolve(__dirname, 'src/renderer/landing.html'),
+          login:          resolve(__dirname, 'src/renderer/login.html'),
+          'kalikal-hunter': resolve(__dirname, 'src/renderer/kalikal-hunter.html'),
         },
       },
     },

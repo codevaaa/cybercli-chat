@@ -6,6 +6,7 @@ import { checkTools } from '../services/hunt/ToolRunner.js'
 import { Web3Hunter } from '../services/hunt/Web3Hunter.js'
 import { listSkills, getSkillContext } from '../services/hunt/SkillsLoader.js'
 import { detectExecutionMode } from '../services/hunt/CloudExecutor.js'
+import { CybersecurityMCP, MCP_TOOLS } from '../services/hunt/CybersecurityMCP.js'
 
 const router = Router()
 
@@ -350,6 +351,50 @@ router.get('/stats', requireAuth, huntGuard, async (req, res) => {
     }
 
     res.json(stats)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── GET /api/v1/hunt/mcp/tools — List MCP tool definitions ────────────────────
+// Exposes Anthropic-Cybersecurity-Skills as an MCP-compatible tool registry
+router.get('/mcp/tools', requireAuth, huntGuard, async (req, res) => {
+  res.json({
+    tools: MCP_TOOLS.map(t => ({
+      name: t.name,
+      description: t.description,
+      inputSchema: t.inputSchema,
+    })),
+    total: MCP_TOOLS.length,
+    source: 'https://github.com/codevaaa/Anthropic-Cybersecurity-Skills',
+    domains: 26,
+    skills: 754,
+  })
+})
+
+// ── POST /api/v1/hunt/mcp/call — Execute an MCP tool ─────────────────────────
+router.post('/mcp/call', requireAuth, huntGuard, async (req, res) => {
+  const { tool, arguments: args } = req.body
+
+  if (!tool) return res.status(400).json({ error: 'tool name required' })
+
+  const toolDef = MCP_TOOLS.find(t => t.name === tool)
+  if (!toolDef) return res.status(404).json({ error: `Tool '${tool}' not found` })
+
+  try {
+    const result = await toolDef.handler(args || {})
+    res.json({ tool, result })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── GET /api/v1/hunt/mcp/skill/:technique — Get skill context ─────────────────
+router.get('/mcp/skill/:technique', requireAuth, huntGuard, async (req, res) => {
+  try {
+    const content = await CybersecurityMCP.getSkill(req.params.technique)
+    if (!content) return res.status(404).json({ error: 'Skill not found' })
+    res.json({ technique: req.params.technique, content })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
