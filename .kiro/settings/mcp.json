@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "codeva-cybersecurity-skills": {
+      "command": "node",
+      "args": ["backend/src/services/hunt/mcp-server.js"],
+      "description": "754 cybersecurity skills mapped to MITRE ATT&CK, NIST CSF 2.0, MITRE ATLAS, D3FEND. Powers the Codeva Bug Bounty Hunter Engine.",
+      "disabled": false,
+      "autoApprove": [
+        "get_cybersecurity_skill",
+        "get_attack_path",
+        "get_hunt_phase_context",
+        "search_skills"
+      ]
+    }
+  }
+}
