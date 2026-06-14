@@ -25,7 +25,6 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     curl wget git unzip tar gzip xz-utils jq \
     python3 python3-pip python3-dev python3-venv \
     ruby ruby-dev rubygems \
-    nodejs npm \
     libssl-dev libffi-dev libxml2-dev libxslt1-dev \
     build-essential pkg-config \
     dnsutils whois netcat-openbsd traceroute \
