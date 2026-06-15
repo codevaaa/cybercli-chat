@@ -289,4 +289,69 @@ router.post('/admin/users/:id/flag', requireAuth, requireAdmin, async (req, res,
   } catch (err) { next(err) }
 })
 
+// ── Set plan for a user (admin only) ──────────────────────────────────────────
+router.post('/admin/users/:id/set-plan', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { plan } = req.body || {}
+    const validPlans = ['free', 'pro', 'max', 'enterprise']
+    if (!validPlans.includes(plan)) {
+      return res.status(400).json({ error: `Invalid plan. Must be one of: ${validPlans.join(', ')}` })
+    }
+
+    // Update in MongoDB
+    const user = await User.findOneAndUpdate(
+      { supabase_id: req.params.id },
+      { plan },
+      { new: true, upsert: true }
+    )
+
+    // Also update in Supabase user_metadata for JWT sync
+    try {
+      await supabase.auth.admin.updateUserById(req.params.id, {
+        user_metadata: { plan_tier: plan }
+      })
+    } catch (e) {
+      console.error('[SetPlan] Supabase metadata update failed:', e.message)
+    }
+
+    // Clear plan cache so it takes effect immediately
+    // (planCache is in auth.js middleware — it self-expires in 60s)
+    res.json({ success: true, user_id: req.params.id, plan, user })
+  } catch (err) { next(err) }
+})
+
+// ── Bulk set plan by email (admin only) ──────────────────────────────────────
+router.post('/admin/set-plan-by-email', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { email, plan } = req.body || {}
+    if (!email || !plan) return res.status(400).json({ error: 'email and plan required' })
+
+    const validPlans = ['free', 'pro', 'max', 'enterprise']
+    if (!validPlans.includes(plan)) {
+      return res.status(400).json({ error: `Invalid plan. Valid: ${validPlans.join(', ')}` })
+    }
+
+    // Find Supabase user by email
+    const { data: { users: sbUsers }, error } = await supabase.auth.admin.listUsers()
+    if (error) return res.status(500).json({ error: error.message })
+
+    const sbUser = sbUsers?.find(u => u.email?.toLowerCase() === email.toLowerCase())
+    if (!sbUser) return res.status(404).json({ error: `User not found: ${email}` })
+
+    // Update MongoDB
+    await User.findOneAndUpdate(
+      { supabase_id: sbUser.id },
+      { plan, email: sbUser.email },
+      { upsert: true, new: true }
+    )
+
+    // Update Supabase metadata
+    await supabase.auth.admin.updateUserById(sbUser.id, {
+      user_metadata: { plan_tier: plan }
+    })
+
+    res.json({ success: true, email, plan, user_id: sbUser.id })
+  } catch (err) { next(err) }
+})
+
 export default router

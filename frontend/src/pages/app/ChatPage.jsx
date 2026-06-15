@@ -4041,6 +4041,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (isLoggedIn()) {
+      // Parallel: load threads + settings simultaneously for faster startup
       loadThreads()
     }
     const params = new URLSearchParams(window.location.search)
@@ -4092,7 +4093,6 @@ export default function ChatPage() {
           setUserName(data.display_name)
           localStorage.setItem('user_name', data.display_name)
         }
-        // Sync language pill in profile bar
         const langMap = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', hi: 'हिं', ur: 'اُ' }
         setUserLanguage(langMap[data.language] || (data.language || 'en').toUpperCase())
       } catch (err) {
@@ -4134,7 +4134,9 @@ export default function ChatPage() {
   const loadThreads = async () => {
     try {
       const { data } = await api.get('/chat')
-      setThreads(data.threads || [])
+      // Sort: pinned first, then by last_message_at desc
+      const threads = data.threads || []
+      setThreads(threads)
     } catch (err) {
       console.error('Failed to load threads:', err)
     } finally {
@@ -5118,17 +5120,26 @@ export default function ChatPage() {
             <div className="flex items-center justify-between px-4 py-4 flex-shrink-0">
               {!!window.electronAPI ? (
                 <div className="flex items-center bg-white/[0.04] rounded-lg p-0.5 border border-white/[0.02]">
-                  {['chats', 'cowork', 'code'].map(m => (
+                  {['chats', 'cowork', 'hunter'].map(m => (
                     <button
                       key={m}
-                      onClick={() => setActiveNav(m)}
+                      onClick={() => {
+                        if (m === 'hunter') {
+                          // Open dedicated Bug Hunter window
+                          window.electronAPI?.openHunter?.()
+                        } else {
+                          setActiveNav(m === 'chats' ? 'chats' : 'cowork')
+                        }
+                      }}
                       className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                        activeNav === m
+                        m !== 'hunter' && activeNav === (m === 'chats' ? 'chats' : 'cowork')
                           ? 'bg-white/10 text-white shadow-sm'
+                          : m === 'hunter'
+                          ? 'text-red-400/70 hover:text-red-400 hover:bg-red-500/10'
                           : 'text-gray-500 hover:text-gray-300'
                       }`}
                     >
-                      {m === 'code' ? 'Kali_Kal' : m === 'chats' ? 'Chat' : m.charAt(0).toUpperCase() + m.slice(1)}
+                      {m === 'hunter' ? '💀 Bug Hunter' : m === 'chats' ? 'Chat' : 'Cowork'}
                     </button>
                   ))}
                 </div>

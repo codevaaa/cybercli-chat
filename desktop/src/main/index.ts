@@ -233,15 +233,12 @@ app.whenReady().then(() => {
   }
 
   if (hasSession) {
-    // If logged in, skip landing window entirely and show main window immediately
+    // Logged in — skip landing, go straight to main window with production URL
     mainWindow = createMainWindow()
     mainWindow?.on('ready-to-show', () => {
       mainWindow?.show()
       mainWindow?.focus()
     })
-
-    // Load preview server for testing
-    mainWindow?.loadURL('http://localhost:4173/')
   } else {
     // If not logged in, show landing window and load main window in the background
     landingWindow = createLandingWindow()

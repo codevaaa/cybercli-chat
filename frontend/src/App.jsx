@@ -106,8 +106,15 @@ function App() {
   // Desktop App auto-login: If the web app is loaded inside the desktop wrapper and a session exists,
   // tell the desktop app to show the main window (skipping the landing screen).
   useEffect(() => {
-    if (session && window.electronAPI?.openMainWindow) {
-      window.electronAPI.openMainWindow()
+    if (!window.electronAPI) return
+    if (session) {
+      // Save session state so next launch skips landing
+      window.electronAPI.setSessionState?.(true)
+      // Show main window if it was hidden (landing → main transition)
+      window.electronAPI.openMainWindow?.()
+    } else if (session === null) {
+      // Explicitly logged out — clear session state
+      window.electronAPI.setSessionState?.(false)
     }
   }, [session])
 

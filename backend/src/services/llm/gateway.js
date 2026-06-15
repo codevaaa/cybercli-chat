@@ -106,9 +106,9 @@ const MODEL_MAP = {
   'mistral/mistral-large-latest': { provider: 'mistral', model: 'mistral-large-latest', purpose: 'reasoning' },
   
   // Codeva Mythological Personas (The Swarm)
-  // Ravan Base (God-Tier)
+  // Ravan Base (God-Tier) — claude-fable-5 via llm7, fallback to gemini-2.5-pro
   'codeva-ravan-v1': { provider: 'llm7', model: 'claude-fable-5', purpose: 'reasoning' },
-  'codeva-ravan-fallback-1': { provider: 'llm7', model: 'gpt-5.5', purpose: 'reasoning' },
+  'codeva-ravan-fallback-1': { provider: 'gemini', model: 'gemini-2.5-pro', purpose: 'reasoning' },
 
   // Madhav Base (4 models)
   'codeva-madhav-v1': { provider: 'gemini', model: 'gemini-2.5-pro', purpose: 'reasoning' },

@@ -33,6 +33,9 @@ const electronAPI = {
   // Landing → Main transition
   openMainWindow: () => ipcRenderer.invoke('landing:open-main'),
 
+  // Session state persistence (skip landing on next launch)
+  setSessionState: (hasSession: boolean) => ipcRenderer.invoke('auth:set-session', hasSession),
+
   // Kali_Kal Bug Bounty Hunter window (MAX plan only)
   openHunter: () => ipcRenderer.invoke('hunter:open'),
 
