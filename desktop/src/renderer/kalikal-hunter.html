@@ -821,8 +821,28 @@ async function startHunt() {
 
     if (!resp.ok) {
       const e = await resp.json().catch(()=>({}))
-      tl('er', `✗ ${e.error || `HTTP ${resp.status}`}`)
-      if (e.required_plan) tl('w', 'Requires MAX plan')
+      if (resp.status === 403 || e.required_plan) {
+        // Show upgrade UI in sidebar
+        tl('w', '⚠ Bug Hunter requires MAX plan')
+        document.getElementById('sb-body').innerHTML = `
+          <div style="padding:24px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px">
+            <div style="font-size:32px">🔒</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">MAX Plan Required</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.65;max-width:240px">
+              Bug Bounty Hunter needs MAX plan.<br>
+              Unlock autonomous recon, 300+ cloud tools, and submission-ready H1 reports.
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">Current plan: ${e.current_plan || 'free'}</div>
+            <a href="https://cybermindcli.info/upgrade" target="_blank"
+              style="margin-top:6px;display:inline-block;padding:9px 22px;background:var(--accent);color:white;border-radius:7px;font-size:11px;font-weight:700;text-decoration:none;letter-spacing:.05em">
+              Upgrade to MAX →
+            </a>
+          </div>
+        `
+        document.getElementById('empty-state').style.display = 'none'
+      } else {
+        tl('er', `✗ ${e.error || `HTTP ${resp.status}`}`)
+      }
       resetUI(); return
     }
 

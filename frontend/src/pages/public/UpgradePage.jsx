@@ -98,6 +98,9 @@ export default function UpgradePage() {
       features: [
         'Up to 20x more usage than Pro*',
         'Unlimited access to CyberCoder CLI',
+        '💀 Bug Bounty Hunter Engine (exclusive)',
+        '☁ Cloud sandbox with 300+ security tools',
+        'Autonomous recon → hunt → exploit → report',
         'Early access to advanced Codeva features',
         'Highest priority queue for image generation',
         'Priority access during high traffic times',

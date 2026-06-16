@@ -5125,8 +5125,13 @@ export default function ChatPage() {
                       key={m}
                       onClick={() => {
                         if (m === 'hunter') {
-                          // Open dedicated Bug Hunter window
-                          window.electronAPI?.openHunter?.()
+                          const plan = userPlan?.toLowerCase()
+                          if (plan === 'max' || plan === 'enterprise') {
+                            window.electronAPI?.openHunter?.()
+                          } else {
+                            // Redirect to upgrade page
+                            navigate('/upgrade')
+                          }
                         } else {
                           setActiveNav(m === 'chats' ? 'chats' : 'cowork')
                         }
@@ -5217,23 +5222,42 @@ export default function ChatPage() {
 
             <div className="border-t border-border-subtle my-1 mx-3 flex-shrink-0" />
 
-            {/* Bug Hunter button — Desktop MAX plan only */}
+            {/* Bug Hunter button — Desktop only */}
             {!!window.electronAPI && (
               <div className="px-3 pb-3 flex-shrink-0">
                 <button
-                  onClick={() => window.electronAPI?.openHunter?.()}
+                  onClick={() => {
+                    const plan = userPlan?.toLowerCase()
+                    if (plan === 'max' || plan === 'enterprise') {
+                      window.electronAPI?.openHunter?.()
+                    } else {
+                      navigate('/upgrade')
+                    }
+                  }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-bold transition-all group"
                   style={{
-                    background: 'rgba(217,22,36,0.08)',
-                    border: '1px solid rgba(217,22,36,0.25)',
-                    color: '#ef4444',
+                    background: userPlan === 'max' || userPlan === 'enterprise'
+                      ? 'rgba(217,22,36,0.08)'
+                      : 'rgba(255,255,255,0.03)',
+                    border: userPlan === 'max' || userPlan === 'enterprise'
+                      ? '1px solid rgba(217,22,36,0.25)'
+                      : '1px solid rgba(255,255,255,0.06)',
+                    color: userPlan === 'max' || userPlan === 'enterprise'
+                      ? '#ef4444'
+                      : 'rgba(255,255,255,0.3)',
                   }}
                   onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(217,22,36,0.15)'
-                    e.currentTarget.style.boxShadow = '0 0 12px rgba(217,22,36,0.2)'
+                    if (userPlan === 'max' || userPlan === 'enterprise') {
+                      e.currentTarget.style.background = 'rgba(217,22,36,0.15)'
+                      e.currentTarget.style.boxShadow = '0 0 12px rgba(217,22,36,0.2)'
+                    } else {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+                    }
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.background = 'rgba(217,22,36,0.08)'
+                    e.currentTarget.style.background = userPlan === 'max' || userPlan === 'enterprise'
+                      ? 'rgba(217,22,36,0.08)'
+                      : 'rgba(255,255,255,0.03)'
                     e.currentTarget.style.boxShadow = 'none'
                   }}
                 >
@@ -5244,12 +5268,24 @@ export default function ChatPage() {
                     fontWeight: 'bold',
                     padding: '1px 5px',
                     borderRadius: 3,
-                    background: 'rgba(217,22,36,0.2)',
-                    color: 'rgba(239,68,68,0.7)',
+                    background: userPlan === 'max' || userPlan === 'enterprise'
+                      ? 'rgba(217,22,36,0.2)'
+                      : 'rgba(255,255,255,0.08)',
+                    color: userPlan === 'max' || userPlan === 'enterprise'
+                      ? 'rgba(239,68,68,0.7)'
+                      : 'rgba(255,255,255,0.3)',
                     letterSpacing: '0.15em',
                     textTransform: 'uppercase',
-                  }}>MAX</span>
+                  }}>
+                    {userPlan === 'max' || userPlan === 'enterprise' ? 'MAX ✓' : 'MAX'}
+                  </span>
                 </button>
+                {/* Upgrade prompt for non-max users */}
+                {userPlan !== 'max' && userPlan !== 'enterprise' && (
+                  <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: 4, lineHeight: 1.4 }}>
+                    Requires MAX plan
+                  </p>
+                )}
               </div>
             )}
 
