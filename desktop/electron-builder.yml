@@ -12,33 +12,39 @@ files:
   - resources/**/*
   - '!node_modules/electron/**/*'
 
-# Clean artifact names for GitHub Releases
 artifactName: ${productName}-${os}-${arch}.${ext}
 
-# Auto-update publish config (GitHub Releases)
 publish:
   provider: github
   owner: codevaaa
   repo: cybercli-chat
   releaseType: release
 
-# macOS
+# ── macOS ──────────────────────────────────────────────────────────────────────
 mac:
   category: public.app-category.productivity
+  # Ad-hoc signing (-) so macOS doesn't reject it outright
+  # Users can bypass Gatekeeper via right-click Open or xattr command
+  identity: null
+  sign: false
+  notarize: false
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  darkModeSupport: true
+  icon: resources/icon.png
   target:
     - target: dmg
-      arch: universal
+      arch:
+        - universal
     - target: zip
-      arch: universal
-  icon: resources/icon.png
-  darkModeSupport: true
-  hardenedRuntime: true
-  gatekeeperAssess: false
-  entitlements: resources/entitlements.mac.plist
-  entitlementsInherit: resources/entitlements.mac.plist
+      arch:
+        - universal
+  entitlements: null
+  entitlementsInherit: null
 
 dmg:
   sign: false
+  background: null
   contents:
     - x: 130
       y: 220
@@ -46,8 +52,11 @@ dmg:
       y: 220
       type: link
       path: /Applications
+  window:
+    width: 540
+    height: 380
 
-# Windows
+# ── Windows ────────────────────────────────────────────────────────────────────
 win:
   target:
     - target: nsis
@@ -65,9 +74,8 @@ nsis:
   createDesktopShortcut: always
   createStartMenuShortcut: true
   shortcutName: Codeva
-  include: "" # No custom NSIS script
 
-# Linux
+# ── Linux ──────────────────────────────────────────────────────────────────────
 linux:
   target:
     - target: AppImage
@@ -78,7 +86,7 @@ linux:
   icon: resources/icon.png
   maintainer: Codeva
   synopsis: AI-powered coding and chat assistant
-  description: Codeva Desktop brings the full AI chat and agentic coding experience to your desktop.
+  description: Codeva Desktop — AI chat, coding and bug bounty engine.
 
 protocols:
   - name: Codeva Protocol

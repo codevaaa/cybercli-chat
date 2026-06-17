@@ -121,12 +121,60 @@ jobs:
             cp src/renderer/kalikal-hunter.html dist/renderer/kalikal-hunter.html
           fi
 
-      - name: Package macOS DMG (universal — Intel + Apple Silicon)
+      - name: Package macOS DMG (unsigned — ad-hoc, universal)
         working-directory: desktop
         run: npx electron-builder --mac --universal
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          # Disable code signing completely — users bypass Gatekeeper via right-click Open
+          CSC_LINK: ""
+          CSC_KEY_PASSWORD: ""
+
+      - name: Strip quarantine from DMG (allows right-click Open without warning)
+        working-directory: desktop
+        run: |
+          for f in release/*.dmg release/*.zip; do
+            [ -f "$f" ] && xattr -cr "$f" && echo "✓ Cleared xattr: $f" || true
+          done
+
+      - name: Create macOS install helper script
+        working-directory: desktop
+        run: |
+          cat > release/install-mac.sh << 'INSTALLSCRIPT'
+          #!/bin/bash
+          # Codeva macOS Install Helper
+          # Bypasses Gatekeeper for unsigned builds
+          echo "Installing Codeva..."
+          
+          DMG=$(find ~/Downloads -name "Codeva-mac*.dmg" 2>/dev/null | head -1)
+          APP="/Applications/Codeva.app"
+          
+          if [ -n "$DMG" ]; then
+            echo "Removing quarantine from DMG..."
+            xattr -cr "$DMG"
+            echo "Mounting DMG..."
+            hdiutil attach "$DMG" -nobrowse -quiet
+            VOLUME=$(ls /Volumes/ | grep -i codeva | head -1)
+            if [ -n "$VOLUME" ]; then
+              cp -R "/Volumes/$VOLUME/Codeva.app" /Applications/
+              hdiutil detach "/Volumes/$VOLUME" -quiet
+              echo "Removing quarantine from app..."
+              xattr -cr "$APP"
+              echo "✓ Codeva installed to /Applications/"
+              open "$APP"
+            fi
+          elif [ -d "$APP" ]; then
+            echo "Removing quarantine from existing app..."
+            xattr -cr "$APP"
+            echo "✓ Quarantine removed from Codeva.app"
+            open "$APP"
+          else
+            echo "Codeva.app not found. Please drag from DMG to Applications first, then run:"
+            echo "  xattr -cr /Applications/Codeva.app"
+          fi
+          INSTALLSCRIPT
+          chmod +x release/install-mac.sh
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -135,6 +183,7 @@ jobs:
           path: |
             desktop/release/*.dmg
             desktop/release/*.zip
+            desktop/release/install-mac.sh
           if-no-files-found: warn
 
   # ── Linux ────────────────────────────────────────────────────────────────────
