@@ -37,7 +37,14 @@ const electronAPI = {
   setSessionState: (hasSession: boolean) => ipcRenderer.invoke('auth:set-session', hasSession),
 
   // Kali_Kal Bug Bounty Hunter window (MAX plan only)
-  openHunter: () => ipcRenderer.invoke('hunter:open'),
+  openHunter: (token?: string) => ipcRenderer.invoke('hunter:open', token),
+
+  // Hunter window receives auth token from main window
+  onHunterToken: (callback: (token: string) => void) => {
+    const handler = (_event: any, token: string) => callback(token)
+    ipcRenderer.on('hunter:token', handler)
+    return () => ipcRenderer.removeListener('hunter:token', handler)
+  },
 
   // File system
   readFile: (path: string) => ipcRenderer.invoke('fs:read-file', path),

@@ -548,13 +548,23 @@ ipcMain.handle('app:get-info', () => ({
 }))
 
 // Open Kali_Kal Hunter window (MAX plan users)
-ipcMain.handle('hunter:open', () => {
-  console.log('[Codeva] IPC: hunter:open received')
+ipcMain.handle('hunter:open', (_event, token?: string) => {
+  console.log('[Codeva] IPC: hunter:open received, token present:', !!token)
   if (!hunterWindow || hunterWindow.isDestroyed()) {
     hunterWindow = createHunterWindow()
+    // Inject auth token once window loads
+    if (token) {
+      hunterWindow.webContents.once('did-finish-load', () => {
+        hunterWindow?.webContents.send('hunter:token', token)
+      })
+    }
   } else {
     hunterWindow.show()
     hunterWindow.focus()
+    // Re-inject token for already-open window
+    if (token) {
+      hunterWindow.webContents.send('hunter:token', token)
+    }
   }
 })
 

@@ -3,431 +3,148 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Codeva Hunter</title>
+  <title>Codeva — Bug Hunter</title>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --bg:      #0d0f10;
-      --bg2:     #13171a;
-      --bg3:     #1a1f22;
-      --bg4:     #20262a;
-      --border:  rgba(255,255,255,0.07);
-      --text:    #e8eaed;
-      --muted:   rgba(232,234,237,0.4);
-      --accent:  #d97757;
-      --blue:    #4a9eff;
-      --green:   #34d058;
-      --yellow:  #f0a33c;
-      --red:     #f85149;
-      --purple:  #a371f7;
+      --bg: #0d0f10; --bg2: #13171a; --bg3: #1a1f22; --bg4: #20262a;
+      --border: rgba(255,255,255,0.07); --text: #e8eaed; --muted: rgba(232,234,237,0.4);
+      --accent: #d97757; --blue: #4a9eff; --green: #34d058;
+      --yellow: #f0a33c; --red: #f85149;
     }
-
-    html, body { height: 100%; overflow: hidden; }
-    body {
-      font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      font-size: 13px;
-      -webkit-app-region: no-drag;
-    }
-
-    /* scrollbar */
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-
-    /* ── Title bar ─────────────────────── */
+    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-size: 13px; }
+    body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; -webkit-app-region: no-drag; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
     #titlebar {
-      height: 38px;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      gap: 10px;
-      -webkit-app-region: drag;
-      flex-shrink: 0;
-      user-select: none;
+      height: 38px; background: var(--bg2); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 12px; gap: 10px;
+      -webkit-app-region: drag; flex-shrink: 0; user-select: none;
     }
-    .tb-dots {
-      display: flex; gap: 6px;
-      -webkit-app-region: no-drag;
-    }
-    .tb-dots span {
-      width: 12px; height: 12px; border-radius: 50%;
-      cursor: pointer; transition: filter .15s;
-    }
-    .tb-dots span:hover { filter: brightness(1.2); }
-    .dot-r { background: #ff5f57; }
-    .dot-y { background: #febc2e; }
-    .dot-g { background: #28c840; }
-    .tb-title {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--muted);
-    }
+    .tb-dots { display: flex; gap: 6px; -webkit-app-region: no-drag; }
+    .tb-dots span { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+    .dot-r { background: #ff5f57; } .dot-y { background: #febc2e; } .dot-g { background: #28c840; }
+    .tb-title { font-size: 12px; font-weight: 500; color: var(--muted); }
     #mode-pill {
-      margin-left: auto;
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 9px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      -webkit-app-region: no-drag;
-      transition: all .3s;
+      margin-left: auto; font-size: 10px; font-weight: 600; padding: 2px 9px;
+      border-radius: 20px; border: 1px solid var(--border); color: var(--muted); -webkit-app-region: no-drag;
     }
-    #mode-pill.cloud  { color: var(--green); border-color: rgba(52,208,88,.3); background: rgba(52,208,88,.06); }
-    #mode-pill.local  { color: var(--yellow); border-color: rgba(240,163,60,.3); }
-
-    /* ── Shell ─────────────────────────── */
-    #shell {
-      height: calc(100vh - 38px);
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-    }
-
-    /* ── Command bar ───────────────────── */
-    #cmd-bar {
-      padding: 10px 16px;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .cmd-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .cmd-prompt {
-      font-family: 'SF Mono', 'Cascadia Code', monospace;
-      font-size: 12px;
-      color: var(--green);
-      user-select: none;
-      white-space: nowrap;
-    }
+    #mode-pill.cloud { color: var(--green); border-color: rgba(52,208,88,.3); background: rgba(52,208,88,.06); }
+    #shell { height: calc(100vh - 38px); display: grid; grid-template-rows: auto 1fr auto; }
+    #cmd-bar { padding: 10px 16px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+    .cmd-row { display: flex; align-items: center; gap: 8px; }
+    .cmd-prompt { font-family: 'SF Mono','Cascadia Code',monospace; font-size: 12px; color: var(--green); user-select: none; white-space: nowrap; }
     #target-input {
-      flex: 1;
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 7px 12px;
-      font-size: 13px;
-      font-family: 'SF Mono','Cascadia Code', monospace;
-      color: var(--text);
-      outline: none;
-      transition: border-color .2s;
+      flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+      padding: 7px 12px; font-size: 13px; font-family: 'SF Mono','Cascadia Code',monospace;
+      color: var(--text); outline: none; transition: border-color .2s;
     }
     #target-input:focus { border-color: rgba(73,158,255,.4); }
     #target-input::placeholder { color: var(--muted); }
     #target-input:disabled { opacity: .5; }
-
     #run-btn {
-      font-size: 12px;
-      font-weight: 600;
-      padding: 7px 18px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      background: var(--accent);
-      color: #fff;
-      transition: all .2s;
-      white-space: nowrap;
+      font-size: 12px; font-weight: 600; padding: 7px 18px; border-radius: 6px;
+      border: none; cursor: pointer; background: var(--accent); color: #fff;
+      transition: all .2s; white-space: nowrap;
     }
     #run-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
     #run-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
-
-    /* mode tabs */
-    #mode-tabs {
-      display: flex;
-      gap: 4px;
-    }
-    .mtab {
-      font-size: 11px;
-      font-weight: 500;
-      padding: 3px 10px;
-      border-radius: 4px;
-      border: 1px solid transparent;
-      background: none;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all .15s;
-      font-family: inherit;
-    }
-    .mtab:hover { color: var(--text); background: var(--bg3); }
-    .mtab.on { color: var(--text); background: var(--bg4); border-color: var(--border); }
-
-    /* phase bar */
-    #phases {
-      display: flex;
-      gap: 0;
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      border-top: 1px solid var(--border);
-      margin: 0 -16px;
-      padding: 0 16px;
-    }
-    .ph {
-      flex: 1;
-      padding: 5px 2px;
-      text-align: center;
-      color: var(--muted);
-      border-bottom: 2px solid transparent;
-      position: relative;
-      transition: all .25s;
-    }
-    .ph::after {
-      content:'';position:absolute;right:0;top:20%;bottom:20%;
-      width:1px;background:var(--border);
-    }
+    #phases { display: flex; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; border-top: 1px solid var(--border); margin: 0 -16px; padding: 0 16px; }
+    .ph { flex: 1; padding: 5px 2px; text-align: center; color: var(--muted); border-bottom: 2px solid transparent; transition: all .25s; position: relative; }
+    .ph::after { content:''; position:absolute; right:0; top:20%; bottom:20%; width:1px; background:var(--border); }
     .ph:last-child::after { display:none; }
     .ph.run { color: var(--yellow); border-color: var(--yellow); animation: blink .9s infinite; }
-    .ph.ok  { color: var(--green);  border-color: var(--green); }
+    .ph.ok  { color: var(--green); border-color: var(--green); }
     @keyframes blink { 0%,100%{opacity:1}50%{opacity:.5} }
-
-    /* ── Main panes ─────────────────────── */
-    #panes {
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    /* ── Terminal output ───────────────── */
-    #term {
-      display: flex; flex-direction: column;
-      overflow: hidden;
-      border-right: 1px solid var(--border);
-    }
-    #term-bar {
-      display: flex; align-items: center; gap: 8px;
-      padding: 5px 14px;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg2);
-      flex-shrink: 0;
-    }
-    #term-bar span {
-      font-size: 10px; font-weight: 600; color: var(--muted);
-      text-transform: uppercase; letter-spacing: .08em;
-    }
-    #clr-btn {
-      margin-left: auto; font-family: inherit; font-size: 10px;
-      color: var(--muted); background: none; border: none;
-      cursor: pointer; padding: 2px 6px; border-radius: 3px;
-      transition: all .15s;
-    }
+    #panes { display: grid; grid-template-columns: 1fr 320px; overflow: hidden; min-height: 0; }
+    #term { display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); }
+    #term-bar { display: flex; align-items: center; gap: 8px; padding: 5px 14px; border-bottom: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; }
+    #term-bar span { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    #clr-btn { margin-left: auto; font-family: inherit; font-size: 10px; color: var(--muted); background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 3px; }
     #clr-btn:hover { color: var(--text); background: var(--bg3); }
-    #term-out {
-      flex: 1; overflow-y: auto;
-      padding: 10px 14px;
-      font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace;
-      font-size: 11.5px;
-      line-height: 1.55;
-      display: flex; flex-direction: column; gap: 0;
-    }
+    #term-out { flex: 1; overflow-y: auto; padding: 10px 14px; font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace; font-size: 11.5px; line-height: 1.55; display: flex; flex-direction: column; }
     .tl { color: rgba(232,234,237,.5); white-space: pre-wrap; word-break: break-all; }
     .tl.h  { color: var(--text); font-weight: 700; margin-top: 6px; }
-    .tl.ok { color: var(--green); }
-    .tl.w  { color: var(--yellow); }
-    .tl.er { color: var(--red); font-weight: 700; }
-    .tl.md { color: var(--blue); }
-    .tl.fx { color: var(--accent); }
-    .tl.dm { color: rgba(232,234,237,.2); }
-
-    /* ── Results sidebar ───────────────── */
-    #sidebar {
-      display: flex; flex-direction: column;
-      overflow: hidden; background: var(--bg2);
-    }
-    #sb-header {
-      display: flex; align-items: center; gap: 6px;
-      padding: 5px 12px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    #sb-header span {
-      font-size: 10px; font-weight: 600;
-      color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
-    }
-    #badge {
-      margin-left: auto; font-size: 9px; font-weight: 700;
-      padding: 1px 7px; border-radius: 10px;
-      background: rgba(217,119,87,.12); color: var(--accent);
-      border: 1px solid rgba(217,119,87,.25);
-      display: none;
-    }
-    #sb-body {
-      flex: 1; overflow-y: auto;
-      padding: 8px;
-      display: flex; flex-direction: column; gap: 5px;
-    }
-
-    /* empty */
-    #empty {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center; padding: 20px; gap: 8px;
-    }
-    #empty .ei { font-size: 28px; opacity: .2; }
-    #empty p { font-size: 11px; color: var(--muted); line-height: 1.65; }
-
-    /* stat grid */
+    .tl.ok { color: var(--green); } .tl.w { color: var(--yellow); }
+    .tl.er { color: var(--red); font-weight: 700; } .tl.md { color: var(--blue); }
+    .tl.fx { color: var(--accent); } .tl.dm { color: rgba(232,234,237,.2); }
+    #sidebar { display: flex; flex-direction: column; overflow: hidden; background: var(--bg2); }
+    #sb-header { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    #sb-header span { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    #badge { margin-left: auto; font-size: 9px; font-weight: 700; padding: 1px 7px; border-radius: 10px; background: rgba(217,119,87,.12); color: var(--accent); border: 1px solid rgba(217,119,87,.25); display: none; }
+    #sb-body { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 5px; }
     .sg { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-    .sc {
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: 6px; padding: 7px 9px;
-    }
-    .sc .v { font-size: 18px; font-weight: 800; color: var(--accent); }
-    .sc .l { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-
-    /* section label */
-    .sl {
-      font-size: 9px; font-weight: 700; letter-spacing: .12em;
-      text-transform: uppercase; color: var(--muted);
-      padding: 4px 2px 2px;
-    }
-
-    /* finding card */
-    .fc {
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: 5px; padding: 7px 9px;
-      transition: border-color .15s;
-    }
-    .fc:hover { border-color: rgba(232,234,237,.15); }
+    .sc { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 7px 9px; }
+    .sc .v { font-size: 18px; font-weight: 800; color: var(--accent); } .sc .l { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .fc { background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; padding: 7px 9px; }
     .fc-top { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
-    .dot {
-      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
-    }
-    .dot.critical { background: var(--red); box-shadow: 0 0 5px rgba(248,81,73,.5); }
-    .dot.high     { background: var(--accent); }
-    .dot.medium   { background: var(--yellow); }
-    .dot.low      { background: #6e7681; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .dot.critical { background: var(--red); } .dot.high { background: var(--accent); } .dot.medium { background: var(--yellow); } .dot.low { background: #6e7681; }
     .fc-cat { font-size: 10px; font-weight: 700; color: var(--text); }
-    .fc-verd {
-      margin-left: auto; font-size: 8px; font-weight: 700;
-      padding: 1px 6px; border-radius: 8px;
-    }
-    .fc-verd.SUBMIT { background: rgba(52,208,88,.12); color: var(--green); }
-    .fc-verd.CHAIN  { background: rgba(240,163,60,.12); color: var(--yellow); }
-    .fc-verd.DROP   { background: rgba(110,118,129,.1); color: #6e7681; }
+    .fc-verd { margin-left: auto; font-size: 8px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+    .fc-verd.SUBMIT { background: rgba(52,208,88,.12); color: var(--green); } .fc-verd.CHAIN { background: rgba(240,163,60,.12); color: var(--yellow); } .fc-verd.DROP { background: rgba(110,118,129,.1); color: #6e7681; }
     .fc-ev { font-size: 10px; color: var(--muted); word-break: break-all; line-height: 1.4; }
-    .fc-ag { font-size: 9px; color: rgba(232,234,237,.18); margin-top: 2px; }
-
-    /* report card */
-    .rc {
-      background: var(--bg3); border: 1px solid rgba(52,208,88,.2);
-      border-radius: 5px; padding: 9px;
-    }
+    .rc { background: var(--bg3); border: 1px solid rgba(52,208,88,.2); border-radius: 5px; padding: 9px; }
     .rc-t { font-size: 11px; font-weight: 600; color: var(--text); line-height: 1.4; margin-bottom: 3px; }
     .rc-m { font-size: 9px; color: var(--muted); margin-bottom: 6px; }
     .rc-btns { display: flex; gap: 5px; }
-    .rbt {
-      font-family: inherit; font-size: 9px; font-weight: 600;
-      padding: 3px 9px; border-radius: 4px; cursor: pointer;
-      transition: all .15s; border: 1px solid;
-    }
-    .rbt-v { background: rgba(52,208,88,.08); color: var(--green); border-color: rgba(52,208,88,.25); }
-    .rbt-c { background: none; color: var(--muted); border-color: var(--border); }
-    .rbt-v:hover { background: rgba(52,208,88,.16); }
-    .rbt-c:hover { color: var(--text); background: var(--bg4); }
-
-    /* ── Status bar ─────────────────────── */
-    #statusbar {
-      height: 22px; background: var(--bg2);
-      border-top: 1px solid var(--border);
-      display: flex; align-items: center;
-      padding: 0 12px; gap: 16px;
-      flex-shrink: 0;
-    }
-    .sb-item {
-      font-size: 10px; color: var(--muted);
-      display: flex; align-items: center; gap: 4px;
-    }
-    .sb-item .dot2 {
-      width: 5px; height: 5px; border-radius: 50%;
-      background: var(--muted);
-    }
-    .sb-item.cloud .dot2 { background: var(--green); }
-    .sb-item.local .dot2 { background: var(--yellow); }
-    #ticker-bar {
-      flex: 1; overflow: hidden; display: flex; align-items: center;
-    }
-    #ticker-text {
-      font-size: 9px; color: rgba(232,234,237,.2);
-      white-space: nowrap;
-      animation: scroll-t 55s linear infinite;
-    }
-    @keyframes scroll-t {
-      0%   { transform: translateX(120px); }
-      100% { transform: translateX(-100%); }
-    }
-
-    /* ── Modal ──────────────────────────── */
-    #modal {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.75); z-index: 999;
-      align-items: center; justify-content: center;
-    }
+    .rbt { font-family: inherit; font-size: 9px; font-weight: 600; padding: 3px 9px; border-radius: 4px; cursor: pointer; transition: all .15s; border: 1px solid; }
+    .rbt-v { background: rgba(52,208,88,.08); color: var(--green); border-color: rgba(52,208,88,.25); } .rbt-c { background: none; color: var(--muted); border-color: var(--border); }
+    #statusbar { height: 22px; background: var(--bg2); border-top: 1px solid var(--border); display: flex; align-items: center; padding: 0 12px; gap: 16px; flex-shrink: 0; }
+    .sb-i { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+    .d2 { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); }
+    .cloud .d2 { background: var(--green); } .local .d2 { background: var(--yellow); }
+    #ticker-bar { flex: 1; overflow: hidden; }
+    #ticker-txt { font-size: 9px; color: rgba(232,234,237,.2); white-space: nowrap; animation: scr 55s linear infinite; }
+    @keyframes scr { 0%{transform:translateX(120px)} 100%{transform:translateX(-100%)} }
+    .spin { display: inline-block; width: 10px; height: 10px; border: 1.5px solid rgba(217,119,87,.25); border-top-color: var(--accent); border-radius: 50%; animation: sp .7s linear infinite; vertical-align: middle; margin-right: 5px; }
+    @keyframes sp { to { transform: rotate(360deg); } }
+    #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 999; align-items: center; justify-content: center; }
     #modal.on { display: flex; }
-    #modal-box {
-      background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 10px; width: min(700px, 94vw); max-height: 80vh;
-      display: flex; flex-direction: column;
-      box-shadow: 0 20px 50px rgba(0,0,0,.6);
-    }
-    #modal-head {
-      padding: 12px 16px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 10px;
-    }
+    #modal-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; width: min(700px,94vw); max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,.6); }
+    #modal-head { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
     #modal-title { font-size: 13px; font-weight: 600; flex: 1; }
-    #modal-plat {
-      font-size: 9px; font-weight: 700; padding: 2px 8px;
-      border-radius: 8px; background: rgba(52,208,88,.08);
-      color: var(--green); border: 1px solid rgba(52,208,88,.2);
-      text-transform: uppercase; letter-spacing: .08em;
-    }
-    #modal-close {
-      background: none; border: none; color: var(--muted);
-      cursor: pointer; font-size: 16px; padding: 2px 6px;
-      border-radius: 4px; transition: all .15s;
-    }
+    #modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; }
     #modal-close:hover { color: var(--text); background: var(--bg3); }
     #modal-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
-    #modal-content {
-      font-family: 'SF Mono','Cascadia Code', monospace;
-      font-size: 12px; line-height: 1.7;
-      color: rgba(232,234,237,.8); white-space: pre-wrap;
-    }
-    #modal-foot {
-      padding: 10px 16px; border-top: 1px solid var(--border);
-      display: flex; justify-content: flex-end; gap: 8px;
-    }
-    .mft {
-      font-family: inherit; font-size: 11px; font-weight: 600;
-      padding: 6px 16px; border-radius: 6px; cursor: pointer;
-      border: 1px solid; transition: all .15s;
-    }
-    .mft-cp { background: var(--bg3); color: var(--text); border-color: var(--border); }
-    .mft-cl { background: rgba(52,208,88,.1); color: var(--green); border-color: rgba(52,208,88,.3); }
-    .mft-cp:hover { background: var(--bg4); }
-    .mft-cl:hover { background: rgba(52,208,88,.18); }
-
-    /* spinner */
-    .spin {
-      display: inline-block; width: 10px; height: 10px;
-      border: 1.5px solid rgba(217,119,87,.25);
-      border-top-color: var(--accent);
-      border-radius: 50%; animation: sp .7s linear infinite;
-      vertical-align: middle; margin-right: 5px;
-    }
-    @keyframes sp { to { transform: rotate(360deg); } }
+    #modal-content { font-family: 'SF Mono','Cascadia Code',monospace; font-size: 12px; line-height: 1.7; color: rgba(232,234,237,.8); white-space: pre-wrap; }
+    #modal-foot { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+    .mft { font-family: inherit; font-size: 11px; font-weight: 600; padding: 6px 16px; border-radius: 6px; cursor: pointer; border: 1px solid; transition: all .15s; }
+    .mft-cp { background: var(--bg3); color: var(--text); border-color: var(--border); } .mft-cl { background: rgba(52,208,88,.1); color: var(--green); border-color: rgba(52,208,88,.3); }
+    #terms-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 2000; align-items: center; justify-content: center; }
+    #terms-overlay.on { display: flex; }
+    #terms-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; width: min(520px,94vw); padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
+    #terms-box h2 { font-size: 15px; font-weight: 700; }
+    #terms-box p { font-size: 12px; color: var(--muted); line-height: 1.7; }
+    #terms-box ul { font-size: 12px; color: var(--muted); padding-left: 18px; line-height: 1.8; }
+    #terms-box label { display: flex; align-items: flex-start; gap: 10px; font-size: 12px; cursor: pointer; }
+    #terms-box input[type=checkbox] { margin-top: 2px; width: 14px; height: 14px; flex-shrink: 0; }
+    #terms-accept-btn { padding: 10px; border-radius: 8px; border: none; background: var(--accent); color: white; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
+    #terms-accept-btn:disabled { opacity: .4; cursor: not-allowed; }
+    #terms-accept-btn:not(:disabled):hover { filter: brightness(1.1); }
   </style>
 </head>
 <body>
+
+<!-- Terms Overlay — shown once per session before first hunt -->
+<div id="terms-overlay">
+  <div id="terms-box">
+    <h2>⚠️ Authorized Use Only</h2>
+    <p>Codeva Bug Hunter uses 300+ offensive security tools. You must confirm before each hunt session:</p>
+    <ul>
+      <li>You have <strong>explicit written permission</strong> to test the target</li>
+      <li>The target is in an active bug bounty program scope</li>
+      <li>You will NOT test systems you don't own or have permission for</li>
+      <li>You accept full legal responsibility for your actions</li>
+    </ul>
+    <label>
+      <input type="checkbox" id="terms-check" onchange="document.getElementById('terms-accept-btn').disabled=!this.checked" />
+      I confirm I have authorization to test the target and accept full responsibility.
+    </label>
+    <button id="terms-accept-btn" disabled onclick="acceptTerms()">
+      I Understand — Start Hunt
+    </button>
+  </div>
+</div>
 
 <div id="titlebar">
   <div class="tb-dots">
@@ -440,36 +157,27 @@
 </div>
 
 <div id="shell">
-
-  <!-- Command bar -->
   <div id="cmd-bar">
     <div class="cmd-row">
-      <div id="mode-tabs">
-        <button class="mtab on" id="tab-web2" onclick="setTab('web2')">Web2</button>
-        <button class="mtab" id="tab-web3" onclick="setTab('web3')">Web3</button>
+      <div style="display:flex;gap:4px">
+        <button class="rbt rbt-v" id="tab-web2" onclick="setTab('web2')" style="font-size:10px;padding:4px 12px">Web2</button>
+        <button class="rbt rbt-c" id="tab-web3" onclick="setTab('web3')" style="font-size:10px;padding:4px 12px">Web3</button>
       </div>
     </div>
-
     <div class="cmd-row" id="row-web2">
       <span class="cmd-prompt">hunter@codeva ~ %</span>
-      <input id="target-input" type="text"
-        placeholder="target.com  (domain / IP / CIDR)"
-        autocomplete="off" spellcheck="false" />
+      <input id="target-input" type="text" placeholder="target.com — domain, IP, or CIDR" autocomplete="off" spellcheck="false" />
       <button id="run-btn" onclick="startHunt()">▶ Run</button>
     </div>
-
     <div class="cmd-row" id="row-web3" style="display:none">
       <span class="cmd-prompt">hunter@codeva ~ %</span>
-      <input id="web3-input" type="text"
-        placeholder="0x... contract or protocol name"
-        autocomplete="off" spellcheck="false" />
-      <select id="web3-type" style="font-family:inherit;font-size:12px;padding:7px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);outline:none;cursor:pointer">
+      <input id="web3-input" type="text" placeholder="0x... contract address or protocol name" autocomplete="off" />
+      <select id="web3-type" style="font-family:inherit;font-size:12px;padding:7px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);outline:none">
         <option value="full">Full Audit</option>
         <option value="token">Token Scan</option>
       </select>
-      <button id="web3-btn" onclick="startWeb3()" style="background:var(--blue)">⬡ Audit</button>
+      <button onclick="startWeb3()" style="font-size:12px;font-weight:600;padding:7px 18px;border-radius:6px;border:none;cursor:pointer;background:var(--blue);color:#fff">⬡ Audit</button>
     </div>
-
     <div id="phases">
       <div class="ph" id="ph-recon">Recon</div>
       <div class="ph" id="ph-analyze">Intel</div>
@@ -480,61 +188,34 @@
     </div>
   </div>
 
-  <!-- Main panes -->
   <div id="panes">
-
-    <!-- Terminal -->
     <div id="term">
       <div id="term-bar">
-        <span id="term-label">Output</span>
+        <span>Output</span>
         <button id="clr-btn" onclick="clearTerm()">Clear</button>
       </div>
       <div id="term-out">
         <span class="tl dm">Codeva Bug Bounty Engine — autonomous recon to report</span>
         <span class="tl dm">Phases: Recon → Intel → Hunt → Triage → Chain → Report</span>
-        <span class="tl dm">Tools: reconFTW + 250+ best-in-class offensive tools</span>
         <span class="tl dm">Type a target and press Run ▶</span>
       </div>
     </div>
-
-    <!-- Sidebar -->
     <div id="sidebar">
-      <div id="sb-header">
-        <span>Findings</span>
-        <span id="badge">0</span>
-      </div>
+      <div id="sb-header"><span>Findings</span><span id="badge">0</span></div>
       <div id="sb-body">
-        <div id="empty">
-          <div class="ei">◎</div>
-          <p>Findings and reports appear here as agents work.<br><br>
-          The 7-Question Gate filters noise automatically.<br><br>
-          Reports are copy-paste ready for H1, Bugcrowd,<br>Intigriti, and Immunefi.</p>
+        <div id="empty" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;gap:8px">
+          <div style="font-size:28px;opacity:.2">◎</div>
+          <p style="font-size:11px;color:var(--muted)">Findings and reports appear here as agents work.<br><br>7-Question Gate filters noise automatically.<br><br>Reports are copy-paste ready for H1, Bugcrowd, Intigriti, Immunefi.</p>
         </div>
       </div>
     </div>
-
   </div>
 
-  <!-- Status bar -->
   <div id="statusbar">
-    <div class="sb-item" id="sb-mode">
-      <div class="dot2"></div>
-      <span id="sb-mode-txt">Checking...</span>
-    </div>
-    <div id="ticker-bar">
-      <span id="ticker-text">
-        CVE-2024-3094 XZ Backdoor &nbsp;·&nbsp; RCE in popular VPN CVSS 9.8 &nbsp;·&nbsp; Flash loan exploit $3.2M &nbsp;·&nbsp;
-        Subdomain takeover via dangling CNAME &nbsp;·&nbsp; AWS S3 misconfiguration mass exposure &nbsp;·&nbsp;
-        JWT none-alg bypass on OAuth endpoint &nbsp;·&nbsp; SSRF to cloud metadata → IAM exfil &nbsp;·&nbsp;
-        CVE-2025-21298 Windows OLE RCE &nbsp;·&nbsp; GraphQL introspection + IDOR → mass PII &nbsp;·&nbsp;
-        CVE-2024-3094 XZ Backdoor &nbsp;·&nbsp; RCE in popular VPN CVSS 9.8
-      </span>
-    </div>
-    <div class="sb-item" id="sb-count" style="display:none">
-      <span id="sb-count-txt">0 findings</span>
-    </div>
+    <div class="sb-i" id="sb-mode"><div class="d2"></div><span id="sb-mode-txt">Checking...</span></div>
+    <div id="ticker-bar"><span id="ticker-txt">CVE-2024-3094 XZ Backdoor · RCE CVSS 9.8 · Flash loan exploit $3.2M · Subdomain takeover via CNAME · AWS S3 misconfiguration · JWT none-alg bypass · SSRF to IAM exfil · CVE-2025-21298 · GraphQL IDOR</span></div>
+    <div class="sb-i" id="sb-count" style="display:none"><span id="sb-count-txt">0 findings</span></div>
   </div>
-
 </div>
 
 <!-- Report Modal -->
@@ -542,7 +223,7 @@
   <div id="modal-box">
     <div id="modal-head">
       <span id="modal-title">Report</span>
-      <span id="modal-plat">HackerOne</span>
+      <span id="modal-plat" style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:8px;background:rgba(52,208,88,.08);color:var(--green);border:1px solid rgba(52,208,88,.2);text-transform:uppercase;letter-spacing:.08em">HackerOne</span>
       <button id="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div id="modal-body"><pre id="modal-content"></pre></div>
@@ -553,67 +234,85 @@
   </div>
 </div>
 
+
 <script>
-// ── Config ────────────────────────────────────────────────────
 const API = 'https://cybercli-api.onrender.com/api/v1'
 const PHASES = ['recon','analyze','scan','validate','chain','report']
+let hunting = false, tab = 'web2', sid = null, reps = [], ridx = 0, fcount = 0
+let authToken = null
+let termsAccepted = sessionStorage.getItem('bb_terms_accepted') === '1'
 
-// ── State ─────────────────────────────────────────────────────
-let hunting = false
-let tab = 'web2'
-let sid = null
-let reps = []
-let ridx = 0
-let fcount = 0
+// ── Get token from IPC (main window passes it) ───────────────
+function initToken() {
+  // Check localStorage first (web context)
+  const ls = localStorage.getItem('sb-access-token')
+  if (ls) { authToken = ls; applyMode(); return }
+  // Listen for IPC injection from main window
+  if (window.electronAPI?.onHunterToken) {
+    window.electronAPI.onHunterToken((token) => {
+      authToken = token
+      localStorage.setItem('sb-access-token', token)
+      tl('ok', '✓ Authenticated')
+      applyMode()
+    })
+  }
+}
 
-// ── Boot: detect execution mode ───────────────────────────────
-;(async () => {
-  const token = localStorage.getItem('sb-access-token')
-  if (!token) return
+// ── Mode detection ────────────────────────────────────────────
+async function applyMode() {
+  if (!authToken) return
   try {
     const r = await fetch(`${API}/hunt/status`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { 'Authorization': `Bearer ${authToken}`, 'x-desktop-client': 'codeva-desktop' }
     })
     if (!r.ok) return
     const d = await r.json()
-    applyMode(d.exec_mode)
+    const pill = document.getElementById('mode-pill')
+    const sbi  = document.getElementById('sb-mode')
+    const sbt  = document.getElementById('sb-mode-txt')
+    if (d.exec_mode === 'cloud') {
+      pill.className = 'cloud'; pill.textContent = '☁ CLOUD SANDBOX'
+      sbi.className = 'sb-i cloud'; sbt.textContent = 'Cloud sandbox ready'
+    } else if (d.exec_mode === 'local') {
+      pill.className = 'local'; pill.textContent = '💻 LOCAL'
+      sbi.className = 'sb-i local'; sbt.textContent = 'Local tools'
+    } else {
+      pill.textContent = '🤖 AI ONLY'; sbt.textContent = 'AI-only mode'
+    }
   } catch {}
-})()
-
-function applyMode(m) {
-  const pill = document.getElementById('mode-pill')
-  const sb   = document.getElementById('sb-mode')
-  const sbt  = document.getElementById('sb-mode-txt')
-  if (m === 'cloud') {
-    pill.className = 'cloud'; pill.textContent = '☁ CLOUD SANDBOX'
-    sb.className = 'sb-item cloud'; sbt.textContent = 'Cloud sandbox'
-  } else if (m === 'local') {
-    pill.className = 'local'; pill.textContent = '💻 LOCAL'
-    sb.className = 'sb-item local'; sbt.textContent = 'Local tools'
-  } else {
-    pill.textContent = '🤖 AI ONLY'
-    sbt.textContent = 'AI-only mode'
-  }
 }
 
 // ── Tab ───────────────────────────────────────────────────────
 function setTab(t) {
   tab = t
-  document.getElementById('tab-web2').classList.toggle('on', t==='web2')
-  document.getElementById('tab-web3').classList.toggle('on', t==='web3')
+  document.getElementById('tab-web2').className = t==='web2' ? 'rbt rbt-v' : 'rbt rbt-c'
+  document.getElementById('tab-web3').className = t==='web3' ? 'rbt rbt-v' : 'rbt rbt-c'
   document.getElementById('row-web2').style.display = t==='web2' ? 'flex' : 'none'
   document.getElementById('row-web3').style.display = t==='web3' ? 'flex' : 'none'
+}
+
+// ── Terms ─────────────────────────────────────────────────────
+function showTerms(cb) {
+  if (termsAccepted) { cb(); return }
+  document.getElementById('terms-overlay').classList.add('on')
+  window._termsCb = cb
+}
+function acceptTerms() {
+  termsAccepted = true
+  sessionStorage.setItem('bb_terms_accepted', '1')
+  document.getElementById('terms-overlay').classList.remove('on')
+  document.getElementById('terms-check').checked = false
+  document.getElementById('terms-accept-btn').disabled = true
+  if (window._termsCb) { window._termsCb(); window._termsCb = null }
 }
 
 // ── Terminal ──────────────────────────────────────────────────
 function tl(cls, txt) {
   if (!txt?.trim() && cls !== 'h') return
   const el = document.getElementById('term-out')
-  const s  = document.createElement('span')
-  s.className = `tl ${cls}`
-  s.textContent = txt
-  el.appendChild(s)
-  el.scrollTop = el.scrollHeight
+  const s = document.createElement('span')
+  s.className = `tl ${cls}`; s.textContent = txt
+  el.appendChild(s); el.scrollTop = el.scrollHeight
 }
 function clearTerm() {
   document.getElementById('term-out').innerHTML = ''
@@ -621,338 +320,184 @@ function clearTerm() {
 }
 
 // ── Phase ─────────────────────────────────────────────────────
-function ph(id, state) {
-  const el = document.getElementById(`ph-${id}`)
-  if (el) el.className = `ph ${state||''}`
-}
-function phReset() { PHASES.forEach(p => ph(p, '')) }
+function ph(id, state) { const el = document.getElementById(`ph-${id}`); if(el) el.className = `ph ${state||''}` }
+function phReset() { PHASES.forEach(p => ph(p,'')) }
 
 // ── Findings sidebar ──────────────────────────────────────────
-function hideEmpty() {
-  const e = document.getElementById('empty')
-  if (e) e.style.display = 'none'
-}
+function hideEmpty() { const e = document.getElementById('empty'); if(e) e.style.display='none' }
 
 function showStats(d) {
   hideEmpty()
   let el = document.getElementById('stats-el')
-  if (!el) {
-    el = document.createElement('div')
-    el.id = 'stats-el'
-    el.className = 'sg'
-    document.getElementById('sb-body').prepend(el)
-  }
+  if (!el) { el = document.createElement('div'); el.id='stats-el'; el.className='sg'; document.getElementById('sb-body').prepend(el) }
   el.innerHTML = `
     <div class="sc"><div class="v">${d.subdomains||0}</div><div class="l">Subdomains</div></div>
     <div class="sc"><div class="v">${d.live_hosts||0}</div><div class="l">Live Hosts</div></div>
     <div class="sc"><div class="v">${d.raw_findings||0}</div><div class="l">Raw Finds</div></div>
-    <div class="sc"><div class="v">${d.validated||0}</div><div class="l">Validated</div></div>
-  `
+    <div class="sc"><div class="v">${d.validated||0}</div><div class="l">Validated</div></div>`
 }
 
 function pushFinding(f) {
-  hideEmpty()
-  fcount++
-  const b = document.getElementById('badge')
-  b.style.display = 'block'
-  b.textContent = fcount
-  document.getElementById('sb-count').style.display = 'flex'
-  document.getElementById('sb-count-txt').textContent = `${fcount} finding${fcount!==1?'s':''}`
-
-  const sev = f.severity || 'medium'
-  const cat = (f.category || 'unknown').toUpperCase()
-
-  const d = document.createElement('div')
-  d.className = 'fc'
-  d.innerHTML = `
-    <div class="fc-top">
-      <div class="dot ${sev}"></div>
-      <span class="fc-cat">${esc(cat)}</span>
-      ${f.verdict ? `<span class="fc-verd ${f.verdict}">${f.verdict}</span>` : ''}
-    </div>
-    <div class="fc-ev">${esc((f.evidence||'').slice(0,120))}</div>
-    ${f.agent ? `<div class="fc-ag">via ${f.agent}</div>` : ''}
-  `
-  insertAboveReports(d)
+  hideEmpty(); fcount++
+  const b = document.getElementById('badge'); b.style.display='block'; b.textContent=fcount
+  document.getElementById('sb-count').style.display='flex'
+  document.getElementById('sb-count-txt').textContent=`${fcount} finding${fcount!==1?'s':''}`
+  const sev = f.severity||'medium', cat = (f.category||'unknown').toUpperCase()
+  const d = document.createElement('div'); d.className='fc'
+  d.innerHTML = `<div class="fc-top"><div class="dot ${sev}"></div><span class="fc-cat">${esc(cat)}</span>${f.verdict?`<span class="fc-verd ${f.verdict}">${f.verdict}</span>`:''}</div><div class="fc-ev">${esc((f.evidence||'').slice(0,120))}</div>${f.agent?`<div style="font-size:9px;color:rgba(232,234,237,.18);margin-top:2px">via ${f.agent}</div>`:''}`
+  insertAbove(d)
 }
 
 function pushReports(arr) {
-  if (!arr?.length) return
-  reps = arr
+  if (!arr?.length) return; reps = arr
   let sec = document.getElementById('rep-sec')
   if (!sec) {
-    const lbl = document.createElement('div')
-    lbl.className = 'sl'
-    lbl.style.color = 'var(--green)'
-    lbl.textContent = '✓ Reports ready'
-    sec = document.createElement('div')
-    sec.id = 'rep-sec'
-    sec.appendChild(lbl)
-    document.getElementById('sb-body').appendChild(sec)
+    sec = document.createElement('div'); sec.id='rep-sec'
+    const lbl = document.createElement('div'); lbl.style.cssText='font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);padding:4px 2px'; lbl.textContent='✓ Reports ready'
+    sec.appendChild(lbl); document.getElementById('sb-body').appendChild(sec)
   }
   arr.forEach((r,i) => {
-    const d = document.createElement('div')
-    d.className = 'rc'
-    d.innerHTML = `
-      <div class="rc-t">${esc((r.title||'Bug Report').slice(0,85))}</div>
-      <div class="rc-m">${(r.platform||'hackerone').toUpperCase()} · ${(r.severity||'medium').toUpperCase()}</div>
-      <div class="rc-btns">
-        <button class="rbt rbt-v" onclick="viewRep(${i})">View</button>
-        <button class="rbt rbt-c" onclick="cpAt(${i})">Copy</button>
-      </div>
-    `
+    const d = document.createElement('div'); d.className='rc'
+    d.innerHTML=`<div class="rc-t">${esc((r.title||'Bug Report').slice(0,85))}</div><div class="rc-m">${(r.platform||'hackerone').toUpperCase()} · ${(r.severity||'medium').toUpperCase()}</div><div class="rc-btns"><button class="rbt rbt-v" onclick="viewRep(${i})">View</button><button class="rbt rbt-c" onclick="cpAt(${i})">Copy</button></div>`
     sec.appendChild(d)
   })
 }
 
-function insertAboveReports(el) {
+function insertAbove(el) {
   const body = document.getElementById('sb-body')
-  const sec  = document.getElementById('rep-sec')
-  if (sec) body.insertBefore(el, sec)
-  else     body.appendChild(el)
+  const sec = document.getElementById('rep-sec')
+  if (sec) body.insertBefore(el, sec); else body.appendChild(el)
   body.scrollTop = body.scrollHeight
 }
 
-// ── SSE event handler ─────────────────────────────────────────
+// ── SSE Event Handler ─────────────────────────────────────────
 function onEvent(ev) {
-  switch (ev.type) {
-    case 'session':
-      sid = ev.sessionId
-      tl('dm', `// session ${ev.sessionId}`)
-      break
-
-    case 'mode':
-      applyMode(ev.mode)
-      tl('md', `// Exec mode: ${ev.mode}`)
-      break
-
+  switch(ev.type) {
+    case 'session': sid=ev.sessionId; tl('dm',`// session ${ev.sessionId}`); break
+    case 'mode': applyMode(); break
     case 'phase':
-      if (ev.status === 'started') {
-        ph(ev.phase, 'run')
-        tl('h', `\n── ${ev.phase.toUpperCase()} ──`)
-      } else {
-        ph(ev.phase, 'ok')
+      if (ev.status==='started') { ph(ev.phase,'run'); tl('h',`\n── ${ev.phase.toUpperCase()} ──`) }
+      else {
+        ph(ev.phase,'ok')
         if (ev.data) {
-          if (ev.phase==='recon')
-            tl('ok', `✓ ${ev.data.subdomains} subdomains · ${ev.data.live_hosts} live · ${ev.data.urls} URLs`)
-          if (ev.phase==='scan')
-            tl('ok', `✓ ${ev.data.count} raw findings`)
-          if (ev.phase==='validate')
-            tl('ok', `✓ SUBMIT:${ev.data.submit} CHAIN:${ev.data.chain} DROP:${ev.data.drop}`)
-          if (ev.phase==='report')
-            tl('ok', `✓ ${ev.data.count} reports ready`)
+          if (ev.phase==='recon') { tl('ok',`✓ ${ev.data.subdomains} subdomains · ${ev.data.live_hosts} live · ${ev.data.urls} URLs`); showStats(ev.data) }
+          if (ev.phase==='scan') tl('ok',`✓ ${ev.data.count} raw findings`)
+          if (ev.phase==='validate') tl('ok',`✓ SUBMIT:${ev.data.submit} CHAIN:${ev.data.chain} DROP:${ev.data.drop}`)
+          if (ev.phase==='report') tl('ok',`✓ ${ev.data.count} reports ready`)
         }
       }
       break
-
     case 'progress': {
-      const m = ev.message || ''
-      if (!m.trim()) break
-      if (m.startsWith('[ERROR]')||m.startsWith('[-]')) tl('er', m)
-      else if (m.startsWith('[WARN]')||m.startsWith('[!]')) tl('w', m)
-      else if (m.startsWith('✓')||m.startsWith('[+]')||m.startsWith('[OK]')) tl('ok', m)
-      else if (m.startsWith('[FINDING]')) tl('fx', m)
-      else tl('', m)
+      const m = ev.message||''; if (!m.trim()) break
+      if (m.startsWith('[ERROR]')||m.startsWith('[-]')) tl('er',m)
+      else if (m.startsWith('[WARN]')||m.startsWith('[!]')) tl('w',m)
+      else if (m.startsWith('✓')||m.startsWith('[+]')) tl('ok',m)
+      else if (m.startsWith('[FINDING]')) tl('fx',m)
+      else tl('',m)
       break
     }
-
     case 'finding':
-      if (ev.finding) {
-        pushFinding(ev.finding)
-        tl('fx', `  [${(ev.finding.severity||'?').toUpperCase()}][${ev.finding.category}] ${(ev.finding.evidence||'').slice(0,80)}`)
-      }
+      if (ev.finding) { pushFinding(ev.finding); tl('fx',`  [${(ev.finding.severity||'?').toUpperCase()}][${ev.finding.category}] ${(ev.finding.evidence||'').slice(0,80)}`) }
       break
-
     case 'complete':
       if (ev.success) {
-        tl('h', '\n── COMPLETE ──')
-        tl('ok', `✓ ${ev.reports} reports · ${ev.summary?.duration_mins||0} min · mode:${ev.summary?.exec_mode||'?'}`)
-        PHASES.forEach(p => {
-          const el = document.getElementById(`ph-${p}`)
-          if (el && !el.classList.contains('ok')) el.className = 'ph ok'
-        })
+        tl('h','\n── COMPLETE ──')
+        tl('ok',`✓ ${ev.reports} reports · ${ev.summary?.duration_mins||0} min`)
+        PHASES.forEach(p => { const el=document.getElementById(`ph-${p}`); if(el&&!el.classList.contains('ok'))el.className='ph ok' })
         if (sid) loadSession(sid)
-      } else {
-        tl('er', `✗ ${ev.error}`)
-      }
+      } else { tl('er',`✗ ${ev.error}`) }
       break
-
-    case 'error':
-      tl('er', `✗ ${ev.message}`)
-      break
+    case 'error': tl('er',`✗ ${ev.message}`); break
   }
 }
 
-// ── Start hunt ────────────────────────────────────────────────
-async function startHunt() {
+// ── Start Hunt ────────────────────────────────────────────────
+function startHunt() {
+  if (!authToken) { tl('er','✗ Not authenticated. Please close and reopen from the main app.'); return }
   const raw = document.getElementById('target-input').value.trim()
-  if (!raw || hunting) return
+  if (!raw||hunting) return
   const target = raw.replace(/^https?:\/\//,'').replace(/\/.*$/,'').toLowerCase()
   if (!/^[a-z0-9\-\./]+$/.test(target)) { tl('er','✗ Invalid target'); return }
+  showTerms(() => _doHunt(target))
+}
 
-  const token = localStorage.getItem('sb-access-token')
-  if (!token) { tl('er','✗ Not authenticated'); return }
-
-  hunting = true; reps = []; fcount = 0
-  phReset()
-  document.getElementById('sb-body').innerHTML = ''
-  const emp = document.createElement('div'); emp.id = 'empty'; emp.style.display='none'
-  document.getElementById('sb-body').appendChild(emp)
-  document.getElementById('badge').style.display = 'none'
-  document.getElementById('sb-count').style.display = 'none'
-
+async function _doHunt(target) {
+  hunting = true; reps = []; fcount = 0; phReset()
+  const body = document.getElementById('sb-body')
+  body.innerHTML = '<div id="empty" style="display:none"></div>'
+  document.getElementById('badge').style.display='none'
+  document.getElementById('sb-count').style.display='none'
   const btn = document.getElementById('run-btn')
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Running...'
-  document.getElementById('target-input').disabled = true
-
-  tl('h', `\nhunter@codeva ~ % hunt ${target}`)
-  tl('', 'Initializing autonomous hunt engine...')
-
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>Running...'
+  document.getElementById('target-input').disabled=true
+  tl('h',`\nhunter@codeva ~ % hunt ${target}`)
+  tl('','Initializing autonomous hunt engine...')
   try {
     const resp = await fetch(`${API}/hunt/autopilot`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'x-desktop-client': 'codeva-desktop',
-      },
-      body: JSON.stringify({ target }),
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${authToken}`,'x-desktop-client':'codeva-desktop'},
+      body:JSON.stringify({target})
     })
-
     if (!resp.ok) {
       const e = await resp.json().catch(()=>({}))
-      if (resp.status === 403 || e.required_plan) {
-        // Show upgrade UI in sidebar
-        tl('w', '⚠ Bug Hunter requires MAX plan')
-        document.getElementById('sb-body').innerHTML = `
-          <div style="padding:24px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px">
-            <div style="font-size:32px">🔒</div>
-            <div style="font-size:13px;font-weight:600;color:var(--text)">MAX Plan Required</div>
-            <div style="font-size:11px;color:var(--muted);line-height:1.65;max-width:240px">
-              Bug Bounty Hunter needs MAX plan.<br>
-              Unlock autonomous recon, 300+ cloud tools, and submission-ready H1 reports.
-            </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px">Current plan: ${e.current_plan || 'free'}</div>
-            <a href="https://cybermindcli.info/upgrade" target="_blank"
-              style="margin-top:6px;display:inline-block;padding:9px 22px;background:var(--accent);color:white;border-radius:7px;font-size:11px;font-weight:700;text-decoration:none;letter-spacing:.05em">
-              Upgrade to MAX →
-            </a>
-          </div>
-        `
-        document.getElementById('empty-state').style.display = 'none'
-      } else {
-        tl('er', `✗ ${e.error || `HTTP ${resp.status}`}`)
-      }
+      if (resp.status===403||e.required_plan) {
+        tl('w','⚠ Bug Hunter requires MAX plan')
+        document.getElementById('sb-body').innerHTML=`<div style="padding:24px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px"><div style="font-size:32px">🔒</div><div style="font-size:13px;font-weight:600;color:var(--text)">MAX Plan Required</div><div style="font-size:11px;color:var(--muted);line-height:1.65;max-width:240px">Current plan: ${e.current_plan||'free'}<br><br>Upgrade to MAX for Bug Bounty Hunter access.</div><a href="https://cybermindcli.info/upgrade" target="_blank" style="margin-top:6px;display:inline-block;padding:9px 22px;background:var(--accent);color:white;border-radius:7px;font-size:11px;font-weight:700;text-decoration:none">Upgrade to MAX →</a></div>`
+      } else { tl('er',`✗ ${e.error||`HTTP ${resp.status}`}`) }
       resetUI(); return
     }
-
-    const reader = resp.body.getReader()
-    const dec    = new TextDecoder()
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      for (const line of dec.decode(value).split('\n')) {
-        if (!line.startsWith('data: ')) continue
-        const raw2 = line.slice(6).trim()
-        if (raw2 === '[DONE]') break
-        try { onEvent(JSON.parse(raw2)) } catch {}
+    const reader=resp.body.getReader(), dec=new TextDecoder()
+    while(true){
+      const{done,value}=await reader.read(); if(done) break
+      for(const line of dec.decode(value).split('\n')){
+        if(!line.startsWith('data: ')) continue
+        const r2=line.slice(6).trim(); if(r2==='[DONE]') break
+        try{onEvent(JSON.parse(r2))}catch{}
       }
     }
-  } catch (e) { tl('er', `✗ ${e.message}`) }
+  } catch(e){ tl('er',`✗ ${e.message}`) }
   resetUI()
 }
 
 async function startWeb3() {
-  const target = document.getElementById('web3-input').value.trim()
-  if (!target || hunting) return
-  const token = localStorage.getItem('sb-access-token')
-  if (!token) { tl('er','✗ Not authenticated'); return }
-
-  hunting = true
-  tl('h', `\nhunter@codeva ~ % web3-audit ${target}`)
-
-  try {
-    const resp = await fetch(`${API}/hunt/web3`, {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
-      body: JSON.stringify({
-        target,
-        contract_address: target.startsWith('0x') ? target : undefined,
-        audit_type: document.getElementById('web3-type').value,
-      }),
-    })
-    if (!resp.ok) { const e = await resp.json().catch(()=>({})); tl('er',`✗ ${e.error}`); hunting=false; return }
-    const reader = resp.body.getReader(), dec = new TextDecoder()
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      for (const line of dec.decode(value).split('\n')) {
-        if (!line.startsWith('data: ')) continue
-        const r2 = line.slice(6).trim()
-        if (r2==='[DONE]') break
-        try { onEvent(JSON.parse(r2)) } catch {}
-      }
-    }
-  } catch(e) { tl('er',`✗ ${e.message}`) }
-  hunting = false
+  if (!authToken) { tl('er','✗ Not authenticated'); return }
+  const target = document.getElementById('web3-input').value.trim(); if(!target||hunting) return
+  showTerms(async () => {
+    hunting=true; tl('h',`\nhunter@codeva ~ % web3-audit ${target}`)
+    try {
+      const resp=await fetch(`${API}/hunt/web3`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${authToken}`},body:JSON.stringify({target,contract_address:target.startsWith('0x')?target:undefined,audit_type:document.getElementById('web3-type').value})})
+      if(!resp.ok){const e=await resp.json().catch(()=>({}));tl('er',`✗ ${e.error}`);hunting=false;return}
+      const reader=resp.body.getReader(),dec=new TextDecoder()
+      while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(!line.startsWith('data: '))continue;const r2=line.slice(6).trim();if(r2==='[DONE]')break;try{onEvent(JSON.parse(r2))}catch{}}}
+    }catch(e){tl('er',`✗ ${e.message}`)}
+    hunting=false
+  })
 }
 
 async function loadSession(id) {
-  const token = localStorage.getItem('sb-access-token')
-  if (!token) return
+  if(!authToken) return
   try {
-    const r = await fetch(`${API}/hunt/sessions/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    if (!r.ok) return
-    const s = await r.json()
-    showStats({
-      subdomains: s.recon?.subdomains_count||0,
-      live_hosts: s.recon?.live_hosts_count||0,
-      raw_findings: s.raw_findings?.length||0,
-      validated: s.validated_findings?.filter(f=>f.verdict!=='DROP').length||0,
-    })
-    for (const f of s.validated_findings||[]) {
-      if (f.verdict !== 'DROP') pushFinding(f)
-    }
+    const r=await fetch(`${API}/hunt/sessions/${id}`,{headers:{'Authorization':`Bearer ${authToken}`}})
+    if(!r.ok) return
+    const s=await r.json()
+    showStats({subdomains:s.recon?.subdomains_count||0,live_hosts:s.recon?.live_hosts_count||0,raw_findings:s.raw_findings?.length||0,validated:s.validated_findings?.filter(f=>f.verdict!=='DROP').length||0})
+    for(const f of s.validated_findings||[]) if(f.verdict!=='DROP') pushFinding(f)
     pushReports(s.reports||[])
-  } catch {}
+  }catch{}
 }
 
 // ── Modal ─────────────────────────────────────────────────────
-function viewRep(i) {
-  ridx = i; const r = reps[i]; if (!r) return
-  document.getElementById('modal-title').textContent = r.title||'Report'
-  document.getElementById('modal-plat').textContent = (r.platform||'hackerone').toUpperCase()
-  document.getElementById('modal-content').textContent = r.content||''
-  document.getElementById('modal').classList.add('on')
-}
-function closeModal() { document.getElementById('modal').classList.remove('on') }
-function copyRep()   { cpAt(ridx) }
-function cpAt(i) {
-  const r = reps[i]; if (!r) return
-  navigator.clipboard.writeText(r.content||'')
-  tl('ok', '✓ Copied to clipboard')
-}
+function viewRep(i){ridx=i;const r=reps[i];if(!r)return;document.getElementById('modal-title').textContent=r.title||'Report';document.getElementById('modal-plat').textContent=(r.platform||'hackerone').toUpperCase();document.getElementById('modal-content').textContent=r.content||'';document.getElementById('modal').classList.add('on')}
+function closeModal(){document.getElementById('modal').classList.remove('on')}
+function copyRep(){cpAt(ridx)}
+function cpAt(i){const r=reps[i];if(!r)return;navigator.clipboard.writeText(r.content||'');tl('ok','✓ Copied to clipboard')}
+function resetUI(){hunting=false;const btn=document.getElementById('run-btn');btn.disabled=false;btn.innerHTML='▶ Run';document.getElementById('target-input').disabled=false}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-function resetUI() {
-  hunting = false
-  const btn = document.getElementById('run-btn')
-  btn.disabled = false; btn.innerHTML = '▶ Run'
-  document.getElementById('target-input').disabled = false
-}
-
-function esc(s) {
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-}
-
-// ── Keyboard ──────────────────────────────────────────────────
-document.getElementById('target-input').addEventListener('keydown', e => {
-  if (e.key==='Enter' && !e.shiftKey) startHunt()
-})
-document.getElementById('web3-input')?.addEventListener('keydown', e => {
-  if (e.key==='Enter') startWeb3()
-})
+// ── Init ──────────────────────────────────────────────────────
+document.getElementById('target-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey)startHunt()})
+document.getElementById('web3-input')?.addEventListener('keydown',e=>{if(e.key==='Enter')startWeb3()})
+initToken()
 </script>
 </body>
 </html>
