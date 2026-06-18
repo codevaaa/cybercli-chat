@@ -127,9 +127,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
-          # Disable code signing completely — users bypass Gatekeeper via right-click Open
           CSC_LINK: ""
           CSC_KEY_PASSWORD: ""
+          # Publish update metadata so auto-updater works
+          PUBLISH: always
 
       - name: Strip quarantine from DMG (allows right-click Open without warning)
         working-directory: desktop
