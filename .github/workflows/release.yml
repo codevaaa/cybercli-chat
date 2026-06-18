@@ -1,0 +1,193 @@
+name: Release — Build & Publish All Platforms
+
+# Triggers ONLY on version tags (v0.5.2, v1.0.0, etc.)
+# This is separate from the CI build workflow
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # ── Windows ───────────────────────────────────────────────────────────────────
+  release-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps && npm run build
+
+      - name: Install desktop deps
+        working-directory: desktop
+        run: npm ci --legacy-peer-deps
+
+      - name: Build electron-vite
+        working-directory: desktop
+        run: npx electron-vite build
+
+      - name: Copy kalikal-hunter.html if missing
+        working-directory: desktop
+        run: |
+          if (-not (Test-Path "dist/renderer/kalikal-hunter.html")) {
+            Copy-Item "src/renderer/kalikal-hunter.html" "dist/renderer/kalikal-hunter.html"
+          }
+
+      - name: Build & publish Windows (--publish always uploads to GitHub Release)
+        working-directory: desktop
+        run: npx electron-builder --win --x64 --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: desktop/release/*.exe
+          if-no-files-found: warn
+
+  # ── macOS ─────────────────────────────────────────────────────────────────────
+  release-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps && npm run build
+
+      - name: Install desktop deps
+        working-directory: desktop
+        run: npm ci --legacy-peer-deps
+
+      - name: Build electron-vite
+        working-directory: desktop
+        run: npx electron-vite build
+
+      - name: Copy kalikal-hunter.html if missing
+        working-directory: desktop
+        run: |
+          [ -f "dist/renderer/kalikal-hunter.html" ] || cp "src/renderer/kalikal-hunter.html" "dist/renderer/kalikal-hunter.html"
+
+      - name: Build & publish macOS unsigned
+        working-directory: desktop
+        run: npx electron-builder --mac --universal --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          CSC_LINK: ""
+          CSC_KEY_PASSWORD: ""
+
+      - name: Strip quarantine from DMG
+        working-directory: desktop
+        run: |
+          for f in release/*.dmg release/*.zip; do
+            [ -f "$f" ] && xattr -cr "$f" || true
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+          if-no-files-found: warn
+
+  # ── Linux ─────────────────────────────────────────────────────────────────────
+  release-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - run: sudo apt-get install -y --no-install-recommends rpm fakeroot
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps && npm run build
+
+      - name: Install desktop deps
+        working-directory: desktop
+        run: npm ci --legacy-peer-deps
+
+      - name: Build electron-vite
+        working-directory: desktop
+        run: npx electron-vite build
+
+      - name: Copy kalikal-hunter.html if missing
+        working-directory: desktop
+        run: |
+          [ -f "dist/renderer/kalikal-hunter.html" ] || cp "src/renderer/kalikal-hunter.html" "dist/renderer/kalikal-hunter.html"
+
+      - name: Build & publish Linux
+        working-directory: desktop
+        run: npx electron-builder --linux AppImage deb --x64 --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: |
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+          if-no-files-found: warn
+
+  # ── Announce release ──────────────────────────────────────────────────────────
+  announce:
+    needs: [release-windows, release-macos, release-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update release notes
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            ## Codeva Desktop ${{ github.ref_name }}
+
+            ### Download
+            | Platform | File | Size |
+            |---|---|---|
+            | 🪟 Windows | [Codeva-win-x64.exe](https://github.com/codevaaa/cybercli-chat/releases/download/${{ github.ref_name }}/Codeva-win-x64.exe) | ~82 MB |
+            | 🍎 macOS (Intel + M1/M2/M3) | [Codeva-mac-universal.dmg](https://github.com/codevaaa/cybercli-chat/releases/download/${{ github.ref_name }}/Codeva-mac-universal.dmg) | ~181 MB |
+            | 🐧 Linux AppImage | [Codeva-linux-x86_64.AppImage](https://github.com/codevaaa/cybercli-chat/releases/download/${{ github.ref_name }}/Codeva-linux-x86_64.AppImage) | ~108 MB |
+            | 🐧 Linux deb | [Codeva-linux-amd64.deb](https://github.com/codevaaa/cybercli-chat/releases/download/${{ github.ref_name }}/Codeva-linux-amd64.deb) | ~75 MB |
+
+            ### macOS Install (unsigned app bypass)
+            ```bash
+            xattr -cr /Applications/Codeva.app
+            open /Applications/Codeva.app
+            ```
+
+            ### What's New
+            - 💀 Bug Bounty Hunter — full auth fix (token IPC injection)
+            - ✅ Terms acceptance before each hunt session
+            - 🔧 Removed duplicate Bug Hunter button from sidebar
+            - ⬆️ Auto-updater now pushes latest.yml for in-app updates
+            - 🔴 All 6 phases visible: Recon → Intel → Hunt → Triage → Chain → Report
+          append_body: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
