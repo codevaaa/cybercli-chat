@@ -267,10 +267,22 @@ app.whenReady().then(() => {
     })
     
     autoUpdater.on('error', (err) => {
-      mainWindow?.webContents.send('update:error', err.message)
+      // Silently ignore 404 latest.yml errors — don't crash the app
+      const msg = err?.message || ''
+      if (msg.includes('latest.yml') || msg.includes('404') || msg.includes('HttpError')) {
+        console.log('[Updater] Update check skipped (latest.yml not found yet):', msg.slice(0, 80))
+        return
+      }
+      console.error('[Updater] Error:', msg)
+      mainWindow?.webContents.send('update:error', msg)
     })
 
-    autoUpdater.checkForUpdates().catch(() => {})
+    // Delay update check by 10s so app loads first, and wrap in try/catch
+    setTimeout(() => {
+      autoUpdater.checkForUpdates().catch((err) => {
+        console.log('[Updater] checkForUpdates failed silently:', (err?.message || '').slice(0, 80))
+      })
+    }, 10_000)
   }
 
   app.on('activate', () => {
