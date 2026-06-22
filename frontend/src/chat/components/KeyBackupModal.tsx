@@ -13,6 +13,8 @@
  *   - Escape key closes the modal (calls onCancel)
  *   - Auto-focuses the cancel button on open
  *
+ * Responsive: bottom-sheet on mobile, centered dialog on sm+ screens.
+ *
  * REQ-14.4, REQ-14.5
  */
 
@@ -23,16 +25,9 @@ import React, { useEffect, useRef } from 'react'
 // ---------------------------------------------------------------------------
 
 export interface KeyBackupModalProps {
-  /**
-   * `export-warning`: user is about to export their identity key backup.
-   * `overwrite-confirm`: user is about to overwrite an existing stored identity.
-   */
   mode: 'export-warning' | 'overwrite-confirm'
-  /** Whether the modal is currently visible. */
   isOpen: boolean
-  /** Called when the user confirms the action (Export / Proceed). */
   onConfirm: () => void
-  /** Called when the user dismisses the modal (Cancel / Escape). */
   onCancel: () => void
 }
 
@@ -49,12 +44,12 @@ interface ModalContent {
 const CONTENT: Record<KeyBackupModalProps['mode'], ModalContent> = {
   'export-warning': {
     title: 'Export Identity Key',
-    body: 'Sharing this backup file will compromise your anonymous identity. Keep it private.',
+    body: 'Sharing this backup file will compromise your anonymous identity. Keep it strictly private and never share it.',
     confirmLabel: 'Export',
   },
   'overwrite-confirm': {
     title: 'Overwrite Existing Identity?',
-    body: 'An identity already exists on this device. Importing will permanently replace it.',
+    body: 'An identity already exists on this device. Importing will permanently replace it. This cannot be undone.',
     confirmLabel: 'Proceed',
   },
 }
@@ -63,33 +58,6 @@ const CONTENT: Record<KeyBackupModalProps['mode'], ModalContent> = {
 // Component
 // ---------------------------------------------------------------------------
 
-/**
- * Modal dialog used for identity key backup (export warning) and identity
- * import overwrite confirmation.
- *
- * Returns `null` when `isOpen` is false so the component can be mounted
- * unconditionally in a parent and toggled via the `isOpen` prop.
- *
- * Example — export warning:
- * ```tsx
- * <KeyBackupModal
- *   mode="export-warning"
- *   isOpen={showExport}
- *   onConfirm={handleExport}
- *   onCancel={() => setShowExport(false)}
- * />
- * ```
- *
- * Example — overwrite confirmation:
- * ```tsx
- * <KeyBackupModal
- *   mode="overwrite-confirm"
- *   isOpen={showOverwrite}
- *   onConfirm={handleImport}
- *   onCancel={() => setShowOverwrite(false)}
- * />
- * ```
- */
 export function KeyBackupModal({
   mode,
   isOpen,
@@ -100,7 +68,6 @@ export function KeyBackupModal({
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
   const { title, body, confirmLabel } = CONTENT[mode]
 
-  // Close on Escape key
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -110,7 +77,6 @@ export function KeyBackupModal({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onCancel])
 
-  // Auto-focus the cancel button when the modal opens (safer default)
   useEffect(() => {
     if (isOpen) {
       cancelButtonRef.current?.focus()
@@ -120,21 +86,20 @@ export function KeyBackupModal({
   if (!isOpen) return null
 
   return (
-    /* Backdrop */
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         justifyContent: 'center',
         zIndex: 1000,
       }}
+      className="sm:items-center sm:p-4"
       onClick={onCancel}
       data-testid="key-backup-modal-backdrop"
     >
-      {/* Dialog panel — stop propagation so clicking inside doesn't close */}
       <div
         role="dialog"
         aria-modal="true"
@@ -143,20 +108,34 @@ export function KeyBackupModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           background: '#1e1e2e',
-          borderRadius: '0.75rem',
-          padding: '2rem',
-          maxWidth: '28rem',
-          width: '90%',
           color: '#cdd6f4',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.6)',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.7)',
           border: '1px solid rgba(255,255,255,0.08)',
+          width: '100%',
+          borderRadius: '1rem 1rem 0 0',
+          padding: '1.5rem 1.25rem 2rem',
         }}
+        className="sm:rounded-xl sm:max-w-md sm:w-full sm:p-8"
       >
+        {/* Drag handle (mobile) */}
+        <div
+          style={{
+            width: '2.5rem',
+            height: '0.25rem',
+            background: 'rgba(255,255,255,0.15)',
+            borderRadius: '999px',
+            margin: '0 auto 1.25rem',
+          }}
+          className="sm:hidden"
+          aria-hidden="true"
+        />
+
         {/* Title */}
         <h2
           id={titleId}
           data-testid="key-backup-modal-title"
-          style={{ margin: '0 0 0.75rem', fontSize: '1.25rem', fontWeight: 700 }}
+          style={{ margin: '0 0 0.625rem', fontSize: '1.125rem', fontWeight: 700 }}
+          className="sm:text-xl"
         >
           {title}
         </h2>
@@ -164,47 +143,56 @@ export function KeyBackupModal({
         {/* Body */}
         <p
           data-testid="key-backup-modal-body"
-          style={{ margin: '0 0 1.5rem', fontSize: '0.9375rem', lineHeight: 1.6, opacity: 0.85 }}
+          style={{ margin: '0 0 1.75rem', fontSize: '0.9375rem', lineHeight: 1.6, opacity: 0.85 }}
         >
           {body}
         </p>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-          {/* Cancel — focused by default (safe action) */}
+        {/* Actions — stacked on mobile, row on sm+ */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '0.75rem',
+            flexDirection: 'column-reverse',
+          }}
+          className="sm:flex-row sm:justify-end"
+        >
           <button
             type="button"
             ref={cancelButtonRef}
             onClick={onCancel}
             data-testid="key-backup-modal-cancel"
             style={{
-              padding: '0.5rem 1.25rem',
-              borderRadius: '0.375rem',
+              padding: '0.75rem 1.25rem',
+              borderRadius: '0.5rem',
               border: '1px solid rgba(255,255,255,0.15)',
               background: 'transparent',
               color: 'inherit',
               cursor: 'pointer',
-              fontSize: '0.875rem',
+              fontSize: '0.9375rem',
+              width: '100%',
             }}
+            className="sm:w-auto sm:py-2 sm:text-sm"
           >
             Cancel
           </button>
 
-          {/* Confirm (Export / Proceed) */}
           <button
             type="button"
             onClick={onConfirm}
             data-testid="key-backup-modal-confirm"
             style={{
-              padding: '0.5rem 1.25rem',
-              borderRadius: '0.375rem',
+              padding: '0.75rem 1.25rem',
+              borderRadius: '0.5rem',
               background: mode === 'overwrite-confirm' ? '#f38ba8' : '#cba6f7',
               color: '#1e1e2e',
-              fontWeight: 600,
+              fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
-              fontSize: '0.875rem',
+              fontSize: '0.9375rem',
+              width: '100%',
             }}
+            className="sm:w-auto sm:py-2 sm:text-sm"
           >
             {confirmLabel}
           </button>

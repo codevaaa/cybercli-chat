@@ -2,8 +2,8 @@
  * TtlSelector — TTL picker for disappearing messages.
  *
  * Renders exactly 5 radio-button options corresponding to the five permitted
- * TTL values (REQ-6.1). Passes the selected TTL in milliseconds to the
- * `onChange` callback. A value of `undefined` means "no TTL" (permanent).
+ * TTL values (REQ-6.1). On mobile the options are displayed as a scrollable
+ * horizontal chip strip; on sm+ screens they stack vertically.
  *
  * REQ-6.1
  */
@@ -14,32 +14,24 @@ import React from 'react'
 // TTL options — exactly 5 values as required by REQ-6.1
 // ---------------------------------------------------------------------------
 
-/**
- * The 5 permitted TTL values in milliseconds.
- * Exported for use in tests and other components.
- */
 export const TTL_OPTIONS = [
-  { label: '30 seconds', value: 30_000 },
-  { label: '5 minutes', value: 300_000 },
-  { label: '1 hour', value: 3_600_000 },
-  { label: '24 hours', value: 86_400_000 },
-  { label: '7 days', value: 604_800_000 },
+  { label: '30s', fullLabel: '30 seconds', value: 30_000 },
+  { label: '5m',  fullLabel: '5 minutes',  value: 300_000 },
+  { label: '1h',  fullLabel: '1 hour',     value: 3_600_000 },
+  { label: '24h', fullLabel: '24 hours',   value: 86_400_000 },
+  { label: '7d',  fullLabel: '7 days',     value: 604_800_000 },
 ] as const
 
 export type TtlValue = (typeof TTL_OPTIONS)[number]['value']
 
 // ---------------------------------------------------------------------------
-// Component props
+// Props
 // ---------------------------------------------------------------------------
 
 export interface TtlSelectorProps {
-  /** Currently selected TTL in milliseconds, or undefined if TTL is disabled. */
   value: number | undefined
-  /** Called with the newly selected TTL value in milliseconds. */
   onChange: (ttl: number) => void
-  /** Optional label prefix rendered above the options. */
   label?: string
-  /** Whether the selector is disabled (e.g. while saving). */
   disabled?: boolean
 }
 
@@ -47,14 +39,6 @@ export interface TtlSelectorProps {
 // TtlSelector component
 // ---------------------------------------------------------------------------
 
-/**
- * Renders exactly 5 radio-button TTL options (REQ-6.1).
- *
- * Example:
- * ```tsx
- * <TtlSelector value={300_000} onChange={(ttl) => updateSession(ttl)} />
- * ```
- */
 export function TtlSelector({
   value,
   onChange,
@@ -70,20 +54,34 @@ export function TtlSelector({
       {label && (
         <legend
           style={{
-            fontSize: '0.875rem',
+            fontSize: '0.8125rem',
             fontWeight: 600,
-            marginBottom: '0.5rem',
+            marginBottom: '0.625rem',
             color: 'inherit',
+            opacity: disabled ? 0.5 : 1,
           }}
         >
           {label}
         </legend>
       )}
 
+      {/*
+        Mobile: horizontal scrollable chip row (overflow-x auto, no wrap)
+        sm+: vertical radio list
+      */}
       <div
         role="radiogroup"
         aria-label={label}
-        style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          gap: '0.5rem',
+          overflowX: 'auto',
+          paddingBottom: '0.25rem',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+        }}
+        className="sm:flex-col sm:overflow-x-visible sm:pb-0"
       >
         {TTL_OPTIONS.map((option) => {
           const id = `ttl-option-${option.value}`
@@ -93,14 +91,29 @@ export function TtlSelector({
             <label
               key={option.value}
               htmlFor={id}
+              title={option.fullLabel}
               style={{
-                display: 'flex',
+                /* Chip style on mobile */
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.5rem',
+                justifyContent: 'center',
+                flexShrink: 0,
+                gap: '0.375rem',
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.5 : 1,
-                fontSize: '0.875rem',
+                fontSize: '0.8125rem',
+                fontWeight: isSelected ? 600 : 400,
+                padding: '0.375rem 0.75rem',
+                borderRadius: '999px',
+                border: `1.5px solid ${isSelected ? 'rgba(203,166,247,0.9)' : 'rgba(255,255,255,0.12)'}`,
+                background: isSelected ? 'rgba(203,166,247,0.12)' : 'transparent',
+                color: isSelected ? '#cba6f7' : 'inherit',
+                transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+                userSelect: 'none',
               }}
+              /* On sm+ show the full label */
+              className="sm:rounded-md sm:px-0 sm:py-1 sm:bg-transparent sm:border-0 sm:justify-start sm:font-normal sm:text-sm"
             >
               <input
                 id={id}
@@ -113,8 +126,11 @@ export function TtlSelector({
                 aria-checked={isSelected}
                 data-testid={`ttl-option-${option.value}`}
                 style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+                className="sm:block"
               />
-              {option.label}
+              {/* Short label on mobile chip, full label on desktop */}
+              <span className="sm:hidden">{option.label}</span>
+              <span style={{ display: 'none' }} className="sm:inline">{option.fullLabel}</span>
             </label>
           )
         })}

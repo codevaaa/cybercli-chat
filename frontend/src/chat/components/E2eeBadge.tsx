@@ -1,8 +1,8 @@
 /**
  * E2eeBadge — Visual indicator distinguishing E2EE messages from TLS-only messages.
  *
- * When `encrypted` is `true` renders a lock icon indicating the message is
- * end-to-end encrypted. When `encrypted` is `false` renders nothing.
+ * When `encrypted` is `true` renders a lock icon + "E2EE" label.
+ * Scales cleanly across all screen sizes via em units.
  *
  * REQ-11.5
  */
@@ -14,12 +14,7 @@ import React from 'react'
 // ---------------------------------------------------------------------------
 
 export interface E2eeBadgeProps {
-  /**
-   * `true` — message is end-to-end encrypted (show lock icon).
-   * `false` — message uses TLS-only encryption (render nothing).
-   */
   encrypted: boolean
-  /** Optional CSS class applied to the root element. */
   className?: string
 }
 
@@ -31,12 +26,12 @@ function LockIcon(): React.ReactElement {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="12"
-      height="12"
+      width="1em"
+      height="1em"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -52,15 +47,6 @@ function LockIcon(): React.ReactElement {
 // E2eeBadge component
 // ---------------------------------------------------------------------------
 
-/**
- * Renders a lock icon badge on E2EE-encrypted messages.
- * Renders nothing for Basic-plan TLS-only messages.
- *
- * Example:
- * ```tsx
- * <E2eeBadge encrypted={message.encryptionStatus === 'e2ee'} />
- * ```
- */
 export function E2eeBadge({ encrypted, className }: E2eeBadgeProps): React.ReactElement | null {
   if (!encrypted) return null
 
@@ -73,15 +59,17 @@ export function E2eeBadge({ encrypted, className }: E2eeBadgeProps): React.React
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '0.2rem',
-        fontSize: '0.6875rem',
+        gap: '0.2em',
+        /* em-based so it scales with parent font-size on all devices */
+        fontSize: '0.75em',
         color: '#a6e3a1',
         verticalAlign: 'middle',
         userSelect: 'none',
+        flexShrink: 0,
       }}
     >
       <LockIcon />
-      <span style={{ fontSize: '0.6875rem' }}>E2EE</span>
+      <span>E2EE</span>
     </span>
   )
 }

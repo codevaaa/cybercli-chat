@@ -1,0 +1,17 @@
+{
+  "name": "codeva-editor-builder",
+  "version": "1.0.0",
+  "description": "Packaging script to fork, brand, and build Codeva Editor from VS Code OSS",
+  "main": "scripts/build-editor.js",
+  "type": "module",
+  "scripts": {
+    "setup": "node scripts/build-editor.js --setup",
+    "patch": "node scripts/build-editor.js --patch",
+    "compile": "node scripts/build-editor.js --compile",
+    "package": "node scripts/build-editor.js --package"
+  },
+  "dependencies": {
+    "fs-extra": "^11.2.0",
+    "shelljs": "^0.8.5"
+  }
+}

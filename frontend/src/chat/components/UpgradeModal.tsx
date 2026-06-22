@@ -9,6 +9,8 @@
  *   - aria-labelledby pointing at the title
  *   - Focus management: close on Escape key
  *
+ * Responsive: full-width on mobile, capped at 28rem on desktop.
+ *
  * REQ-11.1
  */
 
@@ -46,19 +48,6 @@ function getFeatureLabel(feature: string): string {
 // UpgradeModal component
 // ---------------------------------------------------------------------------
 
-/**
- * Modal that informs the user their current plan does not include a feature
- * and provides a link to the MAX plan subscription page.
- *
- * Example:
- * ```tsx
- * <UpgradeModal
- *   feature="enableE2EE"
- *   isOpen={showModal}
- *   onClose={() => setShowModal(false)}
- * />
- * ```
- */
 export function UpgradeModal({
   feature,
   isOpen,
@@ -67,7 +56,6 @@ export function UpgradeModal({
   const titleId = 'upgrade-modal-title'
   const closeButtonRef = useRef<HTMLButtonElement>(null)
 
-  // Close on Escape key
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -77,7 +65,6 @@ export function UpgradeModal({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
 
-  // Auto-focus the close button when the modal opens
   useEffect(() => {
     if (isOpen) {
       closeButtonRef.current?.focus()
@@ -89,21 +76,22 @@ export function UpgradeModal({
   const featureLabel = getFeatureLabel(feature)
 
   return (
-    /* Backdrop */
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-end',   /* bottom-sheet on mobile */
         justifyContent: 'center',
         zIndex: 1000,
+        padding: '0',
       }}
+      /* On wider screens: center vertically */
+      className="sm:items-center sm:p-4"
       onClick={onClose}
       data-testid="upgrade-modal-backdrop"
     >
-      {/* Dialog panel — stop click propagation so clicking inside doesn't close */}
       <div
         role="dialog"
         aria-modal="true"
@@ -112,25 +100,40 @@ export function UpgradeModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           background: '#1e1e2e',
-          borderRadius: '0.75rem',
-          padding: '2rem',
-          maxWidth: '28rem',
-          width: '90%',
           color: '#cdd6f4',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.6)',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.7)',
           border: '1px solid rgba(255,255,255,0.08)',
+          /* Mobile: full width, rounded top corners only */
+          width: '100%',
+          borderRadius: '1rem 1rem 0 0',
+          padding: '1.5rem 1.25rem 2rem',
         }}
+        className="sm:rounded-xl sm:max-w-md sm:w-full sm:p-8"
       >
+        {/* Drag handle — visible on mobile */}
+        <div
+          style={{
+            width: '2.5rem',
+            height: '0.25rem',
+            background: 'rgba(255,255,255,0.15)',
+            borderRadius: '999px',
+            margin: '0 auto 1.25rem',
+          }}
+          className="sm:hidden"
+          aria-hidden="true"
+        />
+
         {/* Title */}
         <h2
           id={titleId}
-          style={{ margin: '0 0 0.75rem', fontSize: '1.25rem', fontWeight: 700 }}
+          style={{ margin: '0 0 0.625rem', fontSize: '1.125rem', fontWeight: 700 }}
+          className="sm:text-xl"
         >
           MAX Plan Required
         </h2>
 
         {/* Body */}
-        <p style={{ margin: '0 0 1.5rem', fontSize: '0.9375rem', lineHeight: 1.6, opacity: 0.85 }}>
+        <p style={{ margin: '0 0 1.25rem', fontSize: '0.9375rem', lineHeight: 1.6, opacity: 0.85 }}>
           <strong>{featureLabel}</strong> is available exclusively on the Codeva MAX plan.
           Upgrade to unlock end-to-end encryption, disappearing messages, file sharing, and voice
           messages.
@@ -150,20 +153,29 @@ export function UpgradeModal({
         </p>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '0.75rem',
+            flexDirection: 'column-reverse',  /* stacked on mobile */
+          }}
+          className="sm:flex-row sm:justify-end"
+        >
           <button
             type="button"
             onClick={onClose}
             ref={closeButtonRef}
             style={{
-              padding: '0.5rem 1.25rem',
-              borderRadius: '0.375rem',
+              padding: '0.75rem 1.25rem',
+              borderRadius: '0.5rem',
               border: '1px solid rgba(255,255,255,0.15)',
               background: 'transparent',
               color: 'inherit',
               cursor: 'pointer',
-              fontSize: '0.875rem',
+              fontSize: '0.9375rem',
+              width: '100%',
             }}
+            className="sm:w-auto sm:py-2 sm:text-sm"
             data-testid="upgrade-modal-close"
           >
             Not now
@@ -172,16 +184,19 @@ export function UpgradeModal({
           <a
             href="/subscription"
             style={{
-              padding: '0.5rem 1.25rem',
-              borderRadius: '0.375rem',
+              padding: '0.75rem 1.25rem',
+              borderRadius: '0.5rem',
               background: '#cba6f7',
               color: '#1e1e2e',
-              fontWeight: 600,
+              fontWeight: 700,
               textDecoration: 'none',
-              fontSize: '0.875rem',
-              display: 'inline-flex',
+              fontSize: '0.9375rem',
+              display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
             }}
+            className="sm:w-auto sm:py-2 sm:text-sm"
             data-testid="upgrade-modal-cta"
           >
             Upgrade to MAX
