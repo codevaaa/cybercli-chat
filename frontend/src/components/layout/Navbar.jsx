@@ -5,7 +5,7 @@ import {
   Sparkles, Cpu, CreditCard, History, 
   BookOpen, Terminal, Rss, Gift, 
   Building2, Briefcase, Mail, Bot, Code2,
-  FolderOpen, Layers, Globe, Brain, Flame
+  FolderOpen, Layers, Globe, Brain, Flame, Ghost
 } from 'lucide-react'
 import { useAuthStore } from '@stores/authStore.js'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -17,7 +17,7 @@ const ICON_MAP = {
   Sparkles, Cpu, CreditCard, History,
   BookOpen, Terminal, Rss, Gift,
   Building2, Briefcase, Mail, Bot, Code2,
-  FolderOpen, Layers, Globe, Brain, MessageSquare, Flame
+  FolderOpen, Layers, Globe, Brain, MessageSquare, Flame, Ghost
 }
 
 const MENU_GROUPS = [
@@ -35,6 +35,7 @@ const MENU_GROUPS = [
       { label: 'RAVAN Engine', href: '/ravan', desc: '10-Headed Dashanan Architecture', icon: 'Flame' },
       { label: 'CyberCoder CLI', href: '/product', desc: 'Terminal AI coding assistant - Better than Claude Code', icon: 'Terminal' },
       { label: 'Codeva', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
+      { label: 'Anonymous Chat', href: '/anonymous-chat', desc: 'Encrypted person-to-person messaging — no identity required', icon: 'Ghost' },
       { label: 'Kali_Kal Mode', href: '/kali-kal', desc: 'Uncensored Cyber AI Engine', icon: 'Terminal' },
       { label: 'Council Mode', href: '/council-mode', desc: '4-model ensemble intelligence', icon: 'Brain' },
       { label: 'Models', href: '/models', desc: 'Browse 200K+ AI models', icon: 'Cpu' },
