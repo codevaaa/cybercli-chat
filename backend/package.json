@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test src/**/*.test.js"
+    "test": "node --test src/**/*.test.js",
+    "test:chat": "node --experimental-strip-types --loader ./src/chat/loader.mjs --test src/chat/chatRelay.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.717.0",
@@ -35,5 +36,10 @@
   },
   "engines": {
     "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "fast-check": "^4.8.0",
+    "ioredis-mock": "^8.13.1",
+    "mongodb-memory-server": "^11.2.0"
   }
 }
