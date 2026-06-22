@@ -80,14 +80,15 @@ const QUICK_ACTIONS = [
 ]
 
 const NAV_ITEMS = [
-  { id: 'search',    label: 'Search',    icon: Search        },
-  { id: 'chats',     label: 'Chats',     icon: MessageSquare },
-  { id: 'projects',  label: 'Projects',  icon: FolderOpen    },
-  { id: 'artifacts', label: 'Artifacts', icon: Layers        },
-  { id: 'kali_kal',  label: 'Kali_Kal',  icon: Terminal      },
-  { id: 'voice',     label: 'Voice',     icon: Radio         },
-  { id: 'api_keys',  label: 'API Keys',  icon: Code2         },
-  { id: 'customize', label: 'Customize', icon: Sliders       },
+  { id: 'search',         label: 'Search',         icon: Search        },
+  { id: 'chats',          label: 'Chats',           icon: MessageSquare },
+  { id: 'projects',       label: 'Projects',        icon: FolderOpen    },
+  { id: 'artifacts',      label: 'Artifacts',       icon: Layers        },
+  { id: 'kali_kal',       label: 'Kali_Kal',        icon: Terminal      },
+  { id: 'voice',          label: 'Voice',           icon: Radio         },
+  { id: 'api_keys',       label: 'API Keys',        icon: Code2         },
+  { id: 'customize',      label: 'Customize',       icon: Sliders       },
+  { id: 'anonymous_chat', label: 'Anonymous Chat',  icon: Ghost         },
 ]
 
 const LANGUAGES = [
@@ -4743,6 +4744,8 @@ export default function ChatPage() {
                       setVoiceChatOpen(true)
                     } else if (item.id === 'search') {
                       setIsSearchModalOpen(true)
+                    } else if (item.id === 'anonymous_chat') {
+                      navigate('/anonymous-chat')
                     } else {
                       if (activeNav !== item.id && activeThreadId) {
                         navigate('/chat')

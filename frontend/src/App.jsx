@@ -65,6 +65,7 @@ import VerifyEmailPage from '@pages/auth/VerifyEmailPage'
 import AuthCallbackPage from '@pages/auth/AuthCallbackPage'
 
 import ChatPage from '@pages/app/ChatPage'
+import AnonymousChatPage from '@pages/app/AnonymousChatPage'
 import SettingsPage from '@pages/app/SettingsPage'
 import OrgDashboardPage from '@pages/app/OrgDashboardPage'
 import ProfilePage from '@pages/app/ProfilePage'
@@ -214,6 +215,7 @@ function App() {
 
           {/* ── Protected App Routes (no Lenis — native scroll for chat) ── */}
           <Route path="/chat/:threadId?" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+          <Route path="/anonymous-chat" element={<ProtectedRoute><AnonymousChatPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/app/org" element={<ProtectedRoute><OrgDashboardPage /></ProtectedRoute>} />
           {/* Catch-all for every settings sub-tab (account, connectors, usage,
