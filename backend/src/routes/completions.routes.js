@@ -1,7 +1,6 @@
 import { Router } from 'express'
 import { requireAuth, optionalAuth } from '../middleware/auth.js'
 import { llmGateway } from '../services/llm/gateway.js'
-import { getDaemon } from '../utils/daemonBridge.js'
 
 const router = Router()
 
@@ -104,29 +103,7 @@ After installation, they can run \`cybercli\` or \`cybercoder\` in their termina
         extraSystemContent += `\n\n[CODE EXECUTION CAPABILITY]\nJavaScript code execution is enabled. The user can execute JavaScript code blocks directly. If they ask you to run a calculation, verify some code, or write JavaScript, write standard JavaScript code blocks and remind them they can click the "Run" button on the top-right of your code blocks to execute the code in a sandboxed environment.`
       }
 
-      // Handle Daemon Connection / Workspace Editing Instructions
-      const hasDaemon = req.user && !!getDaemon(req.user.id)
-      if (hasDaemon) {
-        extraSystemContent += `\n\n[LOCAL WORKSPACE EDITING (CLI DAEMON CONNECTED)]
-You are connected to the user's local workspace via a secure CLI daemon. You have the ability to read files, create/edit files, and run terminal commands to help them build, run, and debug their code.
-To invoke these workspace tools, you MUST output specific XML-like tags in your response. The frontend will intercept these tags, execute them via the daemon, and display the results to the user.
-Available tools:
-1. Read a file:
-<read_file path="path/to/file.js" />
 
-2. Write or create a file:
-<write_file path="path/to/file.js">
-// File contents here
-</write_file>
-
-3. Run a terminal command (e.g. build, compile, tests, install):
-<run_command cmd="npm run build" />
-
-Rules:
-- Specify paths relative to the project root.
-- You can explain what you are doing before or after using these tags.
-- Always use the exact tags above to perform local operations. When you output these tags, they will be executed on the user's system after their confirmation in the terminal.`
-      }
 
       const history = messages.map(m => ({ role: m.role, content: m.content }))
       if (extraSystemContent) {

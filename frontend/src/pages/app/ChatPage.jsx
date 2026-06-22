@@ -367,233 +367,9 @@ function ImageGeneratorWidget({ src, alt }) {
   )
 }
 
-// ─── Daemon Action Widget ────────────────────────────────────────────────────
-
-function DaemonActionWidget({ action, payload, daemonConnected, onExecuteSuccess }) {
-  const [status, setStatus] = useState('idle') // idle | executing | success | error
-  const [result, setResult] = useState(null)
-  const [errMessage, setErrMessage] = useState(null)
-  const [showContent, setShowContent] = useState(false)
-
-  const handleExecute = async () => {
-    setStatus('executing')
-    setErrMessage(null)
-    setResult(null)
-
-    try {
-      const token = localStorage.getItem('sb-access-token')
-      const response = await fetch(`${API_BASE}/daemon/action`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ action, payload })
-      })
-
-      const data = await response.json()
-      if (!data.success) {
-        throw new Error(data.error || 'Execution failed')
-      }
-
-      setStatus('success')
-      setResult(data.data)
-      if (onExecuteSuccess && (action === 'read_file' || action === 'write_file')) {
-        onExecuteSuccess(payload.path)
-      }
-    } catch (err) {
-      setStatus('error')
-      setErrMessage(err.message)
-    }
-  }
-
-  const renderPayload = () => {
-    if (action === 'read_file') {
-      return (
-        <div className="text-xs text-foreground-secondary">
-          Action: <span className="font-semibold text-accent">Read File</span>
-          <div className="mt-1 font-mono text-[11px] bg-black/25 px-2.5 py-1.5 rounded border border-white/[0.03]">
-            {payload.path}
-          </div>
-        </div>
-      )
-    } else if (action === 'write_file') {
-      return (
-        <div className="text-xs text-foreground-secondary w-full">
-          Action: <span className="font-semibold text-accent">Write File</span>
-          <div className="mt-1 font-mono text-[11px] bg-black/25 px-2.5 py-1.5 rounded border border-white/[0.03] truncate">
-            {payload.path}
-          </div>
-          <div className="mt-2">
-            <button
-              onClick={() => setShowContent(!showContent)}
-              className="text-[10px] text-accent hover:underline flex items-center gap-1"
-            >
-              {showContent ? 'Hide file content' : `Show file content (${payload.content?.length || 0} chars)`}
-            </button>
-            {showContent && (
-              <pre className="mt-1.5 p-2 bg-black/40 border border-white/[0.03] rounded font-mono text-[10px] max-h-36 overflow-y-auto whitespace-pre-wrap text-foreground-muted w-full">
-                {payload.content}
-              </pre>
-            )}
-          </div>
-        </div>
-      )
-    } else if (action === 'run_command') {
-      return (
-        <div className="text-xs text-foreground-secondary">
-          Action: <span className="font-semibold text-accent">Run Command</span>
-          <div className="mt-1 font-mono text-[11px] bg-black/25 px-2.5 py-1.5 rounded border border-white/[0.03] text-emerald-400">
-            $ {payload.command}
-          </div>
-        </div>
-      )
-    }
-    return null
-  }
-
-  return (
-    <div className="my-3 rounded-xl border border-border-subtle bg-background-secondary p-4.5 max-w-lg flex flex-col gap-3.5 animate-fade-in w-full">
-      <div className="flex items-center justify-between border-b border-white/[0.03] pb-2">
-        <div className="flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-accent" />
-          <span className="text-xs font-semibold text-foreground-primary">
-            {daemonConnected ? 'Local Workspace Daemon Action' : ((thread?.mode === 'kalikal' || thread?.mode === 'kali_kal') ? 'Cloud Sandbox Execution' : 'Local Workspace Daemon Action')}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className={`w-1.5 h-1.5 rounded-full ${daemonConnected ? 'bg-emerald-400 animate-pulse' : ((thread?.mode === 'kalikal' || thread?.mode === 'kali_kal') ? 'bg-blue-400 animate-pulse' : 'bg-red-400')}`} />
-          <span className="text-[10px] text-foreground-muted">{daemonConnected ? 'Daemon connected' : ((thread?.mode === 'kalikal' || thread?.mode === 'kali_kal') ? 'Sandbox connected' : 'Daemon offline')}</span>
-        </div>
-      </div>
-
-      <VoiceChatModal />
-
-      {renderPayload()}
-
-      {status === 'idle' && (
-        <button
-          disabled={!daemonConnected && thread?.mode !== 'kalikal' && thread?.mode !== 'kali_kal'}
-          onClick={handleExecute}
-          className={`w-full py-2 rounded-lg text-xs font-bold text-center transition-all ${
-            daemonConnected || thread?.mode === 'kalikal' || thread?.mode === 'kali_kal'
-              ? 'bg-accent text-white hover:bg-accent-dark active:scale-[0.98]'
-              : 'bg-white/5 text-white/30 border border-white/5 cursor-not-allowed'
-          }`}
-        >
-          {daemonConnected ? 'Execute Workspace Action' : ((thread?.mode === 'kalikal' || thread?.mode === 'kali_kal') ? 'Execute in Cloud Sandbox' : 'Connect Daemon to Execute')}
-        </button>
-      )}
-
-      {status === 'executing' && (
-        <div className="flex flex-col items-center justify-center py-2 gap-2">
-          <div className="w-5 h-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <span className="text-[10px] text-foreground-muted animate-pulse">
-            Waiting for terminal approval (y/n) on your local machine...
-          </span>
-        </div>
-      )}
-
-      {status === 'success' && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-semibold">
-            <Check className="w-4 h-4" />
-            <span>Successfully Executed!</span>
-          </div>
-          {result && (result.stdout || result.stderr || result.content) && (
-            <div className="bg-[#0f0f13] border border-white/[0.03] rounded-lg p-3 font-mono text-[10px] max-h-48 overflow-y-auto whitespace-pre text-foreground-muted">
-              {result.content && (
-                <div>
-                  <div className="text-[9px] text-[#D97757] mb-1 font-semibold">File Content:</div>
-                  {result.content}
-                </div>
-              )}
-              {result.stdout && (
-                <div>
-                  <div className="text-[9px] text-emerald-400 mb-0.5 font-semibold">STDOUT:</div>
-                  {result.stdout}
-                </div>
-              )}
-              {result.stderr && (
-                <div className="mt-2">
-                  <div className="text-[9px] text-rose-400 mb-0.5 font-semibold">STDERR:</div>
-                  {result.stderr}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {status === 'error' && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-1.5 text-red-400 text-xs font-semibold">
-            <AlertCircle className="w-4 h-4" />
-            <span>Execution Failed</span>
-          </div>
-          <div className="bg-red-950/20 border border-red-500/10 p-2.5 rounded-lg text-[10px] text-red-300 font-mono break-words leading-relaxed">
-            {errMessage}
-          </div>
-          <button
-            onClick={() => setStatus('idle')}
-            className="text-[10px] text-accent hover:underline text-left"
-          >
-            Reset and retry
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Daemon Action Tag Parser ────────────────────────────────────────────────
-
-const parseDaemonActions = (text) => {
-  if (!text) return [];
-  const regex = /(<read_file\s+path="([^"]+)"\s*\/?>|<write_file\s+path="([^"]+)"\s*>([\s\S]*?)<\/write_file>|<run_command\s+cmd="([^"]+)"\s*\/?>)/g;
-  const blocks = [];
-  let lastIndex = 0;
-  let match;
-  while ((match = regex.exec(text)) !== null) {
-    const startIndex = match.index;
-    if (startIndex > lastIndex) {
-      blocks.push({
-        type: 'markdown',
-        content: text.substring(lastIndex, startIndex)
-      });
-    }
-    const fullTag = match[0];
-    if (fullTag.startsWith('<read_file')) {
-      blocks.push({
-        type: 'read_file',
-        path: match[2]
-      });
-    } else if (fullTag.startsWith('<write_file')) {
-      blocks.push({
-        type: 'write_file',
-        path: match[3],
-        content: match[4]
-      });
-    } else if (fullTag.startsWith('<run_command')) {
-      blocks.push({
-        type: 'run_command',
-        command: match[5]
-      });
-    }
-    lastIndex = regex.lastIndex;
-  }
-  if (lastIndex < text.length) {
-    blocks.push({
-      type: 'markdown',
-      content: text.substring(lastIndex)
-    });
-  }
-  return blocks;
-};
-
 // ─── Message Bubble ──────────────────────────────────────────────────────────
 
-function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled, daemonConnected, onExecuteSuccess }) {
+function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled }) {
   const isUser = msg.role === 'user'
   const isAssistant = msg.role === 'assistant'
 
@@ -633,92 +409,55 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
                   Thinking...
                 </div>
               )}
-              {parseDaemonActions(msg.content).map((block, bIdx) => {
-                if (block.type === 'markdown') {
-                  return (
-                    <ReactMarkdown
-                      key={`md-${bIdx}`}
-                      components={{
-                        img: ({ src, alt }) => <ImageGeneratorWidget src={src} alt={alt} />,
-                        code({ node, inline, className, children, ...props }) {
-                          const match = /language-(\w+)/.exec(className || '')
-                          if (!inline && match) {
-                            const lang = match[1].toLowerCase()
-                            if (lang === 'pdf' || lang === 'docx' || lang === 'pptx') {
-                              return <DocumentArtifact format={lang} content={String(children).replace(/\n$/, '')} />
-                            }
-                            return (
-                              <CodeBlock
-                                language={match[1]}
-                                value={String(children).replace(/\n$/, '')}
-                                codeExecutionEnabled={codeExecutionEnabled}
-                              />
-                            )
-                          }
-                          return (
-                            <code
-                              className="px-1.5 py-0.5 rounded text-[13px] font-mono bg-background-tertiary text-foreground-primary border border-border-subtle"
-                              {...props}
-                            >
-                              {children}
-                            </code>
-                          )
-                        },
-                        p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
-                        ul: ({ children }) => <ul className="mb-4 pl-5 space-y-1.5 list-disc">{children}</ul>,
-                        ol: ({ children }) => <ol className="mb-4 pl-5 space-y-1.5 list-decimal">{children}</ol>,
-                        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                        h1: ({ children }) => <h1 className="text-xl font-bold mb-4 mt-6 first:mt-0 text-foreground-primary">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-lg font-semibold mb-3 mt-6 first:mt-0 text-foreground-primary">{children}</h2>,
-                        h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-4 first:mt-0 text-foreground-primary">{children}</h3>,
-                        blockquote: ({ children }) => (
-                          <blockquote className="border-l-[3px] border-border-medium pl-4 my-4 text-foreground-muted italic">
-                            {children}
-                          </blockquote>
-                        ),
-                        strong: ({ children }) => <strong className="font-semibold text-foreground-primary">{children}</strong>,
-                        a: ({ href, children }) => (
-                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">
-                            {children}
-                          </a>
-                        ),
-                      }}
-                    >
-                      {block.content}
-                    </ReactMarkdown>
-                  )
-                } else if (block.type === 'read_file') {
-                  return (
-                    <DaemonActionWidget
-                      key={`read-${bIdx}`}
-                      action="read_file"
-                      payload={{ path: block.path }}
-                      daemonConnected={daemonConnected}
-                      onExecuteSuccess={onExecuteSuccess}
-                    />
-                  )
-                } else if (block.type === 'write_file') {
-                  return (
-                    <DaemonActionWidget
-                      key={`write-${bIdx}`}
-                      action="write_file"
-                      payload={{ path: block.path, content: block.content }}
-                      daemonConnected={daemonConnected}
-                      onExecuteSuccess={onExecuteSuccess}
-                    />
-                  )
-                } else if (block.type === 'run_command') {
-                  return (
-                    <DaemonActionWidget
-                      key={`run-${bIdx}`}
-                      action="run_command"
-                      payload={{ command: block.command }}
-                      daemonConnected={daemonConnected}
-                    />
-                  )
-                }
-                return null
-              })}
+              <ReactMarkdown
+                components={{
+                  img: ({ src, alt }) => <ImageGeneratorWidget src={src} alt={alt} />,
+                  code({ node, inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '')
+                    if (!inline && match) {
+                      const lang = match[1].toLowerCase()
+                      if (lang === 'pdf' || lang === 'docx' || lang === 'pptx') {
+                        return <DocumentArtifact format={lang} content={String(children).replace(/\n$/, '')} />
+                      }
+                      return (
+                        <CodeBlock
+                          language={match[1]}
+                          value={String(children).replace(/\n$/, '')}
+                          codeExecutionEnabled={codeExecutionEnabled}
+                        />
+                      )
+                    }
+                    return (
+                      <code
+                        className="px-1.5 py-0.5 rounded text-[13px] font-mono bg-background-tertiary text-foreground-primary border border-border-subtle"
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    )
+                  },
+                  p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+                  ul: ({ children }) => <ul className="mb-4 pl-5 space-y-1.5 list-disc">{children}</ul>,
+                  ol: ({ children }) => <ol className="mb-4 pl-5 space-y-1.5 list-decimal">{children}</ol>,
+                  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                  h1: ({ children }) => <h1 className="text-xl font-bold mb-4 mt-6 first:mt-0 text-foreground-primary">{children}</h1>,
+                  h2: ({ children }) => <h2 className="text-lg font-semibold mb-3 mt-6 first:mt-0 text-foreground-primary">{children}</h2>,
+                  h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-4 first:mt-0 text-foreground-primary">{children}</h3>,
+                  blockquote: ({ children }) => (
+                    <blockquote className="border-l-[3px] border-border-medium pl-4 my-4 text-foreground-muted italic">
+                      {children}
+                    </blockquote>
+                  ),
+                  strong: ({ children }) => <strong className="font-semibold text-foreground-primary">{children}</strong>,
+                  a: ({ href, children }) => (
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
+                {msg.content}
+              </ReactMarkdown>
               {isStreaming && <BlinkCursor />}
             </div>
           )}
@@ -1991,7 +1730,7 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
             type="text"
             value={newKeyName}
             onChange={e => setNewKeyName(e.target.value)}
-            placeholder="Key name, e.g. Local Daemon"
+            placeholder="Key name, e.g. VS Code Extension"
             className="flex-1 bg-background-tertiary text-sm text-foreground-primary placeholder:text-foreground-muted border border-border-subtle rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-accent"
           />
           <button
@@ -2714,24 +2453,11 @@ function ArtifactsView({ messages }) {
 
 // ─── Code Sub-View Component (CLI & API Keys) ─────────────────────────────────
 
-function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: parentLoadDaemonStatus }) {
-  const [daemonConnected, setDaemonConnected] = useState(false)
+function CodeView() {
   const [apiKeys, setApiKeys] = useState([])
   const [newKeyName, setNewKeyName] = useState('')
   const [generatedKey, setGeneratedKey] = useState(null)
   const [loading, setLoading] = useState(false)
-
-  const isConnected = parentDaemonConnected !== undefined ? parentDaemonConnected : daemonConnected
-  const loadStatus = parentLoadDaemonStatus || loadDaemonStatus
-
-  async function loadDaemonStatus() {
-    try {
-      const { data } = await api.get('/daemon/status')
-      setDaemonConnected(data.connected)
-    } catch (err) {
-      console.error(err)
-    }
-  }
 
   const loadApiKeys = async () => {
     try {
@@ -2741,14 +2467,6 @@ function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: pa
       console.error(err)
     }
   }
-
-  useEffect(() => {
-    if (parentDaemonConnected === undefined) {
-      loadDaemonStatus()
-      const intv = setInterval(loadDaemonStatus, 5000)
-      return () => clearInterval(intv)
-    }
-  }, [parentDaemonConnected])
 
   useEffect(() => {
     loadApiKeys()
@@ -2771,7 +2489,7 @@ function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: pa
   }
 
   const handleRevokeKey = async (id) => {
-    if (!confirm('Revoke this API Key? Any CLI daemon using this key will immediately disconnect.')) return
+    if (!confirm('Revoke this API Key? Any VS Code extension or client using this key will immediately disconnect.')) return
     try {
       await api.delete(`/api-keys/${id}`)
       loadApiKeys()
@@ -2783,45 +2501,9 @@ function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: pa
   return (
     <div className="p-6 max-w-4xl mx-auto w-full space-y-6">
       <div>
-        <h2 className="text-2xl font-serif font-bold text-foreground-primary">Developer & Workspace Link</h2>
-        <p className="text-xs text-foreground-muted">Securely link your local folders to Codeva for agentic filesystem execution.</p>
+        <h2 className="text-2xl font-serif font-bold text-foreground-primary">Developer API Keys</h2>
+        <p className="text-xs text-foreground-muted">Manage API keys to access Codeva APIs and extensions securely.</p>
       </div>
-
-      {/* Daemon Status Card */}
-      <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: isConnected ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)', border: `1px solid ${isConnected ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
-            <Terminal className={`w-6 h-6 ${isConnected ? 'text-emerald-400' : 'text-rose-400'}`} />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-foreground-primary flex items-center gap-2">
-              Daemon Linkage
-              <span className={`w-2 h-2 rounded-full inline-block ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
-            </h3>
-            <p className="text-xs text-foreground-muted mt-1 max-w-md">
-              {isConnected
-                ? 'Your local terminal daemon is actively connected. Codeva is armed to safely read/write workspace files.'
-                : 'No daemon linked. Start the secure daemon process in your local workspace to enable file edits.'}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Setup Guide */}
-      {!(thread?.mode === 'kalikal' || thread?.mode === 'kali_kal') && (
-        <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary space-y-3.5">
-          <h3 className="text-sm font-semibold text-foreground-primary flex items-center gap-2">
-            <Zap className="w-4 h-4 text-accent" />
-            Quick Setup Guide
-          </h3>
-          <p className="text-xs text-foreground-secondary leading-relaxed">
-            Open a terminal inside your target development directory on your local machine and run:
-          </p>
-          <pre className="bg-[#0f0f13] border border-white/[0.03] p-3 rounded-lg font-mono text-[11px] text-foreground-secondary select-all leading-relaxed whitespace-pre-wrap">
-            # Install CLI globally{"\n"}npm install -g codeva{"\n\n"}# Link workspace using your API key below{"\n"}codeva link --key YOUR_API_KEY
-          </pre>
-        </div>
-      )}
 
       {/* API Key Section */}
       <div className="p-5 rounded-2xl border border-border-subtle bg-background-secondary space-y-4">
@@ -2848,7 +2530,7 @@ function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: pa
             type="text"
             value={newKeyName}
             onChange={e => setNewKeyName(e.target.value)}
-            placeholder="e.g. Local Terminal Daemon"
+            placeholder="e.g. VS Code Extension"
             className="flex-1 bg-background-tertiary text-sm text-foreground-primary placeholder:text-foreground-muted border border-border-subtle rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-accent"
           />
           <button
@@ -2886,7 +2568,7 @@ function CodeView({ daemonConnected: parentDaemonConnected, loadDaemonStatus: pa
           ))}
           {apiKeys.length === 0 && (
             <div className="text-center py-6 text-foreground-muted text-xs">
-              No API Keys generated yet. Create one above to link a daemon.
+              No API Keys generated yet. Create one above to link your tools.
             </div>
           )}
         </div>
@@ -3563,7 +3245,6 @@ export default function ChatPage() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState('general')
   const [showInviteModal, setShowInviteModal] = useState(false)
-  const [daemonConnected, setDaemonConnected] = useState(false)
   const [isWarmingUp, setIsWarmingUp] = useState(false)
   const [backendReady, setBackendReady] = useState(true)
 
@@ -3646,64 +3327,19 @@ export default function ChatPage() {
 
   // Claude & Cyber Mode Upgrades
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  const [workspaceOpen, setWorkspaceOpen] = useState(false)
-  const [workspaceTab, setWorkspaceTab] = useState('terminal')
-  const [terminalHistory, setTerminalHistory] = useState([
-    { type: 'output', text: 'Welcome to Codeva Workspace Terminal! Type your command below and hit enter.' }
-  ])
-  const [terminalInput, setTerminalInput] = useState('')
-  const [terminalLoading, setTerminalLoading] = useState(false)
-  const [activePreviewFile, setActivePreviewFile] = useState(null)
   const [profileMenuTab, setProfileMenuTab] = useState('main')
 
   // Cowork — background/parallel autonomous tasks (lifted to parent so they survive tab switches)
   const [coworkTasks, setCoworkTasks] = useState([])
   const coworkAbortRef = useRef({})
 
-  const [workspaceWidth, setWorkspaceWidth] = useState(600) // Default 600px
-  const [isResizing, setIsResizing] = useState(false)
-
   // Desktop drag & drop
   const [isDraggingFiles, setIsDraggingFiles] = useState(false)
-
-  const startResizing = useCallback((e) => {
-    setIsResizing(true)
-    e.preventDefault()
-  }, [])
-
-  const stopResizing = useCallback(() => {
-    setIsResizing(false)
-  }, [])
-
-  const resize = useCallback((e) => {
-    if (isResizing) {
-      const newWidth = window.innerWidth - e.clientX
-      if (newWidth > 300 && newWidth < window.innerWidth * 0.8) {
-        setWorkspaceWidth(newWidth)
-      }
-    }
-  }, [isResizing])
-
-  useEffect(() => {
-    if (isResizing) {
-      window.addEventListener('mousemove', resize)
-      window.addEventListener('mouseup', stopResizing)
-    }
-    return () => {
-      window.removeEventListener('mousemove', resize)
-      window.removeEventListener('mouseup', stopResizing)
-    }
-  }, [isResizing, resize, stopResizing])
   
   const activeThreadIdRef = useRef(null)
   const isCreatingThreadRef = useRef(false)
   const [showShortcutsModal, setShowShortcutsModal] = useState(false)
   const [hoveredSubmenu, setHoveredSubmenu] = useState(null)
-  
-  const [previewFilePath, setPreviewFilePath] = useState('')
-  const [previewFileContent, setPreviewFileContent] = useState('')
-  const [previewFileLoading, setPreviewFileLoading] = useState(false)
-  const [previewFileError, setPreviewFileError] = useState(null)
 
   useEffect(() => {
     const handleResize = () => {
@@ -3717,91 +3353,7 @@ export default function ChatPage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const loadDaemonStatus = async () => {
-    try {
-      const token = localStorage.getItem('sb-access-token')
-      if (token) {
-        const { data } = await api.get('/daemon/status')
-        setDaemonConnected(data.connected)
-      } else {
-        setDaemonConnected(false)
-      }
-    } catch (err) {
-      console.error('Error loading daemon status:', err)
-      setDaemonConnected(false)
-    }
-  }
 
-  useEffect(() => {
-    loadDaemonStatus()
-    const intv = setInterval(loadDaemonStatus, 5000)
-    return () => clearInterval(intv)
-  }, [])
-
-  const handleTerminalSubmit = async (e) => {
-    e.preventDefault()
-    if (!terminalInput.trim() || terminalLoading) return
-    const cmd = terminalInput.trim()
-    setTerminalInput('')
-    setTerminalHistory(prev => [...prev, { type: 'input', text: cmd }])
-    
-    setTerminalLoading(true)
-    try {
-      const token = localStorage.getItem('sb-access-token')
-      const response = await fetch(`${API_BASE}/daemon/action`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ action: 'run_command', payload: { command: cmd } })
-      })
-      const data = await response.json()
-      if (data.success) {
-        const out = data.data.stdout || ''
-        const err = data.data.stderr || ''
-        if (out) setTerminalHistory(prev => [...prev, { type: 'output', text: out }])
-        if (err) setTerminalHistory(prev => [...prev, { type: 'error', text: err }])
-        if (!out && !err) setTerminalHistory(prev => [...prev, { type: 'output', text: '(Command executed with no output)' }])
-      } else {
-        setTerminalHistory(prev => [...prev, { type: 'error', text: `Error: ${data.error || 'Execution failed'}` }])
-      }
-    } catch (err) {
-      setTerminalHistory(prev => [...prev, { type: 'error', text: `Error: ${err.message}` }])
-    } finally {
-      setTerminalLoading(false)
-    }
-  }
-
-  const handleLoadPreviewFile = async (pathOverride) => {
-    const path = pathOverride || previewFilePath
-    if (!path.trim()) return
-    setPreviewFileLoading(true)
-    setPreviewFileError(null)
-    setPreviewFileContent('')
-    try {
-      const token = localStorage.getItem('sb-access-token')
-      const response = await fetch(`${API_BASE}/daemon/action`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ action: 'read_file', payload: { path } })
-      })
-      const data = await response.json()
-      if (data.success) {
-        setPreviewFileContent(data.data.content || '')
-        setActivePreviewFile(path)
-      } else {
-        setPreviewFileError(data.error || 'Failed to read file')
-      }
-    } catch (err) {
-      setPreviewFileError(err.message)
-    } finally {
-      setPreviewFileLoading(false)
-    }
-  }
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -3815,11 +3367,7 @@ export default function ChatPage() {
         e.preventDefault()
         openSettings('general')
       }
-      // Ctrl + p (Workspace toggle)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-        e.preventDefault()
-        setWorkspaceOpen(prev => !prev)
-      }
+
       // Escape to close modals
       if (e.key === 'Escape') {
         setShowShortcutsModal(false)
@@ -5852,13 +5400,6 @@ export default function ChatPage() {
                             isPlaying={isPlaying}
                             copied={copied}
                             codeExecutionEnabled={codeExecutionEnabled}
-                            daemonConnected={daemonConnected}
-                            onExecuteSuccess={(path) => {
-                              setPreviewFilePath(path)
-                              handleLoadPreviewFile(path)
-                              setWorkspaceTab('preview')
-                              setWorkspaceOpen(true)
-                            }}
                           />
                         ))
                       )}

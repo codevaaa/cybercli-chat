@@ -36,7 +36,7 @@ router.post('/thread', requireAuth, async (req, res) => {
       const welcomeMessage = new SupportMessage({
         thread_id: thread._id,
         sender: 'agent',
-        content: 'Hello! I am your Codeva Support Agent. How can I help you today? Feel free to ask me anything about the platform, models, CLI daemon integration, or our tools.'
+        content: 'Hello! I am your Codeva Support Agent. How can I help you today? Feel free to ask me anything about the platform, models, or our tools.'
       })
       await welcomeMessage.save()
     } else if (!thread.accepted_terms) {
@@ -115,7 +115,6 @@ Here is the key context about our ecosystem to help you resolve user issues:
    - 8+ API providers, 50+ free models (e.g. Codeva, Madhav, Chanakya, Bheem, Arjun, Panchayat council mode, Sahadeva, Vyas, etc.).
    - Panchayat (Council Mode): streams queries to multiple models concurrently and returns side-by-side comparative views.
    - Conversation Branching: click on a message to branch/fork a conversation from that specific point.
-   - Client-daemon: A local WebSocket bridge (CYBER ACTIVE status). Running the daemon enables direct terminal commands, workspace reading, and local scripts execution from the chat window.
    - Premium Voice Chat: Fast multimodal voice synthesis powered by Gemini Flash and ElevenLabs (Voices: Aoede female, Charon male 1, Puck male 2).
    - Artifacts panel: Displays code and images generated in chat in a side-by-side split screen view with live preview.
 3. Pricing Plans:

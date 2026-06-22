@@ -31,7 +31,6 @@ import stripeRoutes from './routes/stripe.routes.js'
 import searchRoutes from './routes/search.routes.js'
 import webhookRoutes from './routes/webhook.routes.js'
 import apiKeysRoutes from './routes/apiKeys.routes.js'
-import daemonRoutes from './routes/daemon.routes.js'
 import executeRoutes from './routes/execute.routes.js'
 import imagesRoutes from './routes/images.routes.js'
 import contactRoutes from './routes/contact.routes.js'
@@ -49,10 +48,8 @@ import statusRoutes from './routes/status.routes.js'
 import orgRoutes from './routes/org.routes.js'
 import huntRoutes from './routes/hunt.routes.js'
 import http from 'http'
-import { WebSocketServer } from 'ws'
 import ApiKey from './models/ApiKey.js'
 import Feedback from './models/Feedback.js'
-import { registerDaemon, removeDaemon, handleDaemonResponse } from './utils/daemonBridge.js'
 
 
 import { errorHandler } from './middleware/errorHandler.js'
@@ -214,7 +211,6 @@ app.use('/api/v1/stripe', stripeRoutes)
 app.use('/api/v1/search', searchRoutes)
 app.use('/api/v1/webhook', webhookRoutes)
 app.use('/api/v1/api-keys', apiKeysRoutes)
-app.use('/api/v1/daemon', daemonRoutes)
 app.use('/api/v1/execute', executeRoutes)
 app.use('/api/v1/images', imagesRoutes)
 app.use('/api/v1/art', imagesRoutes) // Alias for /images to bypass adblockers
@@ -244,65 +240,6 @@ app.use(errorHandler)
 
 // Connect to MongoDB then listen
 const server = http.createServer(app)
-const wss = new WebSocketServer({ noServer: true })
-
-server.on('upgrade', async (request, socket, head) => {
-  try {
-    const parsedUrl = new URL(request.url, `http://${request.headers.host || 'localhost'}`)
-    const pathname = parsedUrl.pathname
-    
-    if (pathname === '/api/v1/daemon') {
-      const apiKey = parsedUrl.searchParams.get('apiKey')
-      if (!apiKey || !apiKey.startsWith('sk_cyber_')) {
-        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n')
-        socket.destroy()
-        return
-      }
-
-      const apiKeyDoc = await ApiKey.findOne({ key_hash: ApiKey.hashKey(apiKey), is_active: true })
-      if (!apiKeyDoc) {
-        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n')
-        socket.destroy()
-        return
-      }
-
-      wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit('connection', ws, request, apiKeyDoc.user_id)
-      })
-    } else {
-      socket.destroy()
-    }
-  } catch (err) {
-    socket.write('HTTP/1.1 500 Internal Server Error\r\n\r\n')
-    socket.destroy()
-  }
-})
-
-wss.on('connection', (ws, request, userId) => {
-  registerDaemon(userId, ws)
-  console.log(`Daemon connected for user: ${userId}`)
-
-  ws.on('message', (message) => {
-    try {
-      const data = JSON.parse(message.toString())
-      if (data.type === 'response' && data.actionId) {
-        handleDaemonResponse(data.actionId, data)
-      }
-    } catch (err) {
-      console.error('Error handling daemon message:', err)
-    }
-  })
-
-  ws.on('close', () => {
-    removeDaemon(userId)
-    console.log(`Daemon disconnected for user: ${userId}`)
-  })
-
-  ws.on('error', (err) => {
-    console.error(`Daemon WebSocket error for user ${userId}:`, err)
-    removeDaemon(userId)
-  })
-})
 
 connectMongoDB().then(async () => {
   // Seed feedback testimonials if none exist

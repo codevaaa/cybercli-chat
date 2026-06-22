@@ -98,9 +98,9 @@ export const HERO_FEATURES = [
     icon: 'git-branch',
   },
   {
-    title: 'Secure Local Integration',
-    description: 'Run the Codeva daemon locally to read/write project files and execute commands securely.',
-    icon: 'globe',
+    title: 'VS Code Extension',
+    description: 'Use the official Codeva VS Code Extension to read/write project files and execute commands directly.',
+    icon: 'code',
   },
 ]
 
@@ -133,7 +133,7 @@ export const PRICING_TIERS = [
       'Premium voice synthesis engine',
       'Conversation branching',
       'API Keys management',
-      'Secure local CLI Daemon bridge',
+      'VS Code Extension integration',
       'Unlimited personas',
       'Image generation',
       'Priority support',
