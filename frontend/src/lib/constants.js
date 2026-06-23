@@ -18,6 +18,7 @@ export const FOOTER_SECTIONS = [
       { label: 'MADHAV Engine', href: '/madhav' },
       { label: 'RAVAN Engine', href: '/ravan' },
       { label: 'CyberCoder CLI', href: '/product' },
+      { label: 'Anonymous Chat', href: '/anonymous-chat' },
       { label: 'Kali_Kal Mode', href: '/kali-kal' },
       { label: 'Download Apps', href: '/downloads' },
       { label: 'Features', href: '/features' },
