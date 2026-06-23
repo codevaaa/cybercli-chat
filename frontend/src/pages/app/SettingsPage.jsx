@@ -660,7 +660,7 @@ function DeveloperTab() {
         <TextInput
           value={keyName}
           onChange={setKeyName}
-          placeholder="Key name (e.g. Local CLI Daemon)"
+          placeholder="Key name (e.g. VS Code Extension)"
           className="flex-1"
         />
         <button

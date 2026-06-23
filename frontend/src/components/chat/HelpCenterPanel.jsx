@@ -23,16 +23,16 @@ const HELP_COLLECTIONS = [
     ]
   },
   {
-    title: 'Workspace & CLI Daemon',
-    desc: 'Setting up local terminal and file system integrations.',
+    title: 'Workspace & VS Code Extension',
+    desc: 'Setting up the official VS Code Extension for local editing.',
     articles: [
       {
-        title: 'What does "CYBER ACTIVE" mean?',
-        content: 'The "CYBER ACTIVE" badge in the sidebar indicates that a secure local WebSocket connection is active between your web chat interface and the local CLI daemon (`cli-daemon`) running on your machine. When active, it unlocks full-stack development features like reading local codebase files, running terminal scripts, and editing files directly from the web chat.'
+        title: 'How does the VS Code Extension work?',
+        content: 'The VS Code Extension allows the Codeva agent to read/write local codebase files and execute commands directly from your editor. When active, it runs an RPC server that securely processes local workspace commands and syncs with your active files.'
       },
       {
-        title: 'How do I install the CLI Daemon?',
-        content: 'To install the CLI daemon locally, run the global npm package install script or follow instructions on the "Code" tab. You will generate a sk_cyber API key from the Code tab, configure it in your local daemon, and run the daemon bridge in your terminal. Once launched, your status turns to CYBER ACTIVE.'
+        title: 'How do I install the VS Code Extension?',
+        content: 'To install the extension, generate an API Access Key from the Code tab, install the Codeva VS Code Extension from the marketplace, and configure your API key in the extension settings. Once configured, your local workspace will be connected.'
       }
     ]
   },
