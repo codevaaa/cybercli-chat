@@ -5,9 +5,9 @@ import { Tooltip } from '../../components/ui/Tooltip.jsx'
 import tts from '../../lib/tts.js'
 
 const VOICES = [
-  { id: 'gemini_flash', name: 'Sahadeva', gender: 'Female', provider: 'Gemini Flash TTS', description: 'Warm, empathetic, conversational voice', lang: 'EN, HI, ES' },
-  { id: 'gemini_pro', name: 'Sahadeva Pro', gender: 'Male', provider: 'Gemini Flash TTS', description: 'Deep, authoritative, analytical voice', lang: 'EN, HI, ES' },
-  { id: 'mistral_large', name: 'Vayu', gender: 'Male', provider: 'Gemini Flash TTS', description: 'Technical, expressive, and wise strategic advisor', lang: 'EN, DE, FR' },
+  { id: 'gemini_female',   name: 'Saraswati', gender: 'Female', provider: 'Gemini TTS', description: 'Warm, empathetic divine feminine voice (Aoede)', lang: 'EN, HI, ES, FR' },
+  { id: 'gemini_female_2', name: 'Lakshmi',   gender: 'Female', provider: 'Gemini TTS', description: 'Firm, precise, nurturing voice (Kore)',          lang: 'EN, HI, DE, FR' },
+  { id: 'gemini_male_1',   name: 'Madhav',    gender: 'Male',   provider: 'Gemini TTS', description: 'Deep, authoritative, divine voice (Charon)',     lang: 'EN, HI, ES' },
 ]
 
 export default function VoicePage() {

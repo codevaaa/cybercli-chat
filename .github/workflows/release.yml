@@ -58,24 +58,33 @@ jobs:
           $exePath = Get-ChildItem release -Filter "*.exe" | Select-Object -First 1 -ExpandProperty FullName
           if (-not $exePath) { Write-Host "No exe found"; exit 0 }
           
-          $hash = (Get-FileHash -Path $exePath -Algorithm SHA512).Hash.ToLower()
+          # electron-updater expects sha512 as BASE64, not hex
+          $hashBytes = (Get-FileHash -Path $exePath -Algorithm SHA512).Hash
+          # Convert hex string to bytes, then to base64
+          $bytes = [byte[]]::new($hashBytes.Length / 2)
+          for ($i = 0; $i -lt $hashBytes.Length; $i += 2) {
+            $bytes[$i/2] = [Convert]::ToByte($hashBytes.Substring($i, 2), 16)
+          }
+          $sha512b64 = [Convert]::ToBase64String($bytes)
+          
           $size = (Get-Item $exePath).Length
           $filename = Split-Path $exePath -Leaf
           $version = node -e "console.log(require('./package.json').version)"
+          $releaseDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
           
           $yml = @"
-          version: $version
-          files:
-            - url: $filename
-              sha512: $hash
-              size: $size
-          path: $filename
-          sha512: $hash
-          releaseDate: '$(Get-Date -Format "yyyy-MM-ddTHH:mm:ss.fffZ")'
-          "@
+version: $version
+files:
+  - url: $filename
+    sha512: $sha512b64
+    size: $size
+path: $filename
+sha512: $sha512b64
+releaseDate: '$releaseDate'
+"@
           
-          $yml | Out-File -FilePath "release/latest.yml" -Encoding utf8
-          Write-Host "Generated latest.yml for $filename (sha512=$($hash.Substring(0,16))... size=$size)"
+          $yml | Out-File -FilePath "release/latest.yml" -Encoding utf8NoBOM
+          Write-Host "Generated latest.yml: sha512(base64)=$($sha512b64.Substring(0,20))... size=$size"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

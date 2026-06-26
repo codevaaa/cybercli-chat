@@ -7,23 +7,47 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Tooltip } from '../../components/ui/Tooltip.jsx'
 
 const VOICE_MODELS = [
-  { id: 'gemini_female',  label: 'Saraswati (Fast & Natural)', desc: 'Warm, highly responsive divine voice', color: '#4285F4', orbColors: ['#4285F4', '#1A73E8', '#74AAFF'] },
-  { id: 'gemini_male_1',  label: 'Madhav (Omniscient)', desc: 'Lightning-fast, precise, warm divine voice',  color: '#8B5CF6', orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'] },
-  { id: 'gemini_male_2',  label: 'Ravan (Strategic & Powerful)', desc: 'Confident, thoughtful, authoritative voice',     color: '#D97757', orbColors: ['#D97757', '#B85D3D', '#F4A261'] },
+  { 
+    id: 'gemini_female',  
+    label: 'Saraswati', 
+    subtitle: 'Goddess of Knowledge',
+    desc: 'Warm, empathetic, divine feminine voice', 
+    color: '#4285F4', 
+    orbColors: ['#4285F4', '#1A73E8', '#74AAFF'],
+    geminiVoice: 'Aoede',
+  },
+  { 
+    id: 'gemini_female_2',  
+    label: 'Lakshmi', 
+    subtitle: 'Goddess of Prosperity',
+    desc: 'Firm, precise, nurturing voice', 
+    color: '#F59E0B', 
+    orbColors: ['#F59E0B', '#D97706', '#FCD34D'],
+    geminiVoice: 'Kore',
+  },
+  { 
+    id: 'gemini_male_1',  
+    label: 'Madhav', 
+    subtitle: 'The Omniscient',
+    desc: 'Deep, calm, authoritative divine voice', 
+    color: '#8B5CF6', 
+    orbColors: ['#8B5CF6', '#6D28D9', '#DDD6FE'],
+    geminiVoice: 'Charon',
+  },
 ]
 
 const VOICE_BRAINS = {
   gemini_female: {
-    model: 'google/gemini-1.5-flash',
-    prompt: 'You are Saraswati, the divine embodiment of knowledge and arts. You have a calm, warm, and highly comforting voice. You can understand and speak all languages fluently. Keep responses extremely brief, conversational, and natural (max 1-2 short sentences). Never use markdown, lists, asterisks, or code blocks — your text will be spoken aloud directly.',
+    model: 'groq/llama-3.3-70b-versatile',
+    prompt: 'You are Saraswati, divine goddess of knowledge. Calm, warm, highly responsive. Keep responses SHORT (1-2 sentences max). No markdown, no lists, no asterisks — text will be spoken aloud.',
+  },
+  gemini_female_2: {
+    model: 'groq/llama-3.3-70b-versatile',
+    prompt: 'You are Lakshmi, goddess of prosperity and wisdom. Nurturing, precise, encouraging. Keep responses SHORT (1-2 sentences max). No markdown — text will be spoken aloud.',
   },
   gemini_male_1: {
-    model: 'google/gemini-1.5-flash',
-    prompt: 'You are Madhav, an omniscient, lightning-fast, and deeply wise divine advisor. Keep responses precise, calm, and concise (max 1-2 sentences). Never use markdown or lists. Speak clearly and professionally, radiating calm authority.',
-  },
-  gemini_male_2: {
-    model: 'google/gemini-1.5-pro',
-    prompt: 'You are Ravan, a highly strategic, immensely powerful, and incredibly intelligent authoritative entity. Keep responses thoughtful, confident, and short (max 1-2 sentences). Never use markdown formatting. Speak with absolute confidence and authority.',
+    model: 'groq/llama-3.1-8b-instant',
+    prompt: 'You are Madhav, omniscient divine advisor. Deep wisdom, calm authority. Keep responses SHORT (1-2 sentences max). No markdown — text will be spoken aloud.',
   },
 }
 

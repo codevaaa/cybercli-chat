@@ -287,6 +287,23 @@ app.whenReady().then(() => {
     console.error('[Codeva] Failed to read session state:', e)
   }
 
+  // Also check if there's a supabase auth token stored (belt-and-suspenders)
+  // Some users' session_state.json may be stale due to timing issues
+  const authTokenFile = path.join(app.getPath('userData'), 'auth_token.json')
+  if (!hasSession) {
+    try {
+      if (fs.existsSync(authTokenFile)) {
+        const tokenData = JSON.parse(fs.readFileSync(authTokenFile, 'utf8'))
+        if (tokenData.token && tokenData.expiresAt && tokenData.expiresAt > Date.now()) {
+          hasSession = true
+          console.log('[Codeva] Found valid auth token, skipping landing')
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
   if (hasSession) {
     // Logged in — skip landing, go straight to main window with production URL
     mainWindow = createMainWindow()
@@ -571,6 +588,29 @@ ipcMain.handle('auth:set-session', (_event, hasSession: boolean) => {
     fs.writeFileSync(sessionFile, JSON.stringify({ hasSession }))
   } catch (err) {
     console.error('[Codeva] Failed to save session state:', err)
+  }
+})
+
+ipcMain.handle('auth:save-token', (_event, payload: { token: string; expiresAt: number }) => {
+  try {
+    const authTokenFile = path.join(app.getPath('userData'), 'auth_token.json')
+    fs.writeFileSync(authTokenFile, JSON.stringify(payload))
+    // Also update session state
+    const sessionFile = path.join(app.getPath('userData'), 'session_state.json')
+    fs.writeFileSync(sessionFile, JSON.stringify({ hasSession: true }))
+  } catch (err) {
+    console.error('[Codeva] Failed to save auth token:', err)
+  }
+})
+
+ipcMain.handle('auth:clear-token', () => {
+  try {
+    const authTokenFile = path.join(app.getPath('userData'), 'auth_token.json')
+    const sessionFile = path.join(app.getPath('userData'), 'session_state.json')
+    if (fs.existsSync(authTokenFile)) fs.unlinkSync(authTokenFile)
+    fs.writeFileSync(sessionFile, JSON.stringify({ hasSession: false }))
+  } catch (err) {
+    console.error('[Codeva] Failed to clear auth token:', err)
   }
 })
 

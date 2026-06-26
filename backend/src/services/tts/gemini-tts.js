@@ -38,23 +38,38 @@ function createWavBuffer(pcmBuffer) {
 
 // Voice ID → Gemini built-in voice name mapping
 const VOICE_MAP = {
-  // New optimized voice mappings
-  gemini_female: 'Aoede',   // Bright, warm, friendly (female)
-  gemini_male_1: 'Charon',  // Deep, confident, authoritative (male)
-  gemini_male_2: 'Puck',    // Energetic, youthful (male)
-  
+  // Female voices (warm, natural)
+  gemini_female:   'Aoede',    // Bright, warm (Female) — DEFAULT
+  gemini_female_2: 'Kore',     // Firm, precise (Female)
+  gemini_female_3: 'Leda',     // Youthful, fresh (Female)
+  gemini_female_4: 'Sulafat',  // Warm, resonant (Female)
+  gemini_female_5: 'Zephyr',   // Breezy, light (Female)
+
+  // Male voices (deep, authoritative)
+  gemini_male_1: 'Charon',   // Dark, atmospheric (Male)
+  gemini_male_2: 'Puck',     // Upbeat, lively (Male)
+  gemini_male_3: 'Fenrir',   // Bold, powerful (Male)
+  gemini_male_4: 'Orus',     // Confident, direct (Male)
+  gemini_male_5: 'Iapetus',  // Clear, informative (Male)
+
+  // Mythological character voices
+  saraswati: 'Aoede',   // Warm goddess voice
+  madhav:    'Charon',  // Deep omniscient voice
+  ravan:     'Fenrir',  // Bold authoritative voice
+  arjun:     'Puck',    // Swift energetic voice
+
   // Backward compatibility
   gemini_flash:  'Aoede',
   gemini_pro:    'Charon',
   mistral_large: 'Puck',
-  ava:   'Aoede',
-  nova:  'Kore',
-  luna:  'Aoede',
-  orion: 'Charon',
-  echo:  'Charon',
-  sol:   'Aoede',
-  cove:  'Charon',
-  breeze:'Kore',
+  ava:     'Aoede',
+  nova:    'Kore',
+  luna:    'Leda',
+  orion:   'Charon',
+  echo:    'Fenrir',
+  sol:     'Aoede',
+  cove:    'Orus',
+  breeze:  'Zephyr',
 }
 
 export async function generateGeminiTTS(text, voiceId = 'gemini_flash', speed = 1.0, clientApiKey = null) {
@@ -76,6 +91,8 @@ export async function generateGeminiTTS(text, voiceId = 'gemini_flash', speed = 
           voiceConfig: {
             prebuiltVoiceConfig: { voiceName },
           },
+          // Gemini 2.5 flash TTS supports speaking rate
+          ...(speed !== 1.0 ? { speakingRate: Math.max(0.25, Math.min(4.0, speed)) } : {}),
         },
       },
     })
