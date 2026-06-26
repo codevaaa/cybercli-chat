@@ -8,8 +8,63 @@
 import { app, BrowserWindow, ipcMain, shell, dialog, Menu, Tray, nativeImage } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
-import pkg from 'electron-updater'
-const { autoUpdater } = pkg
+// Defer electron-updater load to prevent cold-start freezes
+let autoUpdater: any = null
+
+async function initAutoUpdater() {
+  if (isDev) return null
+  if (autoUpdater) return autoUpdater
+  try {
+    console.log('[Updater] Initializing auto-updater asynchronously...')
+    const pkg = await import('electron-updater')
+    autoUpdater = pkg.autoUpdater || (pkg as any).default?.autoUpdater
+    if (!autoUpdater) {
+      console.error('[Updater] Failed to get autoUpdater instance from module')
+      return null
+    }
+
+    autoUpdater.autoDownload = false
+    autoUpdater.autoInstallOnAppQuit = false
+
+    autoUpdater.on('update-available', (info) => {
+      mainWindow?.webContents.send('update:available', info)
+    })
+    
+    autoUpdater.on('update-not-available', () => {
+      mainWindow?.webContents.send('update:none')
+    })
+    
+    autoUpdater.on('download-progress', (progressObj) => {
+      mainWindow?.webContents.send('update:progress', progressObj)
+    })
+    
+    autoUpdater.on('update-downloaded', (info) => {
+      mainWindow?.webContents.send('update:downloaded', info)
+    })
+    
+    autoUpdater.on('error', (err) => {
+      const msg = err?.message || ''
+      if (msg.includes('latest.yml') || msg.includes('404') || msg.includes('HttpError')) {
+        console.log('[Updater] Update check skipped (latest.yml not found yet):', msg.slice(0, 80))
+        return
+      }
+      console.error('[Updater] Error:', msg)
+      mainWindow?.webContents.send('update:error', msg)
+    })
+
+    // Defer check by 15s to guarantee window has rendered
+    setTimeout(() => {
+      autoUpdater.checkForUpdates().catch((err) => {
+        console.log('[Updater] checkForUpdates failed silently:', (err?.message || '').slice(0, 80))
+      })
+    }, 15_000)
+    
+    return autoUpdater
+  } catch (err) {
+    console.error('[Updater] Failed to dynamically load electron-updater:', err)
+    return null
+  }
+}
 
 // ─── Constants ──────────────────────────────────────────────
 
@@ -245,44 +300,11 @@ app.whenReady().then(() => {
     mainWindow = createMainWindow()
   }
 
-  // Auto-updater
+  // Defer auto-updater initialization so main thread isn't blocked on startup
   if (!isDev) {
-    autoUpdater.autoDownload = false // Let user click download
-    autoUpdater.autoInstallOnAppQuit = false
-
-    autoUpdater.on('update-available', (info) => {
-      mainWindow?.webContents.send('update:available', info)
-    })
-    
-    autoUpdater.on('update-not-available', () => {
-      mainWindow?.webContents.send('update:none')
-    })
-    
-    autoUpdater.on('download-progress', (progressObj) => {
-      mainWindow?.webContents.send('update:progress', progressObj)
-    })
-    
-    autoUpdater.on('update-downloaded', (info) => {
-      mainWindow?.webContents.send('update:downloaded', info)
-    })
-    
-    autoUpdater.on('error', (err) => {
-      // Silently ignore 404 latest.yml errors — don't crash the app
-      const msg = err?.message || ''
-      if (msg.includes('latest.yml') || msg.includes('404') || msg.includes('HttpError')) {
-        console.log('[Updater] Update check skipped (latest.yml not found yet):', msg.slice(0, 80))
-        return
-      }
-      console.error('[Updater] Error:', msg)
-      mainWindow?.webContents.send('update:error', msg)
-    })
-
-    // Delay update check by 10s so app loads first, and wrap in try/catch
     setTimeout(() => {
-      autoUpdater.checkForUpdates().catch((err) => {
-        console.log('[Updater] checkForUpdates failed silently:', (err?.message || '').slice(0, 80))
-      })
-    }, 10_000)
+      initAutoUpdater().catch((err) => console.error('[Updater] Deferred init failed:', err))
+    }, 5000)
   }
 
   app.on('activate', () => {
@@ -637,10 +659,16 @@ ipcMain.handle('notify:show', (_event, title: string, body: string) => {
 })
 
 // Auto-updater
-ipcMain.handle('update:restart', () => autoUpdater.quitAndInstall())
+ipcMain.handle('update:restart', () => {
+  if (autoUpdater) {
+    autoUpdater.quitAndInstall()
+  }
+})
 ipcMain.handle('update:check', async () => {
   try {
-    const result = await autoUpdater.checkForUpdates()
+    const updater = await initAutoUpdater()
+    if (!updater) return { success: false, error: 'Auto-updater not available' }
+    const result = await updater.checkForUpdates()
     return { success: true, version: result?.updateInfo?.version }
   } catch (err) {
     return { success: false, error: (err as Error).message }
@@ -648,7 +676,9 @@ ipcMain.handle('update:check', async () => {
 })
 ipcMain.handle('update:download', async () => {
   try {
-    await autoUpdater.downloadUpdate()
+    const updater = await initAutoUpdater()
+    if (!updater) return { success: false, error: 'Auto-updater not available' }
+    await updater.downloadUpdate()
     return { success: true }
   } catch (err) {
     return { success: false, error: (err as Error).message }

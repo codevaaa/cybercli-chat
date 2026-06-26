@@ -67,18 +67,21 @@ async function patch() {
   product.win32DirName = config.win32DirName;
   product.win32MutexName = config.win32MutexName;
   product.urlProtocol = config.urlName;
+  product.win32NameVersion = 'Codeva Editor';
+  product.win32RegValueName = 'Codeva';
+  product.win32AppUserModelId = 'Codeva.AI';
+  product.win32ShellNameShort = 'Codeva';
+  product.darwinBundleIdentifier = 'com.codeva.editor';
+  product.linuxIconName = 'codeva';
+  product.reportIssueUrl = 'https://github.com/codevaaa/codeva/issues';
 
-  // Configure extension marketplace (VSCodium uses open-vsx)
-  product.extensionsGallery = {
-    serviceUrl: 'https://open-vsx.org/api',
-    itemUrl: 'https://open-vsx.org/item',
-    resourceUrlTemplate: 'https://open-vsx.org/api/v1/file/{publisher}/{name}/{version}/file',
-  };
+  // Configure extension marketplace - Omitted at build-time to avoid built-in download 404s
+  delete product.extensionsGallery;
 
   // Embed our custom vscode-extension as a built-in extension
   product.builtInExtensions = product.builtInExtensions || [];
   const extensionBundlePath = path.join(rootDir, 'cybercoder/packages/vscode-extension');
-  const extensionDest = path.join(vscodeDir, 'extensions/cybercoder');
+  const extensionDest = path.join(vscodeDir, 'extensions/codeva-vscode');
 
   console.log(`Copying vscode-extension bundle to ${extensionDest}...`);
   fs.copySync(extensionBundlePath, extensionDest, {
@@ -87,13 +90,16 @@ async function patch() {
   });
 
   // Inject into product.json extensions config
-  if (!product.builtInExtensions.some(ext => ext.name === 'cybercoder')) {
+  if (!product.builtInExtensions.some(ext => ext.name === 'codeva-vscode')) {
     product.builtInExtensions.push({
-      name: 'cybercoder',
-      version: '0.1.22',
-      publisher: 'cybermind',
+      name: 'codeva-vscode',
+      version: '0.6.2',
+      publisher: 'codeva',
     });
   }
+
+  // Remove any stale cybercoder registrations
+  product.builtInExtensions = product.builtInExtensions.filter(ext => ext.name !== 'cybercoder');
 
   fs.writeJsonSync(productJsonPath, product, { spaces: 2 });
   console.log('product.json successfully patched.');
@@ -112,6 +118,38 @@ async function compile() {
   // Run build command via npm/gulp
   run('npm', ['run', 'gulp', 'vscode-win32-x64-min'], vscodeDir);
   console.log('Compilation complete.');
+
+  console.log('--- Phase 4: Post-Build Patching ---');
+  // Find built product.json paths (check both vscode-oss parent and nested locations)
+  const possibleBuiltProductPaths = [
+    path.join(rootDir, 'editor-builder/VSCode-win32-x64/resources/app/product.json'),
+    path.join(vscodeDir, 'VSCode-win32-x64/resources/app/product.json'),
+    path.join(vscodeDir, '../VSCode-win32-x64/resources/app/product.json'),
+  ];
+
+  let patchedCount = 0;
+  for (const builtProductPath of possibleBuiltProductPaths) {
+    if (fs.existsSync(builtProductPath)) {
+      console.log(`Found built product.json at ${builtProductPath}. Injecting extensionsGallery...`);
+      try {
+        const builtProduct = fs.readJsonSync(builtProductPath);
+        builtProduct.extensionsGallery = {
+          serviceUrl: 'https://open-vsx.org/api',
+          itemUrl: 'https://open-vsx.org/item',
+          resourceUrlTemplate: 'https://open-vsx.org/api/v1/file/{publisher}/{name}/{version}/file',
+        };
+        fs.writeJsonSync(builtProductPath, builtProduct, { spaces: 2 });
+        console.log(`Successfully patched built product.json at ${builtProductPath}`);
+        patchedCount++;
+      } catch (err) {
+        console.error(`Error patching built product.json at ${builtProductPath}:`, err);
+      }
+    }
+  }
+
+  if (patchedCount === 0) {
+    console.warn('Warning: Could not find any built product.json to patch. Compilation might have failed or built to a different path.');
+  }
 }
 
 async function main() {

@@ -61,3 +61,7 @@ hunter-engine/.claude/
 
 # E2B / hunt session temp data
 backend/src/services/hunt/sessions/
+
+# VSCode OSS build folder
+editor-builder/vscode-oss/
+

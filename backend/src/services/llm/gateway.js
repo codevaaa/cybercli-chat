@@ -258,7 +258,25 @@ const OPENROUTER_FALLBACK_MAP = {
   'codeva/abhimanyu': 'meta-llama/llama-3.3-70b-instruct',
   'cloudflare/@cf/meta/llama-3.1-8b-instruct': 'meta-llama/llama-3.1-8b-instruct',
   'cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast': 'meta-llama/llama-3.3-70b-instruct',
-  'cloudflare/@cf/qwen/qwq-32b': 'qwen/qwq-32b-preview'
+  'cloudflare/@cf/qwen/qwq-32b': 'qwen/qwq-32b-preview',
+
+  // Codeva Swarm Fallbacks
+  'codeva-ravan-v1': 'anthropic/claude-3.5-sonnet',
+  'codeva-madhav-v1': 'google/gemini-2.5-pro',
+  'codeva-kali-v1': 'qwen/qwen-2.5-72b-instruct',
+  'codeva-arjun-v1': 'meta-llama/llama-3.3-70b-instruct',
+  'codeva-abhimanyu-v1': 'meta-llama/llama-3.3-70b-instruct',
+
+  // llm7 Fallbacks
+  'llm7/deepseek-v3.1:671b-terminus': 'deepseek/deepseek-chat',
+  'llm7/deepseek-v4-flash': 'deepseek/deepseek-chat',
+  'llm7/kimi-k2.6': 'moonshotai/kimi-k2.6:free',
+  'llm7/minimax-m2.7': 'minimax/minimax-m2.5:free',
+  'llm7/qwen3-235b': 'qwen/qwen-2.5-72b-instruct',
+  'llm7/mistral-small-3.2': 'mistralai/mistral-small-24b-instruct-2501',
+  'llm7/codestral-latest': 'mistralai/codestral-2501',
+  'llm7/GLM-4.6V-Flash': 'glm/glm-4-9b-chat',
+  'llm7/devstral-small-2:24b': 'mistralai/mistral-small-24b-instruct-2501'
 }
 
 const FALLBACK_CHAIN = [
@@ -318,30 +336,30 @@ export function resolveModelForPlan(requestedId, planName, lastUserText = '') {
 
 function getClient(provider) {
   const key = getKey(provider)
-  if (!key) return null
+  if (!key) return { client: null, key: null }
 
   if (provider === 'huggingface') {
-    return new OpenAI({ apiKey: key, baseURL: 'https://router.huggingface.co/v1' })
+    return { client: new OpenAI({ apiKey: key, baseURL: 'https://router.huggingface.co/v1' }), key }
   }
 
   if (provider === 'cloudflare') {
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
-    if (!accountId) return null
-    return new OpenAI({ apiKey: key, baseURL: `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1` })
+    if (!accountId) return { client: null, key: null }
+    return { client: new OpenAI({ apiKey: key, baseURL: `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1` }), key }
   }
 
   if (provider === 'openrouter' || provider === 'groq' || provider === 'mistral' || provider === 'opencode' || provider === 'apifreellm' || provider === 'cerebras' || provider === 'llm7') {
-    return new OpenAI({ apiKey: key, baseURL: BASE_URLS[provider] })
+    return { client: new OpenAI({ apiKey: key, baseURL: BASE_URLS[provider] }), key }
   }
 
   if (provider === 'nvidia') {
-    return new OpenAI({ apiKey: key, baseURL: 'https://integrate.api.nvidia.com/v1' })
+    return { client: new OpenAI({ apiKey: key, baseURL: 'https://integrate.api.nvidia.com/v1' }), key }
   }
 
   // For other providers, use OpenRouter as unified proxy
   const orKey = getKey('openrouter')
-  if (!orKey) return null
-  return new OpenAI({ apiKey: orKey, baseURL: BASE_URLS.openrouter })
+  if (!orKey) return { client: null, key: null }
+  return { client: new OpenAI({ apiKey: orKey, baseURL: BASE_URLS.openrouter }), key: orKey }
 }
 
 /** Get the raw key for a provider (used by Gemini direct SDK). */
@@ -476,25 +494,28 @@ export const llmGateway = {
         for await (const chunk of stream) {
           yield chunk
         }
+        reportSuccess('gemini', getRawKey('gemini'))
         return
       } catch (err) {
         console.error('Direct Gemini SDK stream completion failed, falling back to proxy:', err.message)
+        reportFailure('gemini', getRawKey('gemini'), err.status || 403)
         directGeminiFailed = true
       }
     }
 
-    let client = getClient(targetModel.provider)
+    let { client, key: activeKey } = getClient(targetModel.provider)
     let activeModelName = targetModel.model
     let activeProvider = targetModel.provider
 
     const needsOpenRouterFallback = 
       (activeProvider === 'gemini' && (directGeminiFailed || !getRawKey('gemini'))) ||
-      (!client && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral'].includes(targetModel.provider))
+      (!client && activeProvider !== 'openrouter')
 
     if (needsOpenRouterFallback) {
-      const orClient = getClient('openrouter')
+      const { client: orClient, key: orKey } = getClient('openrouter')
       if (orClient) {
         client = orClient
+        activeKey = orKey
         activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
         activeProvider = 'openrouter'
       }
@@ -521,13 +542,15 @@ export const llmGateway = {
         }
       }
 
+      reportSuccess(activeProvider, activeKey)
       yield { type: 'done' }
     } catch (error) {
       console.error(`Provider ${activeProvider} failed:`, error.message)
+      reportFailure(activeProvider, activeKey, error.status || 500)
 
-      if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini'].includes(targetModel.provider)) {
+      if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini', 'llm7'].includes(targetModel.provider)) {
         try {
-          const fallbackClient = getClient('openrouter')
+          const { client: fallbackClient, key: fallbackKey } = getClient('openrouter')
           if (fallbackClient) {
             const fallbackModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
             yield { type: 'info', content: `Direct route failed. Switching to OpenRouter...` }
@@ -542,11 +565,16 @@ export const llmGateway = {
               const content = chunk.choices[0]?.delta?.content
               if (content) yield { type: 'token', content }
             }
+            reportSuccess('openrouter', fallbackKey)
             yield { type: 'done' }
             return
           }
         } catch (fallbackError) {
           console.error(`Fallback to OpenRouter for ${activeModelId} failed:`, fallbackError.message)
+          const { key: fallbackKey } = getClient('openrouter')
+          if (fallbackKey) {
+            reportFailure('openrouter', fallbackKey, fallbackError.status || 500)
+          }
         }
       }
 
@@ -576,13 +604,15 @@ export const llmGateway = {
             for await (const chunk of stream) {
               yield chunk
             }
+            reportSuccess('gemini', getRawKey('gemini'))
             return
           } catch (geminiErr) {
             console.error('Gemini fallback direct SDK failed:', geminiErr.message)
+            reportFailure('gemini', getRawKey('gemini'), geminiErr.status || 403)
           }
         }
 
-        const fallbackClient = getClient(fallback.provider)
+        const { client: fallbackClient, key: fallbackKey } = getClient(fallback.provider)
         if (!fallbackClient) continue
 
         try {
@@ -603,10 +633,12 @@ export const llmGateway = {
             }
           }
 
+          reportSuccess(fallback.provider, fallbackKey)
           yield { type: 'done' }
           return
         } catch (fallbackError) {
           console.error(`Fallback ${fallback.provider} failed:`, fallbackError.message)
+          reportFailure(fallback.provider, fallbackKey, fallbackError.status || 500)
         }
       }
 
@@ -628,7 +660,7 @@ export const llmGateway = {
 
     const lastUserText = [...workingMessages].reverse().find((m) => m.role === 'user')?.content || ''
     activeModelId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText)
-    const totalChars = workingMessages.reduce((sum, m) => sum + (m.content || '').length, 0)
+    const totalChars = workingMessages.reverse().reduce((sum, m) => sum + (m.content || '').length, 0)
     
     if (totalChars > 35000 && !activeModelId.startsWith('gemini/') && activeModelId !== 'codeva-ravan-v1') {
       activeModelId = 'gemini/gemini-2.5-flash'
@@ -672,6 +704,7 @@ export const llmGateway = {
             ...(systemInstruction ? { systemInstruction } : {}),
           },
         })
+        reportSuccess('gemini', getRawKey('gemini'))
         return {
           content: response.text,
           model: targetModel.model,
@@ -681,22 +714,24 @@ export const llmGateway = {
         }
       } catch (err) {
         console.error('Direct Gemini SDK non-stream completion failed, falling back to proxy:', err.message)
+        reportFailure('gemini', getRawKey('gemini'), err.status || 403)
         directGeminiFailed = true
       }
     }
 
-    let client = getClient(targetModel.provider)
+    let { client, key: activeKey } = getClient(targetModel.provider)
     let activeModelName = targetModel.model
     let activeProvider = targetModel.provider
 
     const needsOpenRouterFallback = 
       (activeProvider === 'gemini' && (directGeminiFailed || !getRawKey('gemini'))) ||
-      (!client && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral'].includes(targetModel.provider))
+      (!client && activeProvider !== 'openrouter')
 
     if (needsOpenRouterFallback) {
-      const orClient = getClient('openrouter')
+      const { client: orClient, key: orKey } = getClient('openrouter')
       if (orClient) {
         client = orClient
+        activeKey = orKey
         activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
         activeProvider = 'openrouter'
       }
@@ -714,6 +749,8 @@ export const llmGateway = {
         max_tokens: EFFORT_MAX_TOKENS[effort] || 4096,
       })
 
+      reportSuccess(activeProvider, activeKey)
+
       return {
         content: response.choices[0].message.content,
         model: activeModelName,
@@ -723,10 +760,11 @@ export const llmGateway = {
       }
     } catch (error) {
       console.error(`Provider ${activeProvider} failed:`, error.message)
+      reportFailure(activeProvider, activeKey, error.status || 500)
 
-      if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini'].includes(targetModel.provider)) {
+      if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini', 'llm7'].includes(targetModel.provider)) {
         try {
-          const fallbackClient = getClient('openrouter')
+          const { client: fallbackClient, key: fallbackKey } = getClient('openrouter')
           if (fallbackClient) {
             const fallbackModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
             const response = await fallbackClient.chat.completions.create({
@@ -735,6 +773,7 @@ export const llmGateway = {
               temperature,
               max_tokens: EFFORT_MAX_TOKENS[effort] || 4096,
             })
+            reportSuccess('openrouter', fallbackKey)
             return {
               content: response.choices[0].message.content,
               model: fallbackModelName,
@@ -745,6 +784,10 @@ export const llmGateway = {
           }
         } catch (fallbackErr) {
           console.error(`Non-stream fallback to OpenRouter failed:`, fallbackErr.message)
+          const { key: fallbackKey } = getClient('openrouter')
+          if (fallbackKey) {
+            reportFailure('openrouter', fallbackKey, fallbackErr.status || 500)
+          }
         }
       }
       return { error: error.message }

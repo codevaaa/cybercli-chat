@@ -12,7 +12,7 @@ import MatrixRain from './MatrixRain'
 import { CodevaMark } from '@components/ui/CodevaLogo'
 import { useNavigate } from 'react-router-dom'
 import mermaid from 'mermaid'
-import api from '../../lib/api.js'
+import { ImageGeneratorWidget } from './ImageGeneratorWidget'
 
 // ─── Kali-compatible models (kali: true in EXTRA_MODELS) ────────────────────
 const KALI_MODELS = [
@@ -280,6 +280,7 @@ function KaliMessage({ msg, index, isStreaming, copiedIdx, onCopy, onRetry, mode
               )}
               <ReactMarkdown
                 components={{
+                  img: ({ src, alt }) => <ImageGeneratorWidget src={src} alt={alt} />,
                   code({ node, inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '')
                     const codeString = String(children).replace(/\n$/, '')
