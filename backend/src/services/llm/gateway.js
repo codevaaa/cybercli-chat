@@ -217,6 +217,9 @@ const MODEL_MAP = {
   'mistral/codestral-latest': { provider: 'mistral', model: 'codestral-latest', purpose: 'general' },
   'nvidia/qwen-2.5-coder-32b': { provider: 'nvidia', model: 'qwen/qwen2.5-coder-32b-instruct', purpose: 'general' },
   'nvidia/deepseek-r1': { provider: 'nvidia', model: 'deepseek-ai/deepseek-r1', purpose: 'reasoning' },
+
+  // Abhimanyu — Cloudflare Workers AI (Llama 3.3 70B fast)
+  'codeva/abhimanyu': { provider: 'cloudflare', model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', purpose: 'reasoning' },
 }
 
 const OPENROUTER_FALLBACK_MAP = {
@@ -292,11 +295,49 @@ const KALI_FALLBACK_CHAIN = [
 ]
 
 const FALLBACK_CHAINS = {
-  'codeva-ravan-v1': ['codeva-ravan-fallback-1'],
+  // Ravan — try gemini-2.5-pro, then openrouter claude fallback
+  'codeva-ravan-v1': ['codeva-ravan-fallback-1', 'gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini'],
+
+  // Madhav — opencode deepseek → llm7 → openrouter
   'codeva-madhav-v1': ['codeva-madhav-fallback-1', 'codeva-madhav-fallback-2', 'codeva-madhav-fallback-3'],
+  'opencode/deepseek-v4-pro': ['openrouter/gpt-4o-mini', 'gemini/gemini-2.5-flash', 'groq/llama-3.1-8b'],
+
+  // Kali persona models
   'codeva-kali-v1': ['codeva-kali-fallback-1', 'codeva-kali-fallback-2', 'codeva-kali-fallback-3'],
+  'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b': ['groq/llama-3.3-70b', 'groq/llama-3.1-70b', 'openrouter/gpt-4o-mini'],
+  'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b': ['groq/llama-3.3-70b', 'groq/llama-3.1-70b', 'openrouter/gpt-4o-mini'],
+  'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b': ['groq/llama-3.1-8b', 'openrouter/gpt-4o-mini'],
+
+  // Arjun
   'codeva-arjun-v1': ['codeva-arjun-fallback-1', 'codeva-arjun-fallback-2', 'codeva-arjun-fallback-3'],
+
+  // Abhimanyu (Default — codeva/abhimanyu maps to cloudflare)
   'codeva-abhimanyu-v1': ['codeva-abhimanyu-fallback-1', 'codeva-abhimanyu-fallback-2', 'codeva-abhimanyu-fallback-3'],
+  'codeva/abhimanyu': ['groq/llama-3.3-70b', 'gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini'],
+
+  // Chanakya (deepseek-r1-distill)
+  'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B': ['groq/deepseek-r1-distill-70b', 'openrouter/gpt-4o-mini'],
+
+  // Bheem
+  'apifreellm/gpt-4o': ['openrouter/gpt-4o-mini', 'gemini/gemini-2.5-flash'],
+
+  // Vyas
+  'opencode/deepseek-v4-flash': ['groq/llama-3.1-8b', 'openrouter/gpt-4o-mini'],
+
+  // Sahadeva/Gemini
+  'gemini/gemini-2.5-pro': ['gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini'],
+  'gemini/gemini-2.5-flash': ['openrouter/gpt-4o-mini', 'groq/llama-3.1-8b'],
+
+  // Vayu/Mistral
+  'mistral/mistral-large-latest': ['groq/llama-3.1-70b', 'openrouter/gpt-4o-mini'],
+
+  // LLM7 models
+  'llm7/deepseek-v3.1:671b-terminus': ['openrouter/gpt-4o-mini', 'groq/llama-3.1-70b'],
+  'llm7/kimi-k2.6': ['openrouter/gpt-4o-mini', 'groq/llama-3.1-8b'],
+  'llm7/qwen3-235b': ['groq/llama-3.1-70b', 'openrouter/gpt-4o-mini'],
+
+  // Council mode
+  'council': ['openrouter/gpt-4o-mini', 'groq/llama-3.1-8b', 'gemini/gemini-2.5-flash'],
 }
 
 /**
@@ -642,7 +683,30 @@ export const llmGateway = {
         }
       }
 
-      yield { type: 'error', content: 'All providers failed. Please try again later.' }
+      // EMERGENCY LAST RESORT — always try groq llama as final fallback
+      try {
+        const { client: emergencyClient, key: emergencyKey } = getClient('groq')
+        if (emergencyClient) {
+          yield { type: 'info', content: 'Switching to emergency backup...' }
+          const emergencyStream = await emergencyClient.chat.completions.create({
+            model: 'llama-3.1-8b-instant',
+            messages: enriched,
+            temperature,
+            stream: true,
+            max_tokens: 4096,
+          })
+          for await (const chunk of emergencyStream) {
+            const content = chunk.choices[0]?.delta?.content
+            if (content) yield { type: 'token', content }
+          }
+          reportSuccess('groq', emergencyKey)
+          yield { type: 'done' }
+          return
+        }
+      } catch (emergencyErr) {
+        console.error('Emergency groq fallback failed:', emergencyErr.message)
+      }
+      yield { type: 'error', content: 'All providers are temporarily unavailable. Please try again in a moment.' }
     }
   },
 

@@ -5237,7 +5237,8 @@ export default function ChatPage() {
                           />
                         </div>
                       ) : (
-                        messages.map((msg, i) => (
+                        <div style={{ maxWidth: '48rem', margin: '0 auto', width: '100%' }}>
+                        {messages.map((msg, i) => (
                           <MessageBubble
                             key={msg._id || `msg-${i}`}
                             msg={msg}
@@ -5253,7 +5254,8 @@ export default function ChatPage() {
                             copied={copied}
                             codeExecutionEnabled={codeExecutionEnabled}
                           />
-                        ))
+                        ))}
+                        </div>
                       )}
                       <div ref={messagesEndRef} />
                     </div>
