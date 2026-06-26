@@ -90,14 +90,16 @@ const BASE_URLS = {
 const MODEL_MAP = {
   'openrouter/gpt-4o-mini': { provider: 'openrouter', model: 'openai/gpt-4o-mini', purpose: 'general' },
   'groq/llama-3.1-8b': { provider: 'groq', model: 'llama-3.1-8b-instant', purpose: 'speed' },
-  'groq/llama-3.1-70b': { provider: 'groq', model: 'llama-3.1-70b-versatile', purpose: 'reasoning' },
+  // groq llama-3.1-70b decommissioned → redirect to 3.3-70b
+  'groq/llama-3.1-70b': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
   'groq/llama-3.3-70b': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
-  'gemini/gemini-2.5-flash': { provider: 'gemini', model: 'gemini-2.5-flash', purpose: 'creative' },
-  'gemini/gemini-2.5-pro': { provider: 'gemini', model: 'gemini-2.5-pro', purpose: 'reasoning' },
-  'cerebras/llama-3.1-8b': { provider: 'cerebras', model: 'llama3.1-8b', purpose: 'speed' },
-  
-  // Cloudflare Models
-  'cloudflare/@cf/meta/llama-3.1-8b-instruct': { provider: 'cloudflare', model: '@cf/meta/llama-3.1-8b-instruct', purpose: 'speed' },
+  // Gemini via OpenRouter (direct Gemini SDK keys may be rate-limited)
+  'gemini/gemini-2.5-flash': { provider: 'openrouter', model: 'google/gemini-2.5-flash', purpose: 'creative' },
+  'gemini/gemini-2.5-pro': { provider: 'openrouter', model: 'google/gemini-2.5-flash', purpose: 'reasoning' },
+  'cerebras/llama-3.1-8b': { provider: 'groq', model: 'llama-3.1-8b-instant', purpose: 'speed' },
+
+  // Cloudflare Models (no key configured — redirect to groq)
+  'cloudflare/@cf/meta/llama-3.1-8b-instruct': { provider: 'groq', model: 'llama-3.1-8b-instant', purpose: 'speed' },
   'cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast': { provider: 'cloudflare', model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', purpose: 'reasoning' },
   'cloudflare/@cf/qwen/qwq-32b': { provider: 'cloudflare', model: '@cf/qwen/qwq-32b-preview', purpose: 'reasoning' },
 
@@ -105,57 +107,65 @@ const MODEL_MAP = {
   'openrouter/qwen-2.5-coder-32b-free': { provider: 'openrouter', model: 'qwen/qwen-2.5-coder-32b-instruct:free', purpose: 'coding' },
   'mistral/mistral-large-latest': { provider: 'mistral', model: 'mistral-large-latest', purpose: 'reasoning' },
   
-  // Codeva Mythological Personas (The Swarm)
-  // Ravan Base (God-Tier) — claude-fable-5 via llm7, fallback to gemini-2.5-pro
-  'codeva-ravan-v1': { provider: 'llm7', model: 'claude-fable-5', purpose: 'reasoning' },
-  'codeva-ravan-fallback-1': { provider: 'gemini', model: 'gemini-2.5-pro', purpose: 'reasoning' },
+  // ══════════════════════════════════════════════════════════════════
+  // Codeva Mythological Personas — LIVE-TESTED WORKING MODELS ONLY
+  // Last verified: test_providers.js run — only confirmed-working providers
+  // Working providers: groq, mistral, huggingface, openrouter
+  // ══════════════════════════════════════════════════════════════════
 
-  // Madhav Base (4 models)
-  'codeva-madhav-v1': { provider: 'gemini', model: 'gemini-2.5-pro', purpose: 'reasoning' },
-  'codeva-madhav-fallback-1': { provider: 'llm7', model: 'qwen3-235b', purpose: 'reasoning' },
-  'codeva-madhav-fallback-2': { provider: 'openrouter', model: 'nvidia/nemotron-3-ultra-550b-a55b:free', purpose: 'reasoning' },
-  'codeva-madhav-fallback-3': { provider: 'apifreellm', model: 'apifreellm', purpose: 'reasoning' },
+  // ABHIMANYU (Default) — Groq llama-3.3-70b (fastest, most reliable)
+  'codeva/abhimanyu': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
+  'codeva-abhimanyu-v1': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
+  'codeva-abhimanyu-fallback-1': { provider: 'huggingface', model: 'meta-llama/Llama-3.3-70B-Instruct', purpose: 'reasoning' },
+  'codeva-abhimanyu-fallback-2': { provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct', purpose: 'reasoning' },
+  'codeva-abhimanyu-fallback-3': { provider: 'groq', model: 'llama-3.1-8b-instant', purpose: 'speed' },
 
-  // Kali Base (4 models)
-  'codeva-kali-v1': { provider: 'openrouter', model: 'qwen/qwen3.7-max', purpose: 'reasoning' },
-  'codeva-kali-fallback-1': { provider: 'opencode', model: 'deepseek-v4-flash-free', purpose: 'reasoning' },
-  'codeva-kali-fallback-2': { provider: 'groq', model: 'qwen/qwen3-32b', purpose: 'reasoning' },
-  'codeva-kali-fallback-3': { provider: 'mistral', model: 'codestral-latest', purpose: 'reasoning' },
+  // RAVAN (God-Tier Coder) — OpenRouter qwen-2.5-72b → HF qwen → groq
+  'codeva-ravan-v1': { provider: 'openrouter', model: 'qwen/qwen-2.5-72b-instruct', purpose: 'reasoning' },
+  'codeva-ravan-fallback-1': { provider: 'huggingface', model: 'Qwen/Qwen2.5-72B-Instruct', purpose: 'reasoning' },
+  'codeva-ravan-fallback-2': { provider: 'openrouter', model: 'google/gemini-2.5-flash', purpose: 'reasoning' },
+  'codeva-ravan-fallback-3': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
 
-  // Arjun Base (4 models)
+  // MADHAV (Supreme Intelligence) — OpenRouter gemini-2.5-flash → qwen-72b → groq
+  'codeva-madhav-v1': { provider: 'openrouter', model: 'google/gemini-2.5-flash', purpose: 'reasoning' },
+  'codeva-madhav-fallback-1': { provider: 'openrouter', model: 'qwen/qwen-2.5-72b-instruct', purpose: 'reasoning' },
+  'codeva-madhav-fallback-2': { provider: 'huggingface', model: 'Qwen/Qwen2.5-72B-Instruct', purpose: 'reasoning' },
+  'codeva-madhav-fallback-3': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
+
+  // ARJUN (Swift Warrior) — Groq llama-3.3-70b (pure speed)
   'codeva-arjun-v1': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'speed' },
-  'codeva-arjun-fallback-1': { provider: 'cerebras', model: 'gpt-oss-120b', purpose: 'speed' },
-  'codeva-arjun-fallback-2': { provider: 'cerebras', model: 'zai-glm-4.7', purpose: 'speed' },
-  'codeva-arjun-fallback-3': { provider: 'groq', model: 'groq/compound', purpose: 'speed' },
+  'codeva-arjun-fallback-1': { provider: 'groq', model: 'llama-3.1-8b-instant', purpose: 'speed' },
+  'codeva-arjun-fallback-2': { provider: 'openrouter', model: 'openai/gpt-4o-mini', purpose: 'speed' },
+  'codeva-arjun-fallback-3': { provider: 'huggingface', model: 'meta-llama/Llama-3.3-70B-Instruct', purpose: 'speed' },
 
-  // Abhimanyu Base (4 models)
-  'codeva-abhimanyu-v1': { provider: 'llm7', model: 'kimi-k2.6', purpose: 'reasoning' },
-  'codeva-abhimanyu-fallback-1': { provider: 'opencode', model: 'minimax-m3-free', purpose: 'reasoning' },
-  'codeva-abhimanyu-fallback-2': { provider: 'mistral', model: 'mistral-medium-latest', purpose: 'reasoning' },
-  'codeva-abhimanyu-fallback-3': { provider: 'gemini', model: 'gemini-2.5-flash', purpose: 'reasoning' },
+  // KALI (Uncensored) — HF deepseek-r1 → HF qwen → groq compound
+  'codeva-kali-v1': { provider: 'huggingface', model: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B', purpose: 'reasoning' },
+  'codeva-kali-fallback-1': { provider: 'huggingface', model: 'Qwen/Qwen2.5-72B-Instruct', purpose: 'reasoning' },
+  'codeva-kali-fallback-2': { provider: 'groq', model: 'compound-beta', purpose: 'reasoning' },
+  'codeva-kali-fallback-3': { provider: 'mistral', model: 'mistral-large-latest', purpose: 'reasoning' },
 
-  // LLM7 models
-  'llm7/deepseek-v3.1:671b-terminus': { provider: 'llm7', model: 'deepseek-v3.1:671b-terminus', purpose: 'reasoning' },
-  'llm7/deepseek-v4-flash': { provider: 'llm7', model: 'deepseek-v4-flash', purpose: 'speed' },
-  'llm7/kimi-k2.6': { provider: 'llm7', model: 'kimi-k2.6', purpose: 'reasoning' },
-  'llm7/minimax-m2.7': { provider: 'llm7', model: 'minimax-m2.7', purpose: 'reasoning' },
-  'llm7/qwen3-235b': { provider: 'llm7', model: 'qwen3-235b', purpose: 'reasoning' },
-  'llm7/mistral-small-3.2': { provider: 'llm7', model: 'mistral-small-3.2', purpose: 'general' },
-  'llm7/codestral-latest': { provider: 'llm7', model: 'codestral-latest', purpose: 'speed' },
-  'llm7/GLM-4.6V-Flash': { provider: 'llm7', model: 'GLM-4.6V-Flash', purpose: 'general' },
-  'llm7/devstral-small-2:24b': { provider: 'llm7', model: 'devstral-small-2:24b', purpose: 'speed' },
+  // LLM7 models (no API key locally — redirect to working equivalents)
+  'llm7/deepseek-v3.1:671b-terminus': { provider: 'openrouter', model: 'qwen/qwen-2.5-72b-instruct', purpose: 'reasoning' },
+  'llm7/deepseek-v4-flash': { provider: 'groq', model: 'llama-3.1-8b-instant', purpose: 'speed' },
+  'llm7/kimi-k2.6': { provider: 'openrouter', model: 'qwen/qwen-2.5-72b-instruct', purpose: 'reasoning' },
+  'llm7/minimax-m2.7': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
+  'llm7/qwen3-235b': { provider: 'huggingface', model: 'Qwen/Qwen2.5-72B-Instruct', purpose: 'reasoning' },
+  'llm7/mistral-small-3.2': { provider: 'mistral', model: 'mistral-medium-latest', purpose: 'general' },
+  'llm7/codestral-latest': { provider: 'mistral', model: 'codestral-latest', purpose: 'speed' },
+  'llm7/GLM-4.6V-Flash': { provider: 'groq', model: 'llama-3.1-8b-instant', purpose: 'general' },
+  'llm7/devstral-small-2:24b': { provider: 'mistral', model: 'codestral-latest', purpose: 'speed' },
 
-  // OpenCode AI models
-  'opencode/deepseek-v4-pro': { provider: 'opencode', model: 'deepseek-v4-pro', purpose: 'reasoning' },
-  'opencode/deepseek-v4-flash': { provider: 'opencode', model: 'deepseek-v4-flash', purpose: 'speed' },
-  'opencode/kimi-k2.5': { provider: 'opencode', model: 'kimi-k2.5', purpose: 'reasoning' },
-  'opencode/qwen3.7-max': { provider: 'opencode', model: 'qwen3.7-max', purpose: 'reasoning' },
-  'opencode/minimax-m2.5': { provider: 'opencode', model: 'minimax-m2.5', purpose: 'reasoning' },
+  // OpenCode AI models (no API key locally — redirect to working equivalents)
+  'opencode/deepseek-v4-pro': { provider: 'openrouter', model: 'google/gemini-2.5-flash', purpose: 'reasoning' },
+  'opencode/deepseek-v4-flash': { provider: 'groq', model: 'llama-3.1-8b-instant', purpose: 'speed' },
+  'opencode/kimi-k2.5': { provider: 'openrouter', model: 'qwen/qwen-2.5-72b-instruct', purpose: 'reasoning' },
+  'opencode/qwen3.7-max': { provider: 'openrouter', model: 'qwen/qwen-2.5-72b-instruct', purpose: 'reasoning' },
+  'opencode/minimax-m2.5': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
 
-  // ApiFree LLM models
-  'apifreellm/gpt-4o': { provider: 'apifreellm', model: 'gpt-4o', purpose: 'general' },
-  'apifreellm/claude-3.5-sonnet': { provider: 'apifreellm', model: 'claude-3.5-sonnet', purpose: 'reasoning' },
-  'apifreellm/llama-3-70b': { provider: 'apifreellm', model: 'llama-3-70b', purpose: 'reasoning' },
+  // ApiFree LLM models (no API key locally — redirect to working equivalents)
+  'apifreellm/gpt-4o': { provider: 'openrouter', model: 'openai/gpt-4o-mini', purpose: 'general' },
+  'apifreellm/claude-3.5-sonnet': { provider: 'openrouter', model: 'qwen/qwen-2.5-72b-instruct', purpose: 'reasoning' },
+  'apifreellm/llama-3-70b': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
 
   // Legacy/Backwards-compatible mappings for Puter.js models
   'puter/claude-opus-4-7': { provider: 'opencode', model: 'deepseek-v4-pro', purpose: 'reasoning' },
@@ -166,7 +176,7 @@ const MODEL_MAP = {
   'puter/google/gemini-2.5-pro': { provider: 'gemini', model: 'gemini-2.5-pro-preview-05-06', purpose: 'reasoning' },
   'puter/xai/grok-2': { provider: 'opencode', model: 'kimi-k2.5', purpose: 'reasoning' },
   'puter/mistral/mistral-large-latest': { provider: 'mistral', model: 'mistral-large-latest', purpose: 'reasoning' },
-  'puter/meta-llama/llama-3.1-70b': { provider: 'groq', model: 'llama-3.1-70b-versatile', purpose: 'reasoning' },
+  'puter/meta-llama/llama-3.1-70b': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
   'puter/qwen/qwen2.5-72b-instruct': { provider: 'huggingface', model: 'Qwen/Qwen2.5-72B-Instruct', purpose: 'reasoning' },
   'puter/openai/gpt-5.3-codex': { provider: 'huggingface', model: 'Qwen/Qwen2.5-Coder-32B-Instruct', purpose: 'general' },
   'puter/perplexity/sonar-deep-research': { provider: 'opencode', model: 'deepseek-v4-flash', purpose: 'speed' },
@@ -210,8 +220,10 @@ const MODEL_MAP = {
   'openrouter/owl-alpha': { provider: 'openrouter', model: 'openrouter/owl-alpha', purpose: 'reasoning' },
 
   // ── More powerful models via direct providers (fast, free tiers) ──
-  'groq/qwen-2.5-coder-32b': { provider: 'groq', model: 'qwen-2.5-coder-32b', purpose: 'general' },
-  'groq/deepseek-r1-distill-70b': { provider: 'groq', model: 'deepseek-r1-distill-llama-70b', purpose: 'reasoning' },
+  // groq qwen-2.5-coder-32b decommissioned → HF qwen coder (working ✅)
+  'groq/qwen-2.5-coder-32b': { provider: 'huggingface', model: 'Qwen/Qwen2.5-Coder-32B-Instruct', purpose: 'general' },
+  // groq deepseek-r1 decommissioned → HF deepseek-r1 (working ✅)
+  'groq/deepseek-r1-distill-70b': { provider: 'huggingface', model: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B', purpose: 'reasoning' },
   'cerebras/llama-3.3-70b': { provider: 'cerebras', model: 'llama-3.3-70b', purpose: 'reasoning' },
   'cerebras/qwen-3-32b': { provider: 'cerebras', model: 'qwen-3-32b', purpose: 'general' },
   'mistral/codestral-latest': { provider: 'mistral', model: 'codestral-latest', purpose: 'general' },
@@ -290,7 +302,6 @@ const FALLBACK_CHAIN = [
 
 const KALI_FALLBACK_CHAIN = [
   'groq/llama-3.3-70b',
-  'groq/llama-3.1-70b',
   'groq/llama-3.1-8b',
 ]
 
@@ -302,10 +313,10 @@ const FALLBACK_CHAINS = {
   'codeva-madhav-v1': ['codeva-madhav-fallback-1', 'codeva-madhav-fallback-2', 'codeva-madhav-fallback-3'],
   'opencode/deepseek-v4-pro': ['openrouter/gpt-4o-mini', 'gemini/gemini-2.5-flash', 'groq/llama-3.1-8b'],
 
-  // Kali persona models
+  // Kali persona models — HF dolphins decommissioned, use groq + HF deepseek
   'codeva-kali-v1': ['codeva-kali-fallback-1', 'codeva-kali-fallback-2', 'codeva-kali-fallback-3'],
-  'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b': ['groq/llama-3.3-70b', 'groq/llama-3.1-70b', 'openrouter/gpt-4o-mini'],
-  'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b': ['groq/llama-3.3-70b', 'groq/llama-3.1-70b', 'openrouter/gpt-4o-mini'],
+  'huggingface/cognitivecomputations/dolphin-2.9.2-qwen2.5-72b': ['huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', 'groq/llama-3.3-70b', 'openrouter/gpt-4o-mini'],
+  'huggingface/cognitivecomputations/dolphin-2.9.4-llama3-70b': ['huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', 'groq/llama-3.3-70b', 'openrouter/gpt-4o-mini'],
   'huggingface/cognitivecomputations/dolphin-2.9.3-mistral-nemo-12b': ['groq/llama-3.1-8b', 'openrouter/gpt-4o-mini'],
 
   // Arjun
@@ -328,13 +339,13 @@ const FALLBACK_CHAINS = {
   'gemini/gemini-2.5-pro': ['gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini'],
   'gemini/gemini-2.5-flash': ['openrouter/gpt-4o-mini', 'groq/llama-3.1-8b'],
 
-  // Vayu/Mistral
-  'mistral/mistral-large-latest': ['groq/llama-3.1-70b', 'openrouter/gpt-4o-mini'],
+  // Vayu/Mistral — working ✅
+  'mistral/mistral-large-latest': ['mistral/mistral-medium-latest', 'openrouter/gpt-4o-mini'],
 
-  // LLM7 models
-  'llm7/deepseek-v3.1:671b-terminus': ['openrouter/gpt-4o-mini', 'groq/llama-3.1-70b'],
+  // LLM7 models (no keys configured locally — OpenRouter fallbacks)
+  'llm7/deepseek-v3.1:671b-terminus': ['openrouter/gpt-4o-mini', 'groq/llama-3.3-70b'],
   'llm7/kimi-k2.6': ['openrouter/gpt-4o-mini', 'groq/llama-3.1-8b'],
-  'llm7/qwen3-235b': ['groq/llama-3.1-70b', 'openrouter/gpt-4o-mini'],
+  'llm7/qwen3-235b': ['huggingface/Qwen/Qwen2.5-72B-Instruct', 'openrouter/gpt-4o-mini'],
 
   // Council mode
   'council': ['openrouter/gpt-4o-mini', 'groq/llama-3.1-8b', 'gemini/gemini-2.5-flash'],
