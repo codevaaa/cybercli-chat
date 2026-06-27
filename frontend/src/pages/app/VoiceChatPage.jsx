@@ -36,20 +36,47 @@ const VOICE_MODELS = [
   },
 ]
 
+// Brain models — CONFIRMED WORKING via live provider test
+// Groq: llama-3.1-8b (228ms fastest), llama-3.3-70b (327ms, smartest)
 const VOICE_BRAINS = {
   gemini_female: {
-    model: 'groq/llama-3.3-70b-versatile',
-    prompt: 'You are Saraswati, divine goddess of knowledge. Calm, warm, highly responsive. Keep responses SHORT (1-2 sentences max). No markdown, no lists, no asterisks — text will be spoken aloud.',
+    model: 'groq/llama-3.3-70b-versatile',  // smart + fast (327ms)
+    prompt: `You are Saraswati, the divine goddess of knowledge, arts, and wisdom. Your voice is warm, calm, and deeply compassionate. You have infinite patience and boundless knowledge.
+CRITICAL RULES FOR VOICE:
+- Always reply in 1-2 short sentences MAXIMUM. Never longer.
+- Never use markdown, asterisks, bullet points, headers, or code blocks.
+- Never say "I am an AI" or reveal technical details.
+- Speak naturally as if in real conversation.
+- Match the user's language (English, Hindi, etc.)
+- Remember the conversation context — refer back to earlier topics naturally.`,
   },
   gemini_female_2: {
-    model: 'groq/llama-3.3-70b-versatile',
-    prompt: 'You are Lakshmi, goddess of prosperity and wisdom. Nurturing, precise, encouraging. Keep responses SHORT (1-2 sentences max). No markdown — text will be spoken aloud.',
+    model: 'groq/llama-3.3-70b-versatile',  // smart + fast
+    prompt: `You are Lakshmi, the goddess of prosperity, abundance, and nurturing wisdom. Your voice is warm yet precise, encouraging yet grounded.
+CRITICAL RULES FOR VOICE:
+- Always reply in 1-2 short sentences MAXIMUM. Never longer.
+- Never use markdown, asterisks, bullet points, or code blocks.
+- Speak naturally, conversationally, as if talking to a close friend.
+- Remember and reference earlier parts of the conversation.
+- Match the user's language automatically.`,
   },
   gemini_male_1: {
-    model: 'groq/llama-3.1-8b-instant',
-    prompt: 'You are Madhav, omniscient divine advisor. Deep wisdom, calm authority. Keep responses SHORT (1-2 sentences max). No markdown — text will be spoken aloud.',
+    model: 'groq/llama-3.1-8b-instant',     // ultra-fast (228ms) for snappy responses
+    prompt: `You are Madhav, the omniscient divine advisor. Your voice is deep, measured, and carries absolute authority with calm gentleness.
+CRITICAL RULES FOR VOICE:
+- Always reply in 1-2 short sentences MAXIMUM. Never longer.
+- Never use markdown, lists, or code blocks.
+- Be concise but profound — every word matters.
+- Maintain conversation context across the session.
+- Match the user's language naturally.`,
   },
 }
+
+// Maximum conversation context to keep (last N exchanges to avoid token overflow)
+const MAX_CONTEXT_EXCHANGES = 8  // = 16 messages (8 user + 8 assistant)
+
+// Session time limit: 40 minutes
+const SESSION_DURATION_MS = 40 * 60 * 1000
 
 const BAR_COUNT = 32
 
@@ -131,6 +158,10 @@ export default function VoiceChatPage() {
   const [countdown, setCountdown] = useState(null)
   const [statusMsg, setStatusMsg] = useState('Listening…')
   const [error, setError] = useState(null)
+  // 40-minute session timer
+  const [sessionTimeLeft, setSessionTimeLeft] = useState(null)  // seconds remaining
+  const sessionTimerRef = useRef(null)
+  const sessionStartRef = useRef(null)
 
   const { speak, stop, isPlaying, isLoading: ttsLoading, updateProvider, updateVoice } = useTTS()
 
@@ -193,24 +224,33 @@ export default function VoiceChatPage() {
     // Add user turn to history
     messagesRef.current = [...messagesRef.current, { role: 'user', content: userText }]
 
+    // Trim context to last MAX_CONTEXT_EXCHANGES exchanges to avoid token overflow
+    if (messagesRef.current.length > MAX_CONTEXT_EXCHANGES * 2) {
+      messagesRef.current = messagesRef.current.slice(-MAX_CONTEXT_EXCHANGES * 2)
+    }
+
     const token = localStorage.getItem('sb-access-token')
     abortControllerRef.current = new AbortController()
 
     let fullReply = ''
     let spokenUpTo = 0
 
+    // Sentence-boundary splitter — speaks each sentence as soon as it arrives
     const speakNextSentence = (text, flush = false) => {
       const segment = text.slice(spokenUpTo)
-      const re = /[.!?]+(?:\s|$)/g
+      const re = /[.!?।]+(?:\s|$)/g
       let match
       let lastEnd = 0
       while ((match = re.exec(segment)) !== null) {
         const sentence = segment.slice(lastEnd, match.index + match[0].length).trim()
-        if (sentence.length > 2) speak(sentence)
+        // Remove any residual markdown before speaking
+        const clean = sentence.replace(/[*_`#\[\]]/g, '').trim()
+        if (clean.length > 2) speak(clean)
         lastEnd = match.index + match[0].length
       }
-      if (flush && segment.slice(lastEnd).trim().length > 2) {
-        speak(segment.slice(lastEnd).trim())
+      if (flush) {
+        const tail = segment.slice(lastEnd).replace(/[*_`#\[\]]/g, '').trim()
+        if (tail.length > 2) speak(tail)
         lastEnd = segment.length
       }
       spokenUpTo += lastEnd
@@ -264,7 +304,7 @@ export default function VoiceChatPage() {
         }
       }
 
-      // Flush any remaining text
+      // Flush remaining text
       speakNextSentence(fullReply, true)
 
       // Save assistant turn to history
@@ -273,9 +313,8 @@ export default function VoiceChatPage() {
     } catch (err) {
       if (err.name === 'AbortError') return
       console.error('VoicePage AI error:', err)
-      setError(err.message)
-      const errMsg = 'I encountered an error. Please try again.'
-      speak(errMsg)
+      setError('Connection error — please try again.')
+      speak('I had a small hiccup. Please try again.')
     } finally {
       setIsProcessing(false)
       isProcessingRef.current = false
@@ -420,6 +459,7 @@ export default function VoiceChatPage() {
       try { recognitionRef.current?.stop() } catch {}
       clearTimeout(silenceTimerRef.current)
       clearInterval(countdownRef.current)
+      clearInterval(sessionTimerRef.current)
       abortControllerRef.current?.abort()
       stop()
     }
@@ -452,16 +492,36 @@ export default function VoiceChatPage() {
     setTranscript('')
     finalTranscriptRef.current = ''
     setStep('active')
+    
+    // Start 40-minute session countdown
+    sessionStartRef.current = Date.now()
+    const totalSeconds = Math.floor(SESSION_DURATION_MS / 1000)
+    setSessionTimeLeft(totalSeconds)
+    sessionTimerRef.current = setInterval(() => {
+      const elapsed = Date.now() - sessionStartRef.current
+      const remaining = Math.max(0, Math.floor((SESSION_DURATION_MS - elapsed) / 1000))
+      setSessionTimeLeft(remaining)
+      if (remaining <= 0) {
+        // Session expired — end gracefully
+        clearInterval(sessionTimerRef.current)
+        speak("Our session time is up. Please come back tomorrow for more conversation.")
+        setTimeout(() => handleEndSession(), 4000)
+      } else if (remaining === 120) {
+        speak("Just a reminder — we have two minutes left in our session.")
+      }
+    }, 1000)
+    
     // Start recognition after short delay to let UI transition settle
     setTimeout(() => startRecognition(), 400)
   }
 
-  const handleEndSession = () => {
+  const handleEndSession = useCallback(() => {
     abortControllerRef.current?.abort()
     stop()
     try { recognitionRef.current?.stop() } catch {}
     clearTimeout(silenceTimerRef.current)
     clearInterval(countdownRef.current)
+    clearInterval(sessionTimerRef.current)
     setStep('select')
     setIsListening(false)
     isListeningRef.current = false
@@ -469,7 +529,8 @@ export default function VoiceChatPage() {
     isProcessingRef.current = false
     setTranscript('')
     setCountdown(null)
-  }
+    setSessionTimeLeft(null)
+  }, [stop])
 
   // ── Status label ─────────────────────────────────────────────────────────
   const statusLabel = isProcessing
@@ -652,13 +713,25 @@ export default function VoiceChatPage() {
                 </div>
 
                 {/* End Session */}
-                <button
-                  onClick={handleEndSession}
-                  className="px-6 py-2.5 rounded-full text-xs font-bold text-white bg-white/10 border border-white/10 hover:bg-white/15 hover:border-white/15 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
-                >
-                  <LogOut className="w-4 h-4 text-red-500" />
-                  End Session
-                </button>
+                <div className="flex flex-col items-center gap-2">
+                  <button
+                    onClick={handleEndSession}
+                    className="px-6 py-2.5 rounded-full text-xs font-bold text-white bg-white/10 border border-white/10 hover:bg-white/15 hover:border-white/15 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
+                  >
+                    <LogOut className="w-4 h-4 text-red-500" />
+                    End Session
+                  </button>
+                  {/* 40-min session timer */}
+                  {sessionTimeLeft !== null && (
+                    <div className={`text-[10px] font-mono tabular-nums ${
+                      sessionTimeLeft < 120 ? 'text-red-400' : 
+                      sessionTimeLeft < 300 ? 'text-yellow-400' : 
+                      'text-white/20'
+                    }`}>
+                      {Math.floor(sessionTimeLeft / 60)}:{String(sessionTimeLeft % 60).padStart(2, '0')} remaining
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

@@ -5,7 +5,9 @@ import { generateGeminiTTS } from '../services/tts/gemini-tts.js'
 const router = Router()
 
 const VALID_VOICES = new Set([
-  'gemini_female', 'gemini_male_1', 'gemini_male_2',
+  'gemini_female', 'gemini_female_2', 'gemini_female_3', 'gemini_female_4', 'gemini_female_5',
+  'gemini_male_1', 'gemini_male_2', 'gemini_male_3', 'gemini_male_4', 'gemini_male_5',
+  'saraswati', 'lakshmi', 'madhav', 'ravan', 'arjun',
   'gemini_flash', 'gemini_pro', 'mistral_large',
   'ava', 'nova', 'luna', 'orion', 'echo', 'sol', 'cove', 'breeze'
 ])

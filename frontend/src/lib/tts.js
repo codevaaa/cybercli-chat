@@ -214,73 +214,86 @@ class TTSService {
     })
   }
 
-  // Enqueues text and immediately pumps queue
   speak(text) {
     if (!text || !text.trim()) return
     this.stopped = false
     this.queue.push({ text, blob: null, fetching: false, error: false })
     this._notifyState()
-    this.pumpQueue()
+    // Immediately start fetching this item AND kick playback
+    this._prefetchNext()
+    this._drainPlayback()
+  }
+
+  // Prefetch the NEXT unfetched item (runs in background, non-blocking)
+  async _prefetchNext() {
+    if (this.isFetching || this.currentProvider !== 'gemini') return
+    const item = this.queue.find(i => !i.blob && !i.fetching && !i.error)
+    if (!item) return
+    this.isFetching = true
+    item.fetching = true
+    this._notifyState()
+    try {
+      item.blob = await this.fetchGeminiAudio(item.text)
+    } catch {
+      item.error = true
+    } finally {
+      item.fetching = false
+      this.isFetching = false
+      this._notifyState()
+      // Prefetch the one after this too (pipeline)
+      this._prefetchNext()
+      // Wake up playback in case it was waiting
+      this._drainPlayback()
+    }
+  }
+
+  // Playback loop — plays items as soon as blobs arrive
+  async _drainPlayback() {
+    if (this.isPlaying || this.stopped) return
+    if (this.queue.length === 0) return
+
+    const item = this.queue[0]
+
+    if (this.currentProvider === 'browser') {
+      this.isPlaying = true
+      this._notifyState()
+      this.queue.shift()
+      await this.speakWithBrowser(item.text)
+      this.isPlaying = false
+      this._notifyState()
+      if (!this.stopped) this._drainPlayback()
+      return
+    }
+
+    if (item.blob) {
+      this.isPlaying = true
+      this._notifyState()
+      this.queue.shift()
+      // Start prefetching the next item immediately while this plays
+      this._prefetchNext()
+      await this.playAudio(item.blob)
+      this.isPlaying = false
+      this._notifyState()
+      if (!this.stopped) this._drainPlayback()
+    } else if (item.error) {
+      // Fallback to browser TTS
+      this.isPlaying = true
+      this._notifyState()
+      this.queue.shift()
+      await this.speakWithBrowser(item.text)
+      this.isPlaying = false
+      this._notifyState()
+      if (!this.stopped) this._drainPlayback()
+    } else {
+      // Blob not ready yet — poll every 15ms (very tight loop for low latency)
+      setTimeout(() => { if (!this.stopped) this._drainPlayback() }, 15)
+    }
   }
 
   async pumpQueue() {
-    if (this.stopped) return
-
-    // 1. Prefetch Worker
-    if (!this.isFetching && this.currentProvider === 'gemini') {
-      this.isFetching = true
-      this._notifyState()
-      for (let i = 0; i < this.queue.length; i++) {
-        const item = this.queue[i]
-        if (!item.blob && !item.fetching && !item.error && !this.stopped) {
-          item.fetching = true
-          try {
-             item.blob = await this.fetchGeminiAudio(item.text)
-          } catch(e) {
-             item.error = true
-          }
-        }
-      }
-      this.isFetching = false
-      this._notifyState()
-    }
-
-    // 2. Playback Worker
-    if (!this.isPlaying && this.queue.length > 0 && !this.stopped) {
-      const item = this.queue[0]
-      
-      if (this.currentProvider === 'browser') {
-        this.isPlaying = true
-        this._notifyState()
-        this.queue.shift()
-        await this.speakWithBrowser(item.text)
-        this.isPlaying = false
-        this._notifyState()
-        this.pumpQueue()
-      } else {
-        if (item.blob) {
-          this.isPlaying = true
-          this._notifyState()
-          this.queue.shift()
-          await this.playAudio(item.blob)
-          this.isPlaying = false
-          this._notifyState()
-          this.pumpQueue()
-        } else if (item.error) {
-          // Fallback to browser
-          this.isPlaying = true
-          this._notifyState()
-          this.queue.shift()
-          await this.speakWithBrowser(item.text)
-          this.isPlaying = false
-          this._notifyState()
-          this.pumpQueue()
-        } else {
-          // Still fetching, wait and check again quickly
-          setTimeout(() => this.pumpQueue(), 20)
-        }
-      }
-    }
+    // Legacy method — delegates to new parallel pipeline
+    this._prefetchNext()
+    this._drainPlayback()
   }
 
   stop() {
