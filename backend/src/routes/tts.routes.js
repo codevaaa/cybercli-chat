@@ -20,6 +20,17 @@ router.post('/', optionalAuth, async (req, res) => {
     return res.status(400).json({ error: 'text is required' })
   }
 
+  // Check if Gemini key is available at all (server or client)
+  const hasKey = !!(clientApiKey || process.env.GEMINI_API_KEY)
+  if (!hasKey) {
+    // Return 503 with a clear code so frontend can fall back to browser TTS
+    return res.status(503).json({
+      error: 'TTS_KEY_UNAVAILABLE',
+      message: 'Gemini TTS key not configured — use browser TTS fallback',
+      fallback: 'browser'
+    })
+  }
+
   try {
     const voiceLower = voice_id.toLowerCase()
     const resolvedVoice = VALID_VOICES.has(voiceLower) ? voiceLower : 'gemini_female'
@@ -32,6 +43,14 @@ router.post('/', optionalAuth, async (req, res) => {
     res.send(audioBuffer)
   } catch (error) {
     console.error('TTS route error:', error.message)
+    // On Gemini API failure, also signal browser fallback
+    if (error.message?.includes('key not configured') || error.message?.includes('API_KEY') || error.status === 403 || error.status === 401) {
+      return res.status(503).json({
+        error: 'TTS_KEY_UNAVAILABLE',
+        message: error.message,
+        fallback: 'browser'
+      })
+    }
     res.status(500).json({ error: error.message })
   }
 })

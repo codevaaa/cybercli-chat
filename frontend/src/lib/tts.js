@@ -128,6 +128,17 @@ class TTSService {
         }),
       })
 
+      // If backend signals browser fallback (no Gemini key), switch provider automatically
+      if (response.status === 503) {
+        const data = await response.json().catch(() => ({}))
+        if (data.fallback === 'browser') {
+          console.warn('[TTS] Gemini key unavailable — switching to browser TTS permanently')
+          this.currentProvider = 'browser'
+          this._notifyState()
+          return null  // null signals caller to use browser TTS
+        }
+      }
+
       if (!response.ok) throw new Error(`Gemini TTS API status ${response.status}`)
       return await response.blob()
     } catch (error) {
@@ -233,7 +244,13 @@ class TTSService {
     item.fetching = true
     this._notifyState()
     try {
-      item.blob = await this.fetchGeminiAudio(item.text)
+      const blob = await this.fetchGeminiAudio(item.text)
+      if (blob === null && this.currentProvider === 'browser') {
+        // Backend switched us to browser — mark as error so _drainPlayback uses browser
+        item.error = true
+      } else {
+        item.blob = blob
+      }
     } catch {
       item.error = true
     } finally {
