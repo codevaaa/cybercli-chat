@@ -8,7 +8,7 @@ export default function CTASection() {
   const { user } = useAuthStore()
 
   return (
-    <section className="section-padding py-24 lg:py-32 relative overflow-hidden">
+    <section className="section-padding py-24 lg:py-32 relative overflow-hidden bg-background-primary">
       {/* Ambient background glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div

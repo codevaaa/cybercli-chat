@@ -43,7 +43,7 @@ const CARDS = [
 
 export default function EverywhereSection() {
   return (
-    <section className="bg-[#1a1a18] py-24 px-6 relative overflow-hidden">
+    <section className="bg-[#0A0A0F] py-24 px-6 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-2/3 h-[360px] blur-[140px] rounded-bl-full pointer-events-none" style={{ backgroundColor: 'rgba(201,100,66,0.06)' }} />
       <div className="max-w-5xl mx-auto relative z-10">
         <motion.div
@@ -75,7 +75,7 @@ export default function EverywhereSection() {
               >
                 <Link
                   to={c.to}
-                  className="group block h-full p-6 rounded-2xl border border-white/[0.06] bg-[#211f1c] hover:bg-[#262521] transition-colors"
+                  className="group block h-full p-6 rounded-2xl border border-white/[0.06] bg-[#111118] hover:bg-[#16161F] transition-colors"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(201,100,66,0.15)' }}>

@@ -41,7 +41,7 @@ export default function HeroSection() {
   }, [cmdIndex])
 
   return (
-    <div className="bg-[#1a1a18] text-white min-h-screen relative flex flex-col items-center pt-32 pb-24 overflow-hidden selection:bg-[#C96442]/30">
+    <div className="bg-[#0A0A0F] text-white min-h-screen relative flex flex-col items-center pt-32 pb-24 overflow-hidden selection:bg-[#C96442]/30">
 
       {/* ── Background Glow + subtle grid ── */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[520px] bg-[#C96442]/12 blur-[150px] rounded-full pointer-events-none" />

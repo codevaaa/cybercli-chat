@@ -8,6 +8,7 @@ import ProtectedRoute from '@components/auth/ProtectedRoute.jsx'
 import DesktopUpdateNotification from '@components/desktop/DesktopUpdateNotification.jsx'
 import { ErrorBoundary } from '@components/layout/ErrorBoundary.jsx'
 import { useAuthStore } from '@stores/authStore.js'
+import { applyAppearanceTheme } from '@lib/theme.js'
 
 import HomePage from '@pages/public/HomePage'
 import FeaturesPage from '@pages/public/FeaturesPage'
@@ -99,31 +100,30 @@ function App() {
   const location = useLocation()
 
   useEffect(() => {
-    // Apply saved theme preference; default is always dark
-    const savedTheme = localStorage.getItem('setting_theme') || 'dark'
-    const root = document.documentElement
-    const applyTheme = (theme) => {
-      if (theme === 'light') {
-        root.classList.remove('dark')
-      } else if (theme === 'dark') {
-        root.classList.add('dark')
-      } else {
-        // 'system'
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          root.classList.add('dark')
-        } else {
-          root.classList.remove('dark')
-        }
-      }
+    // Public/marketing pages stay Codevaa dark forever.
+    // In-app light mode uses `.light` — never by stripping `.dark` from :root defaults.
+    const isPublic =
+      PUBLIC_PATHS.includes(location.pathname) ||
+      AUTH_PATHS.some((p) => location.pathname.startsWith(p)) ||
+      location.pathname.startsWith('/blog/') ||
+      location.pathname.startsWith('/docs/') ||
+      location.pathname.startsWith('/features/') ||
+      location.pathname.startsWith('/models/')
+
+    if (isPublic) {
+      applyAppearanceTheme('dark', { forceDark: true })
+      return
     }
-    applyTheme(savedTheme)
+
+    const savedTheme = localStorage.getItem('setting_theme') || 'dark'
+    applyAppearanceTheme(savedTheme)
     if (savedTheme === 'system') {
       const mq = window.matchMedia('(prefers-color-scheme: dark)')
-      const handler = (e) => applyTheme('system')
+      const handler = () => applyAppearanceTheme('system')
       mq.addEventListener('change', handler)
       return () => mq.removeEventListener('change', handler)
     }
-  }, [])
+  }, [location.pathname])
 
   const { session } = useAuthStore()
 

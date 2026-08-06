@@ -97,9 +97,31 @@ export default {
     },
   },
   plugins: [
-    function({ addBase, theme }) {
+    function({ addBase }) {
+      // Codevaa brand dark is the DEFAULT (:root + .dark).
+      // Light is opt-in only via .light (in-app preference) — never the public site baseline.
+      const codevaaDark = {
+        '--bg-primary': '#0A0A0F',
+        '--bg-secondary': '#111118',
+        '--bg-tertiary': '#16161F',
+        '--bg-elevated': '#1A1A24',
+        '--text-primary': '#F0F0F0',
+        '--text-secondary': '#A3A3A3',
+        '--text-muted': '#737373',
+        '--accent': '#D97757',
+        '--accent-light': '#E8A590',
+        '--accent-dark': '#B85D3D',
+        '--border-subtle': 'rgba(255,255,255,0.06)',
+        '--border-medium': 'rgba(255,255,255,0.12)',
+        '--success': '#059669',
+        '--warning': '#D97706',
+        '--error': '#DC2626',
+        '--info': '#2563EB',
+      }
       addBase({
-        ':root': {
+        ':root': codevaaDark,
+        '.dark': codevaaDark,
+        '.light': {
           '--bg-primary': '#FAF9F7',
           '--bg-secondary': '#F5F3F0',
           '--bg-tertiary': '#EDEBE7',
@@ -112,24 +134,6 @@ export default {
           '--accent-dark': '#B85D3D',
           '--border-subtle': 'rgba(0,0,0,0.08)',
           '--border-medium': 'rgba(0,0,0,0.15)',
-          '--success': '#059669',
-          '--warning': '#D97706',
-          '--error': '#DC2626',
-          '--info': '#2563EB',
-        },
-        '.dark': {
-          '--bg-primary': '#201E1C',
-          '--bg-secondary': '#262421',
-          '--bg-tertiary': '#2C2A26',
-          '--bg-elevated': '#282623',
-          '--text-primary': '#F0F0F0',
-          '--text-secondary': '#A3A3A3',
-          '--text-muted': '#737373',
-          '--accent': '#7C3AED',
-          '--accent-light': '#9D60FF',
-          '--accent-dark': '#5B21B6',
-          '--border-subtle': 'rgba(255,255,255,0.06)',
-          '--border-medium': 'rgba(255,255,255,0.12)',
           '--success': '#059669',
           '--warning': '#D97706',
           '--error': '#DC2626',

@@ -11,7 +11,7 @@ const SOCIAL_LINKS = [
 
 export default function Footer() {
   return (
-    <footer className="bg-background-secondary text-foreground-primary relative overflow-hidden border-t border-border-subtle">
+    <footer className="bg-background-primary text-foreground-primary relative overflow-hidden border-t border-border-subtle">
       {/* Main footer content */}
       <div className="section-padding pt-16 pb-8 lg:pt-24 lg:pb-12 relative z-10">
         <div className="container-custom">

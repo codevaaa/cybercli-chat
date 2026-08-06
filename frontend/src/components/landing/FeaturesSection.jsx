@@ -70,7 +70,7 @@ const FEATURES = [
 
 export default function FeaturesSection() {
   return (
-    <section className="section-padding py-28 lg:py-36">
+    <section className="section-padding py-28 lg:py-36 bg-background-primary">
       <div className="container-custom">
         {/* Section header */}
         <ScrollReveal direction="up" delay={0} className="text-center mb-16 lg:mb-20">

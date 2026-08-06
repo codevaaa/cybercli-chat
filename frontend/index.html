@@ -2,6 +2,33 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Prevent light-theme flash: keep Codevaa dark unless the user is in the app
+      // and explicitly chose light. Marketing pages always stay dark.
+      (function () {
+        try {
+          var path = location.pathname || '/';
+          var isApp = path.indexOf('/chat') === 0 || path.indexOf('/settings') === 0 || path.indexOf('/app') === 0
+            || path.indexOf('/library') === 0 || path.indexOf('/projects') === 0 || path.indexOf('/agents') === 0
+            || path.indexOf('/playground') === 0 || path.indexOf('/usage') === 0 || path.indexOf('/workflows') === 0
+            || path.indexOf('/discover') === 0 || path.indexOf('/profile') === 0 || path.indexOf('/voice') === 0;
+          var theme = localStorage.getItem('setting_theme') || 'dark';
+          var root = document.documentElement;
+          var useLight = isApp && (theme === 'light' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches));
+          if (useLight) {
+            root.classList.remove('dark');
+            root.classList.add('light');
+            root.style.colorScheme = 'light';
+          } else {
+            root.classList.remove('light');
+            root.classList.add('dark');
+            root.style.colorScheme = 'dark';
+          }
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />

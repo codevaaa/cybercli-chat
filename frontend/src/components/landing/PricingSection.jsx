@@ -32,7 +32,7 @@ export default function PricingSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="section-padding py-24 lg:py-32">
+    <section ref={sectionRef} className="section-padding py-24 lg:py-32 bg-background-primary">
       <div className="container-custom">
         <div className="text-center mb-16">
           <span className="text-sm font-medium text-accent tracking-wide uppercase mb-4 block">
