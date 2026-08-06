@@ -377,8 +377,19 @@ export default function AboutPage() {
             {/* Left — Photo Card */}
             <ScrollReveal direction="right" className="lg:col-span-2">
               <div className="card-glass p-8 text-center">
-                <div className="w-28 h-28 rounded-2xl mx-auto mb-6 overflow-hidden border border-white/10 relative bg-background-tertiary flex items-center justify-center">
-                  <span className="text-4xl font-bold text-accent select-none">MK</span>
+                <div className="w-28 h-28 rounded-2xl mx-auto mb-6 overflow-hidden border border-white/10 relative bg-background-tertiary">
+                  <motion.img
+                    src="/manish.jpeg"
+                    alt="Manish Kumar Singh"
+                    className="w-full h-full object-cover filter grayscale hover:grayscale-0 transition-all duration-500 scale-100 hover:scale-105"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: 'spring', stiffness: 300 }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                      e.target.parentElement.classList.add('flex', 'items-center', 'justify-center')
+                      e.target.parentElement.innerHTML = '<span class="text-4xl font-bold text-accent select-none">MK</span>'
+                    }}
+                  />
                 </div>
                 <h3 className="text-2xl font-semibold text-foreground-primary mb-1">Manish Kumar Singh</h3>
                 <p className="text-accent text-sm font-medium mb-4">DevOps Engineer · Cloud Security Lead · Codeva</p>

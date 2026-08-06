@@ -1021,8 +1021,9 @@ export default function SettingsPage() {
     if (backendSettings.avatar_url !== undefined) mapped.avatar_url = backendSettings.avatar_url;
     if (backendSettings.custom_instructions !== undefined) mapped.instructions = backendSettings.custom_instructions;
     if (backendSettings.appearance !== undefined) {
-      const v = backendSettings.appearance;
-      mapped.theme = v.charAt(0).toUpperCase() + v.slice(1);
+      const v = String(backendSettings.appearance).toLowerCase()
+      // Preserve 'dark' as the default, only change if explicitly set
+      mapped.theme = v === 'light' ? 'Light' : v === 'system' ? 'System' : 'Dark'
     }
     if (backendSettings.chat_font !== undefined) {
       const v = backendSettings.chat_font;
@@ -1099,12 +1100,20 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!settings.theme) return
     const root = document.documentElement
-    const themeVal = settings.theme.toLowerCase()
-    if (themeVal === 'dark' || (themeVal === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    const themeVal = (settings.theme || 'dark').toLowerCase()
+    if (themeVal === 'dark') {
       root.classList.add('dark')
-    } else {
+    } else if (themeVal === 'light') {
       root.classList.remove('dark')
+    } else {
+      // system
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        root.classList.add('dark')
+      } else {
+        root.classList.remove('dark')
+      }
     }
+    localStorage.setItem('setting_theme', themeVal)
   }, [settings.theme])
 
   useEffect(() => {

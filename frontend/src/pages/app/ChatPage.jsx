@@ -225,7 +225,7 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
 
   return (
     <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} mb-8 group`}>
-      <div className={`flex max-w-[85%] md:max-w-[75%] ${isUser ? 'flex-row-reverse gap-3' : 'gap-4'} relative`}>
+      <div className={`flex max-w-[92%] md:max-w-[75%] ${isUser ? 'flex-row-reverse gap-3' : 'gap-4'} relative`}>
         
         {/* Assistant Avatar */}
         {isAssistant && (
@@ -673,10 +673,10 @@ function InputArea({
   }
 
   return (
-    <div className="w-full max-w-[768px] mx-auto flex flex-col gap-4 px-4 sm:px-0">
+    <div className="w-full max-w-[768px] mx-auto flex flex-col gap-4 px-2 sm:px-0">
       {/* Input container card */}
       <div
-        className="rounded-2xl transition-all relative flex flex-row items-end p-1.5 gap-2 bg-[#f4f4f0] dark:bg-[#2a2a2a] border border-[#e5e5e0] dark:border-[#3E3E3E] focus-within:border-[#D0D0D0] dark:focus-within:border-[#4E4E4E] shadow-sm"
+        className="rounded-2xl transition-all relative flex flex-row items-end p-1 sm:p-1.5 gap-1.5 sm:gap-2 bg-[#f4f4f0] dark:bg-[#2a2a2a] border border-[#e5e5e0] dark:border-[#3E3E3E] focus-within:border-[#D0D0D0] dark:focus-within:border-[#4E4E4E] shadow-sm"
       >
         <div className="relative" ref={attachmentMenuRef}>
           <button 
@@ -899,10 +899,10 @@ function InputArea({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type / for skills"
+          placeholder="Message Codeva..."
           rows={1}
           disabled={loading}
-          className="flex-1 bg-transparent text-[15px] text-foreground-primary placeholder:text-foreground-muted/70 resize-none focus:outline-none leading-relaxed py-2.5 min-h-[44px]"
+          className="flex-1 bg-transparent text-[14px] sm:text-[15px] text-foreground-primary placeholder:text-foreground-muted/70 resize-none focus:outline-none leading-relaxed py-2.5 min-h-[44px]"
           style={{ maxHeight: '400px' }}
         />
 
@@ -1095,6 +1095,13 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
       await api.patch('/settings', { [key]: value })
       if (onSettingChange) {
         onSettingChange(key, value)
+      }
+      // Persist theme to localStorage so App.jsx can pick it up on reload
+      if (key === 'appearance') {
+        localStorage.setItem('setting_theme', value)
+        const root = document.documentElement
+        if (value === 'light') root.classList.remove('dark')
+        else root.classList.add('dark')
       }
     } catch (e) {
       console.error(e)
@@ -5229,7 +5236,7 @@ export default function ChatPage() {
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col min-h-0">
-                    <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+                    <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 chat-messages-scroll">
                       {loading && messages.length === 0 ? (
                         <div className="flex items-center justify-center py-12">
                           <motion.div
@@ -5260,7 +5267,7 @@ export default function ChatPage() {
                       <div ref={messagesEndRef} />
                     </div>
                     {/* Input pinned at bottom */}
-                    <div className="px-4 py-4 border-t border-border-subtle bg-background-primary flex-shrink-0">
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 border-t border-border-subtle bg-background-primary flex-shrink-0 chat-input-safe">
                       <InputArea
                         userPlan={userPlan}
                         onRequirePro={() => setShowProModal(true)}

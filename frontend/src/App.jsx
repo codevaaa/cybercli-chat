@@ -99,7 +99,30 @@ function App() {
   const location = useLocation()
 
   useEffect(() => {
-    document.documentElement.classList.add('dark')
+    // Apply saved theme preference; default is always dark
+    const savedTheme = localStorage.getItem('setting_theme') || 'dark'
+    const root = document.documentElement
+    const applyTheme = (theme) => {
+      if (theme === 'light') {
+        root.classList.remove('dark')
+      } else if (theme === 'dark') {
+        root.classList.add('dark')
+      } else {
+        // 'system'
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          root.classList.add('dark')
+        } else {
+          root.classList.remove('dark')
+        }
+      }
+    }
+    applyTheme(savedTheme)
+    if (savedTheme === 'system') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)')
+      const handler = (e) => applyTheme('system')
+      mq.addEventListener('change', handler)
+      return () => mq.removeEventListener('change', handler)
+    }
   }, [])
 
   const { session } = useAuthStore()

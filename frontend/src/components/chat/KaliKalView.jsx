@@ -753,36 +753,33 @@ export default function KaliKalView({
       <div className="relative z-10 flex flex-col h-full">
 
         {/* ─── Header Bar ─── */}
-        <div className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-red-900/25 bg-[#0A0205]/80 backdrop-blur-md">
-          <div className="flex items-center gap-3">
+        <div className="flex-shrink-0 flex items-center justify-between px-3 sm:px-5 py-3 border-b border-red-900/25 bg-[#0A0205]/80 backdrop-blur-md flex-wrap gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-red-950/80 to-[#1A0508] border border-red-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(217,22,36,0.15)]">
-                <CodevaMark size={20} color="#ef4444" />
+              <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-lg bg-gradient-to-br from-red-950/80 to-[#1A0508] border border-red-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(217,22,36,0.15)]">
+                <CodevaMark size={18} color="#ef4444" />
               </div>
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_6px_rgba(255,0,51,0.6)]" />
             </div>
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-red-500 tracking-[0.2em] uppercase glitch-text" data-text="KALI_KAL">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-red-500 tracking-[0.2em] uppercase glitch-text" data-text="KALI_KAL">
                 KALI_KAL
               </h1>
-              <span className="text-[9px] text-red-500/40 font-normal tracking-[0.15em]">// SYSTEM</span>
-              <p className="text-[9px] text-red-500/35 uppercase tracking-[0.2em] -mt-0.5">Autonomous Red-Teaming Engine</p>
+              <p className="text-[9px] text-red-500/35 uppercase tracking-[0.2em] -mt-0.5 hidden sm:block">Autonomous Red-Teaming Engine</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1 bg-red-950/30 rounded border border-red-900/50">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-red-500 tracking-widest uppercase glitch-text" data-text="UNRESTRICTED">UNRESTRICTED</span>
-            </div>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-red-950/30 rounded border border-red-900/50">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-[10px] font-bold text-red-500 tracking-widest uppercase glitch-text" data-text="UNRESTRICTED">UNRESTRICTED</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             <button 
               onClick={handleExportReport}
               disabled={kaliMessages.length === 0}
               title="Export Pentest Report (MD)"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D0208] rounded border border-red-900/30 text-red-500/50 hover:text-red-400 hover:bg-red-950/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 bg-[#0D0208] rounded border border-red-900/30 text-red-500/50 hover:text-red-400 hover:bg-red-950/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ArrowUp className="w-3.5 h-3.5 rotate-45" />
               <span className="text-[10px] font-mono tracking-wider hidden sm:inline">EXPORT</span>
@@ -790,20 +787,20 @@ export default function KaliKalView({
 
             <button 
               onClick={() => setBurnAfterRead(!burnAfterRead)}
-              title="Burn After Read (No history)"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded border transition-colors ${burnAfterRead ? 'bg-red-900/40 border-red-500 text-red-400' : 'bg-[#0D0208] border-red-900/30 text-red-500/50 hover:text-red-400'}`}
+              title="Burn After Read"
+              className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded border transition-colors ${burnAfterRead ? 'bg-red-900/40 border-red-500 text-red-400' : 'bg-[#0D0208] border-red-900/30 text-red-500/50 hover:text-red-400'}`}
             >
               <Skull className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-mono tracking-wider">BURN</span>
+              <span className="text-[10px] font-mono tracking-wider hidden sm:inline">BURN</span>
             </button>
             
             <button 
               onClick={() => setCrtEnabled(!crtEnabled)}
-              title="Toggle CRT Scanlines"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded border transition-colors ${crtEnabled ? 'bg-red-900/40 border-red-500 text-red-400' : 'bg-[#0D0208] border-red-900/30 text-red-500/50 hover:text-red-400'}`}
+              title="Toggle CRT"
+              className={`hidden sm:flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded border transition-colors ${crtEnabled ? 'bg-red-900/40 border-red-500 text-red-400' : 'bg-[#0D0208] border-red-900/30 text-red-500/50 hover:text-red-400'}`}
             >
               <Terminal className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-mono tracking-wider">CRT</span>
+              <span className="text-[10px] font-mono tracking-wider hidden sm:inline">CRT</span>
             </button>
 
             <button 
@@ -818,7 +815,7 @@ export default function KaliKalView({
                   navigate('/chat')
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D0208] rounded border border-red-900/30 text-red-500/50 hover:text-red-400 hover:bg-red-950/20 transition-colors"
+              className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 bg-[#0D0208] rounded border border-red-900/30 text-red-500/50 hover:text-red-400 hover:bg-red-950/20 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span className="text-[10px] font-mono tracking-wider hidden sm:inline">WIPE</span>

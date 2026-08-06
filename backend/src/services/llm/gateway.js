@@ -279,8 +279,11 @@ const MODEL_MAP = {
   'nvidia/qwen-2.5-coder-32b': { provider: 'nvidia', model: 'qwen/qwen2.5-coder-32b-instruct', purpose: 'general' },
   'nvidia/deepseek-r1': { provider: 'nvidia', model: 'deepseek-ai/deepseek-r1', purpose: 'reasoning' },
 
-  // Abhimanyu — Cloudflare Workers AI (Llama 3.3 70B fast)
+  // Abhimanyu — Cloudflare Workers AI (Llama 3.3 70B fast), with Groq fallback
+  // Note: FALLBACK_CHAINS entry handles groq/HF/openrouter if cloudflare fails
   'codeva/abhimanyu': { provider: 'cloudflare', model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', purpose: 'reasoning' },
+  // Duplicate alias kept for backwards-compat — same routing
+  'codeva-abhimanyu-v1': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
 }
 
 const OPENROUTER_FALLBACK_MAP = {
@@ -477,10 +480,62 @@ function getRawKey(provider) {
 }
 
 /**
+ * Providers that accept OpenAI-compatible tools / tool_choice / tool_calls.
+ * Direct Gemini SDK and some niche providers use different schemas — when tools
+ * are requested we prefer a tool-capable route (often OpenRouter).
+ */
+export const TOOL_CAPABLE_PROVIDERS = new Set([
+  'openrouter',
+  'groq',
+  'mistral',
+  'cerebras',
+  'nvidia',
+  'huggingface',
+  'opencode',
+  'llm7',
+  'apifreellm',
+  'cloudflare',
+])
+
+/** Sanitize a chat message while preserving OpenAI tool-calling fields. */
+export function sanitizeChatMessage(m) {
+  const cleanMsg = { role: m.role }
+  // Assistant tool-call turns may legally have null content.
+  if (m.content != null) cleanMsg.content = m.content
+  else if (m.role === 'assistant' && m.tool_calls) cleanMsg.content = null
+  else cleanMsg.content = ''
+
+  if (m.name) cleanMsg.name = m.name
+  if (m.tool_calls) cleanMsg.tool_calls = m.tool_calls
+  if (m.tool_call_id) cleanMsg.tool_call_id = m.tool_call_id
+  return cleanMsg
+}
+
+/**
+ * Build OpenAI chat.completions params for tools when the provider supports them.
+ * Exported for unit tests.
+ */
+export function buildToolParams(tools, tool_choice, provider) {
+  if (!tools?.length || !TOOL_CAPABLE_PROVIDERS.has(provider)) return {}
+  const params = { tools }
+  if (tool_choice != null) params.tool_choice = tool_choice
+  return params
+}
+
+function messageCharCount(m) {
+  let n = (typeof m.content === 'string' ? m.content : '').length
+  if (m.tool_calls) {
+    try { n += JSON.stringify(m.tool_calls).length } catch { /* ignore */ }
+  }
+  return n
+}
+
+/**
  * Prepend the Codeva system prompt to every conversation.
  * Preserves any system messages marked with _skip_inject:true (voice brains,
  * web-search context, custom instructions, etc.) by appending them AFTER
  * the identity message. Removes all other conflicting system messages.
+ * Preserves tool_calls / tool_call_id for agentic IDE/CLI round-trips.
  */
 function injectIdentity(messages, isKaliKal = false, isRavan = false) {
   let sysPrompt = CYBERCLI_SYSTEM_PROMPT
@@ -497,14 +552,10 @@ function injectIdentity(messages, isKaliKal = false, isRavan = false) {
     .filter(m => m.role === 'system' && m._skip_inject)
     .map(m => ({ role: 'system', content: m.content || '' }))
 
-  // Sanitize remaining messages: only role/content/name allowed
+  // Sanitize remaining messages; keep tool-calling fields
   const sanitized = messages
     .filter(m => !(m.role === 'system' && m._skip_inject)) // handled above
-    .map(m => {
-      const cleanMsg = { role: m.role, content: m.content || '' }
-      if (m.name) cleanMsg.name = m.name
-      return cleanMsg
-    })
+    .map(sanitizeChatMessage)
 
   // Remove any other system messages that would conflict with our identity
   const chatMessages = sanitized.filter(m => m.role !== 'system')
@@ -524,13 +575,13 @@ function pruneContextWindow(messages, maxChars = 20000) {
   const systemMessages = messages.slice(0, sysEnd)
   const chatMessages = messages.slice(sysEnd)
 
-  let currentChars = systemMessages.reduce((sum, m) => sum + (m.content || '').length, 0)
+  let currentChars = systemMessages.reduce((sum, m) => sum + messageCharCount(m), 0)
   const pruned = []
 
   // Iterate backwards to keep the most recent messages
   for (let i = chatMessages.length - 1; i >= 0; i--) {
     const msg = chatMessages[i]
-    const chars = (msg.content || '').length
+    const chars = messageCharCount(msg)
     if (currentChars + chars > maxChars) {
       break
     }
@@ -554,9 +605,11 @@ const EFFORT_MAX_TOKENS = {
 }
 
 export const llmGateway = {
-  async *complete({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free', effort = 'low', thinking = false, isKaliKal = false }) {
+  async *complete({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free', effort = 'low', thinking = false, isKaliKal = false, tools, tool_choice, max_tokens }) {
     let activeModelId = modelId
     let workingMessages = [...messages]
+    const hasTools = Array.isArray(tools) && tools.length > 0
+    const tokenLimit = max_tokens || EFFORT_MAX_TOKENS[effort] || 4096
 
     if (thinking) {
       workingMessages.push({
@@ -570,17 +623,24 @@ export const llmGateway = {
     // and picks the best model the user's plan allows; explicit models that
     // exceed the plan are downgraded transparently.
     const lastUserText = [...workingMessages].reverse().find((m) => m.role === 'user')?.content || ''
-    activeModelId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText)
+    const resolvedId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText)
+    
+    // Notify the user if their chosen model was downgraded due to plan limits
+    if (resolvedId !== activeModelId && activeModelId !== 'auto' && activeModelId !== 'council') {
+      yield { type: 'info', content: `⚡ Routing to the best available model for your plan...` }
+    }
+    activeModelId = resolvedId
 
     // Council Mode is handled by councilEngine.js — if it reaches here, fallback
     if (modelId === 'council') {
       yield { type: 'info', content: 'Council Mode should use councilEngine. Falling back...' }
     }
 
-    const totalChars = workingMessages.reduce((sum, m) => sum + (m.content || '').length, 0)
+    const totalChars = workingMessages.reduce((sum, m) => sum + messageCharCount(m), 0)
     
     // Auto-route extremely large contexts to Gemini if desired, though pruning handles most
-    if (totalChars > 35000 && !activeModelId.startsWith('gemini/') && activeModelId !== 'codeva-ravan-v1') {
+    // (skip when tools are required — Gemini direct path does not forward tools)
+    if (!hasTools && totalChars > 35000 && !activeModelId.startsWith('gemini/') && activeModelId !== 'codeva-ravan-v1') {
       activeModelId = 'gemini/gemini-2.5-flash'
     }
 
@@ -591,8 +651,9 @@ export const llmGateway = {
     const targetModel = MODEL_MAP[activeModelId] || (isKaliKal ? MODEL_MAP[KALI_FALLBACK_CHAIN[0]] : MODEL_MAP[FALLBACK_CHAIN[0]])
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
+    // Skip when tools are requested — Gemini direct path has no tools forwarding yet.
     let directGeminiFailed = false
-    if (targetModel.provider === 'gemini' && getRawKey('gemini')) {
+    if (!hasTools && targetModel.provider === 'gemini' && getRawKey('gemini')) {
       try {
         const { streamCompletion } = await import('./gemini.js')
         const stream = streamCompletion({
@@ -617,7 +678,8 @@ export const llmGateway = {
     let activeProvider = targetModel.provider
 
     const needsOpenRouterFallback = 
-      (activeProvider === 'gemini' && (directGeminiFailed || !getRawKey('gemini'))) ||
+      (hasTools && !TOOL_CAPABLE_PROVIDERS.has(activeProvider)) ||
+      (activeProvider === 'gemini' && (hasTools || directGeminiFailed || !getRawKey('gemini'))) ||
       (!client && activeProvider !== 'openrouter')
 
     if (needsOpenRouterFallback) {
@@ -635,19 +697,29 @@ export const llmGateway = {
       return
     }
 
+    const toolParams = buildToolParams(tools, tool_choice, activeProvider)
+
     try {
       const stream = await client.chat.completions.create({
         model: activeModelName,
         messages: enriched,
         temperature,
         stream: true,
-        max_tokens: EFFORT_MAX_TOKENS[effort] || 4096,
+        max_tokens: tokenLimit,
+        ...toolParams,
       })
 
       for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content
-        if (content) {
-          yield { type: 'token', content }
+        const choice = chunk.choices?.[0]
+        const delta = choice?.delta
+        if (delta?.content) {
+          yield { type: 'token', content: delta.content }
+        }
+        if (delta?.tool_calls?.length) {
+          yield { type: 'tool_calls_delta', tool_calls: delta.tool_calls }
+        }
+        if (choice?.finish_reason) {
+          yield { type: 'finish', finish_reason: choice.finish_reason }
         }
       }
 
@@ -657,22 +729,27 @@ export const llmGateway = {
       console.error(`Provider ${activeProvider} failed:`, error.message)
       reportFailure(activeProvider, activeKey, error.status || 500)
 
-      if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini', 'llm7'].includes(targetModel.provider)) {
+      if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini', 'llm7', 'cloudflare'].includes(targetModel.provider)) {
         try {
           const { client: fallbackClient, key: fallbackKey } = getClient('openrouter')
           if (fallbackClient) {
             const fallbackModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
             yield { type: 'info', content: `Direct route failed. Switching to OpenRouter...` }
+            const orToolParams = buildToolParams(tools, tool_choice, 'openrouter')
             const stream = await fallbackClient.chat.completions.create({
               model: fallbackModelName,
               messages: enriched,
               temperature,
               stream: true,
-              max_tokens: 4096,
+              max_tokens: tokenLimit,
+              ...orToolParams,
             })
             for await (const chunk of stream) {
-              const content = chunk.choices[0]?.delta?.content
-              if (content) yield { type: 'token', content }
+              const choice = chunk.choices?.[0]
+              const delta = choice?.delta
+              if (delta?.content) yield { type: 'token', content: delta.content }
+              if (delta?.tool_calls?.length) yield { type: 'tool_calls_delta', tool_calls: delta.tool_calls }
+              if (choice?.finish_reason) yield { type: 'finish', finish_reason: choice.finish_reason }
             }
             reportSuccess('openrouter', fallbackKey)
             yield { type: 'done' }
@@ -699,9 +776,10 @@ export const llmGateway = {
       for (const fallbackId of activeFallbackChain) {
         if (fallbackId === activeModelId) continue
         const fallback = MODEL_MAP[fallbackId]
+        if (!fallback) continue
 
-        // Direct SDK fallback for Gemini if possible
-        if (fallback.provider === 'gemini' && getRawKey('gemini')) {
+        // Direct SDK fallback for Gemini if possible (no tools)
+        if (!hasTools && fallback.provider === 'gemini' && getRawKey('gemini')) {
           try {
             yield { type: 'info', content: `Switching providers for best response...` }
             const { streamCompletion } = await import('./gemini.js')
@@ -721,33 +799,54 @@ export const llmGateway = {
           }
         }
 
-        const { client: fallbackClient, key: fallbackKey } = getClient(fallback.provider)
+        // Prefer tool-capable providers when tools are present
+        let fbProvider = fallback.provider
+        let fbModel = fallback.model
+        let { client: fallbackClient, key: fallbackKey } = getClient(fbProvider)
+        if (hasTools && (!TOOL_CAPABLE_PROVIDERS.has(fbProvider) || !fallbackClient)) {
+          const or = getClient('openrouter')
+          if (or.client) {
+            fallbackClient = or.client
+            fallbackKey = or.key
+            fbProvider = 'openrouter'
+            fbModel = OPENROUTER_FALLBACK_MAP[fallbackId] || fallback.model
+          }
+        }
         if (!fallbackClient) continue
 
         try {
           yield { type: 'info', content: `Switching providers for best response...` }
+          const fbToolParams = buildToolParams(tools, tool_choice, fbProvider)
 
           const stream = await fallbackClient.chat.completions.create({
-            model: fallback.model,
+            model: fbModel,
             messages: enriched,
             temperature,
             stream: true,
-            max_tokens: EFFORT_MAX_TOKENS[effort] || 4096,
+            max_tokens: tokenLimit,
+            ...fbToolParams,
           })
 
           for await (const chunk of stream) {
-            const content = chunk.choices[0]?.delta?.content
-            if (content) {
-              yield { type: 'token', content }
+            const choice = chunk.choices?.[0]
+            const delta = choice?.delta
+            if (delta?.content) {
+              yield { type: 'token', content: delta.content }
+            }
+            if (delta?.tool_calls?.length) {
+              yield { type: 'tool_calls_delta', tool_calls: delta.tool_calls }
+            }
+            if (choice?.finish_reason) {
+              yield { type: 'finish', finish_reason: choice.finish_reason }
             }
           }
 
-          reportSuccess(fallback.provider, fallbackKey)
+          reportSuccess(fbProvider, fallbackKey)
           yield { type: 'done' }
           return
         } catch (fallbackError) {
-          console.error(`Fallback ${fallback.provider} failed:`, fallbackError.message)
-          reportFailure(fallback.provider, fallbackKey, fallbackError.status || 500)
+          console.error(`Fallback ${fbProvider} failed:`, fallbackError.message)
+          reportFailure(fbProvider, fallbackKey, fallbackError.status || 500)
         }
       }
 
@@ -756,16 +855,21 @@ export const llmGateway = {
         const { client: emergencyClient, key: emergencyKey } = getClient('groq')
         if (emergencyClient) {
           yield { type: 'info', content: 'Switching to emergency backup...' }
+          const emToolParams = buildToolParams(tools, tool_choice, 'groq')
           const emergencyStream = await emergencyClient.chat.completions.create({
             model: 'llama-3.1-8b-instant',
             messages: enriched,
             temperature,
             stream: true,
-            max_tokens: 4096,
+            max_tokens: tokenLimit,
+            ...emToolParams,
           })
           for await (const chunk of emergencyStream) {
-            const content = chunk.choices[0]?.delta?.content
-            if (content) yield { type: 'token', content }
+            const choice = chunk.choices?.[0]
+            const delta = choice?.delta
+            if (delta?.content) yield { type: 'token', content: delta.content }
+            if (delta?.tool_calls?.length) yield { type: 'tool_calls_delta', tool_calls: delta.tool_calls }
+            if (choice?.finish_reason) yield { type: 'finish', finish_reason: choice.finish_reason }
           }
           reportSuccess('groq', emergencyKey)
           yield { type: 'done' }
@@ -778,9 +882,11 @@ export const llmGateway = {
     }
   },
 
-  async completeNonStream({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free', effort = 'low', thinking = false, isKaliKal = false }) {
+  async completeNonStream({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free', effort = 'low', thinking = false, isKaliKal = false, tools, tool_choice, max_tokens }) {
     let activeModelId = modelId
     let workingMessages = [...messages]
+    const hasTools = Array.isArray(tools) && tools.length > 0
+    const tokenLimit = max_tokens || EFFORT_MAX_TOKENS[effort] || 4096
 
     if (thinking) {
       workingMessages.push({
@@ -792,9 +898,9 @@ export const llmGateway = {
 
     const lastUserText = [...workingMessages].reverse().find((m) => m.role === 'user')?.content || ''
     activeModelId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText)
-    const totalChars = workingMessages.reverse().reduce((sum, m) => sum + (m.content || '').length, 0)
+    const totalChars = workingMessages.reduce((sum, m) => sum + messageCharCount(m), 0)
     
-    if (totalChars > 35000 && !activeModelId.startsWith('gemini/') && activeModelId !== 'codeva-ravan-v1') {
+    if (!hasTools && totalChars > 35000 && !activeModelId.startsWith('gemini/') && activeModelId !== 'codeva-ravan-v1') {
       activeModelId = 'gemini/gemini-2.5-flash'
     }
 
@@ -806,7 +912,7 @@ export const llmGateway = {
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
     let directGeminiFailed = false
-    if (targetModel.provider === 'gemini' && getRawKey('gemini')) {
+    if (!hasTools && targetModel.provider === 'gemini' && getRawKey('gemini')) {
       try {
         const { GoogleGenAI } = await import('@google/genai')
         const genAI = new GoogleGenAI({ apiKey: getRawKey('gemini') })
@@ -832,7 +938,7 @@ export const llmGateway = {
           contents,
           config: {
             temperature,
-            maxOutputTokens: EFFORT_MAX_TOKENS[effort] || 4096,
+            maxOutputTokens: tokenLimit,
             ...(systemInstruction ? { systemInstruction } : {}),
           },
         })
@@ -843,6 +949,7 @@ export const llmGateway = {
           provider: 'gemini',
           tokens_in: 0,
           tokens_out: 0,
+          finish_reason: 'stop',
         }
       } catch (err) {
         console.error('Direct Gemini SDK non-stream completion failed, falling back to proxy:', err.message)
@@ -856,7 +963,8 @@ export const llmGateway = {
     let activeProvider = targetModel.provider
 
     const needsOpenRouterFallback = 
-      (activeProvider === 'gemini' && (directGeminiFailed || !getRawKey('gemini'))) ||
+      (hasTools && !TOOL_CAPABLE_PROVIDERS.has(activeProvider)) ||
+      (activeProvider === 'gemini' && (hasTools || directGeminiFailed || !getRawKey('gemini'))) ||
       (!client && activeProvider !== 'openrouter')
 
     if (needsOpenRouterFallback) {
@@ -873,18 +981,25 @@ export const llmGateway = {
       return { error: 'No API key configured for any provider' }
     }
 
+    const toolParams = buildToolParams(tools, tool_choice, activeProvider)
+
     try {
       const response = await client.chat.completions.create({
         model: activeModelName,
         messages: enriched,
         temperature,
-        max_tokens: EFFORT_MAX_TOKENS[effort] || 4096,
+        max_tokens: tokenLimit,
+        ...toolParams,
       })
 
       reportSuccess(activeProvider, activeKey)
 
+      const choice = response.choices?.[0]
+      const message = choice?.message || {}
       return {
-        content: response.choices[0].message.content,
+        content: message.content ?? '',
+        tool_calls: message.tool_calls || undefined,
+        finish_reason: choice?.finish_reason || (message.tool_calls ? 'tool_calls' : 'stop'),
         model: activeModelName,
         provider: activeProvider,
         tokens_in: response.usage?.prompt_tokens || 0,
@@ -894,20 +1009,26 @@ export const llmGateway = {
       console.error(`Provider ${activeProvider} failed:`, error.message)
       reportFailure(activeProvider, activeKey, error.status || 500)
 
-      if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini', 'llm7'].includes(targetModel.provider)) {
+      if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini', 'llm7', 'cloudflare'].includes(targetModel.provider)) {
         try {
           const { client: fallbackClient, key: fallbackKey } = getClient('openrouter')
           if (fallbackClient) {
             const fallbackModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
+            const orToolParams = buildToolParams(tools, tool_choice, 'openrouter')
             const response = await fallbackClient.chat.completions.create({
               model: fallbackModelName,
               messages: enriched,
               temperature,
-              max_tokens: EFFORT_MAX_TOKENS[effort] || 4096,
+              max_tokens: tokenLimit,
+              ...orToolParams,
             })
             reportSuccess('openrouter', fallbackKey)
+            const choice = response.choices?.[0]
+            const message = choice?.message || {}
             return {
-              content: response.choices[0].message.content,
+              content: message.content ?? '',
+              tool_calls: message.tool_calls || undefined,
+              finish_reason: choice?.finish_reason || (message.tool_calls ? 'tool_calls' : 'stop'),
               model: fallbackModelName,
               provider: 'openrouter',
               tokens_in: response.usage?.prompt_tokens || 0,
