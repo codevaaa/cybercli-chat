@@ -23,41 +23,71 @@ async function initAutoUpdater() {
       return null
     }
 
+    // autoDownload=false: we let the user click "Download" in the UI
+    // autoInstallOnAppQuit=true: install when the user quits normally (safe)
     autoUpdater.autoDownload = false
-    autoUpdater.autoInstallOnAppQuit = false
+    autoUpdater.autoInstallOnAppQuit = true
+    // Don't check pre-releases (only stable tagged releases)
+    autoUpdater.allowPrerelease = false
+    autoUpdater.allowDowngrade = false
+
+    autoUpdater.on('checking-for-update', () => {
+      console.log('[Updater] Checking for update...')
+      mainWindow?.webContents.send('update:checking')
+    })
 
     autoUpdater.on('update-available', (info) => {
+      console.log('[Updater] Update available:', info?.version)
       mainWindow?.webContents.send('update:available', info)
     })
     
-    autoUpdater.on('update-not-available', () => {
+    autoUpdater.on('update-not-available', (info) => {
+      console.log('[Updater] Already up-to-date:', info?.version)
       mainWindow?.webContents.send('update:none')
     })
     
     autoUpdater.on('download-progress', (progressObj) => {
+      console.log('[Updater] Download progress:', Math.round(progressObj?.percent || 0) + '%')
       mainWindow?.webContents.send('update:progress', progressObj)
     })
     
     autoUpdater.on('update-downloaded', (info) => {
+      console.log('[Updater] Update downloaded:', info?.version)
       mainWindow?.webContents.send('update:downloaded', info)
     })
     
     autoUpdater.on('error', (err) => {
-      const msg = err?.message || ''
-      if (msg.includes('latest.yml') || msg.includes('404') || msg.includes('HttpError')) {
-        console.log('[Updater] Update check skipped (latest.yml not found yet):', msg.slice(0, 80))
+      const msg = err?.message || String(err)
+      // Suppress the expected "no release yet" and network errors silently
+      if (
+        msg.includes('latest.yml') ||
+        msg.includes('404') ||
+        msg.includes('HttpError') ||
+        msg.includes('net::ERR_') ||
+        msg.includes('ENOTFOUND') ||
+        msg.includes('ETIMEDOUT') ||
+        msg.includes('Cannot find latest')
+      ) {
+        console.log('[Updater] Update check skipped (expected):', msg.slice(0, 120))
         return
       }
       console.error('[Updater] Error:', msg)
       mainWindow?.webContents.send('update:error', msg)
     })
 
-    // Defer check by 15s to guarantee window has rendered
-    setTimeout(() => {
+    // Check once on startup (deferred 20s so UI is fully rendered first)
+    // then once every 4 hours while the app is open
+    const doCheck = () => {
       autoUpdater.checkForUpdates().catch((err) => {
-        console.log('[Updater] checkForUpdates failed silently:', (err?.message || '').slice(0, 80))
+        const msg = (err?.message || '').slice(0, 120)
+        if (!msg.includes('404') && !msg.includes('latest.yml') && !msg.includes('ENOTFOUND')) {
+          console.error('[Updater] checkForUpdates error:', msg)
+        }
       })
-    }, 15_000)
+    }
+
+    setTimeout(doCheck, 20_000)
+    setInterval(doCheck, 4 * 60 * 60 * 1000)
     
     return autoUpdater
   } catch (err) {

@@ -14,11 +14,15 @@ files:
 
 artifactName: ${productName}-${os}-${arch}.${ext}
 
+# Auto-updater publish config
+# electron-updater reads latest.yml from the GitHub release assets
 publish:
   provider: github
   owner: codevaaa
   repo: cybercli-chat
   releaseType: release
+  # Only check published (non-draft, non-pre-release) releases
+  allowPrerelease: false
 
 # ── macOS ──────────────────────────────────────────────────────────────────────
 mac:

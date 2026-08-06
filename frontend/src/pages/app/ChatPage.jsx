@@ -1099,9 +1099,8 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
       // Persist theme to localStorage so App.jsx can pick it up on reload
       if (key === 'appearance') {
         localStorage.setItem('setting_theme', value)
-        const root = document.documentElement
-        if (value === 'light') root.classList.remove('dark')
-        else root.classList.add('dark')
+        const { applyAppearanceTheme } = await import('@lib/theme.js')
+        applyAppearanceTheme(value)
       }
     } catch (e) {
       console.error(e)
@@ -3111,12 +3110,8 @@ export default function ChatPage() {
   const attachmentMenuRef = useRef(null)
   const attachmentButtonRef = useRef(null)
 
-  // Auto Updater State
-  const [updateAvailable, setUpdateAvailable] = useState(false)
-  const [updateInfo, setUpdateInfo] = useState(null)
-  const [updateProgress, setUpdateProgress] = useState(null)
-  const [updateDownloaded, setUpdateDownloaded] = useState(false)
-  const [showUpdateModal, setShowUpdateModal] = useState(false)
+  // Auto Updater State — handled entirely by DesktopUpdateNotification component
+  // (removed duplicate handlers to prevent dual-modal conflict)
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -3134,27 +3129,6 @@ export default function ChatPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  useEffect(() => {
-    if (window.electronAPI) {
-      const cleanupAvailable = window.electronAPI.onUpdateAvailable((info) => {
-        setUpdateInfo(info)
-        setUpdateAvailable(true)
-        setShowUpdateModal(true)
-      })
-      const cleanupProgress = window.electronAPI.onUpdateProgress((p) => {
-        setUpdateProgress(p)
-      })
-      const cleanupDownloaded = window.electronAPI.onUpdateDownloaded((info) => {
-        setUpdateDownloaded(true)
-        setUpdateProgress(null)
-      })
-      return () => {
-        cleanupAvailable()
-        cleanupProgress()
-        cleanupDownloaded()
-      }
-    }
-  }, [])
   useEffect(() => {
     let active = true
     const check = async () => {
@@ -3410,25 +3384,23 @@ export default function ChatPage() {
   const [currentFont, setCurrentFont] = useState('inter')
 
   useEffect(() => {
-    const root = document.documentElement
-    
-    const handleThemeChange = () => {
-      if (currentTheme === 'dark' || (currentTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        root.classList.add('dark')
-      } else {
-        root.classList.remove('dark')
+    let cleanup = () => {}
+    let cancelled = false
+
+    import('@lib/theme.js').then(({ applyAppearanceTheme }) => {
+      if (cancelled) return
+      const run = () => applyAppearanceTheme(currentTheme)
+      run()
+      if (currentTheme === 'system') {
+        const media = window.matchMedia('(prefers-color-scheme: dark)')
+        media.addEventListener('change', run)
+        cleanup = () => media.removeEventListener('change', run)
       }
-    }
-    
-    handleThemeChange()
-    
-    const media = window.matchMedia('(prefers-color-scheme: dark)')
-    if (currentTheme === 'system') {
-      media.addEventListener('change', handleThemeChange)
-    }
-    
+    })
+
     return () => {
-      media.removeEventListener('change', handleThemeChange)
+      cancelled = true
+      cleanup()
     }
   }, [currentTheme])
 
@@ -5438,94 +5410,6 @@ export default function ChatPage() {
 
       {/* Help Center panel */}
       <HelpCenterPanel isOpen={helpPanelOpen} onClose={() => setHelpPanelOpen(false)} />
-
-      {/* Update Modal */}
-      <AnimatePresence>
-        {showUpdateModal && (
-          <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="w-full max-w-md bg-[#2a2a2a] border border-[#3E3E3E] rounded-2xl shadow-2xl p-6"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#37312c] flex items-center justify-center shadow-sm">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-[#D97757]">
-                    <path d="M12 2l1.2 6.8L20 10l-6.8 1.2L12 18l-1.2-6.8L4 10l6.8-1.2L12 2z" fill="currentColor" />
-                  </svg>
-                </div>
-                <button onClick={() => setShowUpdateModal(false)} className="text-[#A3A097] hover:text-[#E8E6E1] transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <h3 className="text-xl font-serif text-[#E8E6E1] mb-2">
-                {updateDownloaded ? 'Update Ready to Install' : 'Update Available'}
-              </h3>
-              
-              <p className="text-[15px] text-[#A3A097] mb-6 leading-relaxed">
-                {updateDownloaded 
-                  ? 'The latest version of Codeva has been downloaded. Restart the app to apply the update.' 
-                  : updateInfo?.version 
-                    ? `A new version of Codeva (${updateInfo.version}) is available. Do you want to download it now?` 
-                    : 'A new version of Codeva is available. Do you want to download it now?'}
-              </p>
-
-              {updateInfo?.releaseNotes && (
-                <div className="mb-6 bg-[#1f1e1c] p-4 rounded-xl border border-white/[0.05] max-h-[160px] overflow-y-auto">
-                  <h4 className="text-sm font-semibold text-[#E8E6E1] mb-2">Changelog</h4>
-                  <div className="text-[13px] text-[#A3A097] space-y-1 prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: typeof updateInfo.releaseNotes === 'string' ? updateInfo.releaseNotes : Array.isArray(updateInfo.releaseNotes) ? updateInfo.releaseNotes.map(n => n.note || n.text || '').join('<br/>') : '' }} />
-                </div>
-              )}
-              
-              {updateProgress && !updateDownloaded && (
-                <div className="mb-6">
-                  <div className="flex justify-between text-[12px] text-[#A3A097] mb-2">
-                    <span>Downloading update...</span>
-                    <span>{Math.round(updateProgress.percent)}%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
-                    <motion.div 
-                      className="h-full bg-[#D97757]"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${updateProgress.percent}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex gap-3 justify-end">
-                {!updateProgress && !updateDownloaded && (
-                  <>
-                    <button 
-                      onClick={() => setShowUpdateModal(false)}
-                      className="px-4 py-2 rounded-xl text-[#E8E6E1] hover:bg-white/5 transition-colors text-[14px] font-medium"
-                    >
-                      Later
-                    </button>
-                    <button 
-                      onClick={() => window.electronAPI.downloadUpdate()}
-                      className="px-4 py-2 rounded-xl bg-[#E8E6E1] text-[#1a1917] hover:bg-white transition-colors text-[14px] font-medium"
-                    >
-                      Download Now
-                    </button>
-                  </>
-                )}
-                
-                {updateDownloaded && (
-                  <button 
-                    onClick={() => window.electronAPI.restartToUpdate()}
-                    className="px-4 py-2 rounded-xl bg-[#D97757] text-white hover:bg-[#D97757]/90 transition-colors text-[14px] font-medium"
-                  >
-                    Restart App
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {showProModal && (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">

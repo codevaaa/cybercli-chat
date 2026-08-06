@@ -56,16 +56,14 @@ jobs:
         shell: pwsh
         run: |
           $exePath = Get-ChildItem release -Filter "*.exe" | Select-Object -First 1 -ExpandProperty FullName
-          if (-not $exePath) { Write-Host "No exe found"; exit 0 }
+          if (-not $exePath) { Write-Host "No exe found, skipping latest.yml"; exit 0 }
           
           # electron-updater expects sha512 as BASE64, not hex
-          $hashBytes = (Get-FileHash -Path $exePath -Algorithm SHA512).Hash
-          # Convert hex string to bytes, then to base64
-          $bytes = [byte[]]::new($hashBytes.Length / 2)
-          for ($i = 0; $i -lt $hashBytes.Length; $i += 2) {
-            $bytes[$i/2] = [Convert]::ToByte($hashBytes.Substring($i, 2), 16)
-          }
-          $sha512b64 = [Convert]::ToBase64String($bytes)
+          # Use .NET SHA512 directly to get bytes (avoids hex conversion bugs)
+          $sha512Bytes = [System.Security.Cryptography.SHA512]::Create().ComputeHash(
+            [System.IO.File]::ReadAllBytes($exePath)
+          )
+          $sha512b64 = [Convert]::ToBase64String($sha512Bytes)
           
           $size = (Get-Item $exePath).Length
           $filename = Split-Path $exePath -Leaf
@@ -84,7 +82,11 @@ releaseDate: '$releaseDate'
 "@
           
           $yml | Out-File -FilePath "release/latest.yml" -Encoding utf8NoBOM
-          Write-Host "Generated latest.yml: sha512(base64)=$($sha512b64.Substring(0,20))... size=$size"
+          Write-Host "Generated latest.yml:"
+          Write-Host "  version:  $version"
+          Write-Host "  file:     $filename"
+          Write-Host "  size:     $size"
+          Write-Host "  sha512:   $($sha512b64.Substring(0,20))..."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
