@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Shield, Target, Heart, Zap, Globe, Award, Code2, Lock, Github, ShieldAlert } from 'lucide-react'
+import { ArrowRight, Shield, Target, Heart, Zap, Globe, Award, Code2, Lock, Github, ShieldAlert, Cloud, Server, Database } from 'lucide-react'
 import ScrollReveal, { ScrollRevealGroup } from '@components/ui/ScrollReveal'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
 import { Tooltip } from '@components/ui/Tooltip'
@@ -122,6 +122,18 @@ export default function AboutPage() {
     image: 'https://cybermindcli.info/Rishab_thakur.jpeg'
   }
 
+  const personManish = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: 'Manish Kumar Singh',
+    jobTitle: 'DevOps & Cloud Security Engineer',
+    worksFor: {
+      '@type': 'Organization',
+      name: 'Codeva',
+      url: 'https://cybermindcli.com'
+    }
+  }
+
   const structuredData = [
     StructuredData.organization(),
     StructuredData.breadcrumb([
@@ -129,7 +141,8 @@ export default function AboutPage() {
       { name: 'About', path: '/about' }
     ]),
     personChandan,
-    personRishab
+    personRishab,
+    personManish
   ]
 
   return (
@@ -336,6 +349,84 @@ export default function AboutPage() {
                     { icon: Zap, label: 'Strategy & Ops', sub: 'STO · CFO · CMO roles' },
                     { icon: Shield, label: 'Cybersecurity Tester', sub: 'Distributed system testing' },
                     { icon: Award, label: 'Media Powerhouse', sub: 'Influencing & digital marketing' },
+                  ].map(({ icon: Icon, label, sub }) => (
+                    <div key={label} className="flex items-start gap-3 p-4 rounded-xl bg-background-secondary border border-border-subtle">
+                      <Icon className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground-primary">{label}</p>
+                        <p className="text-xs text-foreground-muted">{sub}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Team Member Spotlight — Manish Kumar Singh ── */}
+      <div className="section-padding mb-24">
+        <div className="container-custom">
+          <ScrollReveal>
+            <span className="text-xs font-semibold tracking-widest uppercase text-accent mb-3 block">Team Member Spotlight</span>
+            <h2 className="text-4xl font-serif font-light text-foreground-primary mb-16">The guardian of cloud infrastructure</h2>
+          </ScrollReveal>
+
+          <div className="grid lg:grid-cols-5 gap-12 items-start">
+            {/* Left — Photo Card */}
+            <ScrollReveal direction="right" className="lg:col-span-2">
+              <div className="card-glass p-8 text-center">
+                <div className="w-28 h-28 rounded-2xl mx-auto mb-6 overflow-hidden border border-white/10 relative bg-background-tertiary flex items-center justify-center">
+                  <span className="text-4xl font-bold text-accent select-none">MK</span>
+                </div>
+                <h3 className="text-2xl font-semibold text-foreground-primary mb-1">Manish Kumar Singh</h3>
+                <p className="text-accent text-sm font-medium mb-4">DevOps Engineer · Cloud Security Lead · Codeva</p>
+                <div className="flex flex-wrap gap-2 justify-center mb-6">
+                  {['AWS', 'MCSA', 'CCNA', 'Networking', 'Frontend', 'SQL'].map(tag => (
+                    <span key={tag} className="text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">{tag}</span>
+                  ))}
+                </div>
+                <div className="flex gap-3 justify-center">
+                </div>
+              </div>
+            </ScrollReveal>
+
+            {/* Right — Bio */}
+            <ScrollReveal direction="left" delay={0.1} className="lg:col-span-3">
+              <div className="space-y-5 text-foreground-secondary leading-relaxed">
+                <p className="text-lg">
+                  <strong className="text-foreground-primary">Manish Kumar Singh</strong> is a seasoned DevOps and Cloud Security Engineer
+                  who recently joined the Codeva team, bringing with him a powerful combination of infrastructure automation, cloud architecture,
+                  and enterprise networking expertise. With certified knowledge across AWS, MCSA, and CCNA, Manish is the backbone
+                  of Codeva's cloud operations and security posture.
+                </p>
+                <p>
+                  At Codeva, Manish leads the <strong className="text-foreground-primary">DevOps pipeline</strong> — architecting
+                  CI/CD workflows, containerising services via Docker and Kubernetes, and managing the cloud infrastructure that
+                  keeps the AI gateway running at scale. His expertise in <strong className="text-foreground-primary">cloud security</strong> ensures
+                  that every deployment meets enterprise-grade security standards, from IAM policy hardening to VPC configuration
+                  and encrypted data transit across all provider integrations.
+                </p>
+                <p>
+                  Beyond infrastructure, Manish brings cross-domain strength in <strong className="text-foreground-primary">frontend development</strong> and
+                  <strong className="text-foreground-primary"> SQL database management</strong>, enabling him to bridge the gap between
+                  the platform's cloud backend and the user-facing product. His networking depth — spanning LAN/WAN design,
+                  routing protocols, and firewall rule sets — gives Codeva a rare edge in deploying resilient, low-latency
+                  AI infrastructure globally.
+                </p>
+                <p>
+                  As a <strong className="text-foreground-primary">core team member of this startup</strong>, Manish is positioned as
+                  Codeva's DevOps & Cloud Security Lead — owning the reliability, scalability, and security of the entire
+                  cloud stack as the platform expands to thousands of developers worldwide.
+                </p>
+
+                {/* Achievements */}
+                <div className="grid sm:grid-cols-3 gap-4 pt-4">
+                  {[
+                    { icon: Cloud, label: 'AWS · MCSA · CCNA', sub: 'Certified cloud & network expert' },
+                    { icon: Server, label: 'DevOps Lead', sub: 'CI/CD · Docker · Kubernetes' },
+                    { icon: Shield, label: 'Cloud Security', sub: 'IAM · VPC · Infra hardening' },
                   ].map(({ icon: Icon, label, sub }) => (
                     <div key={label} className="flex items-start gap-3 p-4 rounded-xl bg-background-secondary border border-border-subtle">
                       <Icon className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
