@@ -81,6 +81,11 @@ import WorkflowsPage from '@pages/app/WorkflowsPage'
 import DiscoverPage from '@pages/app/DiscoverPage'
 import PlaygroundPage from '@pages/app/PlaygroundPage'
 
+import { lazy, Suspense } from 'react'
+const PlatformPageLazy     = lazy(() => import('@pages/platform/PlatformPage'))
+const PlatformWelcomeLazy  = lazy(() => import('@pages/platform/PlatformWelcome'))
+const PlatformSettingsLazy = lazy(() => import('@pages/platform/PlatformSettings'))
+
 const PUBLIC_PATHS = [
   '/', '/features', '/models', '/pricing', '/contact', '/about',
   '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy',
@@ -256,6 +261,11 @@ function App() {
           <Route path="/workflows" element={<ProtectedRoute><WorkflowsPage /></ProtectedRoute>} />
           <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
           <Route path="/playground" element={<ProtectedRoute><PlaygroundPage /></ProtectedRoute>} />
+
+          {/* ── Agent Platform Routes ── */}
+          <Route path="/platform" element={<ProtectedRoute><Suspense fallback={<div className="h-screen flex items-center justify-center bg-[var(--bg-primary)]"><img src="/favicon.svg" className="w-10 h-10 animate-spin" style={{animationDuration:'3s'}} /></div>}><PlatformPageLazy /></Suspense></ProtectedRoute>} />
+          <Route path="/platform/welcome" element={<ProtectedRoute><Suspense fallback={null}><PlatformWelcomeLazy /></Suspense></ProtectedRoute>} />
+          <Route path="/platform/settings" element={<ProtectedRoute><Suspense fallback={null}><PlatformSettingsLazy /></Suspense></ProtectedRoute>} />
         </Routes>
         </ErrorBoundary>
       </main>

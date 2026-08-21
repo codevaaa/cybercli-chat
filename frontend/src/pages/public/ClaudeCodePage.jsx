@@ -108,6 +108,22 @@ export default function ClaudeCodePage() {
 
       {/* ===== HERO ===== */}
       <section className="relative min-h-[88vh] flex items-center justify-center pt-12 pb-20">
+        {/* ── Agent Platform Announcement Banner ── */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-20"
+        >
+          <Link
+            to="/platform/welcome"
+            className="flex items-center gap-3 px-5 py-2.5 rounded-full border border-[var(--accent)]/40 bg-[var(--accent)]/10 backdrop-blur-md hover:bg-[var(--accent)]/20 transition-all group"
+          >
+            <span className="text-[var(--accent)] text-xs font-semibold">NEW</span>
+            <span className="text-sm text-[#f5f4ef]">CodeVaa Agent Platform is here — 16 autonomous agents, parallel execution, skills system</span>
+            <ArrowRight size={14} className="text-[var(--accent)] group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </motion.div>
         <div className="absolute inset-0 overflow-hidden">
           <motion.div style={{ y: backgroundY }} className="absolute inset-0 opacity-[0.18]">
             <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full blur-[120px]" style={{ backgroundColor: ACCENT }} />

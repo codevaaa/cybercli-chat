@@ -44,6 +44,8 @@ import cliRoutes from './routes/cli.routes.js'
 import downloadsRoutes from './routes/downloads.routes.js'
 import v1Routes from './routes/v1.routes.js'
 import agentRoutes from './routes/agent.routes.js'
+import ideRoutes from './routes/ide.routes.js'
+import platformRoutes from './routes/platform.routes.js'
 import statusRoutes from './routes/status.routes.js'
 import orgRoutes from './routes/org.routes.js'
 import huntRoutes from './routes/hunt.routes.js'
@@ -223,7 +225,9 @@ app.use('/api/v1/feedback', feedbackRoutes)
 app.use('/api/v1/support', supportRoutes)
 app.use('/api/v1/cli', cliRoutes)
 app.use('/api/v1/downloads', downloadsRoutes)
-app.use('/api/v1/agent', agentRoutes)
+app.use('/api/v1/agent',    agentRoutes)
+app.use('/api/v1/ide',      ideRoutes)
+app.use('/api/v1/platform', platformRoutes)
 app.use('/api/v1/status', statusRoutes)
 app.use('/api/v1/orgs', orgRoutes)
 app.use('/api/v1/hunt', huntRoutes)

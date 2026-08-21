@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { background: #0A0A0F; color: #F9FAFB; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #111118; }
+  ::-webkit-scrollbar-thumb { background: #2D2D3F; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #D97757; }
+}
+
+@layer components {
+  .agent-card {
+    @apply bg-surface border border-border rounded-xl p-4 transition-all duration-200;
+  }
+  .agent-card:hover {
+    @apply border-accent/40 shadow-lg shadow-accent/5;
+  }
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent2 active:scale-95;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent border border-border text-muted hover:text-white hover:border-accent/50;
+  }
+  .input {
+    @apply bg-surface border border-border rounded-lg px-3 py-2 text-sm text-white placeholder-muted focus:outline-none focus:border-accent transition-colors;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .task-node {
+    @apply rounded-lg border p-3 text-sm transition-all duration-300;
+  }
+  .task-node.pending   { @apply border-border bg-surface/50 text-muted; }
+  .task-node.ready     { @apply border-warning/50 bg-warning/5 text-warning; }
+  .task-node.running   { @apply border-accent/60 bg-accent/5 text-accent animate-pulse-slow; }
+  .task-node.completed { @apply border-success/50 bg-success/5 text-success; }
+  .task-node.failed    { @apply border-danger/50 bg-danger/5 text-danger; }
+  .task-node.cancelled { @apply border-border bg-surface/20 text-muted line-through; }
+}
+
+/* Agent colour glow effects */
+.glow-ravan       { box-shadow: 0 0 20px rgba(255,68,68,0.15); }
+.glow-chanakya    { box-shadow: 0 0 20px rgba(121,85,72,0.15); }
+.glow-arjun       { box-shadow: 0 0 20px rgba(0,188,212,0.15); }
+.glow-madhav      { box-shadow: 0 0 20px rgba(156,39,176,0.15); }
+.glow-bheem       { box-shadow: 0 0 20px rgba(76,175,80,0.15); }
+.glow-sahadeva    { box-shadow: 0 0 20px rgba(255,152,0,0.15); }
+.glow-nakul       { box-shadow: 0 0 20px rgba(233,30,99,0.15); }
+.glow-yudhishthir { box-shadow: 0 0 20px rgba(33,150,243,0.15); }
+.glow-shiv        { box-shadow: 0 0 20px rgba(244,67,54,0.15); }
+
+/* Token streaming animation */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.streaming-cursor::after {
+  content: '▊';
+  animation: cursor-blink 1s step-start infinite;
+  color: #D97757;
+  margin-left: 2px;
+}

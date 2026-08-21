@@ -1,0 +1,45 @@
+{
+  "name": "@codeva/agent-manager-desktop",
+  "version": "1.0.0",
+  "description": "CodeVaa Agent Manager — Desktop App",
+  "main": "src/main.js",
+  "scripts": {
+    "start":   "electron .",
+    "dev":     "cross-env NODE_ENV=development electron .",
+    "build":   "electron-builder",
+    "pack":    "electron-builder --dir"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.4"
+  },
+  "devDependencies": {
+    "electron":         "^31.3.1",
+    "electron-builder": "^24.13.3",
+    "cross-env":        "^7.0.3"
+  },
+  "build": {
+    "appId":         "ai.codeva.agent-manager",
+    "productName":   "CodeVaa Agent Manager",
+    "copyright":     "© 2025 Chandan Pandey",
+    "asar":          true,
+    "directories":   { "buildResources": "assets", "output": "dist" },
+    "files":         ["src/**/*", "assets/**/*", "!node_modules"],
+    "extraResources": [
+      { "from": "../ui-dist", "to": "ui-dist", "filter": ["**/*"] }
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": [{ "target": "AppImage" }],
+      "icon": "assets/icon.png",
+      "category": "Development"
+    }
+  }
+}
