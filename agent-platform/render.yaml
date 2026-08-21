@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: codeva-agent-platform
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: agent-platform
+    buildCommand: npm install
+    startCommand: node src/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: CODEVA_PLATFORM_PORT
+        value: 4000
+      - key: CODEVA_PLATFORM_HOST
+        value: 0.0.0.0
+      - key: CODEVA_BACKEND_URL
+        value: https://cybercli-api.onrender.com
+      - key: LOG_LEVEL
+        value: info

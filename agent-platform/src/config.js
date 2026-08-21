@@ -23,8 +23,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export const BUNDLED_SKILLS_DIR = path.resolve(__dirname, '..', 'skills-bundled')
 
 // ── Agent Platform Server ──────────────────────────────────────────────────
-export const PLATFORM_PORT      = parseInt(process.env.CODEVA_PLATFORM_PORT || '4000', 10)
-export const PLATFORM_HOST      = process.env.CODEVA_PLATFORM_HOST || '127.0.0.1'
+export const PLATFORM_PORT      = parseInt(process.env.PORT || process.env.CODEVA_PLATFORM_PORT || '4000', 10)
+export const PLATFORM_HOST      = process.env.CODEVA_PLATFORM_HOST || '0.0.0.0'
 
 // ── Backend API ───────────────────────────────────────────────────────────
 export const BACKEND_URL        = process.env.CODEVA_BACKEND_URL || 'http://localhost:3000'

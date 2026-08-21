@@ -17,8 +17,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
-const PLATFORM_WS  = 'ws://localhost:4000/ws'
-const PLATFORM_API = 'http://localhost:4000/api'
+const PLATFORM_WS  = import.meta.env.VITE_PLATFORM_WS || (window.location.hostname === 'localhost' ? 'ws://localhost:4000/ws' : 'wss://codeva-agent-platform.onrender.com/ws')
+const PLATFORM_API = import.meta.env.VITE_PLATFORM_API || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api' : 'https://codeva-agent-platform.onrender.com/api')
 
 const MODELS = [
   { id: 'auto', name: 'Auto' },

@@ -4,8 +4,9 @@
 import { Router } from 'express'
 import { requireAuth, optionalAuth } from '../middleware/auth.js'
 import PlatformSettings from '../models/PlatformSettings.js'
+import PlatformFeedback from '../models/PlatformFeedback.js'
 
-const PLATFORM_URL = process.env.CODEVA_PLATFORM_URL || 'http://localhost:4000'
+const PLATFORM_URL = process.env.CODEVA_PLATFORM_URL || 'https://codeva-agent-platform.onrender.com'
 
 const router = Router()
 
@@ -63,6 +64,50 @@ router.delete('/settings', requireAuth, async (req, res) => {
     await PlatformSettings.deleteOne({ user_id: req.user.id })
     const settings = await PlatformSettings.create({ user_id: req.user.id })
     res.json(settings)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEEDBACK ENDPOINTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * POST /api/v1/platform/feedback
+ * Submit user feedback (bug report, feature request, etc.)
+ */
+router.post('/feedback', requireAuth, async (req, res) => {
+  try {
+    const { type, description, steps, attachLogs } = req.body
+    if (!type || !description) {
+      return res.status(400).json({ error: 'type and description are required' })
+    }
+    const feedback = await PlatformFeedback.create({
+      user_id:    req.user.id,
+      user_email: req.user.email || '',
+      type,
+      description,
+      steps:      steps || '',
+      attachLogs: attachLogs || false,
+      metadata:   { userAgent: req.headers['user-agent'], origin: req.headers.origin },
+    })
+    res.status(201).json({ success: true, id: feedback._id })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
+ * GET /api/v1/platform/feedback
+ * Get user's own feedback history.
+ */
+router.get('/feedback', requireAuth, async (req, res) => {
+  try {
+    const feedbacks = await PlatformFeedback.find({ user_id: req.user.id })
+      .sort({ createdAt: -1 })
+      .limit(50)
+    res.json({ feedbacks })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
