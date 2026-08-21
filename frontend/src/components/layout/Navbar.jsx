@@ -34,6 +34,7 @@ const MENU_GROUPS = [
       { label: 'MADHAV Engine', href: '/madhav', desc: 'Unstoppable 12-Model AI Cascade', icon: 'Sparkles' },
       { label: 'RAVAN Engine', href: '/ravan', desc: '10-Headed Dashanan Architecture', icon: 'Flame' },
       { label: 'CyberCoder CLI', href: '/product', desc: 'Terminal AI coding assistant - Better than Claude Code', icon: 'Terminal' },
+      { label: 'Agent Platform', href: '/platform/welcome', desc: '16 autonomous agents working in parallel', icon: 'Zap' },
       { label: 'Codeva', href: '/chat', desc: 'Advanced AI chat interface', icon: 'MessageSquare' },
       { label: 'Anonymous Chat', href: '/anonymous-chat', desc: 'Encrypted person-to-person messaging — no identity required', icon: 'Ghost' },
       { label: 'Kali_Kal Mode', href: '/kali-kal', desc: 'Uncensored Cyber AI Engine', icon: 'Terminal' },

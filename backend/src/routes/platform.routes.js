@@ -5,6 +5,7 @@ import { Router } from 'express'
 import { requireAuth, optionalAuth } from '../middleware/auth.js'
 import PlatformSettings from '../models/PlatformSettings.js'
 import PlatformFeedback from '../models/PlatformFeedback.js'
+import PlatformConversation from '../models/PlatformConversation.js'
 
 const PLATFORM_URL = process.env.CODEVA_PLATFORM_URL || 'https://codeva-agent-platform.onrender.com'
 
@@ -108,6 +109,111 @@ router.get('/feedback', requireAuth, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(50)
     res.json({ feedbacks })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONVERSATION ENDPOINTS (real history persistence)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** GET /api/v1/platform/conversations — list user's conversations */
+router.get('/conversations', requireAuth, async (req, res) => {
+  try {
+    const { status, project, limit = 50 } = req.query
+    const filter = { user_id: req.user.id }
+    if (status) filter.status = status
+    if (project) filter.project = project
+
+    const conversations = await PlatformConversation.find(filter)
+      .sort({ pinned: -1, updatedAt: -1 })
+      .limit(parseInt(limit))
+      .select('-messages') // Don't send all messages in list view
+    res.json({ conversations })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/** POST /api/v1/platform/conversations — create new conversation */
+router.post('/conversations', requireAuth, async (req, res) => {
+  try {
+    const { title, model, autonomous, project, session_id } = req.body
+    const conv = await PlatformConversation.create({
+      user_id:    req.user.id,
+      title:      title || 'New Session',
+      model:      model || 'auto',
+      autonomous: autonomous || false,
+      project:    project || '',
+      session_id: session_id || '',
+    })
+    res.status(201).json(conv)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/** GET /api/v1/platform/conversations/:id — get full conversation with messages */
+router.get('/conversations/:id', requireAuth, async (req, res) => {
+  try {
+    const conv = await PlatformConversation.findOne({ _id: req.params.id, user_id: req.user.id })
+    if (!conv) return res.status(404).json({ error: 'Conversation not found' })
+    res.json(conv)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/** POST /api/v1/platform/conversations/:id/messages — add message to conversation */
+router.post('/conversations/:id/messages', requireAuth, async (req, res) => {
+  try {
+    const { role, content, model, agentType } = req.body
+    if (!role || !content) return res.status(400).json({ error: 'role and content required' })
+
+    const conv = await PlatformConversation.findOne({ _id: req.params.id, user_id: req.user.id })
+    if (!conv) return res.status(404).json({ error: 'Conversation not found' })
+
+    conv.messages.push({ role, content, model: model || '', agentType: agentType || '' })
+
+    // Auto-generate title from first user message
+    if (conv.title === 'New Session' && role === 'user') {
+      conv.title = content.slice(0, 60) + (content.length > 60 ? '...' : '')
+    }
+
+    await conv.save()
+    res.json({ success: true, messageCount: conv.messages.length })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/** PATCH /api/v1/platform/conversations/:id — update conversation metadata */
+router.patch('/conversations/:id', requireAuth, async (req, res) => {
+  try {
+    const updates = {}
+    const allowed = ['title', 'status', 'pinned', 'project', 'task_stats', 'model', 'autonomous']
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) updates[key] = req.body[key]
+    }
+    const conv = await PlatformConversation.findOneAndUpdate(
+      { _id: req.params.id, user_id: req.user.id },
+      { $set: updates },
+      { new: true }
+    )
+    if (!conv) return res.status(404).json({ error: 'Conversation not found' })
+    res.json(conv)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/** DELETE /api/v1/platform/conversations/:id — delete conversation */
+router.delete('/conversations/:id', requireAuth, async (req, res) => {
+  try {
+    const result = await PlatformConversation.deleteOne({ _id: req.params.id, user_id: req.user.id })
+    if (result.deletedCount === 0) return res.status(404).json({ error: 'Conversation not found' })
+    res.json({ success: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

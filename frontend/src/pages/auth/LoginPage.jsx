@@ -29,8 +29,11 @@ export default function LoginPage() {
       } else if (redirect === 'desktop') {
         window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token)}`
         return
+      } else if (redirect === 'ide') {
+        window.location.href = `codevaa://auth?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token)}`
+        return
       } else {
-        navigate(redirect || '/chat')
+        navigate(redirect || '/platform/welcome')
         return
       }
     }
@@ -43,7 +46,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     clearError()
     try {
-      let nextPath = redirect || '/chat'
+      let nextPath = redirect || '/platform/welcome'
       let callbackQuery = `?action=login&next=${encodeURIComponent(nextPath)}`
       
       if (redirect === 'cli' && port) {
@@ -51,6 +54,8 @@ export default function LoginPage() {
         callbackQuery = `?action=login&redirect=cli&port=${port}`
       } else if (redirect === 'desktop') {
         callbackQuery = `?action=login&redirect=desktop`
+      } else if (redirect === 'ide') {
+        callbackQuery = `?action=login&redirect=ide`
       }
 
       const redirectTo = `${window.location.origin}/auth/callback${callbackQuery}`
@@ -79,8 +84,13 @@ export default function LoginPage() {
         if (session) {
           window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
         }
+      } else if (redirect === 'ide') {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          window.location.href = `codevaa://auth?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token || '')}`
+        }
       } else {
-        navigate(redirect || '/chat')
+        navigate(redirect || '/platform/welcome')
       }
     }
   }

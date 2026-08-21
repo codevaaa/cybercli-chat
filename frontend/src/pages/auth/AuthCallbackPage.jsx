@@ -23,14 +23,15 @@ export default function AuthCallbackPage() {
         // Detect if this is a password recovery/reset event
         const isRecovery = hashParams.get('type') === 'recovery' || params.get('type') === 'recovery'
         const code = params.get('code')
-        const next = isRecovery ? '/auth/reset-password' : (params.get('next') || '/chat')
+        const next = isRecovery ? '/auth/reset-password' : (params.get('next') || '/platform/welcome')
 
-        // Check if this is a desktop app redirect flow
+        // Check if this is a desktop/IDE app redirect flow
         const redirectParam = params.get('redirect') === 'desktop'
+        const isIdeRedirect = params.get('redirect') === 'ide'
         const isCliRedirect = params.get('redirect') === 'cli'
         const cliPort = params.get('port')
         
-        if (redirectParam || isCliRedirect) setIsDesktopRedirect(true)
+        if (redirectParam || isCliRedirect || isIdeRedirect) setIsDesktopRedirect(true)
 
         // Check for error parameters in hash or search
         const errorDescription = params.get('error_description') || hashParams.get('error_description')
@@ -87,12 +88,14 @@ export default function AuthCallbackPage() {
         const { data: { session } } = await supabase.auth.getSession()
 
         if (session) {
-          // Desktop app redirect: send token via deep link protocol or localhost server
-          if (redirectParam || isCliRedirect) {
+          // Desktop / IDE / CLI redirect: send token via deep link protocol or localhost server
+          if (redirectParam || isCliRedirect || isIdeRedirect) {
             const token = session.access_token
             const refresh = session.refresh_token || ''
             if (isCliRedirect && cliPort) {
               window.location.href = `http://127.0.0.1:${cliPort}/callback?token=${encodeURIComponent(token)}&refresh=${encodeURIComponent(refresh)}`
+            } else if (isIdeRedirect) {
+              window.location.href = `codevaa://auth?token=${encodeURIComponent(token)}&refresh=${encodeURIComponent(refresh)}`
             } else {
               // Fallback to codeva:// deep link with token
               window.location.href = `codeva://auth?token=${encodeURIComponent(token)}&refresh=${encodeURIComponent(refresh)}`

@@ -12,6 +12,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@stores/authStore.js'
+import api from '@lib/api.js'
 
 const PLANS = [
   { name: 'CodeVaa Free',  desc: 'For light usage',           price: 0,   credits: 50,    current: true,  features: ['Agent hooks', 'Model context protocol (MCP)', 'Agent steering'] },
@@ -231,6 +232,11 @@ export default function PlatformSettings() {
             </button>
           </section>
 
+          {/* ── Provide Feedback ── */}
+          <section className="mb-8">
+            <FeedbackForm user={user} />
+          </section>
+
           {/* Footer */}
           <footer className="flex items-center justify-between py-4 border-t border-[var(--border-subtle)]">
             <img src="/favicon.svg" alt="" className="w-4 h-4 opacity-40" />
@@ -241,6 +247,104 @@ export default function PlatformSettings() {
           </footer>
         </div>
       </main>
+    </div>
+  )
+}
+
+// ── Feedback Form Component ─────────────────────────────────────────────────
+function FeedbackForm({ user }) {
+  const [type, setType]           = useState('bug')
+  const [description, setDesc]    = useState('')
+  const [steps, setSteps]         = useState('')
+  const [attachLogs, setLogs]     = useState(true)
+  const [submitting, setSubmit]   = useState(false)
+  const [submitted, setDone]      = useState(false)
+  const [error, setError]         = useState(null)
+
+  const handleSubmit = async () => {
+    if (!description.trim()) { setError('Description is required'); return }
+    setSubmit(true)
+    setError(null)
+    try {
+      await api.post('/platform/feedback', { type, description: description.trim(), steps: steps.trim(), attachLogs })
+      setDone(true)
+      setDesc('')
+      setSteps('')
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || 'Failed to submit')
+    } finally {
+      setSubmit(false)
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="bg-[var(--bg-secondary)] border border-[var(--success)]/30 rounded-xl p-6 text-center">
+        <p className="text-[var(--success)] font-medium mb-1">Thank you for your feedback!</p>
+        <p className="text-xs text-[var(--text-muted)]">We'll review it and get back to you if needed.</p>
+        <button onClick={() => setDone(false)} className="mt-3 text-xs text-[var(--accent)] hover:underline">Submit another</button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-[var(--bg-secondary)] border border-[var(--border-medium)] rounded-xl p-6">
+      <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Provide Feedback</h3>
+
+      {/* Type selector */}
+      <div className="flex gap-3 mb-4 flex-wrap">
+        {[
+          { id: 'bug', label: 'Bug Report' },
+          { id: 'feature', label: 'Feature Request' },
+          { id: 'auth', label: 'Auth & Billing' },
+          { id: 'general', label: 'General' },
+        ].map(opt => (
+          <label key={opt.id} className="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="fb-type" checked={type === opt.id} onChange={() => setType(opt.id)}
+              className="w-3 h-3 accent-[var(--accent)]" />
+            <span className="text-xs text-[var(--text-secondary)]">{opt.label}</span>
+          </label>
+        ))}
+      </div>
+
+      {/* Description */}
+      <textarea
+        value={description}
+        onChange={e => setDesc(e.target.value)}
+        placeholder="Describe the issue or suggestion..."
+        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-medium)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]/50 h-24 resize-none mb-3"
+      />
+
+      {/* Steps (for bugs) */}
+      {type === 'bug' && (
+        <textarea
+          value={steps}
+          onChange={e => setSteps(e.target.value)}
+          placeholder="Steps to reproduce..."
+          className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-medium)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]/50 h-20 resize-none mb-3"
+        />
+      )}
+
+      {/* Options */}
+      <label className="flex items-center gap-2 mb-4 cursor-pointer">
+        <input type="checkbox" checked={attachLogs} onChange={e => setLogs(e.target.checked)} className="w-3 h-3 accent-[var(--accent)] rounded" />
+        <span className="text-xs text-[var(--accent)]">Attach CodeVaa logs</span>
+      </label>
+
+      {error && <p className="text-xs text-[var(--error)] mb-3">{error}</p>}
+
+      {/* Submit */}
+      <button
+        onClick={handleSubmit}
+        disabled={submitting || !description.trim()}
+        className="bg-[var(--accent)] text-white text-xs font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {submitting ? 'Submitting...' : 'Submit Feedback'}
+      </button>
+
+      <p className="text-[10px] text-[var(--text-muted)] mt-3">
+        Feedback is sent as {user?.email || 'anonymous'}
+      </p>
     </div>
   )
 }

@@ -13,6 +13,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@stores/authStore.js'
 import { getFreshToken } from '@lib/api.js'
+import { usePlatformShortcuts } from '@hooks/usePlatformShortcuts.js'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -49,6 +50,18 @@ export default function PlatformPage() {
 
   const messagesEndRef = useRef(null)
   const inputRef       = useRef(null)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [showModelPicker, setShowModelPicker] = useState(false)
+
+  // Keyboard shortcuts
+  usePlatformShortcuts({
+    onNewSession: () => { setMessages([]); setStreamContent(''); setStatus('idle'); inputRef.current?.focus() },
+    onFocusInput: () => inputRef.current?.focus(),
+    onToggleSidebar: () => setSidebarOpen(v => !v),
+    onToggleModelSelector: () => setShowModelPicker(v => !v),
+    onOpenSettings: () => navigate('/platform/settings'),
+    onEscape: () => setShowModelPicker(false),
+  })
 
   // Auto-scroll
   useEffect(() => {
@@ -180,7 +193,8 @@ export default function PlatformPage() {
   return (
     <div className="h-screen flex bg-[var(--bg-primary)]">
       {/* ═══ LEFT SIDEBAR ═══ */}
-      <aside className="w-[260px] border-r border-[var(--border-subtle)] flex flex-col">
+      {sidebarOpen && (
+      <aside className="w-[260px] border-r border-[var(--border-subtle)] flex flex-col shrink-0 max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:bg-[var(--bg-primary)] max-md:shadow-2xl">
         {/* Header */}
         <div className="px-4 py-4 flex items-center gap-2">
           <img src="/favicon.svg" alt="CodeVaa" className="w-6 h-6" />
@@ -240,6 +254,7 @@ export default function PlatformPage() {
           </div>
         </div>
       </aside>
+      )}
 
       {/* ═══ MAIN CONTENT ═══ */}
       <main className="flex-1 flex flex-col overflow-hidden">
