@@ -17,7 +17,9 @@ import fs from 'fs'
 const __dirname    = path.dirname(fileURLToPath(import.meta.url))
 const isDev        = process.env.NODE_ENV === 'development'
 const PLATFORM_URL = 'http://localhost:4000'
-const UI_URL       = isDev ? 'http://localhost:5174' : `file://${path.join(__dirname, '../../ui-dist/index.html')}`
+const UI_URL       = isDev
+  ? 'http://localhost:5174'
+  : `file://${path.join(process.resourcesPath || __dirname, isDev ? '../../ui-dist' : '../ui-dist', 'index.html')}`
 
 let mainWindow = null
 let tray       = null

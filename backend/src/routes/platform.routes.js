@@ -1,18 +1,72 @@
 /**
- * Platform Routes — Backend proxy endpoints for the CodeVaa Agent Platform.
- *
- * These are registered on the main backend server at /api/v1/platform/*
- * and proxy to the agent platform server at localhost:4000.
- *
- * This allows the existing auth, rate limiting, and CORS middleware
- * to protect platform endpoints too.
+ * Platform Routes — Backend endpoints for the CodeVaa Agent Platform.
  */
 import { Router } from 'express'
 import { requireAuth, optionalAuth } from '../middleware/auth.js'
+import PlatformSettings from '../models/PlatformSettings.js'
 
 const PLATFORM_URL = process.env.CODEVA_PLATFORM_URL || 'http://localhost:4000'
 
 const router = Router()
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SETTINGS ENDPOINTS (persist to MongoDB)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/v1/platform/settings
+ * Get the authenticated user's platform settings.
+ */
+router.get('/settings', requireAuth, async (req, res) => {
+  try {
+    let settings = await PlatformSettings.findOne({ user_id: req.user.id })
+    if (!settings) {
+      // Create default settings for new user
+      settings = await PlatformSettings.create({ user_id: req.user.id })
+    }
+    res.json(settings)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
+ * PUT /api/v1/platform/settings
+ * Update the authenticated user's platform settings (partial update).
+ */
+router.put('/settings', requireAuth, async (req, res) => {
+  try {
+    const updates = { ...req.body }
+    delete updates._id
+    delete updates.user_id
+    delete updates.__v
+    delete updates.createdAt
+    delete updates.updatedAt
+
+    const settings = await PlatformSettings.findOneAndUpdate(
+      { user_id: req.user.id },
+      { $set: updates },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    )
+    res.json(settings)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
+ * DELETE /api/v1/platform/settings
+ * Reset all settings to defaults.
+ */
+router.delete('/settings', requireAuth, async (req, res) => {
+  try {
+    await PlatformSettings.deleteOne({ user_id: req.user.id })
+    const settings = await PlatformSettings.create({ user_id: req.user.id })
+    res.json(settings)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 /**
  * Proxy helper — forwards request to agent platform server.

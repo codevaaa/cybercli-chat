@@ -1,45 +1,114 @@
 {
-  "name": "@codeva/agent-manager-desktop",
+  "name": "codeva-agent-platform",
   "version": "1.0.0",
-  "description": "CodeVaa Agent Manager — Desktop App",
+  "description": "CodeVaa Agent Platform — Autonomous AI Agent Desktop App",
+  "author": "Chandan Pandey <chandan@codeva.ai>",
+  "license": "MIT",
   "main": "src/main.js",
+  "type": "module",
   "scripts": {
-    "start":   "electron .",
-    "dev":     "cross-env NODE_ENV=development electron .",
-    "build":   "electron-builder",
-    "pack":    "electron-builder --dir"
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
+    "build:ui": "cd ../ui && npm run build",
+    "prebuild": "npm run build:ui",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "pack": "electron-builder --dir"
   },
   "dependencies": {
-    "electron-updater": "^6.3.4"
+    "electron-updater": "^6.3.4",
+    "electron-log": "^5.2.0"
   },
   "devDependencies": {
-    "electron":         "^31.3.1",
+    "electron": "^31.3.1",
     "electron-builder": "^24.13.3",
-    "cross-env":        "^7.0.3"
+    "cross-env": "^7.0.3"
   },
   "build": {
-    "appId":         "ai.codeva.agent-manager",
-    "productName":   "CodeVaa Agent Manager",
-    "copyright":     "© 2025 Chandan Pandey",
-    "asar":          true,
-    "directories":   { "buildResources": "assets", "output": "dist" },
-    "files":         ["src/**/*", "assets/**/*", "!node_modules"],
+    "appId": "ai.codeva.agent-platform",
+    "productName": "CodeVaa Agent Platform",
+    "copyright": "Copyright © 2025 Chandan Pandey",
+    "artifactName": "CodeVaa-Agent-Platform-${version}-${os}-${arch}.${ext}",
+    "asar": true,
+    "compression": "maximum",
+    "directories": {
+      "buildResources": "assets",
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "!src/**/*.test.*"
+    ],
     "extraResources": [
-      { "from": "../ui-dist", "to": "ui-dist", "filter": ["**/*"] }
+      {
+        "from": "../ui-dist",
+        "to": "ui-dist",
+        "filter": ["**/*"]
+      }
     ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
-      "icon": "assets/icon.ico"
+      "target": [
+        { "target": "nsis", "arch": ["x64", "arm64"] }
+      ],
+      "icon": "assets/icon.ico",
+      "publisherName": "Codeva AI",
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CodeVaa Agent Platform",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
     },
     "mac": {
-      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ],
       "icon": "assets/icon.icns",
-      "category": "public.app-category.developer-tools"
+      "category": "public.app-category.developer-tools",
+      "darkModeSupport": true,
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "background": "assets/dmg-background.png",
+      "iconSize": 80,
+      "window": { "width": 540, "height": 380 }
     },
     "linux": {
-      "target": [{ "target": "AppImage" }],
-      "icon": "assets/icon.png",
-      "category": "Development"
-    }
+      "target": [
+        { "target": "AppImage", "arch": ["x64", "arm64"] },
+        { "target": "deb", "arch": ["x64"] },
+        { "target": "rpm", "arch": ["x64"] }
+      ],
+      "icon": "assets/icons",
+      "category": "Development",
+      "synopsis": "CodeVaa Agent Platform — Autonomous AI Agents",
+      "description": "Multi-agent AI platform with 16 specialized agents, parallel execution, skills system, and full project awareness.",
+      "desktop": {
+        "Name": "CodeVaa Agent Platform",
+        "Comment": "Autonomous AI Agent Platform",
+        "Categories": "Development;IDE;",
+        "StartupWMClass": "codeva-agent-platform"
+      }
+    },
+    "appImage": {
+      "license": "MIT"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "codevaaa",
+        "repo": "cybercli-chat",
+        "releaseType": "release"
+      }
+    ]
   }
 }

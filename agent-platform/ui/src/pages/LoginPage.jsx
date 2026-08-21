@@ -9,7 +9,7 @@
  *   - Previous/Next navigation for onboarding flow
  *   - Dark background with subtle gradient animation
  */
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { usePlatformStore } from '../store/platformStore.js'
 
@@ -19,6 +19,14 @@ export default function LoginPage({ onLogin }) {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
   const [step, setStep]       = useState(0) // 0 = splash, 1 = sign in
+
+  // Auto-advance from splash to sign-in after 2 seconds
+  useEffect(() => {
+    if (step === 0) {
+      const timer = setTimeout(() => setStep(1), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [step])
 
   // Splash screen (loading animation)
   if (step === 0) {
@@ -66,11 +74,6 @@ export default function LoginPage({ onLogin }) {
         </motion.p>
 
         {/* Auto-advance to sign in after 2s */}
-        <motion.div
-          initial={{}}
-          animate={{}}
-          onAnimationComplete={() => setTimeout(() => setStep(1), 2000)}
-        />
       </div>
     )
   }

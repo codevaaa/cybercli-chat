@@ -1,0 +1,62 @@
+name: Build Agent Platform Desktop
+
+on:
+  push:
+    tags:
+      - 'agent-v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+          - os: macos-latest
+            platform: mac
+          - os: ubuntu-latest
+            platform: linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: agent-platform/ui/package-lock.json
+
+      - name: Install UI dependencies
+        working-directory: agent-platform/ui
+        run: npm ci
+
+      - name: Build UI
+        working-directory: agent-platform/ui
+        run: npm run build
+
+      - name: Install Desktop dependencies
+        working-directory: agent-platform/desktop
+        run: npm ci
+
+      - name: Build Desktop App (${{ matrix.platform }})
+        working-directory: agent-platform/desktop
+        run: npm run build:${{ matrix.platform }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-platform-${{ matrix.platform }}
+          path: |
+            agent-platform/desktop/dist/*.exe
+            agent-platform/desktop/dist/*.dmg
+            agent-platform/desktop/dist/*.AppImage
+            agent-platform/desktop/dist/*.deb
+            agent-platform/desktop/dist/*.rpm
+          if-no-files-found: ignore
