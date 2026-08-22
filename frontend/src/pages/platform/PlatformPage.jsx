@@ -14,7 +14,6 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@stores/authStore.js'
 import { getFreshToken } from '@lib/api.js'
 import { usePlatformShortcuts } from '@hooks/usePlatformShortcuts.js'
-import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
