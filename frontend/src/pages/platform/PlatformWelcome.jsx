@@ -161,7 +161,7 @@ export default function PlatformWelcome() {
 
             {/* ── Chat Input Box (Kiro exact layout) ── */}
             <form onSubmit={handleSubmit} className="w-full">
-              <div className="w-full bg-[#16161f] border border-white/[0.1] rounded-2xl overflow-hidden focus-within:border-[#D97757]/40 transition-colors">
+              <div className="w-full bg-[#16161f] border border-white/[0.1] rounded-2xl focus-within:border-[#D97757]/40 transition-colors">
                 {/* Text input */}
                 <div className="px-4 pt-4 pb-3">
                   <input

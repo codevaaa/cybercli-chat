@@ -26,7 +26,7 @@ export default function AgentPlatformBanner() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.4, delay: 1 }}
-        className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4"
+        className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4 max-md:max-w-[calc(100%-2rem)] max-md:top-16"
       >
         <div className="relative bg-gradient-to-r from-[#0A0A0F]/95 to-[#1A1A24]/95 backdrop-blur-xl border border-[var(--accent)]/30 rounded-2xl px-5 py-4 shadow-2xl shadow-[var(--accent)]/10">
           {/* Close button */}
@@ -49,8 +49,11 @@ export default function AgentPlatformBanner() {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] bg-[var(--accent)]/15 px-2 py-0.5 rounded-full">New</span>
                 <span className="text-sm font-semibold text-white">CodeVaa Agent Platform</span>
               </div>
-              <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-3">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-3 max-md:hidden">
                 16 autonomous AI agents working in parallel. Decompose any goal, execute across coder/tester/debugger/security agents, get results in seconds. More powerful than Cursor or Antigravity.
+              </p>
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-3 md:hidden">
+                16 autonomous agents. More powerful than Cursor or Antigravity.
               </p>
               <div className="flex items-center gap-3">
                 <Link

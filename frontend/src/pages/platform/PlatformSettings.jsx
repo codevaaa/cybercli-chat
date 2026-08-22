@@ -216,6 +216,29 @@ export default function PlatformSettings() {
               </span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform ${showHelp ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"/></svg>
             </button>
+            {showHelp && (
+              <div className="mt-2 bg-[var(--bg-secondary)] border border-[var(--border-medium)] rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[var(--text-secondary)]">Technical support</span>
+                  <a href="mailto:support@codeva.ai" className="text-xs text-[var(--accent)] hover:underline">Get Help</a>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[var(--text-secondary)]">Documentation</span>
+                  <a href="/docs" className="text-xs text-[var(--accent)] hover:underline">https://codeva.ai/docs/</a>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[var(--text-secondary)]">Blog: News, tutorials, updates</span>
+                  <a href="/blog" className="text-xs text-[var(--accent)] hover:underline">https://codeva.ai/blog</a>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[var(--text-secondary)]">Follow us</span>
+                  <a href="https://x.com/codevaaa" target="_blank" className="text-xs text-[var(--accent)] hover:underline">X / Discord</a>
+                </div>
+                <button className="mt-2 text-xs border border-[var(--border-medium)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors">
+                  Delete account
+                </button>
+              </div>
+            )}
           </section>
 
           {/* ── Billing Support ── */}
@@ -230,6 +253,29 @@ export default function PlatformSettings() {
               </span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform ${showBilling ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"/></svg>
             </button>
+            {showBilling && (
+              <div className="mt-2 bg-[var(--bg-secondary)] border border-[var(--border-medium)] rounded-xl p-4 space-y-4">
+                <p className="text-xs text-[var(--text-muted)]">Submit a support request and our team will get back to you.</p>
+                <p className="text-xs text-[var(--text-muted)]">Fields marked with an asterisk (*) are required.</p>
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-1">Full name</label>
+                  <input className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-medium)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]/50" placeholder="Enter your full name" />
+                </div>
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-1">Subject *</label>
+                  <input className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-medium)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]/50" placeholder="Brief description of your issue" />
+                  <p className="text-[10px] text-[var(--text-muted)] mt-1">200 characters</p>
+                </div>
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-1">Description</label>
+                  <textarea className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-medium)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]/50 h-24 resize-none" placeholder="Describe the issue you are facing. Don't share any sensitive information such as credentials and credit card numbers." />
+                  <p className="text-[10px] text-[var(--text-muted)] mt-1">2000 characters</p>
+                </div>
+                <button className="bg-[var(--accent)] text-white text-xs font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+                  Submit
+                </button>
+              </div>
+            )}
           </section>
 
           {/* ── Provide Feedback ── */}
