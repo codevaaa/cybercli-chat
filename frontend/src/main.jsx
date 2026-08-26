@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
 import App from './App.jsx'
 import './index.css'
+import 'katex/dist/katex.min.css'
 import { useAuthStore } from './stores/authStore.js'
 import { Analytics } from '@vercel/analytics/react'
 

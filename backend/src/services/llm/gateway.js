@@ -740,6 +740,10 @@ export const llmGateway = {
         const delta = choice?.delta
         if (delta?.content) {
           yield { type: 'token', content: delta.content }
+          // Smooth streaming: tiny delay prevents token flooding on fast providers (Groq/Cerebras)
+          if (activeProvider === 'groq' || activeProvider === 'cerebras') {
+            await new Promise(r => setTimeout(r, 6))
+          }
         }
         if (delta?.tool_calls?.length) {
           yield { type: 'tool_calls_delta', tool_calls: delta.tool_calls }

@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import api, { smartStream, createThread, getThreads, getMessages, isLoggedIn, API_BASE, getFreshToken, truncateThread, checkBackendHealth } from '../../lib/api.js'
@@ -36,21 +38,21 @@ import { ImageGeneratorWidget, MidnightCountdown } from '../../components/chat/I
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const MODELS = [
-  { id: 'codeva/abhimanyu',                    name: 'Abhimanyu (Default)',  tag: 'Abhimanyu', color: '#EC4899', desc: 'The All-Rounder Prodigy (Cloudflare 70B + FLUX)', kali: false },
-  { id: 'codeva-ravan-v1',                     name: 'Ravan',                tag: 'Ravan',     color: '#EF4444', desc: 'God-Tier brute force coder. Unimaginable coding power and elite intelligence.', kali: false },
-  { id: 'opencode/deepseek-v4-pro',            name: 'Madhav',               tag: 'Madhav',    color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false },
-  { id: 'groq/llama-3.1-8b',                   name: 'Arjun',                tag: 'Arjun',     color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise.', kali: false },
+  { id: 'codeva/abhimanyu',                    name: 'Abhimanyu (Default)',  tag: 'Abhimanyu', color: '#EC4899', desc: 'The All-Rounder Prodigy (Cloudflare 70B + FLUX)', kali: false, caps: ['code', 'vision'] },
+  { id: 'codeva-ravan-v1',                     name: 'Ravan',                tag: 'Ravan',     color: '#EF4444', desc: 'God-Tier brute force coder. Unimaginable coding power and elite intelligence.', kali: false, caps: ['code'] },
+  { id: 'opencode/deepseek-v4-pro',            name: 'Madhav',               tag: 'Madhav',    color: '#F59E0B', desc: 'The supreme intelligence. Unrivalled reasoning, deep analysis, and creative mastery.', kali: false, caps: ['research', 'code'] },
+  { id: 'groq/llama-3.1-8b',                   name: 'Arjun',                tag: 'Arjun',     color: '#10B981', desc: 'The swift warrior. Blazing fast responses, lightweight and razor-precise.', kali: false, caps: ['speed'] },
 ]
 
 const EXTRA_MODELS = [
-  { id: 'huggingface/thecnical/cybermindcli',  name: 'Codeva',            tag: 'Codeva', color: '#7C3AED', desc: 'The proprietary flagship model of Codeva. Unmatched reasoning, security analysis, and specialized technical operations.', kali: false },
-  { id: 'opencode/deepseek-v4-flash',          name: 'Vyas',                  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false },
-  { id: 'apifreellm/gpt-4o',                   name: 'Bheem',                tag: 'Bheem',     color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false },
-  { id: 'council',                             name: 'Panchayat',            tag: 'Panchayat', color: '#D97757', desc: 'The council of minds. Streams your query to multiple minds simultaneously.', kali: false },
-  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya', tag: 'Chanakya', color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving.', kali: false },
-  { id: 'openrouter/gpt-4o-mini',              name: 'Nakul',                 tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Fast, capable, and multimodal.', kali: false },
-  { id: 'gemini/gemini-2.5-pro',               name: 'Sahadeva',              tag: 'Sahadeva', color: '#4285F4', desc: 'The wise seer. High-speed intelligence with enormous context window.', kali: false },
-  { id: 'mistral/mistral-large-latest',        name: 'Vayu',                  tag: 'Vayu',     color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities.', kali: false },
+  { id: 'huggingface/thecnical/cybermindcli',  name: 'Codeva',            tag: 'Codeva', color: '#7C3AED', desc: 'The proprietary flagship model of Codeva. Unmatched reasoning, security analysis, and specialized technical operations.', kali: false, caps: ['code', 'research'] },
+  { id: 'opencode/deepseek-v4-flash',          name: 'Vyas',                  tag: 'Vyas',     color: '#0D9488', desc: 'The omniscient researcher. Deeply searches the web to compile definitive answers.', kali: false, caps: ['research'] },
+  { id: 'apifreellm/gpt-4o',                   name: 'Bheem',                tag: 'Bheem',     color: '#3B82F6', desc: 'The reliable powerhouse. Versatile and capable for everyday intelligence tasks with high accuracy.', kali: false, caps: ['vision', 'code'] },
+  { id: 'council',                             name: 'Panchayat',            tag: 'Panchayat', color: '#D97757', desc: 'The council of minds. Streams your query to multiple minds simultaneously.', kali: false, caps: ['research'] },
+  { id: 'huggingface/deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'Chanakya', tag: 'Chanakya', color: '#00A3FF', desc: 'The grand strategist. Explicit chain-of-thought reasoning for multi-step problem solving.', kali: false, caps: ['research'] },
+  { id: 'openrouter/gpt-4o-mini',              name: 'Nakul',                 tag: 'Nakul',    color: '#8B5CF6', desc: 'The skilled strategist. Fast, capable, and multimodal.', kali: false, caps: ['vision', 'speed'] },
+  { id: 'gemini/gemini-2.5-pro',               name: 'Sahadeva',              tag: 'Sahadeva', color: '#4285F4', desc: 'The wise seer. High-speed intelligence with enormous context window.', kali: false, caps: ['vision', 'research'] },
+  { id: 'mistral/mistral-large-latest',        name: 'Vayu',                  tag: 'Vayu',     color: '#F97316', desc: 'The swift wind. Top-tier reasoning and logic capabilities.', kali: false, caps: ['code', 'research'] },
   { id: 'groq/llama-3.1-70b',                  name: 'Yudhishthira',          tag: 'Yudhishthir', color: '#FFD21E', desc: 'The righteous elder. Open-weights flagship model built for balanced output.', kali: false },
   { id: 'huggingface/Qwen/Qwen2.5-72B-Instruct', name: 'Vikrama',             tag: 'Vikrama',  color: '#FF6B35', desc: 'The multilingual emperor. Broad multilingual and cross-cultural intelligence.', kali: false },
   { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Vishwakarma',   tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories.', kali: false },
@@ -337,6 +339,8 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
                 </div>
               )}
               <ReactMarkdown
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex]}
                 components={{
                   img: ({ src, alt }) => <ImageGeneratorWidget src={src} alt={alt} />,
                   code({ node, inline, className, children, ...props }) {
@@ -633,7 +637,17 @@ function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffo
                       }}
                       className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center justify-between"
                     >
-                      <span className="text-[13px] text-foreground-primary">{model.tag}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] text-foreground-primary">{model.tag}</span>
+                        {model.caps && (
+                          <div className="flex items-center gap-0.5">
+                            {model.caps.includes('vision') && <span title="Vision" className="text-[9px] px-1 py-0.5 rounded bg-blue-500/10 text-blue-400 font-bold">👁</span>}
+                            {model.caps.includes('code') && <span title="Code" className="text-[9px] px-1 py-0.5 rounded bg-green-500/10 text-green-400 font-bold">⌨</span>}
+                            {model.caps.includes('research') && <span title="Research" className="text-[9px] px-1 py-0.5 rounded bg-purple-500/10 text-purple-400 font-bold">🔬</span>}
+                            {model.caps.includes('speed') && <span title="Speed" className="text-[9px] px-1 py-0.5 rounded bg-yellow-500/10 text-yellow-400 font-bold">⚡</span>}
+                          </div>
+                        )}
+                      </div>
                       {isSelected && <Check className="w-3.5 h-3.5 text-foreground-primary shrink-0" />}
                     </button>
                   )
@@ -3369,11 +3383,27 @@ export default function ChatPage() {
         e.preventDefault()
         openSettings('general')
       }
-
+      // Ctrl + N — new chat
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault()
+        navigate('/chat')
+        setMessages([])
+      }
+      // Ctrl + K — search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setIsSearchModalOpen(true)
+      }
+      // Ctrl + B — toggle sidebar
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault()
+        setSidebarOpen(prev => !prev)
+      }
       // Escape to close modals
       if (e.key === 'Escape') {
         setShowShortcutsModal(false)
         setSettingsOpen(false)
+        setIsSearchModalOpen(false)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -4140,6 +4170,26 @@ export default function ChatPage() {
       activeModel = 'opencode/deepseek-v4-flash'
     }
 
+    // ── AUTO-MODEL INTELLIGENCE ──
+    // When model is set to default (Abhimanyu), detect intent and route to specialized model
+    if (activeModel === 'codeva/abhimanyu' && !deepResearchEnabled) {
+      const lowerText = userText.toLowerCase()
+      // Code intent → Ravan (brute-force coder)
+      const codePatterns = /\b(write|code|function|implement|debug|fix|refactor|class|component|api|endpoint|script|program|algorithm|regex|sql|html|css|javascript|python|typescript|react|node|rust|golang)\b/i
+      if (codePatterns.test(lowerText) && lowerText.length > 20) {
+        activeModel = 'codeva-ravan-v1'
+      }
+      // Research/analysis intent → DeepSeek (deep reasoning)
+      const researchPatterns = /\b(explain|analyze|compare|research|summarize|review|evaluate|difference between|pros and cons|how does|why does|what is the|in-depth|detailed analysis)\b/i
+      if (researchPatterns.test(lowerText) && lowerText.length > 40) {
+        activeModel = 'opencode/deepseek-v4-pro'
+      }
+      // Image intent → Gemini Vision (handled by gateway, but also route early)
+      if (/\b(image|photo|picture|screenshot|diagram|chart|graph|visual)\b/i.test(lowerText) && (lowerText.includes('analyze') || lowerText.includes('describe') || lowerText.includes('what'))) {
+        activeModel = 'gemini/gemini-2.5-flash'
+      }
+    }
+
     // ── IMAGE GENERATION AUTO-INTERCEPT ──
     const isImageRequest = activeModel === 'image-gen' || (imageGenerationEnabled && /^(draw|generate image|create an image|make an image|paint)/i.test(userText.trim()))
     
@@ -4476,6 +4526,24 @@ export default function ChatPage() {
           await useAuthStore.getState().signOut()
           navigate('/auth/login')
           return
+        }
+        if (res.status === 429) {
+          // Rate limited — extract retry time and show countdown
+          let retrySeconds = 60
+          try {
+            const errBody = await res.json()
+            retrySeconds = errBody.retryAfter || parseInt(res.headers.get('RateLimit-Reset')) || 60
+          } catch {}
+          setMessages(prev => {
+            const next = [...prev]
+            if (next.length > 0) {
+              next[next.length - 1] = { ...next[next.length - 1], content: `⏱️ Rate limit reached. Please wait ${retrySeconds} seconds...`, rateLimitUntil: Date.now() + retrySeconds * 1000 }
+            }
+            return next
+          })
+          setStreamingIndex(null)
+          setLoading(false)
+          return false
         }
         const errText = await res.text().catch(() => `HTTP ${res.status}`)
         throw new Error(`Stream error ${res.status}: ${errText}`)
@@ -5606,12 +5674,13 @@ export default function ChatPage() {
       {/* Keyboard Shortcuts Modal */}
       <AnimatePresence>
         {showShortcutsModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowShortcutsModal(false)}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#1c1c24] border border-white/[0.08] rounded-2xl w-full max-w-md p-6 relative shadow-2xl"
+              className="bg-[#1c1c24] border border-white/[0.08] rounded-2xl w-full max-w-lg p-6 relative shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setShowShortcutsModal(false)}
@@ -5619,23 +5688,61 @@ export default function ChatPage() {
               >
                 <X className="w-5 h-5" />
               </button>
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
                 <Info className="w-5 h-5 text-[#D97757]" />
                 Keyboard Shortcuts
               </h3>
-              <div className="space-y-3.5">
-                {[
-                  { key: 'Ctrl + /', desc: 'Toggle keyboard shortcuts dialog' },
-                  { key: 'Ctrl + ,', desc: 'Open Settings panel' },
-                  { key: 'Ctrl + Enter', desc: 'Submit chat query' },
-                  { key: 'Esc', desc: 'Close dialogs' }
-                ].map(shortcut => (
-                  <div key={shortcut.key} className="flex items-center justify-between text-sm py-1 border-b border-white/[0.04] last:border-0">
-                    <span className="text-gray-400 font-medium">{shortcut.desc}</span>
-                    <kbd className="px-2.5 py-1 rounded bg-[#0f0f15] border border-white/[0.08] text-xs font-mono text-[#D97757] font-semibold">{shortcut.key}</kbd>
+              <div className="grid grid-cols-1 gap-6">
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted mb-2">General</h4>
+                  <div className="space-y-2">
+                    {[
+                      { key: 'Ctrl + /', desc: 'Toggle this shortcuts panel' },
+                      { key: 'Ctrl + ,', desc: 'Open Settings' },
+                      { key: 'Esc', desc: 'Close dialogs & modals' },
+                    ].map(s => (
+                      <div key={s.key} className="flex items-center justify-between text-sm py-1.5 border-b border-white/[0.04] last:border-0">
+                        <span className="text-gray-400">{s.desc}</span>
+                        <kbd className="px-2 py-0.5 rounded bg-[#0f0f15] border border-white/[0.08] text-[11px] font-mono text-[#D97757] font-semibold">{s.key}</kbd>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted mb-2">Chat</h4>
+                  <div className="space-y-2">
+                    {[
+                      { key: 'Enter', desc: 'Send message' },
+                      { key: 'Shift + Enter', desc: 'New line in input' },
+                      { key: 'Ctrl + U', desc: 'Upload file' },
+                      { key: '/compare', desc: 'Multi-model comparison' },
+                      { key: '/recon', desc: 'Security recon (Hunter)' },
+                      { key: '/hunt', desc: 'Vulnerability scan' },
+                    ].map(s => (
+                      <div key={s.key} className="flex items-center justify-between text-sm py-1.5 border-b border-white/[0.04] last:border-0">
+                        <span className="text-gray-400">{s.desc}</span>
+                        <kbd className="px-2 py-0.5 rounded bg-[#0f0f15] border border-white/[0.08] text-[11px] font-mono text-[#D97757] font-semibold">{s.key}</kbd>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted mb-2">Navigation</h4>
+                  <div className="space-y-2">
+                    {[
+                      { key: 'Ctrl + N', desc: 'New chat' },
+                      { key: 'Ctrl + K', desc: 'Search chats' },
+                      { key: 'Ctrl + B', desc: 'Toggle sidebar' },
+                    ].map(s => (
+                      <div key={s.key} className="flex items-center justify-between text-sm py-1.5 border-b border-white/[0.04] last:border-0">
+                        <span className="text-gray-400">{s.desc}</span>
+                        <kbd className="px-2 py-0.5 rounded bg-[#0f0f15] border border-white/[0.08] text-[11px] font-mono text-[#D97757] font-semibold">{s.key}</kbd>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
+              <p className="text-[10px] text-foreground-muted mt-5 text-center">On Mac, use ⌘ instead of Ctrl</p>
             </motion.div>
           </div>
         )}
