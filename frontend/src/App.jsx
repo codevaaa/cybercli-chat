@@ -8,6 +8,7 @@ import ProtectedRoute from '@components/auth/ProtectedRoute.jsx'
 import DesktopUpdateNotification from '@components/desktop/DesktopUpdateNotification.jsx'
 import { ErrorBoundary } from '@components/layout/ErrorBoundary.jsx'
 import { useAuthStore } from '@stores/authStore.js'
+import useSettingsStore from '@stores/settingsStore.js'
 import { applyAppearanceTheme } from '@lib/theme.js'
 
 import HomePage from '@pages/public/HomePage'
@@ -130,6 +131,13 @@ function App() {
   }, [location.pathname])
 
   const { session } = useAuthStore()
+
+  // Hydrate settings store from backend once user is logged in
+  useEffect(() => {
+    if (session) {
+      useSettingsStore.getState().hydrate()
+    }
+  }, [session])
 
   // Desktop App auto-login: If the web app is loaded inside the desktop wrapper and a session exists,
   // tell the desktop app to show the main window (skipping the landing screen).

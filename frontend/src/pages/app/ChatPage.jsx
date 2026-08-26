@@ -20,6 +20,7 @@ import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
 import { useAuthStore } from '@stores/authStore.js'
 import { useProjectStore } from '@stores/projectStore.js'
 import { useStyleStore } from '@stores/styleStore.js'
+import useSettingsStore from '@stores/settingsStore.js'
 import CodevaMark, { CodevaWordmark } from '../../components/ui/CodevaLogo.jsx'
 import InviteFriendsModal from '../../components/invite/InviteFriendsModal.jsx'
 import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
@@ -310,12 +311,12 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
-              <div className="px-5 py-3.5 rounded-3xl rounded-tr-md bg-[#f3f2eb] dark:bg-[#2C2C2C] text-foreground-primary text-[15px] leading-relaxed whitespace-pre-wrap shadow-sm border border-black/5 dark:border-[#3E3E3E]">
+              <div className="px-5 py-3.5 rounded-3xl rounded-tr-md bg-[#f3f2eb] dark:bg-[#2C2C2C] text-foreground-primary text-[15px] leading-relaxed whitespace-pre-wrap break-words shadow-sm border border-black/5 dark:border-[#3E3E3E]">
                 {msg.content}
               </div>
             </div>
           ) : (
-            <div className="text-base text-foreground-primary prose-custom w-full pt-1">
+            <div className="text-base text-foreground-primary prose-custom w-full pt-1 overflow-x-hidden break-words">
               {isStreaming && (
                 <div className="mb-3">
                   <details open className="group">
@@ -1199,6 +1200,14 @@ function SettingsDialog({ isOpen, onClose, onSettingChange, initialTab = 'genera
         localStorage.setItem('setting_theme', value)
         const { applyAppearanceTheme } = await import('@lib/theme.js')
         applyAppearanceTheme(value)
+        // Sync to global store
+        useSettingsStore.getState().setTheme(value)
+      }
+      // Persist language to global store
+      if (key === 'language') {
+        const langCode = value.toUpperCase()
+        const langName = LANGUAGES.find(l => l.code === langCode)?.name || value
+        useSettingsStore.getState().setLanguage(langCode, langName)
       }
     } catch (e) {
       console.error(e)
@@ -4572,9 +4581,10 @@ export default function ChatPage() {
 
   return (
     <div
-      className={`relative h-screen flex overflow-hidden ${isKaliMode ? 'kali-theme' : ''}`}
+      className={`relative h-dvh flex overflow-hidden ${isKaliMode ? 'kali-theme' : ''}`}
       style={{
         background: '#0C0C0C',
+        paddingTop: 'env(safe-area-inset-top)',
       }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -4739,7 +4749,7 @@ export default function ChatPage() {
                           key={t._id}
                           thread={t}
                           isActive={activeThreadId === t._id && activeNav === 'chats'}
-                          onSelect={() => { navigate(`/chat/${t._id}`); setActiveNav('chats') }}
+                          onSelect={() => { navigate(`/chat/${t._id}`); setActiveNav('chats'); if (isMobile) setSidebarOpen(false) }}
                           onDelete={(e) => handleDeleteThread(t._id, e)}
                           onPin={(e) => handlePinThread(t._id, e)}
                         />
@@ -4753,7 +4763,7 @@ export default function ChatPage() {
                     key={t._id}
                     thread={t}
                     isActive={activeThreadId === t._id && activeNav === 'chats'}
-                    onSelect={() => { navigate(`/chat/${t._id}`); setActiveNav('chats') }}
+                    onSelect={() => { navigate(`/chat/${t._id}`); setActiveNav('chats'); if (isMobile) setSidebarOpen(false) }}
                     onDelete={(e) => handleDeleteThread(t._id, e)}
                     onPin={(e) => handlePinThread(t._id, e)}
                   />
@@ -4769,7 +4779,7 @@ export default function ChatPage() {
                         key={t._id}
                         thread={t}
                         isActive={activeThreadId === t._id && activeNav === 'chats'}
-                        onSelect={() => { navigate(`/chat/${t._id}`); setActiveNav('chats') }}
+                        onSelect={() => { navigate(`/chat/${t._id}`); setActiveNav('chats'); if (isMobile) setSidebarOpen(false) }}
                         onDelete={(e) => handleDeleteThread(t._id, e)}
                         onPin={(e) => handlePinThread(t._id, e)}
                       />
@@ -4918,6 +4928,8 @@ export default function ChatPage() {
                             setUserLanguage(lang.code)
                             localStorage.setItem('user_language', lang.code)
                             localStorage.setItem('user_language_name', lang.name)
+                            // Sync to global settings store
+                            useSettingsStore.getState().setLanguage(lang.code, lang.name)
                           }}
                           className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-foreground-secondary hover:text-foreground-primary hover:bg-foreground-primary/5 transition-all text-left"
                         >
@@ -5037,7 +5049,7 @@ export default function ChatPage() {
 
         {/* Header strip */}
         <header 
-          className="relative flex items-center gap-3 px-4 py-3 flex-shrink-0 border-b border-border-subtle bg-background-secondary/85 backdrop-blur-md"
+          className="relative flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0 border-b border-border-subtle bg-background-secondary/85 backdrop-blur-md"
           style={{ WebkitAppRegion: !!window.electronAPI ? 'drag' : 'auto' }}
         >
           {(!sidebarOpen && !window.electronAPI) && (
@@ -5255,7 +5267,7 @@ export default function ChatPage() {
               )}
               {activeNav === 'chats' ? (
                 messages.length === 0 && !loading ? (
-                  <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full px-4 pb-20">
+                  <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full px-4 pb-20 chat-input-safe">
                     <HeroState userName={userName} />
                     <div className="w-full mt-4">
                       <InputArea

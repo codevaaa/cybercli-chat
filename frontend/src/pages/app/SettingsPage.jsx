@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
+import useSettingsStore from '../../stores/settingsStore.js'
 import {
   X, User, Shield, CreditCard, Zap, Plug, Settings2,
   Moon, Sun, Monitor, ChevronLeft, Check, Bell, Volume2,
@@ -278,6 +279,14 @@ function GeneralTab({ settings, onUpdate }) {
           value={settings.chat_font}
           onChange={v => onUpdate('chat_font', v)}
           options={FONTS}
+        />
+      </FieldRow>
+
+      <FieldRow label="Language" hint="Language for AI responses and voice recognition">
+        <SelectInput
+          value={settings.language || 'EN'}
+          onChange={v => onUpdate('language', v)}
+          options={['EN', 'FR', 'DE', 'HI', 'ES', 'IT', 'JA', 'KO', 'PT', 'ID', 'UR']}
         />
       </FieldRow>
 
@@ -1099,21 +1108,13 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!settings.theme) return
-    const root = document.documentElement
     const themeVal = (settings.theme || 'dark').toLowerCase()
-    if (themeVal === 'dark') {
-      root.classList.add('dark')
-    } else if (themeVal === 'light') {
-      root.classList.remove('dark')
-    } else {
-      // system
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        root.classList.add('dark')
-      } else {
-        root.classList.remove('dark')
-      }
-    }
+    import('@lib/theme.js').then(({ applyAppearanceTheme }) => {
+      applyAppearanceTheme(themeVal)
+    })
     localStorage.setItem('setting_theme', themeVal)
+    // Sync to global settings store for cross-component reactivity
+    useSettingsStore.getState().setTheme(themeVal)
   }, [settings.theme])
 
   useEffect(() => {
@@ -1128,6 +1129,8 @@ export default function SettingsPage() {
     } else {
       root.classList.add('font-sans')
     }
+    // Sync to global store
+    useSettingsStore.getState().setChatFont(settings.chat_font)
   }, [settings.chat_font])
 
   const handleUpdate = useCallback(async (key, value) => {
@@ -1140,10 +1143,19 @@ export default function SettingsPage() {
     // Synchronize Voice & Voice Speed changes with local storage for useTTS
     if (key === 'voice') {
       localStorage.setItem('tts_voice', value.toLowerCase())
+      useSettingsStore.getState().setVoice(value)
     } else if (key === 'voice_speed') {
       const speedMap = { slow: '0.85', normal: '1.0', fast: '1.25' }
       const floatStr = speedMap[value.toLowerCase()] || '1.0'
       localStorage.setItem('tts_speed', floatStr)
+      useSettingsStore.getState().setVoiceSpeed(value)
+    }
+
+    // Sync language changes to global store
+    if (key === 'language') {
+      const code = value.toUpperCase()
+      const LANG_NAMES = { EN: 'English (United States)', FR: 'Français (France)', DE: 'Deutsch (Deutschland)', HI: 'हिन्दी (भारत)', ES: 'Español (Latinoamérica)', IT: 'Italiano (Italia)', JA: '日本語 (日本)', KO: '한국어 (대한민국)', PT: 'Português (Brasil)', ID: 'Indonesia (Indonesia)', UR: 'اردو (Urdu)' }
+      useSettingsStore.getState().setLanguage(code, LANG_NAMES[code] || code)
     }
 
     setSaving(true)
