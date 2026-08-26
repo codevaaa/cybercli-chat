@@ -687,20 +687,21 @@ function InputArea({
   const fileInputRef = useRef(null)
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = e.target.files
+    if (!files || files.length === 0) return
     try {
-      // If it's an image or large binary, we could encode to base64, but for text/code:
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          setInput(prev => prev + `\n\n![${file.name}](${event.target.result})\n`)
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader()
+          reader.onload = (event) => {
+            setInput(prev => prev + `\n\n![${file.name}](${event.target.result})\n`)
+          }
+          reader.readAsDataURL(file)
+        } else {
+          const text = await file.text()
+          const extension = file.name.split('.').pop()
+          setInput(prev => prev + `\n\n\`\`\`${extension}\n// ${file.name}\n${text}\n\`\`\`\n`)
         }
-        reader.readAsDataURL(file)
-      } else {
-        const text = await file.text()
-        const extension = file.name.split('.').pop()
-        setInput(prev => prev + `\n\n\`\`\`${extension}\n// ${file.name}\n${text}\n\`\`\`\n`)
       }
     } catch (err) {
       alert('Could not read file: ' + err.message)
@@ -777,7 +778,7 @@ function InputArea({
                 className="absolute bottom-full left-0 mb-2 w-64 bg-[#2a2a2a] border border-[#3E3E3E] rounded-xl shadow-2xl overflow-visible py-1.5 z-50 text-[14px]"
               >
                 <div className="flex flex-col relative">
-                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" multiple accept="image/*,.txt,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.html,.css,.json,.md,.yaml,.yml,.toml,.sh,.sql,.rs,.go,.rb,.php,.swift,.kt" />
                   <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-3 px-3.5 py-2 hover:bg-white/5 text-[#E8E6E1] transition-colors text-left w-full">
                     <Paperclip className="w-[18px] h-[18px] text-[#A3A097]" />
                     <span>Add files or photos</span>

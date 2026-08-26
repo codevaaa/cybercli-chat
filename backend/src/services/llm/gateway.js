@@ -654,6 +654,16 @@ export const llmGateway = {
 
     const totalChars = workingMessages.reduce((sum, m) => sum + messageCharCount(m), 0)
     
+    // Auto-route to Gemini when images are present (Gemini 2.5 Flash supports vision natively)
+    const hasImages = workingMessages.some(m => {
+      const content = typeof m.content === 'string' ? m.content : ''
+      return content.includes('data:image/') || content.includes('![') && content.includes('](data:image/')
+    })
+    if (hasImages && !activeModelId.startsWith('gemini/')) {
+      activeModelId = 'gemini/gemini-2.5-flash'
+      yield { type: 'info', content: '🖼️ Image detected — routing to Gemini Vision for analysis' }
+    }
+
     // Auto-route extremely large contexts to Gemini if desired, though pruning handles most
     // (skip when tools are required — Gemini direct path does not forward tools)
     if (!hasTools && totalChars > 35000 && !activeModelId.startsWith('gemini/') && activeModelId !== 'codeva-ravan-v1') {

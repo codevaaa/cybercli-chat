@@ -55,8 +55,37 @@ router.post('/', optionalAuth, async (req, res) => {
   }
 })
 
-router.post('/stt', requireAuth, (req, res) => {
-  res.json({ text: 'Transcription not yet implemented.' })
+router.post('/stt', requireAuth, async (req, res) => {
+  try {
+    const { audio_base64, mime_type = 'audio/webm' } = req.body
+    if (!audio_base64) {
+      return res.status(400).json({ error: 'audio_base64 is required' })
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) {
+      return res.status(503).json({ error: 'Gemini API key not configured for STT' })
+    }
+
+    const { GoogleGenAI } = await import('@google/genai')
+    const genAI = new GoogleGenAI({ apiKey })
+
+    const response = await genAI.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{
+        parts: [
+          { inlineData: { mimeType: mime_type, data: audio_base64 } },
+          { text: 'Transcribe this audio accurately. Return ONLY the transcribed text, nothing else. If the audio is in a non-English language, transcribe it in that language.' }
+        ]
+      }],
+    })
+
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    res.json({ text: text.trim(), language: 'auto' })
+  } catch (error) {
+    console.error('STT error:', error.message)
+    res.status(500).json({ error: error.message })
+  }
 })
 
 export default router
