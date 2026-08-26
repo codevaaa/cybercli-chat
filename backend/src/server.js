@@ -49,6 +49,7 @@ import platformRoutes from './routes/platform.routes.js'
 import statusRoutes from './routes/status.routes.js'
 import orgRoutes from './routes/org.routes.js'
 import huntRoutes from './routes/hunt.routes.js'
+import compareRoutes from './routes/compare.routes.js'
 import http from 'http'
 import ApiKey from './models/ApiKey.js'
 import Feedback from './models/Feedback.js'
@@ -231,6 +232,7 @@ app.use('/api/v1/platform', platformRoutes)
 app.use('/api/v1/status', statusRoutes)
 app.use('/api/v1/orgs', orgRoutes)
 app.use('/api/v1/hunt', huntRoutes)
+app.use('/api/v1/compare', compareRoutes)
 app.use('/v1', v1Routes)
 
 

@@ -672,6 +672,77 @@ ipcMain.handle('hunter:open', (_event, token?: string) => {
   }
 })
 
+// ─── Hunter Engine Local Process Bridge ─────────────────────────────────────
+
+import { spawn, type ChildProcess } from 'node:child_process'
+
+let hunterProcess: ChildProcess | null = null
+
+ipcMain.handle('hunter:spawn-local', async (_event, args: { target: string; command?: string }) => {
+  const { target, command = 'hunt' } = args
+  
+  // Find hunter-engine relative to app
+  const hunterDir = isDev
+    ? path.join(APP_ROOT, '..', 'hunter-engine')
+    : path.join(APP_ROOT, '..', '..', 'hunter-engine')
+
+  const engineScript = path.join(hunterDir, 'engine.py')
+  
+  // Check if Python and script exist
+  if (!fs.existsSync(engineScript)) {
+    return { success: false, error: 'Hunter engine not found locally. Using cloud mode.' }
+  }
+
+  // Kill existing process if any
+  if (hunterProcess && !hunterProcess.killed) {
+    hunterProcess.kill('SIGTERM')
+    hunterProcess = null
+  }
+
+  try {
+    const pythonCmd = isWin ? 'python' : 'python3'
+    hunterProcess = spawn(pythonCmd, [engineScript, command, '--target', target], {
+      cwd: hunterDir,
+      env: { ...process.env, PYTHONUNBUFFERED: '1' },
+    })
+
+    // Stream stdout to hunter window
+    hunterProcess.stdout?.on('data', (data: Buffer) => {
+      const text = data.toString()
+      hunterWindow?.webContents.send('hunter:stdout', text)
+    })
+
+    // Stream stderr
+    hunterProcess.stderr?.on('data', (data: Buffer) => {
+      const text = data.toString()
+      hunterWindow?.webContents.send('hunter:stderr', text)
+    })
+
+    hunterProcess.on('close', (code: number | null) => {
+      hunterWindow?.webContents.send('hunter:exit', code)
+      hunterProcess = null
+    })
+
+    hunterProcess.on('error', (err: Error) => {
+      hunterWindow?.webContents.send('hunter:error', err.message)
+      hunterProcess = null
+    })
+
+    return { success: true, pid: hunterProcess.pid }
+  } catch (err) {
+    return { success: false, error: (err as Error).message }
+  }
+})
+
+ipcMain.handle('hunter:kill-local', () => {
+  if (hunterProcess && !hunterProcess.killed) {
+    hunterProcess.kill('SIGTERM')
+    hunterProcess = null
+    return { success: true }
+  }
+  return { success: false, error: 'No process running' }
+})
+
 // File system
 ipcMain.handle('fs:read-file', async (_event, filePath: string) => {
   try {

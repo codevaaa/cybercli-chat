@@ -46,6 +46,25 @@ const electronAPI = {
     return () => ipcRenderer.removeListener('hunter:token', handler)
   },
 
+  // Hunter Engine local process bridge
+  spawnHunter: (args: { target: string; command?: string }) => ipcRenderer.invoke('hunter:spawn-local', args),
+  killHunter: () => ipcRenderer.invoke('hunter:kill-local'),
+  onHunterStdout: (callback: (text: string) => void) => {
+    const handler = (_event: any, text: string) => callback(text)
+    ipcRenderer.on('hunter:stdout', handler)
+    return () => ipcRenderer.removeListener('hunter:stdout', handler)
+  },
+  onHunterStderr: (callback: (text: string) => void) => {
+    const handler = (_event: any, text: string) => callback(text)
+    ipcRenderer.on('hunter:stderr', handler)
+    return () => ipcRenderer.removeListener('hunter:stderr', handler)
+  },
+  onHunterExit: (callback: (code: number | null) => void) => {
+    const handler = (_event: any, code: number | null) => callback(code)
+    ipcRenderer.on('hunter:exit', handler)
+    return () => ipcRenderer.removeListener('hunter:exit', handler)
+  },
+
   // File system
   readFile: (path: string) => ipcRenderer.invoke('fs:read-file', path),
   writeFile: (path: string, content: string) => ipcRenderer.invoke('fs:write-file', path, content),

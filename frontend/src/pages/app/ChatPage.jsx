@@ -28,6 +28,7 @@ import KaliKalView from '../../components/chat/KaliKalView.jsx'
 import MatrixRain from '../../components/chat/MatrixRain.jsx'
 import KaliKalBanner from '../../components/chat/KaliKalBanner.jsx'
 import DocumentArtifact from '../../components/chat/DocumentArtifact.jsx'
+import CompareView from '../../components/chat/CompareView.jsx'
 import { Skeleton } from '../../components/ui/Skeleton.jsx'
 import { Tooltip } from '../../components/ui/Tooltip.jsx'
 import { ImageGeneratorWidget, MidnightCountdown } from '../../components/chat/ImageGeneratorWidget.jsx'
@@ -283,9 +284,10 @@ function CodeBlock({ language, value, codeExecutionEnabled }) {
 
 // ─── Message Bubble ──────────────────────────────────────────────────────────
 
-function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled }) {
+function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onFork, onStop, ttsLoading, isPlaying, copied, codeExecutionEnabled, onSuggestionClick }) {
   const isUser = msg.role === 'user'
   const isAssistant = msg.role === 'assistant'
+  const [councilExpanded, setCouncilExpanded] = useState(false)
 
   return (
     <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} mb-8 group`}>
@@ -438,6 +440,52 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
               </div>
             )}
           </div>
+
+          {/* Council Mode — Individual Model Responses */}
+          {isAssistant && !isStreaming && msg.councilResponses && msg.councilResponses.length > 0 && (
+            <div className="mt-3 w-full">
+              <button
+                onClick={() => setCouncilExpanded(!councilExpanded)}
+                className="flex items-center gap-2 text-[11px] font-semibold text-foreground-muted hover:text-foreground-secondary transition-colors uppercase tracking-wider"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Council Responses ({msg.councilResponses.length} models)</span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${councilExpanded ? 'rotate-180' : ''}`} />
+              </button>
+              {councilExpanded && (
+                <div className="mt-2 space-y-2">
+                  {msg.councilResponses.map((cr, idx) => (
+                    <details key={idx} className="group rounded-xl border border-border-subtle bg-background-secondary/50 overflow-hidden">
+                      <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/5 transition-colors select-none">
+                        <span className="text-base">{cr.emoji}</span>
+                        <span className="text-xs font-semibold text-foreground-primary">{cr.label}</span>
+                        <span className="text-[10px] text-foreground-muted capitalize">({cr.role?.replace('_', ' ')})</span>
+                        <span className="ml-auto text-[10px] text-foreground-muted">{cr.elapsed}ms</span>
+                      </summary>
+                      <div className="px-3 pb-3 text-xs text-foreground-secondary leading-relaxed whitespace-pre-wrap border-t border-border-subtle pt-2 max-h-60 overflow-y-auto">
+                        {cr.content.slice(0, 1500)}{cr.content.length > 1500 ? '...' : ''}
+                      </div>
+                    </details>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Suggested Follow-ups */}
+          {isAssistant && !isStreaming && msg.suggestions && msg.suggestions.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2 w-full">
+              {msg.suggestions.map((suggestion, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onSuggestionClick?.(suggestion)}
+                  className="px-3 py-1.5 text-xs text-foreground-secondary bg-background-tertiary hover:bg-background-elevated border border-border-subtle hover:border-accent/30 rounded-full transition-all hover:text-foreground-primary"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1004,6 +1052,17 @@ function InputArea({
           className="flex-1 bg-transparent text-[14px] sm:text-[15px] text-foreground-primary placeholder:text-foreground-muted/70 resize-none focus:outline-none leading-relaxed py-2.5 min-h-[44px]"
           style={{ maxHeight: '400px' }}
         />
+
+        {/* Slash command hint */}
+        {input.startsWith('/') && (
+          <div className="absolute -top-8 left-3 px-2.5 py-1 rounded-lg bg-background-elevated border border-border-subtle shadow-lg text-[11px] text-foreground-muted z-20">
+            <span className="font-mono text-accent">/recon</span> <span className="text-foreground-muted/50">•</span>{' '}
+            <span className="font-mono text-accent">/hunt</span> <span className="text-foreground-muted/50">•</span>{' '}
+            <span className="font-mono text-accent">/validate</span> <span className="text-foreground-muted/50">•</span>{' '}
+            <span className="font-mono text-accent">/compare</span>{' '}
+            <span className="text-foreground-muted/70 ml-1">+ target/prompt</span>
+          </div>
+        )}
 
         <div className="flex items-center gap-1.5 flex-shrink-0 mb-0.5 pr-0.5">
           <button
@@ -3211,6 +3270,11 @@ export default function ChatPage() {
   const [isWarmingUp, setIsWarmingUp] = useState(false)
   const [backendReady, setBackendReady] = useState(true)
 
+  // Compare mode state
+  const [compareOpen, setCompareOpen] = useState(false)
+  const [comparePrompt, setComparePrompt] = useState('')
+  const [compareModels, setCompareModels] = useState([])
+
   // Attachment Menu State
   const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
   const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false)
@@ -3864,6 +3928,22 @@ export default function ChatPage() {
     if (!rawText.trim() || loading) return false
     const userText = rawText.trim()
 
+    // Handle /compare command — opens multi-model comparison view
+    const compareMatch = userText.match(/^\/compare\s+(.+)/i)
+    if (compareMatch) {
+      const compareQuery = compareMatch[1]
+      setInput('')
+      setComparePrompt(compareQuery)
+      // Use 3 diverse models for comparison
+      setCompareModels([
+        'gemini/gemini-2.5-flash',
+        'mistral/mistral-large-latest',
+        'groq/llama-3.3-70b',
+      ])
+      setCompareOpen(true)
+      return true
+    }
+
     // Determine active model and system prompt override if voice chat is open
     let activeModel = modelOverride || selectedModel
     const extraSystemMessages = []
@@ -3986,6 +4066,25 @@ export default function ChatPage() {
                     const last = next[next.length - 1]
                     const existing = last.thinkingContent || ''
                     next[next.length - 1] = { ...last, thinkingContent: existing + (existing ? '\n' : '') + parsed.content }
+                  }
+                  return next
+                })
+              } else if (parsed.type === 'council_responses') {
+                try {
+                  const councilData = JSON.parse(parsed.content)
+                  setMessages(prev => {
+                    const next = [...prev]
+                    if (next.length > 0) {
+                      next[next.length - 1] = { ...next[next.length - 1], councilResponses: councilData }
+                    }
+                    return next
+                  })
+                } catch {}
+              } else if (parsed.type === 'suggestions') {
+                setMessages(prev => {
+                  const next = [...prev]
+                  if (next.length > 0) {
+                    next[next.length - 1] = { ...next[next.length - 1], suggestions: parsed.content }
                   }
                   return next
                 })
@@ -4434,6 +4533,27 @@ export default function ChatPage() {
                 const next = [...prev]
                 if (next.length > 0) {
                   next[next.length - 1] = { ...next[next.length - 1], content: parsed.content }
+                }
+                return next
+              })
+            } else if (parsed.type === 'council_responses') {
+              // Store individual council model responses for visualization
+              try {
+                const councilData = JSON.parse(parsed.content)
+                setMessages(prev => {
+                  const next = [...prev]
+                  if (next.length > 0) {
+                    next[next.length - 1] = { ...next[next.length - 1], councilResponses: councilData }
+                  }
+                  return next
+                })
+              } catch {}
+            } else if (parsed.type === 'suggestions') {
+              // Store follow-up suggestions
+              setMessages(prev => {
+                const next = [...prev]
+                if (next.length > 0) {
+                  next[next.length - 1] = { ...next[next.length - 1], suggestions: parsed.content }
                 }
                 return next
               })
@@ -5350,6 +5470,7 @@ export default function ChatPage() {
                             isPlaying={isPlaying}
                             copied={copied}
                             codeExecutionEnabled={codeExecutionEnabled}
+                            onSuggestionClick={(text) => { setInput(text); handleSend(text) }}
                           />
                         ))}
                         </div>
@@ -5525,6 +5646,18 @@ export default function ChatPage() {
 
       {/* Invite Friends Modal */}
       <InviteFriendsModal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} />
+
+      {/* Multi-Model Comparison */}
+      <CompareView
+        isOpen={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        prompt={comparePrompt}
+        models={compareModels}
+        onSelectBest={(modelId, content) => {
+          setCompareOpen(false)
+          // Optionally set the winning response into chat
+        }}
+      />
 
       {/* Help Center panel */}
       <HelpCenterPanel isOpen={helpPanelOpen} onClose={() => setHelpPanelOpen(false)} />

@@ -303,6 +303,28 @@ export async function* runCouncilStream(originalMessages) {
     }
   }
 
+  // ── Emit individual council responses for visualization ──
+  const councilResponses = []
+  for (const [modelId, result] of Object.entries(results)) {
+    const model = COUNCIL_MODELS.find(m => m.id === modelId)
+    if (result.content && !result.error) {
+      councilResponses.push({
+        modelId,
+        label: model?.label || modelId,
+        emoji: model?.emoji || '🤖',
+        role: model?.role || 'expert',
+        content: result.content,
+        elapsed: result.elapsed,
+      })
+    }
+  }
+  if (councilResponses.length > 0) {
+    yield {
+      type: 'council_responses',
+      content: JSON.stringify(councilResponses),
+    }
+  }
+
   // ── Phase 3: Synthesis ──
   const synthesisProgress = []
   const finalReply = await synthesize(originalMessages, results, (update) => {

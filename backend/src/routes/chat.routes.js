@@ -447,6 +447,85 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
       history.push({ role: 'system', content: extraSystemContent, _skip_inject: true })
     }
 
+    // 7.5 Slash command detection (/recon, /hunt, /validate)
+    const slashMatch = lastUserMsg.content.trim().match(/^\/(recon|hunt|validate)\s*(.*)/i)
+    if (slashMatch) {
+      const [, command, args] = slashMatch
+      const target = args.trim()
+
+      try {
+        const { HuntOrchestrator } = await import('../services/hunt/HuntOrchestrator.js')
+        
+        res.write(`data: ${JSON.stringify({ type: 'info', content: `🔒 Security command: /${command} ${target}` })}\n\n`)
+        res.write(`data: ${JSON.stringify({ type: 'info', content: `⚡ Initializing hunter engine...` })}\n\n`)
+
+        const orchestrator = new HuntOrchestrator(
+          `chat-${Date.now()}`,
+          target || 'unknown',
+          req.user.id,
+          req.user?.plan || 'free',
+          (type, data) => {
+            if (!res.writableEnded) {
+              if (type === 'progress' || type === 'phase') {
+                res.write(`data: ${JSON.stringify({ type: 'info', content: data.message || JSON.stringify(data) })}\n\n`)
+              } else if (type === 'finding') {
+                res.write(`data: ${JSON.stringify({ type: 'info', content: `🎯 Finding: [${data.severity}] ${data.title || data.summary}` })}\n\n`)
+              }
+            }
+          }
+        )
+
+        let result = ''
+        if (command.toLowerCase() === 'recon') {
+          res.write(`data: ${JSON.stringify({ type: 'info', content: `🌐 Running reconnaissance on ${target}...` })}\n\n`)
+          result = await orchestrator.runRecon()
+        } else if (command.toLowerCase() === 'hunt') {
+          res.write(`data: ${JSON.stringify({ type: 'info', content: `💀 Starting vulnerability scan on ${target}...` })}\n\n`)
+          result = await orchestrator.runScan()
+        } else if (command.toLowerCase() === 'validate') {
+          res.write(`data: ${JSON.stringify({ type: 'info', content: `✅ Running full autopilot (recon → scan → validate) on ${target}...` })}\n\n`)
+          result = await orchestrator.runAutopilot()
+        }
+
+        // Format the result as terminal-style output
+        const formatted = `## 🔒 /${command} ${target}\n\n\`\`\`\n${result || 'Command completed. Check info messages above for details.'}\n\`\`\``
+        
+        // Stream it as tokens
+        const words = formatted.split(/(\s+)/)
+        for (let i = 0; i < words.length; i += 5) {
+          const chunk = words.slice(i, i + 5).join('')
+          res.write(`data: ${JSON.stringify({ type: 'token', content: chunk })}\n\n`)
+        }
+
+        // Save to DB
+        const assistantMsg = new Message({
+          thread_id: thread._id,
+          user_id: req.user.id,
+          role: 'assistant',
+          content: formatted,
+          model: 'hunter-engine',
+        })
+        await assistantMsg.save()
+        thread.message_count += 2
+        thread.last_message_at = new Date()
+        await thread.save()
+
+        res.write('data: [DONE]\n\n')
+        res.end()
+        return
+
+      } catch (huntErr) {
+        // If hunter engine isn't available, fall through to LLM with context
+        res.write(`data: ${JSON.stringify({ type: 'info', content: `⚠️ Hunter engine unavailable: ${huntErr.message}. Falling back to AI analysis...` })}\n\n`)
+        // Add context about the slash command for the LLM
+        history.push({
+          role: 'system',
+          content: `The user issued a security slash command: /${command} ${target}. Provide a detailed security analysis, methodology, or guidance for this command as if you were a bug bounty hunter.`,
+          _skip_inject: true
+        })
+      }
+    }
+
     // 8. Call LLM Gateway
     let generator
     const isKaliKal = (thread.mode === 'kalikal' || thread.mode === 'kali_kal')
@@ -482,6 +561,9 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
       } else if (chunk.type === 'info') {
         if (chunk.provider) chosenProvider = chunk.provider
         res.write(`data: ${JSON.stringify({ type: 'info', content: chunk.content })}\n\n`)
+      } else if (chunk.type === 'council_responses') {
+        // Forward council individual responses for visualization
+        res.write(`data: ${JSON.stringify({ type: 'council_responses', content: chunk.content })}\n\n`)
       } else if (chunk.type === 'done') {
         
         // Save assistant response to DB
@@ -505,6 +587,42 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
         thread.message_count += 2
         thread.last_message_at = new Date()
         await thread.save()
+
+        // Generate follow-up suggestions (fire-and-forget, non-blocking)
+        try {
+          if (assistantReply.length > 50) {
+            const followUpPrompt = `Based on this conversation, suggest exactly 3 brief follow-up questions the user might ask next. Return ONLY a JSON array of 3 short strings (max 60 chars each). No explanation, just the JSON array.
+
+User asked: "${lastUserMsg.content.slice(0, 200)}"
+Assistant replied: "${assistantReply.slice(0, 400)}"
+
+Output format: ["question 1", "question 2", "question 3"]`
+
+            const followUpResult = await Promise.race([
+              llmGateway.completeNonStream({
+                messages: [{ role: 'user', content: followUpPrompt }],
+                model: 'groq/llama-3.1-8b',
+                temperature: 0.6,
+              }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+            ])
+
+            if (followUpResult?.content) {
+              // Parse JSON array from response
+              const match = followUpResult.content.match(/\[[\s\S]*?\]/)
+              if (match) {
+                try {
+                  const suggestions = JSON.parse(match[0])
+                  if (Array.isArray(suggestions) && suggestions.length > 0) {
+                    res.write(`data: ${JSON.stringify({ type: 'suggestions', content: suggestions.slice(0, 3) })}\n\n`)
+                  }
+                } catch {}
+              }
+            }
+          }
+        } catch (e) {
+          // Suggestions are optional — don't block the response
+        }
 
         clearInterval(heartbeatInterval)
         res.write('data: [DONE]\n\n')
