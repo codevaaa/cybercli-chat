@@ -60,3 +60,55 @@ jobs:
             agent-platform/desktop/dist/*.deb
             agent-platform/desktop/dist/*.rpm
           if-no-files-found: ignore
+
+  # ── GitHub Release (tag pushes only) ─────────────────────────────────────────
+  release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/agent-v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: find artifacts -type f | sort
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "CodeVaa Agent Platform ${{ github.ref_name }}"
+          body: |
+            ## CodeVaa Agent Platform ${{ github.ref_name }}
+
+            Autonomous multi-agent AI desktop app with 16 specialized agents, parallel execution, skills system, and full project awareness.
+
+            ### Downloads
+            | Platform | File |
+            |---|---|
+            | 🪟 Windows | CodeVaa-Agent-Platform-*-win-x64.exe |
+            | 🍎 macOS | CodeVaa-Agent-Platform-*-mac-x64.dmg |
+            | 🐧 Linux AppImage | CodeVaa-Agent-Platform-*-linux-x64.AppImage |
+            | 🐧 Linux deb | CodeVaa-Agent-Platform-*-linux-x64.deb |
+
+            ### Features
+            - 16 specialized AI agents (coder, researcher, reviewer, etc.)
+            - Parallel multi-agent execution
+            - 116 bundled skills
+            - Full project context awareness
+            - Self-evolving prompt loop
+            - WebSocket real-time orchestration
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

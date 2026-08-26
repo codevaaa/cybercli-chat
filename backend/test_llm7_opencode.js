@@ -6,8 +6,13 @@
 
 import OpenAI from 'openai'
 
-const LLM7_KEY   = 'ey5HteAfAWCuDdXLsKvIYDULK8V79SLpqIzHCdxbzSzVqtpizczTk+EZTyYHwIDx8GPDzSJwn1q3tcQN7U4ZOHrytFT90DSdFRIg04KnjmMiUldqgGHcsY7ae8UjfGBhGRO2dboY1gHhUjAfSTr8rYJ'
-const OPENCODE_KEY = 'sk-qzZZu37BuaFzDOX4OcRKabzJeSeO4cKYZv8HZHxn5eeFXYOaZQ5YFj2X46rCBnaF'
+const LLM7_KEY = process.env.LLM7_API_KEY
+const OPENCODE_KEY = process.env.OPENCODE_API_KEY
+
+if (!LLM7_KEY || !OPENCODE_KEY) {
+  console.error('Missing LLM7_API_KEY and/or OPENCODE_API_KEY environment variables')
+  process.exit(1)
+}
 
 const LLM7_BASE    = 'https://api.llm7.io/v1'
 const OPENCODE_BASE = 'https://opencode.ai/zen/v1'

@@ -1,6 +1,13 @@
-import urllib.request, json
+import os
+import sys
+import urllib.request
+import json
 
-API_KEY = 'AtuMz0O5crIuU4rIAbsilCYLVKwFBfGegBt4Y4vDeWmjYT76sy96caM3k4TsaiIgA5B+BlyFF6InxIEQJnJo9Zl4af+R0Y+KlP5Lnlq+Fhi6LccqUzAdH09X0V7yB0n8GvSv0trro96k18fL1x5O'
+API_KEY = os.environ.get('LLM7_API_KEY')
+if not API_KEY:
+    print('Missing LLM7_API_KEY environment variable', file=sys.stderr)
+    sys.exit(1)
+
 models_to_test = ['gpt-5.5', 'claude-fable-5', 'gemini-3.1-pro', 'qwen3', 'qwen3-235b']
 
 for model in models_to_test:

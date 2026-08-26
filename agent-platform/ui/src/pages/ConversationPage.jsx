@@ -37,12 +37,21 @@ import {
 // ═══════════════════════════════════════════════════════════════════════════
 const AVAILABLE_MODELS = [
   { id: 'auto',              name: 'Auto',                   badge: null },
-  { id: 'codeva/ravan',      name: 'Ravan',                  badge: 'High' },
-  { id: 'codeva/madhav',     name: 'Madhav',                 badge: 'High' },
-  { id: 'codeva/chanakya',   name: 'Chanakya',               badge: 'High' },
-  { id: 'codeva/arjun',      name: 'Arjun',                  badge: 'Fast' },
-  { id: 'codeva/bheem',      name: 'Bheem',                  badge: 'Fast' },
+  { id: 'codeva/ravan',      name: 'Ravan',                  badge: 'Code' },
+  { id: 'codeva/madhav',     name: 'Madhav',                 badge: 'Research' },
+  { id: 'codeva/chanakya',   name: 'Chanakya',               badge: 'Reasoning' },
+  { id: 'codeva/arjun',      name: 'Arjun',                  badge: 'Speed' },
+  { id: 'codeva/bheem',      name: 'Bheem',                  badge: 'Vision' },
   { id: 'codeva/panchayat',  name: 'Panchayat (Council)',    badge: 'Max' },
+  { id: 'codeva/sahadeva',   name: 'Sahadeva',               badge: 'Vision' },
+  { id: 'codeva/vayu',       name: 'Vayu',                   badge: 'Code' },
+  { id: 'codeva/vyas',       name: 'Vyas',                   badge: 'Research' },
+  { id: 'codeva/vishwakarma',name: 'Vishwakarma',            badge: 'Code' },
+  { id: 'codeva/brahma',     name: 'Brahma',                 badge: 'Reasoning' },
+  { id: 'codeva/indra',      name: 'Indra',                  badge: 'Speed' },
+  { id: 'codeva/sanjaya',    name: 'Sanjaya',                badge: 'Research' },
+  { id: 'codeva/narada',     name: 'Narada',                 badge: 'Speed' },
+  { id: 'codeva/garuda',     name: 'Garuda',                 badge: 'Speed' },
 ]
 
 export default function ConversationPage({ onOpenSettings, onLogout, user }) {
@@ -55,6 +64,7 @@ export default function ConversationPage({ onOpenSettings, onLogout, user }) {
   const [input, setInput]               = useState('')
   const [selectedModel, setSelectedModel] = useState('auto')
   const [showModelPicker, setShowModelPicker] = useState(false)
+  const [selfEvolvingPrompt, setSelfEvolvingPrompt] = useState(false)
   const [showProjectPicker, setShowProjectPicker] = useState(false)
   const [activeProject, setActiveProject] = useState(null)
   const [conversations, setConversations] = useState(() => loadConversations())
@@ -86,7 +96,7 @@ export default function ConversationPage({ onOpenSettings, onLogout, user }) {
     setIsStreaming(true)
 
     // Run via the platform
-    runGoal(input.trim(), { projectPath: activeProject?.path, maxParallel: 4 })
+    runGoal(input.trim(), { projectPath: activeProject?.path, maxParallel: 4, selfEvolving: selfEvolvingPrompt, model: selectedModel !== 'auto' ? selectedModel : undefined })
 
     // Save conversation
     const conv = {
@@ -270,6 +280,18 @@ export default function ConversationPage({ onOpenSettings, onLogout, user }) {
               <div className="flex items-center gap-1">
                 <button className="p-1.5 text-muted hover:text-white rounded-md hover:bg-white/5 transition-colors" title="Attach file">
                   <Plus size={14} />
+                </button>
+                <button
+                  onClick={() => setSelfEvolvingPrompt(v => !v)}
+                  className={clsx(
+                    'px-2 py-1 rounded-md text-[10px] font-semibold transition-all border',
+                    selfEvolvingPrompt
+                      ? 'bg-accent/15 text-accent border-accent/30'
+                      : 'text-muted hover:text-white border-border hover:bg-white/5'
+                  )}
+                  title="Self-evolving prompt: agent refines its own instructions each iteration"
+                >
+                  ♻ Self-Evolve
                 </button>
               </div>
 
@@ -542,7 +564,7 @@ function ModelPicker({ models, selected, onSelect, onClose }) {
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 4 }}
-      className="absolute bottom-full right-0 mb-1 w-52 bg-surface border border-border rounded-xl shadow-xl z-50 py-1 overflow-hidden"
+      className="absolute bottom-full right-0 mb-1 w-56 bg-surface border border-border rounded-xl shadow-xl z-50 py-1 overflow-hidden max-h-[320px] overflow-y-auto"
     >
       {models.map(m => (
         <button

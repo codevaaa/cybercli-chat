@@ -13,6 +13,8 @@ const router = Router()
  * (Bheem, Madhav, etc.) with full agentic capabilities. The gateway resolves
  * the model by plan and routes to the best available provider.
  *
+ * Prefer /api/v1/ide/complete for the Codevaa IDE tunnel (same contract).
+ *
  * Accepts: { messages, model, temperature, tools?, tool_choice?, stream }
  * Returns: OpenAI-compatible response with tool_calls if the model wants tools.
  *
@@ -39,8 +41,9 @@ router.post('/complete', async (req, res, next) => {
       // Resolve real plan from user
       plan = req.user?.plan || req.session?.plan || 'free'
     }
+    void userId
 
-    const { messages, model, temperature = 0.4, tools, tool_choice, stream = false, system } = req.body
+    const { messages, model, temperature = 0.4, tools, tool_choice, stream = false, system, max_tokens } = req.body
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'messages array is required' })
     }
@@ -63,9 +66,9 @@ router.post('/complete', async (req, res, next) => {
     }
     const resolvedModel = MODEL_NAME_MAP[model?.toLowerCase()] || model || 'auto'
 
-    // Inject system message if provided
+    // Inject system message if provided (skip identity overwrite of custom system)
     const fullMessages = system
-      ? [{ role: 'system', content: system }, ...messages]
+      ? [{ role: 'system', content: system, _skip_inject: true }, ...messages]
       : messages
 
     if (stream) {
@@ -74,17 +77,28 @@ router.post('/complete', async (req, res, next) => {
       res.setHeader('Connection', 'keep-alive')
 
       try {
-        const generator = await llmGateway.complete({
+        const generator = llmGateway.complete({
           messages: fullMessages,
           model: resolvedModel,
           temperature,
           plan,
+          tools,
+          tool_choice,
+          max_tokens,
         })
         for await (const chunk of generator) {
           // Convert gateway format to OpenAI-compatible SSE
           if (chunk.type === 'token') {
             res.write(`data: ${JSON.stringify({
               choices: [{ delta: { content: chunk.content }, index: 0 }]
+            })}\n\n`)
+          } else if (chunk.type === 'tool_calls_delta') {
+            res.write(`data: ${JSON.stringify({
+              choices: [{ delta: { tool_calls: chunk.tool_calls }, index: 0 }]
+            })}\n\n`)
+          } else if (chunk.type === 'finish') {
+            res.write(`data: ${JSON.stringify({
+              choices: [{ delta: {}, finish_reason: chunk.finish_reason, index: 0 }]
             })}\n\n`)
           } else if (chunk.type === 'done') {
             res.write(`data: [DONE]\n\n`)
@@ -105,19 +119,31 @@ router.post('/complete', async (req, res, next) => {
           model: resolvedModel,
           temperature,
           plan,
+          tools,
+          tool_choice,
+          max_tokens,
         })
+        if (result.error) {
+          return res.status(502).json({ error: result.error })
+        }
+        const message = {
+          role: 'assistant',
+          content: result.content ?? (result.tool_calls ? null : ''),
+        }
+        if (result.tool_calls?.length) message.tool_calls = result.tool_calls
         // Return in OpenAI-compatible format
         res.json({
           choices: [{
-            message: {
-              role: 'assistant',
-              content: result.content || result.text || '',
-            },
-            finish_reason: 'stop',
+            message,
+            finish_reason: result.finish_reason || (result.tool_calls ? 'tool_calls' : 'stop'),
             index: 0,
           }],
           model: result.model || resolvedModel,
-          usage: result.usage || null,
+          usage: {
+            prompt_tokens: result.tokens_in || 0,
+            completion_tokens: result.tokens_out || 0,
+            total_tokens: (result.tokens_in || 0) + (result.tokens_out || 0),
+          },
         })
       } catch (err) {
         res.status(500).json({ error: err.message })
@@ -195,7 +221,7 @@ router.post('/sub-agents', async (req, res, next) => {
       limited.map(async (task) => {
         const result = await llmGateway.completeNonStream({
           messages: [
-            { role: 'system', content: task.system || 'You are a focused sub-agent. Complete the assigned task concisely.' },
+            { role: 'system', content: task.system || 'You are a focused sub-agent. Complete the assigned task concisely.', _skip_inject: true },
             { role: 'user', content: task.prompt },
           ],
           model: task.model || 'auto',

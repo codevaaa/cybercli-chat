@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
   Download, Monitor, Apple, ShieldCheck,
   Terminal, Chrome, Code2, ChevronDown, ChevronUp,
-  ArrowUpRight, Smartphone
+  ArrowUpRight, Smartphone, Bot
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Tooltip } from '@components/ui/Tooltip'
@@ -194,6 +194,81 @@ export default function DownloadsPage() {
           <div className="grid sm:grid-cols-2 gap-4 max-w-2xl">
             <MobileRow label="iOS" store="App Store" href="https://apps.apple.com/app/codeva" />
             <MobileRow label="Android" store="Google Play" href="https://play.google.com/store/apps/details?id=com.codeva.app" />
+          </div>
+        </Section>
+
+        <Section title="Agent Platform" subtitle="Autonomous multi-agent AI desktop app. 16 specialized agents, parallel execution, skills system, and full project awareness.">
+          <div className="grid md:grid-cols-3 gap-5">
+            <ScrollReveal>
+              <a
+                href="https://github.com/codevaaa/cybercli-chat/releases/latest/download/CodeVaa-Agent-Platform-1.0.0-win-x64.exe"
+                download
+                className="block p-7 rounded-2xl border transition-all duration-300 group flex flex-col h-full"
+                style={{ backgroundColor: CARD, borderColor: BORDER, color: CREAM }}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                  <Monitor className="w-6 h-6" style={{ color: CREAM }} />
+                </div>
+                <h3 className="text-lg font-semibold mb-1">Windows</h3>
+                <p className="text-[11px] mb-1 flex items-center gap-1.5"><Bot className="w-3 h-3" style={{ color: ACCENT }} /><span style={{ color: ACCENT }}>Agent Platform</span></p>
+                <p className="text-sm mb-6 flex-1 leading-relaxed" style={{ color: '#a0a0a0' }}>
+                  Autonomous agents with parallel execution. Full project context and self-evolving prompts.
+                </p>
+                <div className="w-full py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 text-sm transition-colors"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: CREAM, border: `1px solid ${BORDER}` }}>
+                  <Download className="w-4 h-4" /> Download EXE
+                </div>
+                <p className="text-center text-[11px] mt-3" style={{ color: '#707070' }}>Windows 10+ · x64 & ARM64</p>
+              </a>
+            </ScrollReveal>
+            <ScrollReveal>
+              <a
+                href="https://github.com/codevaaa/cybercli-chat/releases/latest/download/CodeVaa-Agent-Platform-1.0.0-mac-x64.dmg"
+                download
+                className="block p-7 rounded-2xl border transition-all duration-300 group flex flex-col h-full"
+                style={{ backgroundColor: CARD, borderColor: BORDER, color: CREAM }}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                  <Apple className="w-6 h-6" style={{ color: CREAM }} />
+                </div>
+                <h3 className="text-lg font-semibold mb-1">macOS</h3>
+                <p className="text-[11px] mb-1 flex items-center gap-1.5"><Bot className="w-3 h-3" style={{ color: ACCENT }} /><span style={{ color: ACCENT }}>Agent Platform</span></p>
+                <p className="text-sm mb-6 flex-1 leading-relaxed" style={{ color: '#a0a0a0' }}>
+                  Native macOS experience with hardened runtime and dark mode. Intel + Apple Silicon.
+                </p>
+                <div className="w-full py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 text-sm transition-colors"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: CREAM, border: `1px solid ${BORDER}` }}>
+                  <Download className="w-4 h-4" /> Download DMG
+                </div>
+                <p className="text-center text-[11px] mt-3" style={{ color: '#707070' }}>macOS 12+ · Intel & M1/M2/M3</p>
+              </a>
+            </ScrollReveal>
+            <ScrollReveal>
+              <a
+                href="https://github.com/codevaaa/cybercli-chat/releases/latest/download/CodeVaa-Agent-Platform-1.0.0-linux-x64.AppImage"
+                download
+                className="block p-7 rounded-2xl border transition-all duration-300 group flex flex-col h-full"
+                style={{ backgroundColor: CARD, borderColor: BORDER, color: CREAM }}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                  <Terminal className="w-6 h-6" style={{ color: CREAM }} />
+                </div>
+                <h3 className="text-lg font-semibold mb-1">Linux</h3>
+                <p className="text-[11px] mb-1 flex items-center gap-1.5"><Bot className="w-3 h-3" style={{ color: ACCENT }} /><span style={{ color: ACCENT }}>Agent Platform</span></p>
+                <p className="text-sm mb-6 flex-1 leading-relaxed" style={{ color: '#a0a0a0' }}>
+                  AppImage for any distro. Also available as .deb and .rpm packages.
+                </p>
+                <div className="w-full py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 text-sm transition-colors"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: CREAM, border: `1px solid ${BORDER}` }}>
+                  <Download className="w-4 h-4" /> Download AppImage
+                </div>
+                <p className="text-center text-[11px] mt-3" style={{ color: '#707070' }}>Ubuntu 20.04+ · x64 & ARM64</p>
+              </a>
+            </ScrollReveal>
+          </div>
+          <div className="mt-6 flex items-center gap-2 text-[12px]" style={{ color: '#707070' }}>
+            <Bot className="w-3.5 h-3.5" />
+            <span>Agent Platform is a standalone app — separate from the main Codeva chat desktop.</span>
           </div>
         </Section>
 

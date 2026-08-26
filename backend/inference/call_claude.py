@@ -1,8 +1,12 @@
 import urllib.request
 import json
 import os
+import sys
 
-API_KEY = 'AtuMz0O5crIuU4rIAbsilCYLVKwFBfGegBt4Y4vDeWmjYT76sy96caM3k4TsaiIgA5B+BlyFF6InxIEQJnJo9Zl4af+R0Y+KlP5Lnlq+Fhi6LccqUzAdH09X0V7yB0n8GvSv0trro96k18fL1x5O'
+API_KEY = os.environ.get('LLM7_API_KEY')
+if not API_KEY:
+    print('Missing LLM7_API_KEY environment variable', file=sys.stderr)
+    sys.exit(1)
 
 prompt = """
 Write a very short, highly motivational message (in Hinglish) for a developer who is training an advanced AI model named 'Brahma-v1' on Kaggle for their platform 'Codeva'. Make it sound incredibly epic, like a cyberpunk movie dialogue.

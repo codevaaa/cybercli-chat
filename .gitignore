@@ -65,3 +65,11 @@ backend/src/services/hunt/sessions/
 # VSCode OSS build folder
 editor-builder/vscode-oss/
 
+# Codevaa IDE — on-demand microsoft/vscode shallow clone (never commit full tree)
+ide/upstream/vscode/
+
+
+# Temp/output files
+push_result.txt
+frontend/build_output.txt
+*.tmp
