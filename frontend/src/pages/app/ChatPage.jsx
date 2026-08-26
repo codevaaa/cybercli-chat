@@ -254,9 +254,20 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
           ) : (
             <div className="text-base text-foreground-primary prose-custom w-full pt-1">
               {isStreaming && (
-                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#D97757] mb-3 opacity-80 animate-pulse">
-                  <div className="w-3 h-3 rounded-full border-[1.5px] border-[#D97757] border-t-transparent animate-spin" />
-                  Thinking...
+                <div className="mb-3">
+                  <details open className="group">
+                    <summary className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#D97757] opacity-80 cursor-pointer select-none">
+                      <div className="w-3 h-3 rounded-full border-[1.5px] border-[#D97757] border-t-transparent animate-spin" />
+                      <span className="group-open:hidden">Thinking...</span>
+                      <span className="hidden group-open:inline">Thinking</span>
+                      <span className="text-[9px] font-mono text-foreground-muted font-normal normal-case ml-1" id="thinking-timer"></span>
+                    </summary>
+                    {msg.thinkingContent && (
+                      <div className="mt-2 pl-5 text-xs text-foreground-muted/70 italic border-l-2 border-[#D97757]/20 leading-relaxed whitespace-pre-wrap">
+                        {msg.thinkingContent}
+                      </div>
+                    )}
+                  </details>
                 </div>
               )}
               <ReactMarkdown
@@ -3875,7 +3886,11 @@ export default function ChatPage() {
               } else if (parsed.type === 'info') {
                 setMessages(prev => {
                   const next = [...prev]
-                  if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: parsed.content }
+                  if (next.length > 0) {
+                    const last = next[next.length - 1]
+                    const existing = last.thinkingContent || ''
+                    next[next.length - 1] = { ...last, thinkingContent: existing + (existing ? '\n' : '') + parsed.content }
+                  }
                   return next
                 })
               } else if (parsed.type === 'error') {
@@ -4079,7 +4094,11 @@ export default function ChatPage() {
               } else if (parsed.type === 'info') {
                 setMessages(prev => {
                   const next = [...prev]
-                  if (next.length > 0) next[next.length - 1] = { ...next[next.length - 1], content: parsed.content }
+                  if (next.length > 0) {
+                    const last = next[next.length - 1]
+                    const existing = last.thinkingContent || ''
+                    next[next.length - 1] = { ...last, thinkingContent: existing + (existing ? '\n' : '') + parsed.content }
+                  }
                   return next
                 })
               } else if (parsed.type === 'error') {

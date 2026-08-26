@@ -23,7 +23,7 @@ export default function AuthCallbackPage() {
         // Detect if this is a password recovery/reset event
         const isRecovery = hashParams.get('type') === 'recovery' || params.get('type') === 'recovery'
         const code = params.get('code')
-        const next = isRecovery ? '/auth/reset-password' : (params.get('next') || '/platform/welcome')
+        const next = isRecovery ? '/auth/reset-password' : (params.get('next') || '/chat')
 
         // Check if this is a desktop/IDE app redirect flow
         const redirectParam = params.get('redirect') === 'desktop'
