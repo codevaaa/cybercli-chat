@@ -59,7 +59,6 @@ export const usePlatformStore = create((set, get) => ({
 
       ws.onopen = () => {
         set({ connected: true, platformOnline: true })
-        toast.success('Connected to CodeVaa Platform', { id: 'ws-connect' })
       }
 
       ws.onclose = () => {
@@ -94,12 +93,8 @@ export const usePlatformStore = create((set, get) => ({
   },
 
   // ── Run a goal ────────────────────────────────────────────────────────────
-  runGoal: (goal, options = {}) => {
-    const { ws, activeSession } = get()
-    if (!ws || ws.readyState !== 1) {
-      toast.error('Not connected to platform')
-      return null
-    }
+  runGoal: async (goal, options = {}) => {
+    const { ws } = get()
 
     const sessionId = crypto.randomUUID()
 
@@ -114,13 +109,83 @@ export const usePlatformStore = create((set, get) => ({
       sessionStatus: 'planning',
     })
 
-    ws.send(JSON.stringify({
-      type:        'run',
-      sessionId,
-      goal,
-      projectPath: options.projectPath,
-      maxParallel: options.maxParallel || 4,
-    }))
+    // Try WebSocket first, fall back to HTTP
+    if (ws && ws.readyState === 1) {
+      ws.send(JSON.stringify({
+        type:        'run',
+        sessionId,
+        goal,
+        projectPath: options.projectPath,
+        maxParallel: options.maxParallel || 4,
+        selfEvolving: options.selfEvolving || false,
+        model: options.model || undefined,
+      }))
+    } else {
+      // HTTP fallback — call the platform API directly
+      try {
+        set({ sessionStatus: 'running' })
+        const token = localStorage.getItem('sb-access-token') || ''
+        const res = await fetch(`${PLATFORM_API}/v1/agent/run`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            goal,
+            sessionId,
+            projectPath: options.projectPath,
+            maxParallel: options.maxParallel || 4,
+            selfEvolving: options.selfEvolving || false,
+            model: options.model,
+          }),
+        })
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+          set({ sessionStatus: 'failed', result: err.error || 'Request failed' })
+          toast.error(err.error || 'Agent request failed')
+          return null
+        }
+
+        // Stream SSE response
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        let fullResponse = ''
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
+            const raw = line.slice(6).trim()
+            if (raw === '[DONE]') break
+            try {
+              const parsed = JSON.parse(raw)
+              if (parsed.type === 'token') {
+                fullResponse += parsed.content
+                set({ result: fullResponse, sessionStatus: 'running' })
+              } else if (parsed.type === 'info') {
+                set(s => ({
+                  agentLogs: { ...s.agentLogs, [sessionId]: [...(s.agentLogs[sessionId] || []), { type: 'info', content: parsed.content, timestamp: Date.now() }] }
+                }))
+              }
+            } catch {}
+          }
+        }
+
+        set({ sessionStatus: 'completed', result: fullResponse || 'Task completed.' })
+        toast.success('Agent task completed')
+      } catch (err) {
+        set({ sessionStatus: 'failed', result: err.message })
+        toast.error(`Connection failed: ${err.message}`)
+      }
+    }
 
     return sessionId
   },

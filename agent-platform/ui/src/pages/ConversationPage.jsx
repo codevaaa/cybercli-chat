@@ -343,10 +343,10 @@ export default function ConversationPage({ onOpenSettings, onLogout, user }) {
                 ) : (
                   <button
                     onClick={handleSend}
-                    disabled={!input.trim() || !connected}
+                    disabled={!input.trim()}
                     className={clsx(
                       'w-7 h-7 flex items-center justify-center rounded-lg transition-all',
-                      input.trim() && connected
+                      input.trim()
                         ? 'bg-accent text-white hover:bg-accent2'
                         : 'bg-border text-muted cursor-not-allowed'
                     )}

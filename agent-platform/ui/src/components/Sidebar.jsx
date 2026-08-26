@@ -35,10 +35,10 @@ export default function Sidebar({ onOpenSettings }) {
       <div className="px-4 py-2 border-b border-border">
         <div className={clsx(
           'flex items-center gap-1.5 text-xs px-2 py-1 rounded-full w-fit',
-          platformOnline ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
+          connected ? 'bg-success/10 text-success' : 'bg-accent/10 text-accent'
         )}>
           <Circle size={6} fill="currentColor" />
-          {platformOnline ? 'Platform Online' : 'Platform Offline'}
+          {connected ? 'Connected' : 'Ready (HTTP)'}
         </div>
       </div>
 
