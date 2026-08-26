@@ -54,6 +54,11 @@ const EXTRA_MODELS = [
   { id: 'huggingface/Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Vishwakarma',   tag: 'Vishwakarma', color: '#ED8936', desc: 'The divine architect. Trained on millions of code repositories.', kali: false },
   { id: 'opencode/qwen3.7-max',                name: 'Sanjaya',               tag: 'Sanjaya',  color: '#059669', desc: 'The visionary observer. Real-time web knowledge with deep reasoning.', kali: false },
   { id: 'opencode/minimax-m2.5',               name: 'Narada',                tag: 'Narada',   color: '#047857', desc: 'The swift messenger. Rapid web-search capabilities for instant, cited facts.', kali: false },
+  { id: 'opencode/nemotron-3-ultra-free',      name: 'Brahma',                tag: 'Brahma',   color: '#6D28D9', desc: 'The supreme creator. NVIDIA Nemotron 3 Ultra — unmatched reasoning power, free tier.', kali: false },
+  { id: 'opencode/mimo-v2.5-free',             name: 'Garuda',                tag: 'Garuda',   color: '#DC2626', desc: 'The divine eagle. Xiaomi MiMo V2.5 — fast multilingual reasoning.', kali: false },
+  { id: 'opencode/nemotron-3.5-lightning-free', name: 'Indra',                 tag: 'Indra',    color: '#2563EB', desc: 'The lightning king. NVIDIA Nemotron 3.5 Lightning — ultra-fast responses.', kali: false },
+  { id: 'opencode/laguna-s-2.1-free',          name: 'Varuna',                tag: 'Varuna',   color: '#0891B2', desc: 'The ocean lord. Laguna S 2.1 — deep reasoning with vast knowledge.', kali: false },
+  { id: 'opencode/ox-alpha-free',              name: 'Kubera',                tag: 'Kubera',   color: '#CA8A04', desc: 'The wealth keeper. Ox Alpha — powerful general intelligence, free.', kali: false },
   { id: 'image-gen',                           name: 'Chitrakar',             tag: 'Chitrakar',color: '#E11D48', desc: 'The divine painter. Generates stunning, high-quality images using backend API.', kali: false },
   
   // Backing models restored from previous version
@@ -117,6 +122,64 @@ function BlinkCursor() {
       animate={{ opacity: [1, 0] }}
       transition={{ duration: 0.5, repeat: Infinity, repeatType: 'reverse' }}
     />
+  )
+}
+
+// ─── Source Cards (Research Mode) ────────────────────────────────────────────
+
+function SourceCards({ thinkingContent }) {
+  if (!thinkingContent) return null
+  
+  // Parse URLs from thinking content
+  const urlRegex = /https?:\/\/[^\s)]+/g
+  const urls = [...new Set(thinkingContent.match(urlRegex) || [])]
+  if (urls.length === 0) return null
+
+  // Extract titles from lines containing URLs
+  const sources = urls.slice(0, 6).map(url => {
+    const lines = thinkingContent.split('\n')
+    const urlLine = lines.find(l => l.includes(url))
+    const prevLine = urlLine ? lines[lines.indexOf(urlLine) - 1] : null
+    let title = ''
+    if (prevLine && !prevLine.startsWith('http')) {
+      title = prevLine.replace(/^\d+\.\s*/, '').replace(/Title:\s*/i, '').trim()
+    }
+    if (!title) {
+      try { title = new URL(url).hostname.replace('www.', '') } catch { title = url.slice(0, 40) }
+    }
+    let domain = ''
+    try { domain = new URL(url).hostname.replace('www.', '') } catch {}
+    return { url, title: title.slice(0, 60), domain }
+  })
+
+  return (
+    <div className="mt-4 pt-3 border-t border-border-subtle">
+      <div className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted mb-2 flex items-center gap-1.5">
+        <Globe className="w-3 h-3" />
+        Sources ({sources.length})
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {sources.map((src, i) => (
+          <a
+            key={i}
+            href={src.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background-tertiary hover:bg-background-elevated border border-border-subtle hover:border-border-medium transition-all text-xs group max-w-[200px]"
+          >
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${src.domain}&sz=16`}
+              alt=""
+              className="w-4 h-4 rounded-sm flex-shrink-0"
+              onError={(e) => { e.target.style.display = 'none' }}
+            />
+            <span className="truncate text-foreground-secondary group-hover:text-foreground-primary transition-colors">
+              {src.title}
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -321,6 +384,11 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
               </ReactMarkdown>
               {isStreaming && <BlinkCursor />}
             </div>
+          )}
+
+          {/* Source Cards — show when thinkingContent has URLs (research mode) */}
+          {!isStreaming && msg.thinkingContent && msg.thinkingContent.includes('http') && (
+            <SourceCards thinkingContent={msg.thinkingContent} />
           )}
 
           {/* Model badge and Action row */}
@@ -910,6 +978,24 @@ function InputArea({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
+          onPaste={(e) => {
+            const items = e.clipboardData?.items
+            if (!items) return
+            for (const item of items) {
+              if (item.type.startsWith('image/')) {
+                e.preventDefault()
+                const file = item.getAsFile()
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = (ev) => {
+                  const base64 = ev.target.result
+                  setInput(prev => prev + `\n![Pasted Image](${base64})\n`)
+                }
+                reader.readAsDataURL(file)
+                return
+              }
+            }
+          }}
           placeholder="Message Codeva..."
           rows={1}
           disabled={loading}

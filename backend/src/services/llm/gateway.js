@@ -197,6 +197,16 @@ const MODEL_MAP = {
   'opencode/minimax-m2.5':            { provider: 'groq',       model: 'llama-3.3-70b-versatile',            purpose: 'reasoning' },
   'opencode/minimax-m3-free':         { provider: 'groq',       model: 'llama-3.3-70b-versatile',            purpose: 'general'   },
 
+  // ── OpenCode/Zen — New Free Models (Aug 2026) ────────────────────────────
+  'opencode/deepseek-v4-flash-free':          { provider: 'opencode', model: 'deepseek-v4-flash-free',          purpose: 'speed'     },
+  'opencode/mimo-v2.5-free':                  { provider: 'opencode', model: 'mimo-v2.5-free',                  purpose: 'reasoning' },
+  'opencode/hy3-free':                        { provider: 'opencode', model: 'hy3-free',                        purpose: 'general'   },
+  'opencode/laguna-s-2.1-free':               { provider: 'opencode', model: 'laguna-s-2.1-free',               purpose: 'reasoning' },
+  'opencode/muse-spark-1.2-free':             { provider: 'opencode', model: 'muse-spark-1.2-free',             purpose: 'general'   },
+  'opencode/nemotron-3-ultra-free':           { provider: 'opencode', model: 'nemotron-3-ultra-free',           purpose: 'reasoning' },
+  'opencode/nemotron-3.5-lightning-free':     { provider: 'opencode', model: 'nemotron-3.5-lightning-free',     purpose: 'speed'     },
+  'opencode/ox-alpha-free':                   { provider: 'opencode', model: 'ox-alpha-free',                   purpose: 'reasoning' },
+
   // ── ApiFree — Not tested locally; route to confirmed working providers ────
   'apifreellm/gpt-4o':                { provider: 'openrouter', model: 'openai/gpt-4o-mini',                 purpose: 'general'   },
   'apifreellm/gpt-4.1':               { provider: 'openrouter', model: 'openai/gpt-4o-mini',                 purpose: 'reasoning' },
@@ -377,6 +387,12 @@ const FALLBACK_CHAINS = {
   // ── OpenCode
   'opencode/deepseek-v4-pro':   ['opencode/deepseek-v4-flash', 'groq/llama-3.3-70b',   'openrouter/gpt-4o-mini'],
   'opencode/deepseek-v4-flash': ['groq/llama-3.1-8b',          'openrouter/gpt-4o-mini'],
+  // OpenCode/Zen new free models — fallback to Groq/OpenRouter if they fail
+  'opencode/mimo-v2.5-free':              ['groq/llama-3.3-70b', 'openrouter/gpt-4o-mini'],
+  'opencode/nemotron-3-ultra-free':       ['groq/llama-3.3-70b', 'openrouter/gpt-4o-mini'],
+  'opencode/nemotron-3.5-lightning-free': ['groq/llama-3.1-8b',  'openrouter/gpt-4o-mini'],
+  'opencode/laguna-s-2.1-free':           ['groq/llama-3.3-70b', 'openrouter/gpt-4o-mini'],
+  'opencode/ox-alpha-free':               ['groq/llama-3.3-70b', 'openrouter/gpt-4o-mini'],
 
   // ── LLM7 — only codestral/devstral work on this key; all others → OR/groq
   'llm7/claude-opus-4.8':            ['openrouter/qwen/qwen-2.5-72b-instruct', 'groq/llama-3.3-70b', 'openrouter/gpt-4o-mini'],

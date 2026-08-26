@@ -462,8 +462,17 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     let chosenProvider = ''
     let isExecuting = false
 
+    // Heartbeat: send keepalive every 5s so client knows we're still processing
+    let firstTokenReceived = false
+    const heartbeatInterval = setInterval(() => {
+      if (!firstTokenReceived && !res.writableEnded) {
+        res.write(`data: ${JSON.stringify({ type: 'heartbeat', elapsed: Date.now() })}\n\n`)
+      }
+    }, 5000)
+
     for await (const chunk of generator) {
       if (chunk.type === 'token') {
+        firstTokenReceived = true
         assistantReply += chunk.content
         res.write(`data: ${JSON.stringify({ type: 'token', content: chunk.content })}\n\n`)
       } else if (chunk.type === 'error') {
@@ -497,6 +506,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
         thread.last_message_at = new Date()
         await thread.save()
 
+        clearInterval(heartbeatInterval)
         res.write('data: [DONE]\n\n')
         res.end()
         return
