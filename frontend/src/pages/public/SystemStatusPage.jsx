@@ -501,66 +501,7 @@ export default function SystemStatusPage() {
               </div>
             </section>
 
-            {/* ═══ Infrastructure Health ═══ */}
-            <section className="mb-16">
-              <ScrollReveal>
-                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                  <Database className="w-3.5 h-3.5" /> Infrastructure Health
-                </h2>
-              </ScrollReveal>
 
-              <div className="grid md:grid-cols-3 gap-4">
-                {[
-                  { key: 'mongodb', label: 'MongoDB Atlas', icon: Database, desc: 'Primary data store for chats, settings, and user data' },
-                  { key: 'supabase', label: 'Supabase Auth', icon: Shield, desc: 'Authentication, JWT verification, and RLS policies' },
-                  { key: 'api', label: 'Codeva API', icon: Zap, desc: 'Express server, LLM gateway, and SSE streaming' },
-                ].map((svc, i) => {
-                  const infra = data.infrastructure[svc.key]
-                  const sc = getStatusConfig(infra?.status || 'unknown')
-                  const SvcIcon = svc.icon
-                  return (
-                    <ScrollReveal key={svc.key} delay={i * 0.06}>
-                      <div
-                        className="p-5 rounded-2xl transition-all"
-                        style={{
-                          background: 'rgba(255,255,255,0.015)',
-                          backdropFilter: 'blur(12px)',
-                          border: `1px solid ${sc.border}`,
-                        }}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: sc.bg, border: `1px solid ${sc.border}` }}>
-                              <SvcIcon className="w-4 h-4" style={{ color: sc.color }} />
-                            </div>
-                            <div>
-                              <h3 className="text-xs font-bold text-white">{svc.label}</h3>
-                              <p className="text-[9px] text-gray-550">{svc.desc}</p>
-                            </div>
-                          </div>
-                          <PulseDot status={infra?.status || 'unknown'} />
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] font-mono text-gray-500 pt-2 border-t border-white/[0.03]">
-                          <span>
-                            Status: <span className="font-bold" style={{ color: sc.color }}>{sc.label}</span>
-                          </span>
-                          {infra?.latency !== undefined && (
-                            <span>
-                              Ping: <span className="text-gray-300 font-bold">{infra.latency}ms</span>
-                            </span>
-                          )}
-                          {infra?.uptime !== undefined && (
-                            <span>
-                              Uptime: <span className="text-gray-300 font-bold">{Math.floor(infra.uptime)}s</span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </ScrollReveal>
-                  )
-                })}
-              </div>
-            </section>
 
             {/* ═══ Incidents ═══ */}
             <section>

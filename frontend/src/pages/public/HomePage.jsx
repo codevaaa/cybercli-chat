@@ -6,14 +6,10 @@ import PricingSection from '@components/landing/PricingSection'
 import TestimonialsSection from '@components/landing/TestimonialsSection'
 import CTASection from '@components/landing/CTASection'
 import SEOHead, { StructuredData } from '@components/seo/SEOHead'
-import KaliKalBanner from '@components/chat/KaliKalBanner'
-import AgentPlatformBanner from '@components/landing/AgentPlatformBanner'
 
 export default function HomePage() {
   return (
     <>
-      <KaliKalBanner />
-      <AgentPlatformBanner />
       <SEOHead
         title="Premium Multi-Model AI Chat Platform"
         description="Access 50+ free AI models including GPT, Gemini, Llama, DeepSeek. Features Council Mode, voice chat, and developer API."

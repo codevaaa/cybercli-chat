@@ -201,8 +201,8 @@ export default function DownloadsPage() {
           <div className="grid md:grid-cols-3 gap-5">
             <ScrollReveal>
               <a
-                href="https://github.com/codevaaa/cybercli-chat/releases/latest/download/CodeVaa-Agent-Platform-1.0.0-win-x64.exe"
-                download
+                href="https://github.com/codevaaa/cybercli-chat/releases?q=agent&expanded=true"
+                target="_blank" rel="noopener noreferrer"
                 className="block p-7 rounded-2xl border transition-all duration-300 group flex flex-col h-full"
                 style={{ backgroundColor: CARD, borderColor: BORDER, color: CREAM }}
               >
@@ -223,8 +223,8 @@ export default function DownloadsPage() {
             </ScrollReveal>
             <ScrollReveal>
               <a
-                href="https://github.com/codevaaa/cybercli-chat/releases/latest/download/CodeVaa-Agent-Platform-1.0.0-mac-x64.dmg"
-                download
+                href="https://github.com/codevaaa/cybercli-chat/releases?q=agent&expanded=true"
+                target="_blank" rel="noopener noreferrer"
                 className="block p-7 rounded-2xl border transition-all duration-300 group flex flex-col h-full"
                 style={{ backgroundColor: CARD, borderColor: BORDER, color: CREAM }}
               >
@@ -245,8 +245,8 @@ export default function DownloadsPage() {
             </ScrollReveal>
             <ScrollReveal>
               <a
-                href="https://github.com/codevaaa/cybercli-chat/releases/latest/download/CodeVaa-Agent-Platform-1.0.0-linux-x64.AppImage"
-                download
+                href="https://github.com/codevaaa/cybercli-chat/releases?q=agent&expanded=true"
+                target="_blank" rel="noopener noreferrer"
                 className="block p-7 rounded-2xl border transition-all duration-300 group flex flex-col h-full"
                 style={{ backgroundColor: CARD, borderColor: BORDER, color: CREAM }}
               >

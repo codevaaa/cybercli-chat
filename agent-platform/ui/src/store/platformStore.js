@@ -5,8 +5,10 @@
 import { create } from 'zustand'
 import toast from 'react-hot-toast'
 
-const PLATFORM_WS  = `ws://localhost:4000/ws`
-const PLATFORM_API = `http://localhost:4000/api`
+const IS_PROD = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+const PLATFORM_HOST = IS_PROD ? 'cybercli-api.onrender.com' : 'localhost:4000'
+const PLATFORM_WS  = `${IS_PROD ? 'wss' : 'ws'}://${PLATFORM_HOST}/ws`
+const PLATFORM_API = `${IS_PROD ? 'https' : 'http'}://${PLATFORM_HOST}/api`
 
 const AGENT_PERSONAS = {
   orchestrator: { emoji: '🗺️', name: 'Chanakya',      color: '#795548' },
@@ -52,30 +54,38 @@ export const usePlatformStore = create((set, get) => ({
     const existing = get().ws
     if (existing?.readyState === 1) return
 
-    const ws = new WebSocket(PLATFORM_WS)
+    try {
+      const ws = new WebSocket(PLATFORM_WS)
 
-    ws.onopen = () => {
-      set({ connected: true, platformOnline: true })
-      toast.success('Connected to CodeVaa Platform', { id: 'ws-connect' })
-    }
+      ws.onopen = () => {
+        set({ connected: true, platformOnline: true })
+        toast.success('Connected to CodeVaa Platform', { id: 'ws-connect' })
+      }
 
-    ws.onclose = () => {
-      set({ connected: false, ws: null })
-      // Auto-reconnect after 3s
-      setTimeout(() => get().connect(), 3000)
-    }
+      ws.onclose = () => {
+        set({ connected: false, ws: null })
+        // Auto-reconnect after 5s
+        setTimeout(() => {
+          if (get().ws === null) get().connect()
+        }, 5000)
+      }
 
-    ws.onerror = () => {
+      ws.onerror = () => {
+        set({ connected: false, platformOnline: false })
+      }
+
+      ws.onmessage = (e) => {
+        let msg
+        try { msg = JSON.parse(e.data) } catch { return }
+        get()._handleMessage(msg)
+      }
+
+      set({ ws })
+    } catch (err) {
+      // WebSocket not available — fallback to HTTP-only mode
       set({ connected: false, platformOnline: false })
+      console.warn('[Platform] WebSocket connection failed:', err.message)
     }
-
-    ws.onmessage = (e) => {
-      let msg
-      try { msg = JSON.parse(e.data) } catch { return }
-      get()._handleMessage(msg)
-    }
-
-    set({ ws })
   },
 
   disconnect: () => {
@@ -244,7 +254,8 @@ export const usePlatformStore = create((set, get) => ({
 
   checkPlatformHealth: async () => {
     try {
-      const res = await fetch('http://localhost:4000/health', { signal: AbortSignal.timeout(2000) })
+      const healthUrl = IS_PROD ? `https://${PLATFORM_HOST}/health` : `http://${PLATFORM_HOST}/health`
+      const res = await fetch(healthUrl, { signal: AbortSignal.timeout(5000) })
       set({ platformOnline: res.ok })
       return res.ok
     } catch {
