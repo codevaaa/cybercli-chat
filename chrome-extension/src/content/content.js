@@ -570,5 +570,228 @@ Text:
     return true
   })
 
-  console.log('[Codeva] Content script ready v1.2 — tone, diff, prompts, multi-lang')
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  SMART COMPOSE — Ghost-text autocomplete (Tab to accept)
+  //  Shows faint predicted text ahead of cursor. Press Tab to accept.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  let ghostOverlay = null
+  let ghostText = ''
+  let composeTimer = null
+  let lastComposeText = ''
+  const COMPOSE_DEBOUNCE = 1200
+  const COMPOSE_MIN_CHARS = 20
+
+  function createGhostOverlay(field) {
+    removeGhostOverlay()
+    if (field.tagName.toLowerCase() !== 'textarea' && field.tagName.toLowerCase() !== 'input') return null // only works on textarea/input for now
+
+    ghostOverlay = document.createElement('div')
+    ghostOverlay.className = 'cv-ghost-overlay'
+    ghostOverlay.setAttribute('aria-hidden', 'true')
+
+    // Position overlay exactly over the field
+    const style = window.getComputedStyle(field)
+    ghostOverlay.style.cssText = `
+      position: absolute; pointer-events: none; white-space: pre-wrap; word-break: break-word;
+      font-family: ${style.fontFamily}; font-size: ${style.fontSize}; line-height: ${style.lineHeight};
+      padding: ${style.padding}; border: ${style.borderWidth} solid transparent;
+      box-sizing: border-box; overflow: hidden; color: transparent;
+    `
+    field.parentElement.style.position = field.parentElement.style.position || 'relative'
+    field.parentElement.appendChild(ghostOverlay)
+    positionGhost(field)
+    return ghostOverlay
+  }
+
+  function positionGhost(field) {
+    if (!ghostOverlay) return
+    const rect = field.getBoundingClientRect()
+    const parentRect = field.parentElement.getBoundingClientRect()
+    ghostOverlay.style.top = `${rect.top - parentRect.top}px`
+    ghostOverlay.style.left = `${rect.left - parentRect.left}px`
+    ghostOverlay.style.width = `${rect.width}px`
+    ghostOverlay.style.height = `${rect.height}px`
+  }
+
+  function removeGhostOverlay() {
+    if (ghostOverlay) { ghostOverlay.remove(); ghostOverlay = null }
+    ghostText = ''
+  }
+
+  function renderGhost(field, suggestion) {
+    if (!suggestion || !field) { removeGhostOverlay(); return }
+    if (!ghostOverlay) createGhostOverlay(field)
+    if (!ghostOverlay) return
+
+    ghostText = suggestion
+    const currentText = getText(field)
+    // Show current text as invisible + suggestion as visible ghost
+    ghostOverlay.innerHTML = `<span style="color:transparent">${esc(currentText)}</span><span class="cv-ghost-text">${esc(suggestion)}</span>`
+    positionGhost(field)
+  }
+
+  async function triggerSmartCompose(field) {
+    if (!settings.smartCompose) return
+    const text = getText(field).trim()
+    if (text.length < COMPOSE_MIN_CHARS) return
+    if (text === lastComposeText) return
+    lastComposeText = text
+
+    // Get writing goals
+    const goals = await getWritingGoals()
+    const goalsCtx = goals ? `\nWriting style: ${goals.formality} tone, audience: ${goals.audience}, intent: ${goals.intent}.` : ''
+
+    try {
+      const prompt = `You are an autocomplete engine. Given the text so far, predict the next 5-15 words the user is likely to type. Return ONLY the predicted continuation (no quotes, no explanation, no preamble).${goalsCtx}\n\nText so far: "${text.slice(-200)}"\n\nContinuation:`
+      const suggestion = await callAI(prompt, 'groq/llama-3.1-8b')
+      const clean = suggestion.trim().replace(/^["']|["']$/g, '').slice(0, 80)
+      if (clean.length > 3) {
+        renderGhost(field, clean)
+      }
+    } catch {
+      // Silent fail — compose is non-critical
+    }
+  }
+
+  // Accept ghost text with Tab
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab' && ghostText && activeField && !e.shiftKey) {
+      e.preventDefault()
+      const current = getText(activeField)
+      if (activeField.value !== undefined) {
+        activeField.value = current + ghostText
+      } else {
+        activeField.innerText = current + ghostText
+      }
+      activeField.dispatchEvent(new Event('input', { bubbles: true }))
+      // Move cursor to end
+      if (activeField.setSelectionRange) {
+        const len = activeField.value.length
+        activeField.setSelectionRange(len, len)
+      }
+      removeGhostOverlay()
+      lastComposeText = getText(activeField).trim()
+    }
+    // Escape dismisses ghost
+    if (e.key === 'Escape' && ghostText) {
+      removeGhostOverlay()
+    }
+  }, true)
+
+  // Trigger compose on typing (debounced)
+  document.addEventListener('input', (e) => {
+    const el = e.target
+    if (el !== activeField || !isEditable(el)) return
+    if (!settings.smartCompose) return
+
+    // Remove ghost when user types (they may type something different)
+    removeGhostOverlay()
+    clearTimeout(composeTimer)
+    composeTimer = setTimeout(() => triggerSmartCompose(el), COMPOSE_DEBOUNCE)
+  }, true)
+
+  // Remove ghost on blur
+  document.addEventListener('focusout', () => { removeGhostOverlay() }, true)
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  REPLY GENERATOR — Gmail / LinkedIn compose box detection
+  //  Shows a "Generate Reply" button when user is in a reply context.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  let replyBtn = null
+  const GMAIL_COMPOSE_SELECTOR = 'div[aria-label="Message Body"], div.Am.Al.editable, div[g_editable="true"]'
+  const LINKEDIN_COMPOSE_SELECTOR = 'div.msg-form__contenteditable, div[data-artdeco-is-focused]'
+
+  function detectReplyContext() {
+    const isGmail = location.hostname.includes('mail.google.com')
+    const isLinkedIn = location.hostname.includes('linkedin.com')
+    if (!isGmail && !isLinkedIn) return
+
+    // Check periodically for compose boxes
+    setInterval(() => {
+      const selector = isGmail ? GMAIL_COMPOSE_SELECTOR : LINKEDIN_COMPOSE_SELECTOR
+      const composeBoxes = document.querySelectorAll(selector)
+
+      composeBoxes.forEach(box => {
+        if (box.dataset.cvReply) return // already processed
+        box.dataset.cvReply = '1'
+
+        // Create "Generate Reply" button
+        const btn = document.createElement('button')
+        btn.className = 'cv-reply-btn'
+        btn.innerHTML = `<span class="cv-reply-icon">✨</span> Generate Reply`
+        btn.title = 'Let Codeva AI draft a reply based on the conversation'
+
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          btn.disabled = true
+          btn.innerHTML = `<span class="cv-reply-spinner"></span> Writing…`
+
+          // Extract conversation context
+          let context = ''
+          if (isGmail) {
+            const thread = document.querySelectorAll('.a3s.aiL, .gmail_quote, .gs')
+            thread.forEach(el => { context += el.innerText?.slice(0, 500) + '\n' })
+          } else if (isLinkedIn) {
+            const msgs = document.querySelectorAll('.msg-s-event-listitem__body, .msg-s-message-group__meta')
+            msgs.forEach(el => { context += el.innerText?.slice(0, 300) + '\n' })
+          }
+
+          const goals = await getWritingGoals()
+          const goalsCtx = goals ? `\nTone: ${goals.formality}. Audience: ${goals.audience}. Intent: ${goals.intent}.` : '\nTone: professional and helpful.'
+
+          try {
+            const prompt = `You are a reply assistant. Based on the email/message thread below, write a thoughtful, well-structured reply. Keep it concise (2-4 sentences for messages, 4-6 for emails). ${goalsCtx}\n\nConversation:\n"""${context.slice(0, 2000)}"""\n\nReply:`
+            const reply = await callAI(prompt, 'gemini/gemini-2.5-flash')
+            if (reply.trim()) {
+              // Insert reply into compose box
+              if (box.isContentEditable) {
+                box.innerHTML = `<div>${reply.trim().replace(/\n/g, '<br>')}</div>`
+              } else if (box.value !== undefined) {
+                box.value = reply.trim()
+              }
+              box.dispatchEvent(new Event('input', { bubbles: true }))
+            }
+          } catch (err) {
+            console.warn('[Codeva] Reply generation failed:', err)
+          }
+
+          btn.disabled = false
+          btn.innerHTML = `<span class="cv-reply-icon">✨</span> Generate Reply`
+        })
+
+        // Position the button above the compose box
+        box.parentElement.style.position = box.parentElement.style.position || 'relative'
+        box.parentElement.insertBefore(btn, box)
+      })
+    }, 2000)
+  }
+
+  // Start reply detection for Gmail/LinkedIn
+  if (location.hostname.includes('mail.google.com') || location.hostname.includes('linkedin.com')) {
+    detectReplyContext()
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  WRITING GOALS — read from storage, inject into prompts
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async function getWritingGoals() {
+    try {
+      const { writingGoals } = await chrome.storage.local.get('writingGoals')
+      return writingGoals || null
+    } catch {
+      return null
+    }
+  }
+
+  // Load initial settings including smartCompose
+  chrome.storage.local.get(['settings'], (r) => {
+    const s = r.settings || {}
+    settings.smartCompose = s.smartCompose !== false // default on
+  })
+
+  console.log('[Codeva] Content script ready v1.3 — smart compose, reply gen, writing goals')
 })()

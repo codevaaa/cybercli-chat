@@ -19,6 +19,8 @@
     .toggle.on::after { transform: translateX(16px); }
     .btn-danger { padding: 8px 16px; background: rgba(239,68,68,0.1); color: #EF4444; border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
     .btn-danger:hover { background: rgba(239,68,68,0.2); }
+    select { background: #1a1a24; color: #e8e8e8; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 7px 12px; font-size: 12px; font-family: inherit; cursor: pointer; outline: none; }
+    select:focus { border-color: #D97757; }
   </style>
 </head>
 <body>
@@ -55,6 +57,56 @@
       </div>
       <div class="toggle on" id="toggle-code" onclick="toggleSetting('code', this)"></div>
     </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Smart Compose</div>
+        <div class="setting-desc">Ghost-text autocomplete suggestions as you type (Tab to accept)</div>
+      </div>
+      <div class="toggle on" id="toggle-smartCompose" onclick="toggleSetting('smartCompose', this)"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Writing Goals</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Audience</div>
+        <div class="setting-desc">Who are you writing for?</div>
+      </div>
+      <select id="goal-audience" onchange="updateGoal('audience', this.value)">
+        <option value="general">General audience</option>
+        <option value="expert">Domain experts</option>
+        <option value="executive">Executives / leadership</option>
+        <option value="casual">Friends / casual</option>
+        <option value="academic">Academic / research</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Formality</div>
+        <div class="setting-desc">How formal should your writing be?</div>
+      </div>
+      <select id="goal-formality" onchange="updateGoal('formality', this.value)">
+        <option value="neutral">Neutral</option>
+        <option value="formal">Formal</option>
+        <option value="casual">Casual</option>
+        <option value="academic">Academic</option>
+        <option value="conversational">Conversational</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Intent</div>
+        <div class="setting-desc">What is the purpose of your writing?</div>
+      </div>
+      <select id="goal-intent" onchange="updateGoal('intent', this.value)">
+        <option value="inform">Inform / explain</option>
+        <option value="persuade">Persuade / convince</option>
+        <option value="describe">Describe / narrate</option>
+        <option value="instruct">Instruct / teach</option>
+        <option value="entertain">Entertain / engage</option>
+      </select>
+    </div>
   </div>
 
   <div class="section">
@@ -86,16 +138,25 @@
       settings[key] = el.classList.contains('on')
       chrome.storage.local.set({ settings })
     }
+    async function updateGoal(key, value) {
+      const { writingGoals = {} } = await chrome.storage.local.get('writingGoals')
+      writingGoals[key] = value
+      chrome.storage.local.set({ writingGoals })
+    }
     async function signOut() {
       await chrome.storage.local.remove('authToken')
       alert('Signed out. Please sign in again from the popup.')
     }
     // Load saved settings
-    chrome.storage.local.get('settings').then(({ settings = {} }) => {
+    chrome.storage.local.get(['settings', 'writingGoals']).then(({ settings = {}, writingGoals = {} }) => {
       Object.entries(settings).forEach(([key, val]) => {
         const el = document.getElementById(`toggle-${key}`)
         if (el) el.classList.toggle('on', val)
       })
+      // Load writing goals
+      if (writingGoals.audience) document.getElementById('goal-audience').value = writingGoals.audience
+      if (writingGoals.formality) document.getElementById('goal-formality').value = writingGoals.formality
+      if (writingGoals.intent) document.getElementById('goal-intent').value = writingGoals.intent
     })
   </script>
 </body>

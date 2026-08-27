@@ -352,3 +352,35 @@
   min-width: 70px;
 }
 .cv-slash-desc { font-size: 11px; color: var(--cv-muted); }
+
+
+/* ── Smart Compose — Ghost Text Overlay ─────────────────────────────────── */
+.cv-ghost-overlay { z-index: 1; }
+.cv-ghost-text {
+  color: rgba(217, 119, 87, 0.4);
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* ── Reply Generator Button ─────────────────────────────────────────────── */
+.cv-reply-btn {
+  all: unset; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  color: var(--cv-accent, #D97757);
+  padding: 5px 12px; margin-bottom: 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(217,119,87,0.3);
+  background: rgba(217,119,87,0.06);
+  transition: all 0.15s;
+}
+.cv-reply-btn:hover { background: rgba(217,119,87,0.14); border-color: rgba(217,119,87,0.5); }
+.cv-reply-btn:disabled { opacity: 0.6; cursor: wait; }
+.cv-reply-icon { font-size: 13px; }
+.cv-reply-spinner {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1.5px solid rgba(217,119,87,0.3);
+  border-top-color: var(--cv-accent, #D97757);
+  animation: cv-spin 0.6s linear infinite;
+  display: inline-block;
+}
