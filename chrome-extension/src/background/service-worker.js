@@ -104,10 +104,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       break
 
     case 'RUN_ACTION': {
-      // From content selection toolbar → open panel with the built prompt
+      // From content selection toolbar → check if it's a rewrite action
       const builder = PROMPTS[msg.action]
       const prompt = builder ? builder(msg.text) : msg.text
-      if (sender.tab) openPanelWithPrompt(sender.tab, prompt)
+      const rewriteActions = ['rewrite_formal', 'rewrite_casual', 'rewrite_shorter', 'rewrite_longer', 'fix_tone']
+      if (rewriteActions.includes(msg.action) && sender.tab) {
+        // For rewrites: call API directly, then send diff back to content script
+        handleRewriteDiff(sender.tab, msg.text, prompt, msg.action)
+      } else if (sender.tab) {
+        openPanelWithPrompt(sender.tab, prompt)
+      }
       break
     }
   }
@@ -154,3 +160,67 @@ async function refreshBadge(signedIn) {
 
 // Allow the side panel to open on action click
 chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: false }).catch(() => {})
+
+// ── Rewrite with Diff View ────────────────────────────────────────────────────
+async function handleRewriteDiff(tab, originalText, prompt, action) {
+  const token = await getToken()
+  if (!token) { chrome.tabs.create({ url: AUTH_URL }); return }
+
+  try {
+    const res = await fetch('https://cybercli-api.onrender.com/api/v1/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: prompt }],
+        model: 'gemini/gemini-2.5-flash',
+        stream: false,
+      }),
+    })
+
+    if (!res.ok) {
+      // Fallback to side panel
+      openPanelWithPrompt(tab, prompt)
+      return
+    }
+
+    // Parse response (may be SSE or JSON depending on backend)
+    let rewritten = ''
+    const ct = res.headers.get('content-type') || ''
+    if (ct.includes('application/json')) {
+      const data = await res.json()
+      rewritten = data.content || data.choices?.[0]?.message?.content || ''
+    } else {
+      // SSE stream
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+        const lines = buf.split('\n'); buf = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const raw = line.slice(6).trim()
+          if (raw === '[DONE]') break
+          try { const p = JSON.parse(raw); if (p.type === 'token') rewritten += p.content } catch {}
+        }
+      }
+    }
+
+    if (rewritten.trim()) {
+      // Send the diff back to the content script
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'REWRITE_RESULT',
+        original: originalText,
+        rewritten: rewritten.trim(),
+        action,
+      })
+    } else {
+      openPanelWithPrompt(tab, prompt)
+    }
+  } catch (err) {
+    console.error('[Codeva] Rewrite diff failed:', err)
+    openPanelWithPrompt(tab, prompt)
+  }
+}

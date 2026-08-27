@@ -114,6 +114,8 @@
   let debounceTimer = null
   let lastCheckedText = ''
   let currentIssues = []
+  let currentTone = 'neutral'
+  let currentLanguage = 'English'
   let fabState = 'idle' // idle | checking | issues | clean
 
   function positionFab() {
@@ -162,10 +164,41 @@
     setFabState('checking')
 
     try {
-      const prompt = `You are a grammar checker. Analyze the text and return ONLY a JSON array (no markdown, no prose). Each item: {"original":"exact wrong substring","suggestion":"corrected substring","type":"grammar|spelling|punctuation|clarity","reason":"short reason"}. If perfect, return []. Text:\n"""${text}"""`
+      const prompt = `You are a multilingual grammar and tone analyzer. Analyze the text (detect language automatically — works for English, Hindi, Spanish, French, German, and more).
+
+Return ONLY a JSON object (no markdown, no prose) in this exact format:
+{"tone":"formal|casual|confident|friendly|neutral|aggressive","language":"detected language","issues":[{"original":"exact wrong substring","suggestion":"corrected substring","type":"grammar|spelling|punctuation|clarity","reason":"short reason"}]}
+
+Rules:
+- "tone" = the overall tone of the text (one word)
+- "language" = detected language name (e.g. "English", "Hindi", "Spanish")
+- "issues" = array of errors found. If text is perfect, use empty array []
+- Check grammar rules appropriate for the detected language
+- For Hindi/Devanagari, check spelling and sentence structure
+- For Spanish/French/German, check gender agreement, accents, conjugation
+
+Text:
+"""${text}"""`
       const raw = await callAI(prompt, GRAMMAR_MODEL)
-      const match = raw.match(/\[[\s\S]*\]/)
-      currentIssues = match ? JSON.parse(match[0]) : []
+      // Parse the JSON response
+      let parsed = null
+      try {
+        const jsonMatch = raw.match(/\{[\s\S]*\}/)
+        if (jsonMatch) parsed = JSON.parse(jsonMatch[0])
+      } catch {}
+
+      if (parsed && parsed.issues) {
+        currentIssues = Array.isArray(parsed.issues) ? parsed.issues : []
+        currentTone = parsed.tone || 'neutral'
+        currentLanguage = parsed.language || 'English'
+      } else {
+        // Fallback: try to parse as array (old format)
+        const arrMatch = raw.match(/\[[\s\S]*\]/)
+        currentIssues = arrMatch ? JSON.parse(arrMatch[0]) : []
+        currentTone = 'neutral'
+        currentLanguage = 'English'
+      }
+
       if (Array.isArray(currentIssues) && currentIssues.length > 0) {
         setFabState('issues', currentIssues.length)
       } else {
@@ -216,8 +249,17 @@
     } else if (fabState === 'checking') {
       card.innerHTML = cardShell('Checking…', `<div class="cv-card-empty">Analyzing your text…</div>`)
     } else if (currentIssues.length === 0) {
-      card.innerHTML = cardShell('Codeva', `<div class="cv-card-clean"><div class="cv-check-big">✓</div><div>Looks great! No issues found.</div></div>`)
+      card.innerHTML = cardShell('Codeva', `
+        <div class="cv-card-clean">
+          <div class="cv-check-big">✓</div>
+          <div>Looks great! No issues found.</div>
+          <div class="cv-tone-row">
+            <span class="cv-tone-chip cv-tone-${currentTone}">${currentTone}</span>
+            <span class="cv-lang-chip">${currentLanguage}</span>
+          </div>
+        </div>`)
     } else {
+      const toneBar = `<div class="cv-tone-row"><span class="cv-tone-chip cv-tone-${currentTone}">Tone: ${currentTone}</span><span class="cv-lang-chip">${currentLanguage}</span></div>`
       const items = currentIssues.map((iss, i) => `
         <div class="cv-issue" data-i="${i}">
           <div class="cv-issue-top">
@@ -231,7 +273,7 @@
           </div>
           <button class="cv-apply" data-i="${i}">Apply</button>
         </div>`).join('')
-      card.innerHTML = cardShell(`${currentIssues.length} suggestion${currentIssues.length > 1 ? 's' : ''}`, items, true)
+      card.innerHTML = cardShell(`${currentIssues.length} suggestion${currentIssues.length > 1 ? 's' : ''}`, toneBar + items, true)
     }
 
     document.documentElement.appendChild(card)
@@ -384,5 +426,149 @@
     return (main.innerText || '').replace(/\n{3,}/g, '\n\n').trim().slice(0, 15000)
   }
 
-  console.log('[Codeva] Content script ready v1.1')
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  DIFF VIEW (Original vs Rewritten — before applying)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function showDiffView(original, rewritten, onApply) {
+    closeDiffView()
+    const backdrop = document.createElement('div')
+    backdrop.className = 'cv-diff-backdrop'
+    const diffCard = document.createElement('div')
+    diffCard.className = 'cv-diff-card'
+    diffCard.innerHTML = `
+      <div class="cv-diff-head">
+        <h3>Review Changes</h3>
+        <button class="cv-diff-close">✕</button>
+      </div>
+      <div class="cv-diff-body">
+        <div class="cv-diff-col">
+          <span class="cv-diff-label">Original</span>
+          ${esc(original)}
+        </div>
+        <div class="cv-diff-col">
+          <span class="cv-diff-label">Improved</span>
+          ${esc(rewritten)}
+        </div>
+      </div>
+      <div class="cv-diff-foot">
+        <button class="cv-diff-btn secondary cv-diff-cancel">Cancel</button>
+        <button class="cv-diff-btn primary cv-diff-apply">Apply Changes</button>
+      </div>`
+
+    document.documentElement.appendChild(backdrop)
+    document.documentElement.appendChild(diffCard)
+
+    const close = () => { backdrop.remove(); diffCard.remove() }
+    backdrop.addEventListener('click', close)
+    diffCard.querySelector('.cv-diff-close').addEventListener('click', close)
+    diffCard.querySelector('.cv-diff-cancel').addEventListener('click', close)
+    diffCard.querySelector('.cv-diff-apply').addEventListener('click', () => {
+      onApply?.(rewritten)
+      close()
+    })
+  }
+
+  function closeDiffView() {
+    document.querySelectorAll('.cv-diff-backdrop, .cv-diff-card').forEach(el => el.remove())
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  PROMPT LIBRARY (slash commands: /email, /blog, /code, /review, /tweet)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const PROMPT_LIBRARY = {
+    '/email': 'Write a professional email about: ',
+    '/blog': 'Write a blog post introduction about: ',
+    '/code': 'Write clean code for: ',
+    '/review': 'Review this for quality, clarity, and improvements: ',
+    '/tweet': 'Write a compelling tweet about: ',
+    '/explain': 'Explain this simply: ',
+    '/fix': 'Fix the grammar and improve: ',
+    '/translate': 'Translate to English: ',
+    '/formal': 'Rewrite in a formal professional tone: ',
+    '/casual': 'Rewrite in a casual friendly tone: ',
+  }
+
+  let slashMenu = null
+
+  function showSlashMenu(el, filter = '') {
+    closeSlashMenu()
+    const commands = Object.entries(PROMPT_LIBRARY).filter(([cmd]) =>
+      cmd.toLowerCase().startsWith(filter.toLowerCase())
+    )
+    if (commands.length === 0) return
+
+    slashMenu = document.createElement('div')
+    slashMenu.className = 'cv-slash-menu'
+    const rect = el.getBoundingClientRect()
+    slashMenu.style.bottom = `${window.innerHeight - rect.top + 6}px`
+    slashMenu.style.left = `${rect.left}px`
+    slashMenu.innerHTML = `
+      <div class="cv-slash-head">Prompt Library</div>
+      ${commands.map(([cmd, desc]) => `
+        <button class="cv-slash-item" data-cmd="${cmd}">
+          <span class="cv-slash-cmd">${cmd}</span>
+          <span class="cv-slash-desc">${desc.slice(0, 35)}…</span>
+        </button>`).join('')}`
+
+    document.documentElement.appendChild(slashMenu)
+
+    slashMenu.querySelectorAll('.cv-slash-item').forEach(btn => {
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        const cmd = btn.dataset.cmd
+        const prefix = PROMPT_LIBRARY[cmd]
+        const currentVal = getText(el)
+        const newVal = currentVal.replace(/\/\w*$/, '') + prefix
+        if (el.value !== undefined) { el.value = newVal } else { el.innerText = newVal }
+        el.dispatchEvent(new Event('input', { bubbles: true }))
+        el.focus()
+        closeSlashMenu()
+      })
+    })
+  }
+
+  function closeSlashMenu() {
+    if (slashMenu) { slashMenu.remove(); slashMenu = null }
+  }
+
+  // Listen for slash commands in editable fields
+  document.addEventListener('input', (e) => {
+    const el = e.target
+    if (!isEditable(el)) return
+    const text = getText(el)
+    const slashMatch = text.match(/\/(\w*)$/)
+    if (slashMatch) {
+      showSlashMenu(el, '/' + slashMatch[1])
+    } else {
+      closeSlashMenu()
+    }
+  }, true)
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeSlashMenu()
+  })
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  ENHANCED TOOLBAR → DIFF VIEW for rewrites
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Override RUN_ACTION to show diff view for rewrite actions
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === 'REWRITE_RESULT' && msg.original && msg.rewritten) {
+      showDiffView(msg.original, msg.rewritten, (accepted) => {
+        // Replace selection with accepted text
+        const sel = window.getSelection()
+        if (sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0)
+          range.deleteContents()
+          range.insertNode(document.createTextNode(accepted))
+        }
+      })
+    }
+    return true
+  })
+
+  console.log('[Codeva] Content script ready v1.2 — tone, diff, prompts, multi-lang')
 })()
