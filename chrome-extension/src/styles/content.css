@@ -421,3 +421,18 @@
 }
 .cv-pdf-action:hover { background: rgba(217,119,87,0.15); color: #fff; }
 .cv-pdf-action:disabled { opacity: 0.6; cursor: wait; }
+
+
+/* ── Inline Underlines (grammar errors in contentEditable) ──────────────── */
+.cv-underline-overlay { user-select: none; }
+.cv-underline-mark {
+  color: transparent;
+  background: transparent;
+  text-decoration: underline wavy;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.cv-ul-grammar { text-decoration-color: #FF5F57; }
+.cv-ul-spelling { text-decoration-color: #F0A33C; }
+.cv-ul-punctuation { text-decoration-color: #4a9eff; }
+.cv-ul-clarity { text-decoration-color: #b794f6; }

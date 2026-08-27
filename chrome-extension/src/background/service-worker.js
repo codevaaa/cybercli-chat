@@ -27,6 +27,7 @@ const PROMPTS = {
   improve_code: (t) => `Improve this code (performance, readability, best practices). Show improved code + what changed.\n\n\`\`\`\n${t}\n\`\`\``,
   debug_code: (t) => `Find bugs and security issues. List each with severity and fix.\n\n\`\`\`\n${t}\n\`\`\``,
   convert_code: (t) => `Convert this code to another popular language. Show the equivalent code.\n\n\`\`\`\n${t}\n\`\`\``,
+  meeting_notes: (t) => `From this meeting transcript/notes, extract:\n1. **Summary** (3-4 sentences)\n2. **Action Items** (bullet list with [Owner] if identifiable)\n3. **Key Decisions** (numbered)\n4. **Follow-ups**\n\nTranscript:\n"""${t}"""`,
 }
 
 // ── Context Menus ────────────────────────────────────────────────────────────
@@ -55,6 +56,8 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({ id: 'screenshot_analyze', parentId: 'cv-root', title: 'Screenshot → AI Analysis', contexts: ['page'] })
     chrome.contextMenus.create({ id: 'cite_apa', parentId: 'cv-root', title: 'Generate Citation (APA)', contexts: ['page'] })
     chrome.contextMenus.create({ id: 'cite_mla', parentId: 'cv-root', title: 'Generate Citation (MLA)', contexts: ['page'] })
+    chrome.contextMenus.create({ id: 'sep3', parentId: 'cv-root', type: 'separator', contexts: ['selection'] })
+    sel('meeting_notes', 'Extract Meeting Notes & Action Items')
   })
   refreshBadge()
 })

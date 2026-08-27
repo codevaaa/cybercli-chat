@@ -1069,5 +1069,189 @@ Format: ${style.toUpperCase()}`
     }
   }
 
-  console.log('[Codeva] Content script ready v1.4 — youtube, pdf, vision, citations')
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  USAGE TRACKING — count words improved, prompts run, errors fixed
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async function trackUsage(action, wordsCount = 0) {
+    const { usageStats = { promptsRun: 0, wordsImproved: 0, errorsFixed: 0, sessionsToday: 0, lastDate: '' } } = await chrome.storage.local.get('usageStats')
+    const today = new Date().toISOString().split('T')[0]
+    if (usageStats.lastDate !== today) {
+      usageStats.sessionsToday = 0
+      usageStats.lastDate = today
+    }
+    usageStats.promptsRun++
+    usageStats.wordsImproved += wordsCount
+    if (action === 'grammar') usageStats.errorsFixed++
+    usageStats.sessionsToday++
+    chrome.storage.local.set({ usageStats })
+  }
+
+  // Hook into existing callAI to track usage
+  const _originalCallAI = callAI
+  callAI = async function(prompt, model) {
+    const result = await _originalCallAI(prompt, model)
+    const words = (result || '').split(/\s+/).length
+    trackUsage('prompt', words)
+    return result
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  INLINE UNDERLINES — overlay colored wavy underlines on grammar errors
+  //  Works on contentEditable elements (Gmail, Notion, Google Docs, etc.)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  let underlineOverlay = null
+
+  function showInlineUnderlines(field, issues) {
+    if (!field.isContentEditable || !settings.inlineUnderlines) return
+    removeInlineUnderlines()
+
+    const text = field.innerText || ''
+    if (!text || issues.length === 0) return
+
+    underlineOverlay = document.createElement('div')
+    underlineOverlay.className = 'cv-underline-overlay'
+    underlineOverlay.setAttribute('aria-hidden', 'true')
+
+    // Copy field's computed styles for positioning
+    const cs = window.getComputedStyle(field)
+    underlineOverlay.style.cssText = `
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; overflow: hidden; z-index: 1;
+      font-family: ${cs.fontFamily}; font-size: ${cs.fontSize};
+      line-height: ${cs.lineHeight}; padding: ${cs.padding};
+      white-space: pre-wrap; word-break: break-word;
+      color: transparent;
+    `
+
+    // Build highlighted content
+    let html = text
+    // Sort issues by position (longest first to avoid overlap issues)
+    const sorted = [...issues].filter(i => i.original && text.includes(i.original))
+      .sort((a, b) => b.original.length - a.original.length)
+
+    sorted.forEach(iss => {
+      const typeClass = `cv-ul-${iss.type || 'grammar'}`
+      html = html.replace(
+        iss.original,
+        `<mark class="cv-underline-mark ${typeClass}" title="${esc(iss.reason || '')}">${esc(iss.original)}</mark>`
+      )
+    })
+    underlineOverlay.innerHTML = html
+
+    // Position relative to field
+    field.style.position = field.style.position || 'relative'
+    field.appendChild(underlineOverlay)
+  }
+
+  function removeInlineUnderlines() {
+    if (underlineOverlay) { underlineOverlay.remove(); underlineOverlay = null }
+    document.querySelectorAll('.cv-underline-overlay').forEach(el => el.remove())
+  }
+
+  // Hook into grammar check results to show underlines
+  const _origSetFabState = setFabState
+  setFabState = function(state, count) {
+    _origSetFabState(state, count)
+    if (state === 'issues' && activeField?.isContentEditable && settings.inlineUnderlines) {
+      showInlineUnderlines(activeField, currentIssues)
+    } else if (state === 'clean' || state === 'idle') {
+      removeInlineUnderlines()
+    }
+  }
+
+  // Load inline underlines setting
+  chrome.storage.local.get(['settings'], (r) => {
+    settings.inlineUnderlines = (r.settings || {}).inlineUnderlines !== false
+  })
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  MEETING NOTES EXTRACTOR — select transcript, get action items + summary
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === 'EXTRACT_MEETING_NOTES') {
+      const selected = window.getSelection()?.toString()?.trim()
+      if (!selected || selected.length < 50) {
+        sendResponse({ error: 'Select meeting transcript text first (min 50 chars)' })
+        return true
+      }
+      extractMeetingNotes(selected).then(notes => sendResponse({ notes }))
+      return true
+    }
+  })
+
+  async function extractMeetingNotes(transcript) {
+    const prompt = `You are a meeting assistant. From the following meeting transcript/notes, extract:
+
+1. **Summary** (3-4 sentences)
+2. **Action Items** (bullet list with [Owner] if identifiable)
+3. **Key Decisions** (numbered list)
+4. **Follow-ups** (things to revisit)
+
+Be concise and actionable. Format with markdown.
+
+Transcript:
+"""${transcript.slice(0, 6000)}"""`
+
+    try {
+      return await callAI(prompt, 'gemini/gemini-2.5-flash')
+    } catch {
+      return 'Failed to extract notes. Please sign in.'
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  TEAM SNIPPETS — shared reusable prompt templates (chrome.storage.sync)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Snippets are stored in chrome.storage.sync so they sync across devices
+  // Format: { snippets: [{ id, name, trigger, content, createdAt }] }
+
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === 'GET_SNIPPETS') {
+      chrome.storage.sync.get('snippets', (r) => {
+        sendResponse({ snippets: r.snippets || getDefaultSnippets() })
+      })
+      return true
+    }
+    if (msg.type === 'SAVE_SNIPPET') {
+      chrome.storage.sync.get('snippets', (r) => {
+        const snippets = r.snippets || []
+        snippets.push({ ...msg.snippet, id: Date.now().toString(36), createdAt: Date.now() })
+        chrome.storage.sync.set({ snippets }, () => sendResponse({ ok: true }))
+      })
+      return true
+    }
+    if (msg.type === 'DELETE_SNIPPET') {
+      chrome.storage.sync.get('snippets', (r) => {
+        const snippets = (r.snippets || []).filter(s => s.id !== msg.id)
+        chrome.storage.sync.set({ snippets }, () => sendResponse({ ok: true }))
+      })
+      return true
+    }
+  })
+
+  function getDefaultSnippets() {
+    return [
+      { id: 'def1', name: 'Professional Email', trigger: '/promail', content: 'Write a professional email about: {topic}. Include greeting, body, and sign-off.', createdAt: 0 },
+      { id: 'def2', name: 'Bug Report', trigger: '/bugreport', content: 'Write a bug report with: Summary, Steps to Reproduce, Expected vs Actual, Environment. Bug: {description}', createdAt: 0 },
+      { id: 'def3', name: 'Code Review', trigger: '/cr', content: 'Review this code for: correctness, performance, security, readability. Provide actionable suggestions.\n\n{code}', createdAt: 0 },
+      { id: 'def4', name: 'Meeting Agenda', trigger: '/agenda', content: 'Create a meeting agenda for: {topic}. Include: objectives, discussion points, time allocations, action items template.', createdAt: 0 },
+      { id: 'def5', name: 'LinkedIn Post', trigger: '/linkedin', content: 'Write a LinkedIn post about: {topic}. Make it engaging, use line breaks, include a call-to-action. Professional but authentic tone.', createdAt: 0 },
+    ]
+  }
+
+  // Integrate snippets into the slash menu (expand PROMPT_LIBRARY dynamically)
+  chrome.storage.sync.get('snippets', (r) => {
+    const snippets = r.snippets || getDefaultSnippets()
+    snippets.forEach(s => {
+      if (s.trigger && !PROMPT_LIBRARY[s.trigger]) {
+        PROMPT_LIBRARY[s.trigger] = s.content
+      }
+    })
+  })
+
+  console.log('[Codeva] Content script ready v1.5 — dashboard, underlines, meetings, snippets')
 })()

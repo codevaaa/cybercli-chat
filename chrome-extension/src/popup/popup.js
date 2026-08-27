@@ -47,6 +47,12 @@ async function showMain(me) {
   $('user-avatar').textContent = (email[0] || 'U').toUpperCase()
   $('user-plan').textContent = plan.charAt(0).toUpperCase() + plan.slice(1) + ' plan'
 
+  // Usage stats
+  const { usageStats = {} } = await chrome.storage.local.get('usageStats')
+  $('stat-prompts').textContent = usageStats.promptsRun || 0
+  $('stat-words').textContent = usageStats.wordsImproved || 0
+  $('stat-errors').textContent = usageStats.errorsFixed || 0
+
   // Build action grid
   const grid = $('actions-grid')
   grid.innerHTML = ACTIONS.slice(0, 6).map(a => `

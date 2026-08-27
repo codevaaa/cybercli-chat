@@ -172,3 +172,15 @@ body {
   background: var(--bg-3); border: 1px solid var(--border);
   border-radius: 4px; padding: 1px 5px; font-family: inherit; font-size: 9px; color: var(--text-2);
 }
+
+
+/* ── Usage Dashboard ── */
+.stats-wrap { padding: 0 14px; margin-top: 12px; }
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat-card {
+  padding: 10px 8px; text-align: center;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.stat-value { font-size: 18px; font-weight: 800; color: var(--accent); }
+.stat-label { font-size: 9px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
