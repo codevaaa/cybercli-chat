@@ -52,6 +52,9 @@ chrome.runtime.onInstalled.addListener(() => {
 
     chrome.contextMenus.create({ id: 'summarize_page', parentId: 'cv-root', title: 'Summarize this page', contexts: ['page'] })
     chrome.contextMenus.create({ id: 'ask_page', parentId: 'cv-root', title: 'Ask about this page', contexts: ['page'] })
+    chrome.contextMenus.create({ id: 'screenshot_analyze', parentId: 'cv-root', title: 'Screenshot → AI Analysis', contexts: ['page'] })
+    chrome.contextMenus.create({ id: 'cite_apa', parentId: 'cv-root', title: 'Generate Citation (APA)', contexts: ['page'] })
+    chrome.contextMenus.create({ id: 'cite_mla', parentId: 'cv-root', title: 'Generate Citation (MLA)', contexts: ['page'] })
   })
   refreshBadge()
 })
@@ -67,6 +70,28 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         ? `Summarize this page in 5-7 bullet points:\n\n${resp.content.slice(0, 6000)}`
         : `Give a comprehensive overview of this page:\n\n${resp.content.slice(0, 6000)}`
       openPanelWithPrompt(tab, prompt)
+    })
+    return
+  }
+
+  if (info.menuItemId === 'screenshot_analyze') {
+    chrome.tabs.captureVisibleTab(null, { format: 'png', quality: 85 }, (dataUrl) => {
+      if (chrome.runtime.lastError || !dataUrl) return
+      chrome.tabs.sendMessage(tab.id, { type: 'SCREENSHOT_ANALYSIS', imageData: dataUrl }, (resp) => {
+        if (resp?.analysis) {
+          openPanelWithPrompt(tab, `**Screenshot Analysis:**\n\n${resp.analysis}`)
+        }
+      })
+    })
+    return
+  }
+
+  if (info.menuItemId === 'cite_apa' || info.menuItemId === 'cite_mla') {
+    const style = info.menuItemId === 'cite_apa' ? 'apa' : 'mla'
+    chrome.tabs.sendMessage(tab.id, { type: 'GENERATE_CITATION', style }, (resp) => {
+      if (resp?.citation) {
+        openPanelWithPrompt(tab, `**${style.toUpperCase()} Citation:**\n\n${resp.citation}\n\n_(Copied to clipboard)_`)
+      }
     })
     return
   }
@@ -115,6 +140,44 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         openPanelWithPrompt(sender.tab, prompt)
       }
       break
+    }
+
+    case 'CAPTURE_SCREENSHOT': {
+      // Capture visible tab and send to content script for Gemini Vision analysis
+      if (sender.tab) {
+        chrome.tabs.captureVisibleTab(null, { format: 'png', quality: 85 }, (dataUrl) => {
+          if (chrome.runtime.lastError || !dataUrl) {
+            sendResponse?.({ error: 'Screenshot capture failed' })
+            return
+          }
+          // Send to content script for analysis
+          chrome.tabs.sendMessage(sender.tab.id, {
+            type: 'SCREENSHOT_ANALYSIS',
+            imageData: dataUrl,
+          }, (resp) => {
+            if (resp?.analysis) {
+              openPanelWithPrompt(sender.tab, `**Screenshot Analysis:**\n\n${resp.analysis}`)
+            }
+          })
+        })
+      }
+      break
+    }
+
+    case 'GENERATE_CITATION_REQUEST': {
+      // Forward to content script to extract meta, generate citation
+      if (sender.tab) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          type: 'GENERATE_CITATION',
+          style: msg.style || 'apa',
+        }, (resp) => {
+          if (resp?.citation) {
+            navigator.clipboard?.writeText?.(resp.citation)
+            sendResponse?.({ citation: resp.citation })
+          }
+        })
+      }
+      return true
     }
   }
   return true

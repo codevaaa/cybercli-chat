@@ -793,5 +793,281 @@ Text:
     settings.smartCompose = s.smartCompose !== false // default on
   })
 
-  console.log('[Codeva] Content script ready v1.3 — smart compose, reply gen, writing goals')
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  YOUTUBE SUMMARIZER — extract transcript, generate TL;DR + timestamps
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  if (location.hostname.includes('youtube.com') || location.hostname.includes('youtu.be')) {
+    let ytSumBtn = null
+
+    function injectYouTubeSummarizer() {
+      if (ytSumBtn) return
+      // Wait for the video title/actions to load
+      const interval = setInterval(() => {
+        const actionsBar = document.querySelector('#actions #top-level-buttons-computed, #menu-container, ytd-menu-renderer')
+        if (!actionsBar) return
+        clearInterval(interval)
+
+        ytSumBtn = document.createElement('button')
+        ytSumBtn.className = 'cv-yt-btn'
+        ytSumBtn.innerHTML = `<span>📋</span> Summarize`
+        ytSumBtn.title = 'Summarize this video with Codeva AI'
+        ytSumBtn.addEventListener('click', handleYouTubeSummarize)
+        actionsBar.prepend(ytSumBtn)
+      }, 1500)
+    }
+
+    async function handleYouTubeSummarize() {
+      ytSumBtn.disabled = true
+      ytSumBtn.innerHTML = `<span class="cv-reply-spinner"></span> Extracting…`
+
+      try {
+        // Extract transcript from YouTube's internal data
+        const transcript = await extractYouTubeTranscript()
+        if (!transcript) {
+          ytSumBtn.innerHTML = `<span>⚠</span> No captions`
+          setTimeout(() => { ytSumBtn.innerHTML = `<span>📋</span> Summarize`; ytSumBtn.disabled = false }, 3000)
+          return
+        }
+
+        ytSumBtn.innerHTML = `<span class="cv-reply-spinner"></span> Summarizing…`
+        const title = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, #title h1')?.textContent || 'Video'
+
+        const prompt = `Summarize this YouTube video transcript. Provide:
+1. **TL;DR** (2-3 sentences)
+2. **Key Points** (5-7 bullet points)
+3. **Timestamps** (list notable moments with approximate timestamps if visible in transcript)
+
+Video title: "${title}"
+Transcript:
+"""${transcript.slice(0, 8000)}"""`
+
+        const summary = await callAI(prompt, 'gemini/gemini-2.5-flash')
+        // Send to side panel
+        chrome.runtime.sendMessage({ type: 'RUN_ACTION', action: 'custom', text: summary })
+        ytSumBtn.innerHTML = `<span>✓</span> Done`
+      } catch (err) {
+        ytSumBtn.innerHTML = `<span>⚠</span> Failed`
+        console.warn('[Codeva] YT summary failed:', err)
+      }
+      setTimeout(() => { ytSumBtn.innerHTML = `<span>📋</span> Summarize`; ytSumBtn.disabled = false }, 4000)
+    }
+
+    async function extractYouTubeTranscript() {
+      // Method 1: Try to get from YouTube's internal player response
+      try {
+        const scripts = document.querySelectorAll('script')
+        for (const script of scripts) {
+          const text = script.textContent
+          if (text.includes('captionTracks')) {
+            const match = text.match(/"captionTracks":\s*(\[[\s\S]*?\])/)
+            if (match) {
+              const tracks = JSON.parse(match[1])
+              if (tracks.length > 0) {
+                const url = tracks[0].baseUrl
+                const res = await fetch(url)
+                const xml = await res.text()
+                // Parse XML transcript
+                const lines = xml.match(/<text[^>]*>([\s\S]*?)<\/text>/g) || []
+                return lines.map(l => l.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')).join(' ')
+              }
+            }
+          }
+        }
+      } catch {}
+
+      // Method 2: Try to open transcript panel and scrape
+      try {
+        const transcriptBtn = document.querySelector('[aria-label="Show transcript"], button[aria-label*="transcript"]')
+        if (transcriptBtn) {
+          transcriptBtn.click()
+          await new Promise(r => setTimeout(r, 1500))
+          const segments = document.querySelectorAll('ytd-transcript-segment-renderer .segment-text, .ytd-transcript-segment-renderer')
+          if (segments.length > 0) {
+            const text = Array.from(segments).map(s => s.textContent.trim()).join(' ')
+            return text
+          }
+        }
+      } catch {}
+
+      return null
+    }
+
+    // Inject on page load and navigation (YouTube is SPA)
+    injectYouTubeSummarizer()
+    const ytObserver = new MutationObserver(() => {
+      if (!document.querySelector('.cv-yt-btn')) { ytSumBtn = null; injectYouTubeSummarizer() }
+    })
+    ytObserver.observe(document.body, { childList: true, subtree: true })
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  PDF READER — detect PDF viewer, extract text, offer summarize/query
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  if (location.pathname.endsWith('.pdf') || document.contentType === 'application/pdf') {
+    // Chrome's built-in PDF viewer embeds content in a shadow DOM
+    // We inject a floating action bar for PDF actions
+    setTimeout(() => {
+      const pdfBar = document.createElement('div')
+      pdfBar.className = 'cv-pdf-bar'
+      pdfBar.innerHTML = `
+        <span class="cv-pdf-brand"><span class="cv-logo-dot"></span> Codeva</span>
+        <button class="cv-pdf-action" data-act="summarize">📋 Summarize PDF</button>
+        <button class="cv-pdf-action" data-act="keypoints">🔑 Key Points</button>
+        <button class="cv-pdf-action" data-act="ask">❓ Ask about PDF</button>`
+      document.body.appendChild(pdfBar)
+
+      pdfBar.querySelectorAll('.cv-pdf-action').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const action = btn.dataset.act
+          btn.disabled = true
+          const origText = btn.innerHTML
+          btn.innerHTML = `<span class="cv-reply-spinner"></span>`
+
+          // Try to extract PDF text
+          let pdfText = ''
+          try {
+            // Method: select all text in the viewer
+            document.execCommand('selectAll')
+            pdfText = window.getSelection()?.toString() || ''
+            window.getSelection()?.removeAllRanges()
+          } catch {}
+
+          if (!pdfText) {
+            pdfText = document.body.innerText || ''
+          }
+
+          if (pdfText.length < 50) {
+            btn.innerHTML = '⚠ Cannot read PDF'
+            setTimeout(() => { btn.innerHTML = origText; btn.disabled = false }, 3000)
+            return
+          }
+
+          let prompt = ''
+          if (action === 'summarize') {
+            prompt = `Summarize this PDF document in 5-7 bullet points:\n\n${pdfText.slice(0, 10000)}`
+          } else if (action === 'keypoints') {
+            prompt = `Extract the 7 most important key points from this PDF:\n\n${pdfText.slice(0, 10000)}`
+          } else {
+            prompt = `Provide a comprehensive overview of this PDF document — what is it about, key findings, and conclusions:\n\n${pdfText.slice(0, 10000)}`
+          }
+
+          try {
+            const result = await callAI(prompt, 'gemini/gemini-2.5-flash')
+            chrome.runtime.sendMessage({ type: 'RUN_ACTION', action: 'custom', text: result })
+          } catch {}
+
+          btn.innerHTML = origText
+          btn.disabled = false
+        })
+      })
+    }, 1000)
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  CITATION GENERATOR — generate APA/MLA/Chicago for current page
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === 'GENERATE_CITATION') {
+      const meta = extractPageMeta()
+      generateCitation(meta, msg.style || 'apa').then(citation => {
+        sendResponse({ citation })
+      })
+      return true
+    }
+  })
+
+  function extractPageMeta() {
+    const getMeta = (name) => document.querySelector(`meta[name="${name}"], meta[property="${name}"]`)?.content || ''
+    return {
+      title: document.title,
+      url: location.href,
+      author: getMeta('author') || getMeta('article:author') || getMeta('og:article:author') || '',
+      date: getMeta('date') || getMeta('article:published_time') || getMeta('og:article:published_time') || '',
+      siteName: getMeta('og:site_name') || location.hostname.replace('www.', ''),
+      description: getMeta('description') || getMeta('og:description') || '',
+    }
+  }
+
+  async function generateCitation(meta, style) {
+    const prompt = `Generate a ${style.toUpperCase()} format citation for this webpage. Return ONLY the formatted citation string.
+
+Title: ${meta.title}
+URL: ${meta.url}
+Author: ${meta.author || 'Unknown'}
+Published: ${meta.date || 'n.d.'}
+Site: ${meta.siteName}
+Accessed: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+Format: ${style.toUpperCase()}`
+    try {
+      return await callAI(prompt, 'groq/llama-3.1-8b')
+    } catch {
+      return `[Citation generation failed — please sign in]`
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  SCREENSHOT → VISION (triggered from background via message)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === 'SCREENSHOT_ANALYSIS' && msg.imageData) {
+      analyzeScreenshot(msg.imageData).then(analysis => {
+        sendResponse({ analysis })
+      })
+      return true
+    }
+  })
+
+  async function analyzeScreenshot(base64Image) {
+    if (!authToken) {
+      const r = await chrome.storage.local.get('authToken')
+      authToken = r.authToken
+    }
+    if (!authToken) return 'Please sign in to use screenshot analysis.'
+
+    try {
+      // Send base64 image to Gemini Vision via our completions endpoint
+      const prompt = `Analyze this screenshot. Describe what you see, identify any text, UI elements, errors, or notable content. Be detailed and helpful.`
+      const messages = [
+        { role: 'user', content: `${prompt}\n\n![screenshot](${base64Image})` }
+      ]
+      const res = await fetch(`${API_BASE}/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ messages, model: 'gemini/gemini-2.5-flash', stream: false }),
+      })
+      if (!res.ok) return 'Analysis failed (HTTP ' + res.status + ')'
+
+      const ct = res.headers.get('content-type') || ''
+      if (ct.includes('application/json')) {
+        const data = await res.json()
+        return data.content || 'No analysis available'
+      }
+      // SSE fallback
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buf = '', out = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+        const lines = buf.split('\n'); buf = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const raw = line.slice(6).trim()
+          if (raw === '[DONE]') return out
+          try { const p = JSON.parse(raw); if (p.type === 'token') out += p.content } catch {}
+        }
+      }
+      return out || 'No analysis available'
+    } catch (err) {
+      return `Analysis failed: ${err.message}`
+    }
+  }
+
+  console.log('[Codeva] Content script ready v1.4 — youtube, pdf, vision, citations')
 })()
