@@ -1,184 +1,160 @@
 /**
- * Codeva Chrome Extension — Side Panel
- * Full chat interface with streaming, context-aware assistance
+ * Codeva Side Panel — full chat with streaming + selection-action handoff
  */
+import { ICONS } from '../lib/icons.js'
+import { streamCompletion, getToken, fetchMe, AUTH_URL } from '../lib/config.js'
 
-const API_BASE = 'https://cybercli-api.onrender.com/api/v1'
+const $ = (id) => document.getElementById(id)
+const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
 let messages = []
-let authToken = null
-let isStreaming = false
-
-// ── Init ─────────────────────────────────────────────────────────────────────
+let busy = false
 
 async function init() {
-  const result = await chrome.storage.local.get('authToken')
-  authToken = result.authToken
+  $('sp-logo').innerHTML = ICONS.logo
+  $('sp-auth-logo').innerHTML = ICONS.logo
+  $('sp-welcome-logo').innerHTML = ICONS.logo
+  $('sp-new').innerHTML = ICONS.trash
+  $('sp-settings').innerHTML = ICONS.settings
+  $('sp-send').innerHTML = ICONS.send
 
-  // Listen for prompts from background (context menu actions)
-  chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.type === 'EXECUTE_PROMPT' && msg.prompt) {
-      authToken = msg.token || authToken
-      addMessage('user', msg.prompt)
-      streamResponse(msg.prompt)
-    }
+  const token = await getToken()
+  if (!token) return showAuth()
+  const me = await fetchMe()
+  if (!me) return showAuth()
+
+  bindEvents()
+  checkPending()
+}
+
+function showAuth() {
+  $('sp-auth').hidden = false
+  $('sp-chat').hidden = true
+  $('sp-footer')?.setAttribute('hidden', '')
+  document.querySelector('.sp-footer')?.setAttribute('hidden', '')
+  $('sp-signin').onclick = () => chrome.tabs.create({ url: AUTH_URL })
+}
+
+function bindEvents() {
+  $('sp-send').onclick = send
+  $('sp-input').onkeydown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+  }
+  $('sp-input').oninput = (e) => {
+    e.target.style.height = 'auto'
+    e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'
+  }
+  $('sp-new').onclick = () => {
+    messages = []
+    renderWelcome()
+  }
+  $('sp-settings').onclick = () => chrome.runtime.openOptionsPage()
+
+  document.querySelectorAll('#sp-chips button').forEach(btn => {
+    btn.onclick = () => { $('sp-input').value = btn.dataset.q; send() }
   })
 
-  // Check for pending prompt
-  const pending = await chrome.storage.local.get('pendingPrompt')
-  if (pending.pendingPrompt) {
-    addMessage('user', pending.pendingPrompt)
-    streamResponse(pending.pendingPrompt)
-    chrome.storage.local.remove('pendingPrompt')
-  }
+  // Listen for prompts pushed while panel is open
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'EXECUTE_PROMPT' && msg.prompt) {
+      runPrompt(msg.prompt)
+    }
+  })
 }
 
-// ── UI Helpers ───────────────────────────────────────────────────────────────
+// Check for queued prompt from context menu / selection toolbar
+async function checkPending() {
+  const { pendingPrompt, pendingAt } = await chrome.storage.local.get(['pendingPrompt', 'pendingAt'])
+  if (pendingPrompt && pendingAt && Date.now() - pendingAt < 15000) {
+    chrome.storage.local.remove(['pendingPrompt', 'pendingAt'])
+    runPrompt(pendingPrompt)
+  }
+  // Keep polling briefly in case panel opened before storage was set
+  let tries = 0
+  const poll = setInterval(async () => {
+    tries++
+    const { pendingPrompt: p, pendingAt: at } = await chrome.storage.local.get(['pendingPrompt', 'pendingAt'])
+    if (p && at && Date.now() - at < 15000) {
+      chrome.storage.local.remove(['pendingPrompt', 'pendingAt'])
+      clearInterval(poll)
+      runPrompt(p)
+    }
+    if (tries > 10) clearInterval(poll)
+  }, 500)
+}
+
+function renderWelcome() {
+  $('sp-chat').innerHTML = `
+    <div class="sp-welcome">
+      <span class="sp-welcome-logo">${ICONS.logo}</span>
+      <h2>How can I help?</h2>
+      <p>Select text on any page for instant actions, or ask below.</p>
+    </div>`
+}
+
+function send() {
+  const text = $('sp-input').value.trim()
+  if (!text || busy) return
+  $('sp-input').value = ''
+  $('sp-input').style.height = 'auto'
+  runPrompt(text)
+}
 
 function addMessage(role, content) {
-  messages.push({ role, content })
-  renderMessage(role, content)
-}
-
-function renderMessage(role, content, streaming = false) {
-  const area = document.getElementById('chat-area')
-  // Remove welcome message
-  const welcome = area.querySelector('.welcome-msg')
+  // Clear welcome
+  const welcome = $('sp-chat').querySelector('.sp-welcome')
   if (welcome) welcome.remove()
 
   const el = document.createElement('div')
-  el.className = `msg msg-${role}`
-  el.id = streaming ? 'streaming-msg' : ''
-  el.innerHTML = `
-    <div class="msg-content">${escapeHtml(content)}</div>
-    ${role === 'assistant' && !streaming ? '<button class="copy-msg-btn" title="Copy">📋</button>' : ''}
-  `
-  area.appendChild(el)
-  area.scrollTop = area.scrollHeight
-
-  // Copy button
-  el.querySelector('.copy-msg-btn')?.addEventListener('click', () => {
-    navigator.clipboard.writeText(content)
-  })
-
+  el.className = `sp-msg ${role}`
+  el.innerHTML = `<div class="sp-bubble">${esc(content)}</div>`
+  $('sp-chat').appendChild(el)
+  $('sp-chat').scrollTop = $('sp-chat').scrollHeight
   return el
 }
 
-function updateStreamingMessage(content) {
-  let el = document.getElementById('streaming-msg')
-  if (!el) {
-    el = renderMessage('assistant', '', true)
-  }
-  el.querySelector('.msg-content').textContent = content
-  document.getElementById('chat-area').scrollTop = document.getElementById('chat-area').scrollHeight
-}
+async function runPrompt(prompt) {
+  if (busy) return
+  busy = true
 
-function finalizeStreamingMessage(content) {
-  const el = document.getElementById('streaming-msg')
-  if (el) {
-    el.id = ''
-    el.querySelector('.msg-content').textContent = content
-    const btn = document.createElement('button')
-    btn.className = 'copy-msg-btn'
-    btn.title = 'Copy'
-    btn.textContent = '📋'
-    btn.onclick = () => navigator.clipboard.writeText(content)
-    el.appendChild(btn)
-  }
-}
+  messages.push({ role: 'user', content: prompt })
+  addMessage('user', prompt)
 
-// ── Stream Response ──────────────────────────────────────────────────────────
+  const assistantEl = addMessage('assistant', '')
+  const bubble = assistantEl.querySelector('.sp-bubble')
+  bubble.innerHTML = `<span class="sp-typing">Thinking…</span>`
 
-async function streamResponse(prompt) {
-  if (isStreaming) return
-  isStreaming = true
+  const model = $('sp-model').value
+  let full = ''
 
-  const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }))
-
-  try {
-    const res = await fetch(`${API_BASE}/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-      },
-      body: JSON.stringify({
-        messages: history,
-        model: 'codeva-ravan-v1',
-        stream: true,
-      }),
-    })
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-    let fullText = ''
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue
-        const raw = line.slice(6).trim()
-        if (raw === '[DONE]') break
-        try {
-          const parsed = JSON.parse(raw)
-          if (parsed.type === 'token') {
-            fullText += parsed.content
-            updateStreamingMessage(fullText)
-          }
-        } catch {}
+  await streamCompletion({
+    messages: messages.slice(-12),
+    model,
+    onToken: (t) => {
+      full += t
+      bubble.textContent = full
+      $('sp-chat').scrollTop = $('sp-chat').scrollHeight
+    },
+    onError: (err) => {
+      if (err.auth) { showAuth(); return }
+      bubble.textContent = `⚠ ${err.message}`
+    },
+    onDone: () => {
+      if (!full) { bubble.textContent = '(No response)'; return }
+      messages.push({ role: 'assistant', content: full })
+      // Add copy button
+      const actions = document.createElement('div')
+      actions.className = 'sp-msg-actions'
+      actions.innerHTML = `<button class="sp-mini-btn sp-copy">Copy</button>`
+      assistantEl.appendChild(actions)
+      actions.querySelector('.sp-copy').onclick = () => {
+        navigator.clipboard.writeText(full)
+        actions.querySelector('.sp-copy').textContent = 'Copied ✓'
       }
-    }
+    },
+  })
 
-    finalizeStreamingMessage(fullText)
-    messages.push({ role: 'assistant', content: fullText })
-  } catch (err) {
-    updateStreamingMessage(`❌ Error: ${err.message}`)
-  } finally {
-    isStreaming = false
-  }
-}
-
-// ── Input Handling ───────────────────────────────────────────────────────────
-
-document.getElementById('send-btn')?.addEventListener('click', () => {
-  const input = document.getElementById('input')
-  const text = input.value.trim()
-  if (!text || isStreaming) return
-  input.value = ''
-  input.style.height = 'auto'
-  addMessage('user', text)
-  streamResponse(text)
-})
-
-document.getElementById('input')?.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault()
-    document.getElementById('send-btn').click()
-  }
-})
-
-// Auto-resize textarea
-document.getElementById('input')?.addEventListener('input', (e) => {
-  e.target.style.height = 'auto'
-  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
-})
-
-// Clear
-document.getElementById('clear-btn')?.addEventListener('click', () => {
-  messages = []
-  const area = document.getElementById('chat-area')
-  area.innerHTML = `<div class="welcome-msg"><p>👋 How can I help?</p><p class="welcome-sub">Select text on any page and I'll assist, or just ask anything below.</p></div>`
-})
-
-function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  busy = false
 }
 
 init()

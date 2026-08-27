@@ -8,75 +8,72 @@
 </head>
 <body>
   <div id="app">
-    <!-- Auth check screen -->
-    <div id="auth-screen" class="screen">
-      <div class="logo-section">
-        <div class="logo-icon">🔥</div>
+    <!-- ═══ AUTH GATE ═══ -->
+    <section id="auth-view" class="view" hidden>
+      <div class="auth-hero">
+        <div class="brand-logo" id="brand-logo"></div>
         <h1>Codeva AI</h1>
-        <p class="subtitle">Writing, Coding & Research Assistant</p>
+        <p>Your AI writing, coding &amp; research assistant on every page.</p>
       </div>
-      <button id="login-btn" class="btn-primary">Sign in to Codeva</button>
-      <p class="hint">Free account required</p>
-    </div>
+      <ul class="auth-features">
+        <li><span class="dot"></span> Real-time grammar &amp; tone fixes</li>
+        <li><span class="dot"></span> Summarize &amp; explain anything</li>
+        <li><span class="dot"></span> Code help &amp; translation</li>
+      </ul>
+      <button id="signin-btn" class="btn-primary">Sign in to Codeva</button>
+      <p class="auth-note">Free account — no credit card</p>
+    </section>
 
-    <!-- Main screen (authenticated) -->
-    <div id="main-screen" class="screen" style="display:none">
-      <div class="header">
-        <div class="header-left">
-          <span class="brand">Codeva</span>
-          <span class="status-dot"></span>
+    <!-- ═══ MAIN ═══ -->
+    <section id="main-view" class="view" hidden>
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="brand-mini" id="brand-mini"></div>
+          <div class="brand-name">Codeva</div>
         </div>
-        <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
-      </div>
-
-      <!-- Quick actions grid -->
-      <div class="quick-actions">
-        <button data-action="grammar" class="action-card">
-          <span class="action-icon">✍️</span>
-          <span class="action-label">Grammar Check</span>
-        </button>
-        <button data-action="rewrite" class="action-card">
-          <span class="action-icon">📝</span>
-          <span class="action-label">Rewrite Text</span>
-        </button>
-        <button data-action="summarize" class="action-card">
-          <span class="action-icon">📋</span>
-          <span class="action-label">Summarize Page</span>
-        </button>
-        <button data-action="translate" class="action-card">
-          <span class="action-icon">🌐</span>
-          <span class="action-label">Translate</span>
-        </button>
-        <button data-action="explain-code" class="action-card">
-          <span class="action-icon">💻</span>
-          <span class="action-label">Explain Code</span>
-        </button>
-        <button data-action="security" class="action-card">
-          <span class="action-icon">🔒</span>
-          <span class="action-label">Security Scan</span>
-        </button>
-      </div>
-
-      <!-- Chat input -->
-      <div class="chat-input-wrap">
-        <textarea id="chat-input" placeholder="Ask anything..." rows="2"></textarea>
-        <button id="send-btn" class="send-btn">↑</button>
-      </div>
-
-      <!-- Response area -->
-      <div id="response-area" class="response-area" style="display:none">
-        <div class="response-header">
-          <span>Response</span>
-          <button id="copy-btn" class="icon-btn" title="Copy">📋</button>
+        <div class="topbar-right">
+          <button id="open-panel" class="icon-btn" title="Open side panel">⤢</button>
+          <button id="settings-btn" class="icon-btn" title="Settings"></button>
         </div>
-        <div id="response-content" class="response-content"></div>
+      </header>
+
+      <!-- User strip -->
+      <div class="user-strip" id="user-strip">
+        <div class="avatar" id="user-avatar">U</div>
+        <div class="user-meta">
+          <div class="user-email" id="user-email">—</div>
+          <div class="user-plan" id="user-plan">Free plan</div>
+        </div>
+        <div class="online-badge" id="online-badge">Ready</div>
       </div>
 
-      <!-- Footer -->
-      <div class="footer">
-        <span class="footer-text">Ctrl+Shift+C to open • Ctrl+Shift+S for sidebar</span>
+      <!-- Quick actions -->
+      <div class="section-label">Quick actions</div>
+      <div class="actions-grid" id="actions-grid"></div>
+
+      <!-- Ask box -->
+      <div class="section-label">Ask Codeva</div>
+      <div class="ask-box">
+        <textarea id="ask-input" rows="2" placeholder="Ask anything, or select text on the page…"></textarea>
+        <button id="ask-send" class="ask-send" title="Send"></button>
       </div>
-    </div>
+
+      <!-- Response -->
+      <div id="response-wrap" class="response-wrap" hidden>
+        <div class="response-head">
+          <span id="response-model">Response</span>
+          <div>
+            <button id="copy-btn" class="icon-btn" title="Copy"></button>
+            <button id="clear-btn" class="icon-btn" title="Clear"></button>
+          </div>
+        </div>
+        <div id="response-body" class="response-body"></div>
+      </div>
+
+      <footer class="footer">
+        <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> side panel · <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd> grammar
+      </footer>
+    </section>
   </div>
 
   <script src="popup.js" type="module"></script>

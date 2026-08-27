@@ -1,168 +1,131 @@
 /**
- * Codeva Chrome Extension — Popup Script
- * Quick AI actions + mini chat interface
+ * Codeva Popup — controller
  */
+import { ICONS, icon } from '../lib/icons.js'
+import { streamCompletion, getToken, getUser, fetchMe, AUTH_URL } from '../lib/config.js'
+import { PROMPTS, ACTIONS } from '../lib/prompts.js'
+import { TASK_MODELS } from '../lib/config.js'
 
-const API_BASE = 'https://cybercli-api.onrender.com/api/v1'
-const AUTH_URL = 'https://cybermindcli.info/auth/login?from=extension'
+const $ = (id) => document.getElementById(id)
 
-let authToken = null
-
-// ── Init ─────────────────────────────────────────────────────────────────────
+let busy = false
 
 async function init() {
-  const result = await chrome.storage.local.get('authToken')
-  authToken = result.authToken
+  // Brand logos
+  $('brand-logo').innerHTML = ICONS.logo
+  $('brand-mini').innerHTML = ICONS.logo
+  $('settings-btn').innerHTML = ICONS.settings
+  $('ask-send').innerHTML = ICONS.send
+  $('copy-btn').innerHTML = ICONS.copy
+  $('clear-btn').innerHTML = ICONS.trash
 
-  if (authToken) {
-    document.getElementById('auth-screen').style.display = 'none'
-    document.getElementById('main-screen').style.display = 'flex'
-  } else {
-    document.getElementById('auth-screen').style.display = 'flex'
-    document.getElementById('main-screen').style.display = 'none'
-  }
+  const token = await getToken()
+  if (!token) return showAuth()
+
+  // Verify token is still valid
+  const me = await fetchMe()
+  if (!me) return showAuth()
+
+  showMain(me)
 }
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
+function showAuth() {
+  $('auth-view').hidden = false
+  $('main-view').hidden = true
+  $('signin-btn').onclick = () => chrome.tabs.create({ url: AUTH_URL })
+}
 
-document.getElementById('login-btn')?.addEventListener('click', () => {
-  chrome.tabs.create({ url: AUTH_URL })
-  window.close()
-})
+async function showMain(me) {
+  $('auth-view').hidden = true
+  $('main-view').hidden = false
 
-// ── Quick Actions ────────────────────────────────────────────────────────────
+  // User info
+  const user = await getUser()
+  const email = me?.email || user?.email || 'user@codeva.ai'
+  const plan = (me?.plan || 'free')
+  $('user-email').textContent = email
+  $('user-avatar').textContent = (email[0] || 'U').toUpperCase()
+  $('user-plan').textContent = plan.charAt(0).toUpperCase() + plan.slice(1) + ' plan'
 
-document.querySelectorAll('.action-card').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const action = btn.dataset.action
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  // Build action grid
+  const grid = $('actions-grid')
+  grid.innerHTML = ACTIONS.slice(0, 6).map(a => `
+    <button class="action-btn" data-action="${a.id}">
+      <span class="ic">${ICONS[a.icon] || ''}</span>
+      <span class="lbl">${a.label}</span>
+    </button>`).join('')
 
-    if (action === 'summarize' || action === 'security') {
-      // Page-level action
-      chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_CONTENT' }, (response) => {
-        if (response?.content) {
-          const prompt = action === 'summarize'
-            ? `Summarize this page in 5 bullet points:\n\n${response.content.slice(0, 5000)}`
-            : `Security analysis of ${response.url}. Check headers, cookies, and common vulnerabilities.`
-          sendPrompt(prompt)
-        }
-      })
-    } else {
-      // Selection-based action
-      chrome.tabs.sendMessage(tab.id, { type: 'GET_SELECTION' }, (response) => {
-        if (response?.text) {
-          const prompts = {
-            'grammar': `Check grammar and spelling errors:\n\n"${response.text}"`,
-            'rewrite': `Rewrite this text professionally:\n\n"${response.text}"`,
-            'translate': `Translate to English (or Hindi if already English):\n\n"${response.text}"`,
-            'explain-code': `Explain this code:\n\n\`\`\`\n${response.text}\n\`\`\``,
-          }
-          sendPrompt(prompts[action] || `Help with: ${response.text}`)
-        } else {
-          document.getElementById('chat-input').focus()
-          document.getElementById('chat-input').placeholder = `Select text on page first, or type here...`
-        }
-      })
-    }
+  grid.querySelectorAll('.action-btn').forEach(btn => {
+    btn.onclick = () => runQuickAction(btn.dataset.action)
   })
-})
 
-// ── Chat Input ───────────────────────────────────────────────────────────────
-
-document.getElementById('send-btn')?.addEventListener('click', () => {
-  const input = document.getElementById('chat-input')
-  if (input.value.trim()) {
-    sendPrompt(input.value.trim())
-    input.value = ''
+  $('ask-send').onclick = () => {
+    const text = $('ask-input').value.trim()
+    if (text) { runPrompt(text, TASK_MODELS.chat); $('ask-input').value = '' }
   }
-})
-
-document.getElementById('chat-input')?.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault()
-    document.getElementById('send-btn').click()
+  $('ask-input').onkeydown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('ask-send').click() }
   }
-})
-
-// ── API Call ──────────────────────────────────────────────────────────────────
-
-async function sendPrompt(prompt) {
-  const responseArea = document.getElementById('response-area')
-  const responseContent = document.getElementById('response-content')
-  responseArea.style.display = 'block'
-  responseContent.textContent = '⏳ Thinking...'
-
-  try {
-    const res = await fetch(`${API_BASE}/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-      },
-      body: JSON.stringify({
-        messages: [{ role: 'user', content: prompt }],
-        model: 'groq/llama-3.1-8b',
-        stream: true,
-      }),
-    })
-
-    if (!res.ok) {
-      if (res.status === 401) {
-        responseContent.textContent = '🔒 Session expired. Please sign in again.'
-        chrome.storage.local.remove('authToken')
-        return
-      }
-      throw new Error(`HTTP ${res.status}`)
-    }
-
-    // Stream SSE
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-    let fullText = ''
-    responseContent.textContent = ''
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue
-        const raw = line.slice(6).trim()
-        if (raw === '[DONE]') break
-        try {
-          const parsed = JSON.parse(raw)
-          if (parsed.type === 'token') {
-            fullText += parsed.content
-            responseContent.textContent = fullText
-          }
-        } catch {}
-      }
-    }
-
-    if (!fullText) responseContent.textContent = '(No response)'
-  } catch (err) {
-    responseContent.textContent = `❌ Error: ${err.message}`
+  $('open-panel').onclick = async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    chrome.sidePanel.open({ tabId: tab.id })
+    window.close()
   }
+  $('settings-btn').onclick = () => chrome.runtime.openOptionsPage()
+  $('copy-btn').onclick = () => {
+    navigator.clipboard.writeText($('response-body').textContent)
+    $('copy-btn').innerHTML = ICONS.check
+    setTimeout(() => { $('copy-btn').innerHTML = ICONS.copy }, 1400)
+  }
+  $('clear-btn').onclick = () => { $('response-wrap').hidden = true; $('response-body').textContent = '' }
 }
 
-// ── Copy Response ────────────────────────────────────────────────────────────
+async function runQuickAction(actionId) {
+  const action = ACTIONS.find(a => a.id === actionId)
+  if (!action) return
 
-document.getElementById('copy-btn')?.addEventListener('click', () => {
-  const text = document.getElementById('response-content').textContent
-  navigator.clipboard.writeText(text)
-  document.getElementById('copy-btn').textContent = '✓'
-  setTimeout(() => { document.getElementById('copy-btn').textContent = '📋' }, 1500)
-})
+  // Get selected text from active tab
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  let selected = ''
+  try {
+    const resp = await chrome.tabs.sendMessage(tab.id, { type: 'GET_SELECTION' })
+    selected = resp?.text || ''
+  } catch {}
 
-// ── Settings ─────────────────────────────────────────────────────────────────
+  if (!selected) {
+    // No selection — focus the ask box with a hint
+    $('ask-input').placeholder = `Select text on the page, then tap "${action.label}"`
+    $('ask-input').focus()
+    return
+  }
 
-document.getElementById('settings-btn')?.addEventListener('click', () => {
-  chrome.runtime.openOptionsPage()
-})
+  const prompt = PROMPTS[action.promptKey](selected)
+  const model = TASK_MODELS[action.group] || TASK_MODELS.chat
+  runPrompt(prompt, model, action.label)
+}
 
-// ── Run ──────────────────────────────────────────────────────────────────────
+async function runPrompt(prompt, model, label = 'Response') {
+  if (busy) return
+  busy = true
+
+  $('response-wrap').hidden = false
+  $('response-model').textContent = label
+  const body = $('response-body')
+  body.textContent = ''
+  body.innerHTML = `<span class="cv-typing">Thinking…</span>`
+
+  let full = ''
+  await streamCompletion({
+    messages: [{ role: 'user', content: prompt }],
+    model,
+    onToken: (t) => { full += t; body.textContent = full },
+    onError: (err) => {
+      if (err.auth) { showAuth(); return }
+      body.textContent = `⚠ ${err.message}`
+    },
+    onDone: () => { if (!full) body.textContent = '(No response)' },
+  })
+  busy = false
+}
+
 init()

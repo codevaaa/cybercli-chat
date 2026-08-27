@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Codeva AI — Writing, Coding & Research Assistant",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "AI-powered writing assistant, grammar checker, code helper, and research companion. Works on every website.",
   "permissions": [
     "activeTab",

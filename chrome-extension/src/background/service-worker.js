@@ -1,228 +1,156 @@
 /**
- * Codeva Chrome Extension — Background Service Worker
- * 
- * Handles:
- * - Context menu registration (right-click actions)
- * - Auth state management (token from cybermindcli.info)
- * - API calls to Codeva backend
- * - Side panel toggle
- * - Keyboard shortcut commands
- * - Badge updates
+ * Codeva Extension — Background Service Worker (Manifest V3)
+ *
+ * Responsibilities:
+ *  - Context menu registration + routing
+ *  - Auth token capture & storage (from cybermindcli.info)
+ *  - Opening the side panel with a queued prompt
+ *  - Badge state (signed-in / signed-out)
  */
 
-const API_BASE = 'https://cybercli-api.onrender.com/api/v1'
-const AUTH_URL = 'https://cybermindcli.info/auth/login?from=extension'
+const SITE_URL = 'https://cybermindcli.info'
+const AUTH_URL = `${SITE_URL}/auth/login?from=extension`
+
+// Prompt builders (kept inline — service workers can't import from content libs easily)
+const PROMPTS = {
+  grammar: (t) => `You are a professional editor. Fix grammar, spelling, punctuation, and clarity. Return the corrected text, then a short bullet list of changes.\n\n"""${t}"""`,
+  rewrite_formal: (t) => `Rewrite in a polished, formal, professional tone. Return ONLY the rewritten text.\n\n"""${t}"""`,
+  rewrite_casual: (t) => `Rewrite in a friendly, casual tone. Return ONLY the rewritten text.\n\n"""${t}"""`,
+  rewrite_shorter: (t) => `Make this more concise while keeping key info. Return ONLY the shortened text.\n\n"""${t}"""`,
+  rewrite_longer: (t) => `Expand with more detail and examples. Return ONLY the expanded text.\n\n"""${t}"""`,
+  fix_tone: (t) => `Rewrite with a confident, professional business tone. Return ONLY the text.\n\n"""${t}"""`,
+  explain: (t) => `Explain this clearly and simply:\n\n"""${t}"""`,
+  summarize: (t) => `Summarize in 3-5 concise bullet points:\n\n"""${t}"""`,
+  translate: (t) => `Detect the language. If English, translate to Hindi; else translate to English. Give only the translation.\n\n"""${t}"""`,
+  define: (t) => `Define the term "${t}" with a definition, explanation, and one example.`,
+  explain_code: (t) => `Explain this code step by step, noting any issues:\n\n\`\`\`\n${t}\n\`\`\``,
+  improve_code: (t) => `Improve this code (performance, readability, best practices). Show improved code + what changed.\n\n\`\`\`\n${t}\n\`\`\``,
+  debug_code: (t) => `Find bugs and security issues. List each with severity and fix.\n\n\`\`\`\n${t}\n\`\`\``,
+  convert_code: (t) => `Convert this code to another popular language. Show the equivalent code.\n\n\`\`\`\n${t}\n\`\`\``,
+}
 
 // ── Context Menus ────────────────────────────────────────────────────────────
-
 chrome.runtime.onInstalled.addListener(() => {
-  // Parent menu
-  chrome.contextMenus.create({
-    id: 'codeva-parent',
-    title: 'Codeva AI',
-    contexts: ['selection', 'page', 'editable'],
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({ id: 'cv-root', title: 'Codeva AI', contexts: ['selection', 'page', 'editable'] })
+
+    const sel = (id, title) => chrome.contextMenus.create({ id, parentId: 'cv-root', title, contexts: ['selection'] })
+    sel('grammar', 'Fix grammar & spelling')
+    sel('rewrite_formal', 'Rewrite - Formal')
+    sel('rewrite_casual', 'Rewrite - Casual')
+    sel('rewrite_shorter', 'Make shorter')
+    sel('rewrite_longer', 'Expand')
+    chrome.contextMenus.create({ id: 'sep1', parentId: 'cv-root', type: 'separator', contexts: ['selection'] })
+    sel('explain', 'Explain this')
+    sel('summarize', 'Summarize')
+    sel('translate', 'Translate')
+    sel('define', 'Define term')
+    chrome.contextMenus.create({ id: 'sep2', parentId: 'cv-root', type: 'separator', contexts: ['selection'] })
+    sel('explain_code', 'Explain code')
+    sel('improve_code', 'Improve code')
+    sel('debug_code', 'Find bugs')
+
+    chrome.contextMenus.create({ id: 'summarize_page', parentId: 'cv-root', title: 'Summarize this page', contexts: ['page'] })
+    chrome.contextMenus.create({ id: 'ask_page', parentId: 'cv-root', title: 'Ask about this page', contexts: ['page'] })
   })
-
-  // Writing & Grammar (Grammarly-level)
-  chrome.contextMenus.create({ id: 'grammar-check', parentId: 'codeva-parent', title: '✍️ Check Grammar & Spelling', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'rewrite-formal', parentId: 'codeva-parent', title: '📝 Rewrite → Formal', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'rewrite-casual', parentId: 'codeva-parent', title: '💬 Rewrite → Casual', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'rewrite-shorter', parentId: 'codeva-parent', title: '✂️ Make Shorter', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'rewrite-longer', parentId: 'codeva-parent', title: '📖 Expand / Elaborate', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'fix-tone', parentId: 'codeva-parent', title: '🎯 Fix Tone (Professional)', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'separator-1', parentId: 'codeva-parent', type: 'separator', contexts: ['selection'] })
-
-  // Understanding & Research
-  chrome.contextMenus.create({ id: 'explain', parentId: 'codeva-parent', title: '💡 Explain This', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'summarize', parentId: 'codeva-parent', title: '📋 Summarize', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'translate', parentId: 'codeva-parent', title: '🌐 Translate', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'define', parentId: 'codeva-parent', title: '📚 Define Word/Term', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'separator-2', parentId: 'codeva-parent', type: 'separator', contexts: ['selection'] })
-
-  // Code
-  chrome.contextMenus.create({ id: 'explain-code', parentId: 'codeva-parent', title: '🔍 Explain Code', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'improve-code', parentId: 'codeva-parent', title: '⚡ Improve Code', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'convert-code', parentId: 'codeva-parent', title: '🔄 Convert to Another Language', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'debug-code', parentId: 'codeva-parent', title: '🐛 Find Bugs', contexts: ['selection'] })
-  chrome.contextMenus.create({ id: 'separator-3', parentId: 'codeva-parent', type: 'separator', contexts: ['selection'] })
-
-  // Page-level actions
-  chrome.contextMenus.create({ id: 'summarize-page', parentId: 'codeva-parent', title: '📄 Summarize This Page', contexts: ['page'] })
-  chrome.contextMenus.create({ id: 'extract-key-points', parentId: 'codeva-parent', title: '🔑 Extract Key Points', contexts: ['page'] })
-  chrome.contextMenus.create({ id: 'ask-about-page', parentId: 'codeva-parent', title: '❓ Ask About This Page', contexts: ['page'] })
-
-  // Security (unique to Codeva)
-  chrome.contextMenus.create({ id: 'security-scan', parentId: 'codeva-parent', title: '🔒 Security Quick Scan (Headers)', contexts: ['page'] })
-
-  console.log('[Codeva Extension] Context menus registered')
+  refreshBadge()
 })
 
-// ── Context Menu Click Handler ───────────────────────────────────────────────
-
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  const token = await getAuthToken()
-  if (!token) {
-    chrome.tabs.create({ url: AUTH_URL })
+  const token = await getToken()
+  if (!token) { chrome.tabs.create({ url: AUTH_URL }); return }
+
+  if (info.menuItemId === 'summarize_page' || info.menuItemId === 'ask_page') {
+    chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_CONTENT' }, (resp) => {
+      if (!resp?.content) return
+      const prompt = info.menuItemId === 'summarize_page'
+        ? `Summarize this page in 5-7 bullet points:\n\n${resp.content.slice(0, 6000)}`
+        : `Give a comprehensive overview of this page:\n\n${resp.content.slice(0, 6000)}`
+      openPanelWithPrompt(tab, prompt)
+    })
     return
   }
 
-  const selectedText = info.selectionText || ''
-  let prompt = ''
-  let action = info.menuItemId
+  const builder = PROMPTS[info.menuItemId]
+  if (builder && info.selectionText) {
+    openPanelWithPrompt(tab, builder(info.selectionText))
+  }
+})
 
-  switch (action) {
-    case 'grammar-check':
-      prompt = `Check the following text for grammar, spelling, punctuation, and style errors. For each error found, show the original → corrected version. Then provide the fully corrected text.\n\nText: "${selectedText}"`
-      break
-    case 'rewrite-formal':
-      prompt = `Rewrite the following text in a formal, professional tone. Keep the meaning identical.\n\nText: "${selectedText}"`
-      break
-    case 'rewrite-casual':
-      prompt = `Rewrite the following text in a casual, friendly tone. Keep the meaning identical.\n\nText: "${selectedText}"`
-      break
-    case 'rewrite-shorter':
-      prompt = `Make the following text significantly shorter while preserving all key information.\n\nText: "${selectedText}"`
-      break
-    case 'rewrite-longer':
-      prompt = `Expand and elaborate on the following text. Add more detail, examples, and context.\n\nText: "${selectedText}"`
-      break
-    case 'fix-tone':
-      prompt = `Rewrite this text to have a professional, confident, and clear tone suitable for business communication.\n\nText: "${selectedText}"`
-      break
-    case 'explain':
-      prompt = `Explain the following in simple, clear language:\n\n"${selectedText}"`
-      break
-    case 'summarize':
-      prompt = `Summarize the following text in 2-3 concise bullet points:\n\n"${selectedText}"`
-      break
-    case 'translate':
-      prompt = `Translate the following text to English (if not English) or to Hindi (if already English). Provide the translation only.\n\n"${selectedText}"`
-      break
-    case 'define':
-      prompt = `Define this word/term clearly with examples:\n\n"${selectedText}"`
-      break
-    case 'explain-code':
-      prompt = `Explain this code step by step. What does it do? Any potential issues?\n\n\`\`\`\n${selectedText}\n\`\`\``
-      break
-    case 'improve-code':
-      prompt = `Improve this code for better performance, readability, and best practices. Show the improved version with comments explaining changes.\n\n\`\`\`\n${selectedText}\n\`\`\``
-      break
-    case 'convert-code':
-      prompt = `Convert this code to Python (or if it's Python, convert to JavaScript). Show the equivalent code.\n\n\`\`\`\n${selectedText}\n\`\`\``
-      break
-    case 'debug-code':
-      prompt = `Find bugs, potential errors, and security issues in this code. List each issue with severity and fix.\n\n\`\`\`\n${selectedText}\n\`\`\``
-      break
-    case 'summarize-page':
-    case 'extract-key-points':
-    case 'ask-about-page':
-      // Get page content via content script
-      chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_CONTENT' }, (response) => {
-        if (response?.content) {
-          const pagePrompt = action === 'summarize-page'
-            ? `Summarize this webpage content in 5-7 bullet points:\n\n${response.content.slice(0, 5000)}`
-            : action === 'extract-key-points'
-            ? `Extract the 5 most important key points from this page:\n\n${response.content.slice(0, 5000)}`
-            : `What is this page about? Provide a comprehensive overview:\n\n${response.content.slice(0, 5000)}`
-          sendToSidePanel(pagePrompt, token, tab.id)
-        }
+// ── Message Router ────────────────────────────────────────────────────────────
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  switch (msg.type) {
+    case 'AUTH_TOKEN':
+      chrome.storage.local.set({
+        authToken: msg.token,
+        userInfo: msg.user || null,
       })
-      return
-    case 'security-scan':
-      prompt = `Analyze the security headers and potential vulnerabilities of this URL: ${tab.url}\n\nCheck for: HSTS, CSP, X-Frame-Options, CORS policy, cookie flags, and common misconfigurations.`
+      refreshBadge(true)
+      sendResponse?.({ ok: true })
       break
-    default:
-      return
-  }
 
-  if (prompt) {
-    sendToSidePanel(prompt, token, tab.id)
+    case 'GET_AUTH_TOKEN':
+      getToken().then(token => sendResponse({ token }))
+      return true
+
+    case 'LOGOUT':
+      chrome.storage.local.remove(['authToken', 'userInfo'])
+      refreshBadge(false)
+      sendResponse?.({ ok: true })
+      break
+
+    case 'OPEN_AUTH':
+      chrome.tabs.create({ url: AUTH_URL })
+      break
+
+    case 'RUN_ACTION': {
+      // From content selection toolbar → open panel with the built prompt
+      const builder = PROMPTS[msg.action]
+      const prompt = builder ? builder(msg.text) : msg.text
+      if (sender.tab) openPanelWithPrompt(sender.tab, prompt)
+      break
+    }
+  }
+  return true
+})
+
+// ── Commands (keyboard shortcuts) ─────────────────────────────────────────────
+chrome.commands?.onCommand.addListener((command, tab) => {
+  if (command === 'toggle_sidepanel' && tab) {
+    chrome.sidePanel.open({ tabId: tab.id }).catch(() => {})
+  }
+  if (command === 'grammar_check' && tab) {
+    chrome.tabs.sendMessage(tab.id, { type: 'TRIGGER_GRAMMAR' })
   }
 })
 
-// ── Side Panel Communication ─────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────────
+async function getToken() {
+  const { authToken } = await chrome.storage.local.get('authToken')
+  return authToken || null
+}
 
-async function sendToSidePanel(prompt, token, tabId) {
-  // Open side panel and send the prompt
+async function openPanelWithPrompt(tab, prompt) {
+  await chrome.storage.local.set({ pendingPrompt: prompt, pendingAt: Date.now() })
   try {
-    await chrome.sidePanel.open({ tabId })
-    // Small delay to ensure panel is ready
-    setTimeout(() => {
-      chrome.runtime.sendMessage({ type: 'EXECUTE_PROMPT', prompt, token })
-    }, 500)
-  } catch (err) {
-    // Fallback: send to popup
-    chrome.storage.local.set({ pendingPrompt: prompt })
-    chrome.action.openPopup()
+    await chrome.sidePanel.open({ tabId: tab.id })
+  } catch (e) {
+    // Side panel requires a user gesture on some Chrome versions; fall back to popup storage
+    console.warn('[Codeva] sidePanel.open failed:', e.message)
   }
 }
 
-// ── Auth Token Management ────────────────────────────────────────────────────
-
-async function getAuthToken() {
-  const result = await chrome.storage.local.get('authToken')
-  return result.authToken || null
-}
-
-// Listen for auth token from content script (when user logs in on cybermindcli.info)
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'AUTH_TOKEN') {
-    chrome.storage.local.set({ authToken: message.token })
+async function refreshBadge(signedIn) {
+  if (signedIn === undefined) {
+    signedIn = !!(await getToken())
+  }
+  if (signedIn) {
     chrome.action.setBadgeText({ text: '' })
-    chrome.action.setBadgeBackgroundColor({ color: '#10B981' })
-    sendResponse({ success: true })
+  } else {
+    chrome.action.setBadgeText({ text: '•' })
+    chrome.action.setBadgeBackgroundColor({ color: '#D97757' })
   }
-
-  if (message.type === 'GET_AUTH_TOKEN') {
-    getAuthToken().then(token => sendResponse({ token }))
-    return true // async
-  }
-
-  if (message.type === 'LOGOUT') {
-    chrome.storage.local.remove('authToken')
-    chrome.action.setBadgeText({ text: '!' })
-    chrome.action.setBadgeBackgroundColor({ color: '#EF4444' })
-    sendResponse({ success: true })
-  }
-
-  if (message.type === 'API_CALL') {
-    handleAPICall(message.endpoint, message.options, message.token)
-      .then(data => sendResponse({ data }))
-      .catch(err => sendResponse({ error: err.message }))
-    return true // async
-  }
-})
-
-async function handleAPICall(endpoint, options = {}, token) {
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  }
-  const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  return res.json()
 }
 
-// ── Commands (Keyboard Shortcuts) ────────────────────────────────────────────
-
-chrome.commands.onCommand.addListener((command) => {
-  if (command === 'toggle_sidepanel') {
-    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-      chrome.sidePanel.open({ tabId: tab.id })
-    })
-  }
-  if (command === 'grammar_check') {
-    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-      chrome.tabs.sendMessage(tab.id, { type: 'TRIGGER_GRAMMAR_CHECK' })
-    })
-  }
-})
-
-// ── Badge for unauthenticated state ──────────────────────────────────────────
-chrome.runtime.onInstalled.addListener(async () => {
-  const token = await getAuthToken()
-  if (!token) {
-    chrome.action.setBadgeText({ text: '!' })
-    chrome.action.setBadgeBackgroundColor({ color: '#F59E0B' })
-  }
-})
+// Allow the side panel to open on action click
+chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: false }).catch(() => {})

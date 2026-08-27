@@ -116,7 +116,8 @@ app.use(cors({
       'https://cybermindcli.info',
       'https://www.cybermindcli.info'
     ]
-    if (!origin || whitelist.includes(origin) || defaults.includes(origin) || origin === 'https://codeva-chat.vercel.app' || origin === 'https://codeva.vercel.app') {
+    const isChromeExtension = typeof origin === 'string' && origin.startsWith('chrome-extension://')
+    if (!origin || whitelist.includes(origin) || defaults.includes(origin) || origin === 'https://codeva-chat.vercel.app' || origin === 'https://codeva.vercel.app' || isChromeExtension) {
       callback(null, true)
     } else {
       callback(new Error('Not allowed by CORS'))
