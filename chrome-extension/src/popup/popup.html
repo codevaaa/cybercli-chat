@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Codeva AI</title>
+  <link rel="stylesheet" href="../styles/popup.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Auth check screen -->
+    <div id="auth-screen" class="screen">
+      <div class="logo-section">
+        <div class="logo-icon">🔥</div>
+        <h1>Codeva AI</h1>
+        <p class="subtitle">Writing, Coding & Research Assistant</p>
+      </div>
+      <button id="login-btn" class="btn-primary">Sign in to Codeva</button>
+      <p class="hint">Free account required</p>
+    </div>
+
+    <!-- Main screen (authenticated) -->
+    <div id="main-screen" class="screen" style="display:none">
+      <div class="header">
+        <div class="header-left">
+          <span class="brand">Codeva</span>
+          <span class="status-dot"></span>
+        </div>
+        <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
+      </div>
+
+      <!-- Quick actions grid -->
+      <div class="quick-actions">
+        <button data-action="grammar" class="action-card">
+          <span class="action-icon">✍️</span>
+          <span class="action-label">Grammar Check</span>
+        </button>
+        <button data-action="rewrite" class="action-card">
+          <span class="action-icon">📝</span>
+          <span class="action-label">Rewrite Text</span>
+        </button>
+        <button data-action="summarize" class="action-card">
+          <span class="action-icon">📋</span>
+          <span class="action-label">Summarize Page</span>
+        </button>
+        <button data-action="translate" class="action-card">
+          <span class="action-icon">🌐</span>
+          <span class="action-label">Translate</span>
+        </button>
+        <button data-action="explain-code" class="action-card">
+          <span class="action-icon">💻</span>
+          <span class="action-label">Explain Code</span>
+        </button>
+        <button data-action="security" class="action-card">
+          <span class="action-icon">🔒</span>
+          <span class="action-label">Security Scan</span>
+        </button>
+      </div>
+
+      <!-- Chat input -->
+      <div class="chat-input-wrap">
+        <textarea id="chat-input" placeholder="Ask anything..." rows="2"></textarea>
+        <button id="send-btn" class="send-btn">↑</button>
+      </div>
+
+      <!-- Response area -->
+      <div id="response-area" class="response-area" style="display:none">
+        <div class="response-header">
+          <span>Response</span>
+          <button id="copy-btn" class="icon-btn" title="Copy">📋</button>
+        </div>
+        <div id="response-content" class="response-content"></div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <span class="footer-text">Ctrl+Shift+C to open • Ctrl+Shift+S for sidebar</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

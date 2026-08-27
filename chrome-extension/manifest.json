@@ -1,0 +1,75 @@
+{
+  "manifest_version": 3,
+  "name": "Codeva AI — Writing, Coding & Research Assistant",
+  "version": "1.0.0",
+  "description": "AI-powered writing assistant, grammar checker, code helper, and research companion. Works on every website.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "sidePanel",
+    "notifications",
+    "clipboardWrite",
+    "clipboardRead"
+  ],
+  "optional_permissions": [
+    "tabs",
+    "history"
+  ],
+  "host_permissions": [
+    "https://cybercli-api.onrender.com/*",
+    "https://cybermindcli.info/*"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png",
+      "48": "assets/icons/icon-48.png",
+      "128": "assets/icons/icon-128.png"
+    },
+    "default_title": "Codeva AI Assistant"
+  },
+  "side_panel": {
+    "default_path": "src/sidepanel/sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/content.js"],
+      "css": ["src/styles/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "src/options/options.html",
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Ctrl+Shift+C", "mac": "Command+Shift+C" },
+      "description": "Open Codeva AI popup"
+    },
+    "toggle_sidepanel": {
+      "suggested_key": { "default": "Ctrl+Shift+S", "mac": "Command+Shift+S" },
+      "description": "Toggle Codeva side panel"
+    },
+    "grammar_check": {
+      "suggested_key": { "default": "Ctrl+Shift+G", "mac": "Command+Shift+G" },
+      "description": "Check grammar of selected text"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*", "src/styles/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

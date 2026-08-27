@@ -27,7 +27,7 @@ export default function Footer() {
               </h3>
               <a
                 href="mailto:cybermindcli@cybermindcli.com"
-                className="group inline-flex items-center gap-2 text-foreground-muted hover:text-accent transition-colors text-base"
+                className="group inline-flex items-center gap-2 text-foreground-muted hover:text-accent transition-colors text-base break-all"
               >
                 <span className="relative">
                   cybermindcli@cybermindcli.com

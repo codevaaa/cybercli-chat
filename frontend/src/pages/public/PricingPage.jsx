@@ -233,9 +233,9 @@ export default function PricingPage() {
           </h2>
         </ScrollReveal>
 
-        <div className="rounded-2xl border border-white/[0.06] overflow-hidden bg-[#0e0e12]">
+        <div className="rounded-2xl border border-white/[0.06] overflow-hidden bg-[#0e0e12] overflow-x-auto">
           {/* Sticky header */}
-          <div className="grid grid-cols-[1.6fr_1fr_1fr_1fr] items-center px-5 py-4 border-b border-white/[0.08] bg-[#101014] sticky top-16 z-10">
+          <div className="grid grid-cols-[1.6fr_1fr_1fr_1fr] items-center px-5 py-4 border-b border-white/[0.08] bg-[#101014] sticky top-16 z-10 min-w-[600px]">
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Features</span>
             {['Free', 'Pro', 'Max'].map((h) => (
               <span key={h} className="text-center text-sm font-semibold text-white">{h}</span>
@@ -248,7 +248,7 @@ export default function PricingPage() {
                 <span className="text-[11px] font-bold text-orange-400 uppercase tracking-wider">{section.group}</span>
               </div>
               {section.rows.map((row) => (
-                <div key={row.label} className="grid grid-cols-[1.6fr_1fr_1fr_1fr] items-center px-5 py-3 border-b border-white/[0.04] hover:bg-white/[0.015]">
+                <div key={row.label} className="grid grid-cols-[1.6fr_1fr_1fr_1fr] items-center px-5 py-3 border-b border-white/[0.04] hover:bg-white/[0.015] min-w-[600px]">
                   <span className="text-xs text-gray-300">{row.label}</span>
                   <div className="text-center"><Cell value={row.free} /></div>
                   <div className="text-center"><Cell value={row.pro} /></div>

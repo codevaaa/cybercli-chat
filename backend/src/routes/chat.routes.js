@@ -76,9 +76,17 @@ router.patch('/:id', requireAuth, async (req, res) => {
     if (!isValidId(req.params.id)) {
       return res.status(400).json({ error: 'Invalid thread ID format' })
     }
+    // Only allow specific fields to be updated (prevent mass assignment)
+    const allowedFields = ['title', 'is_pinned', 'is_archived', 'folder_id', 'project_id', 'style_id', 'tags', 'mode']
+    const updateData = {}
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) {
+        updateData[key] = req.body[key]
+      }
+    }
     const thread = await Thread.findOneAndUpdate(
       { _id: req.params.id, user_id: req.user.id },
-      { $set: req.body },
+      { $set: updateData },
       { new: true }
     )
     if (!thread) {

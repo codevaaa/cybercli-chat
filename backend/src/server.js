@@ -116,7 +116,7 @@ app.use(cors({
       'https://cybermindcli.info',
       'https://www.cybermindcli.info'
     ]
-    if (!origin || whitelist.includes(origin) || defaults.includes(origin) || origin.endsWith('.vercel.app')) {
+    if (!origin || whitelist.includes(origin) || defaults.includes(origin) || origin === 'https://codeva-chat.vercel.app' || origin === 'https://codeva.vercel.app') {
       callback(null, true)
     } else {
       callback(new Error('Not allowed by CORS'))

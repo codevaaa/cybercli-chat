@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Codeva AI — Side Panel</title>
+  <link rel="stylesheet" href="../styles/sidepanel.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="panel-header">
+      <div class="brand-row">
+        <span class="brand-text">Codeva AI</span>
+        <span class="mode-badge">Assistant</span>
+      </div>
+      <div class="header-actions">
+        <button id="clear-btn" class="hdr-btn" title="Clear chat">🗑️</button>
+        <button id="settings-btn" class="hdr-btn" title="Settings">⚙️</button>
+      </div>
+    </header>
+
+    <main id="chat-area" class="chat-area">
+      <div class="welcome-msg">
+        <p>👋 How can I help?</p>
+        <p class="welcome-sub">Select text on any page and I'll assist, or just ask anything below.</p>
+      </div>
+    </main>
+
+    <footer class="input-footer">
+      <div class="input-wrap">
+        <textarea id="input" placeholder="Ask anything..." rows="1"></textarea>
+        <button id="send-btn" class="send-btn">↑</button>
+      </div>
+      <div class="input-meta">
+        <span class="model-label">Ravan (Code) • Fast</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="sidepanel.js" type="module"></script>
+</body>
+</html>

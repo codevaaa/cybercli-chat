@@ -143,10 +143,12 @@ export const optionalAuth = async (req, res, next) => {
           { _id: apiKeyDoc._id },
           { $set: { last_used_at: new Date() }, $inc: { usage_count: 1 } },
         ).catch(console.error)
+        const userPlan = await resolveUserPlan(apiKeyDoc.user_id)
         req.user = {
           id: apiKeyDoc.user_id,
           email: `api-user-${apiKeyDoc.user_id.substring(0, 8)}@codeva.local`,
-          plan: 'pro',
+          plan: userPlan || 'free',
+          viaApiKey: true,
         }
       }
     } catch (err) {

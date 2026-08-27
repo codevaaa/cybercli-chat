@@ -292,6 +292,7 @@ export default function Navbar() {
                       exit={{ opacity: 0, y: 8, scale: 0.98 }}
                       transition={{ duration: 0.2, ease: 'easeOut' }}
                       className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 ${(group.featured && group.columns === 2) ? 'w-[800px] max-w-[calc(100vw-2rem)]' : group.featured ? 'w-[640px] max-w-[calc(100vw-2rem)]' : group.columns === 2 ? 'w-[500px] max-w-[calc(100vw-2rem)]' : 'w-80 max-w-[calc(100vw-2rem)]'} bg-[#0a0a0f]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_24px_50px_rgba(0,0,0,0.8)] overflow-hidden flex`}
+                      style={{ transform: 'translateX(max(-50%, calc(-100vw + 100% + 1rem)))' }}
                     >
                       {/* Left: Link Grid */}
                       <div className={`p-3 w-full grid ${group.columns === 2 ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5 flex-1`}>

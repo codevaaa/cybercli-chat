@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Codeva AI — Extension Settings</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #0f0f15; color: #e8e8e8; padding: 40px; max-width: 600px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: #D97757; }
+    .subtitle { color: #888; font-size: 13px; margin-bottom: 32px; }
+    .section { margin-bottom: 28px; }
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #666; margin-bottom: 12px; }
+    .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .setting-label { font-size: 13px; font-weight: 500; }
+    .setting-desc { font-size: 11px; color: #666; margin-top: 2px; }
+    .toggle { position: relative; width: 36px; height: 20px; background: #333; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+    .toggle.on { background: #D97757; }
+    .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.2s; }
+    .toggle.on::after { transform: translateX(16px); }
+    .btn-danger { padding: 8px 16px; background: rgba(239,68,68,0.1); color: #EF4444; border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-danger:hover { background: rgba(239,68,68,0.2); }
+  </style>
+</head>
+<body>
+  <h1>Codeva AI Settings</h1>
+  <p class="subtitle">Configure your writing assistant preferences</p>
+
+  <div class="section">
+    <div class="section-title">Features</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Real-time Grammar Checking</div>
+        <div class="setting-desc">Automatically check grammar as you type in text fields</div>
+      </div>
+      <div class="toggle on" id="toggle-grammar" onclick="toggleSetting('grammar', this)"></div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Floating Toolbar</div>
+        <div class="setting-desc">Show AI action toolbar when you select text</div>
+      </div>
+      <div class="toggle on" id="toggle-toolbar" onclick="toggleSetting('toolbar', this)"></div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Writing Suggestions</div>
+        <div class="setting-desc">Suggest improvements while you write emails and documents</div>
+      </div>
+      <div class="toggle on" id="toggle-suggestions" onclick="toggleSetting('suggestions', this)"></div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Code Assistance</div>
+        <div class="setting-desc">Offer help on GitHub, StackOverflow, and code editors</div>
+      </div>
+      <div class="toggle on" id="toggle-code" onclick="toggleSetting('code', this)"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Privacy</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Send anonymous usage data</div>
+        <div class="setting-desc">Help us improve Codeva with anonymous analytics</div>
+      </div>
+      <div class="toggle" id="toggle-analytics" onclick="toggleSetting('analytics', this)"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Account</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Sign Out</div>
+        <div class="setting-desc">Remove your authentication from this extension</div>
+      </div>
+      <button class="btn-danger" onclick="signOut()">Sign Out</button>
+    </div>
+  </div>
+
+  <script>
+    async function toggleSetting(key, el) {
+      el.classList.toggle('on')
+      const settings = (await chrome.storage.local.get('settings'))?.settings || {}
+      settings[key] = el.classList.contains('on')
+      chrome.storage.local.set({ settings })
+    }
+    async function signOut() {
+      await chrome.storage.local.remove('authToken')
+      alert('Signed out. Please sign in again from the popup.')
+    }
+    // Load saved settings
+    chrome.storage.local.get('settings').then(({ settings = {} }) => {
+      Object.entries(settings).forEach(([key, val]) => {
+        const el = document.getElementById(`toggle-${key}`)
+        if (el) el.classList.toggle('on', val)
+      })
+    })
+  </script>
+</body>
+</html>

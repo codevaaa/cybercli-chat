@@ -1,0 +1,215 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Codeva Chrome Extension — Content Script Styles
+   Injected on every page. All classes prefixed with codeva- to avoid conflicts.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Floating Selection Toolbar ─────────────────────────────────────────── */
+
+#codeva-floating-toolbar {
+  position: absolute;
+  z-index: 2147483647;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(5px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+#codeva-floating-toolbar.codeva-toolbar-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.codeva-toolbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  background: #1a1a24;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset;
+  backdrop-filter: blur(16px);
+}
+
+.codeva-toolbar-inner button {
+  all: unset;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.codeva-toolbar-inner button:hover {
+  background: rgba(217, 119, 87, 0.15);
+}
+
+.codeva-toolbar-brand {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(217, 119, 87, 0.6);
+  padding: 0 6px;
+  letter-spacing: 0.05em;
+}
+
+/* ── Grammar Badge ──────────────────────────────────────────────────────── */
+
+.codeva-grammar-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #D97757;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 999999;
+  font-family: -apple-system, system-ui, sans-serif;
+  box-shadow: 0 2px 8px rgba(217, 119, 87, 0.4);
+  transition: transform 0.15s;
+}
+
+.codeva-grammar-badge:hover {
+  transform: scale(1.1);
+}
+
+/* ── Grammar Panel ──────────────────────────────────────────────────────── */
+
+#codeva-grammar-panel {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 340px;
+  max-height: 80vh;
+  background: #111118;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  z-index: 2147483647;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#codeva-grammar-panel.codeva-panel-visible {
+  display: flex;
+}
+
+.codeva-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.codeva-panel-header button {
+  all: unset;
+  cursor: pointer;
+  color: #666;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.codeva-panel-header button:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.05);
+}
+
+.codeva-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.codeva-error-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.02);
+}
+
+.codeva-error-type {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #D97757;
+  margin-bottom: 4px;
+}
+
+.codeva-error-grammar .codeva-error-type { color: #EF4444; }
+.codeva-error-spelling .codeva-error-type { color: #F59E0B; }
+.codeva-error-punctuation .codeva-error-type { color: #3B82F6; }
+.codeva-error-style .codeva-error-type { color: #8B5CF6; }
+
+.codeva-error-text {
+  font-size: 12px;
+  color: #e0e0e0;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.codeva-error-original {
+  text-decoration: line-through;
+  color: #EF4444;
+  background: rgba(239, 68, 68, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.codeva-error-arrow { color: #666; font-size: 10px; }
+
+.codeva-error-corrected {
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.codeva-error-explain {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.codeva-fix-btn {
+  all: unset;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: #D97757;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(217, 119, 87, 0.3);
+  transition: all 0.15s;
+}
+
+.codeva-fix-btn:hover {
+  background: rgba(217, 119, 87, 0.1);
+}
+
+.codeva-fix-btn:disabled {
+  color: #10B981;
+  border-color: rgba(16, 185, 129, 0.3);
+  cursor: default;
+}

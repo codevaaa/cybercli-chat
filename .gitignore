@@ -73,3 +73,7 @@ ide/upstream/vscode/
 push_result.txt
 frontend/build_output.txt
 *.tmp
+
+# Test files with potential secrets
+backend/test_ravan.js
+test_ravan.js
