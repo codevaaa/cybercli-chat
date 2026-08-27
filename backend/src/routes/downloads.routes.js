@@ -12,6 +12,10 @@ const FILE_MAP = {
   'Codeva-mac-universal.dmg': 'Codeva-mac-universal.dmg',
   'Codeva-linux-x64.AppImage': 'Codeva-linux-x64.AppImage',
   'Codeva-linux-x64.deb': 'Codeva-linux-x64.deb',
+  // Agent Platform
+  'CodeVaa-Agent-Platform-win-x64.exe': 'CodeVaa-Agent-Platform-1.0.0-win-x64.exe',
+  'CodeVaa-Agent-Platform-mac-x64.dmg': 'CodeVaa-Agent-Platform-1.0.0-mac-x64.dmg',
+  'CodeVaa-Agent-Platform-linux-x64.AppImage': 'CodeVaa-Agent-Platform-1.0.0-linux-x64.AppImage',
 }
 
 const DOWNLOAD_META = {
@@ -19,6 +23,9 @@ const DOWNLOAD_META = {
   'Codeva-mac-universal.dmg': { platform: 'macos', name: 'Codeva for Mac', size: '~80 MB', arch: 'universal' },
   'Codeva-linux-x64.AppImage': { platform: 'linux', name: 'Codeva for Linux (AppImage)', size: '~75 MB', arch: 'x64' },
   'Codeva-linux-x64.deb': { platform: 'linux', name: 'Codeva for Linux (.deb)', size: '~70 MB', arch: 'amd64' },
+  'CodeVaa-Agent-Platform-win-x64.exe': { platform: 'windows', name: 'Agent Platform for Windows', size: '~85 MB', arch: 'x64' },
+  'CodeVaa-Agent-Platform-mac-x64.dmg': { platform: 'macos', name: 'Agent Platform for Mac', size: '~90 MB', arch: 'x64' },
+  'CodeVaa-Agent-Platform-linux-x64.AppImage': { platform: 'linux', name: 'Agent Platform for Linux', size: '~80 MB', arch: 'x64' },
 }
 
 /**

@@ -244,4 +244,90 @@ router.post('/sub-agents', async (req, res, next) => {
   }
 })
 
+/**
+ * POST /api/v1/agent/run
+ * 
+ * Agent Platform web UI endpoint. Accepts a goal/task, routes to LLM,
+ * and streams the response as SSE. This allows the web-based Agent Platform
+ * to work without requiring a local WebSocket server.
+ */
+router.post('/run', requireAuth, async (req, res) => {
+  const { goal, model, sessionId } = req.body
+
+  if (!goal || typeof goal !== 'string') {
+    return res.status(400).json({ error: 'goal is required' })
+  }
+
+  // SSE headers
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.flushHeaders?.()
+
+  const send = (data) => {
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify(data)}\n\n`)
+    }
+  }
+
+  try {
+    send({ type: 'info', content: `🚀 Agent received task: "${goal.slice(0, 100)}"` })
+    send({ type: 'info', content: '🧠 Planning execution strategy...' })
+
+    // Build system prompt for agentic behavior
+    const systemPrompt = `You are CodeVaa Agent — an autonomous AI agent that decomposes complex goals into actionable steps and executes them. 
+
+Your capabilities:
+- Code generation and debugging
+- Research and analysis
+- File operations (conceptual)
+- Multi-step planning and execution
+
+For the given goal, think step by step:
+1. Analyze the goal
+2. Break it into sub-tasks
+3. Execute each sub-task
+4. Provide the complete result
+
+Be thorough, provide code when needed, and structure your response clearly with markdown.`
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: goal },
+    ]
+
+    const activeModel = model || 'codeva-ravan-v1'
+    const generator = await llmGateway.complete({
+      messages,
+      model: activeModel,
+      temperature: 0.7,
+      plan: req.user?.plan || 'free',
+      effort: 'high',
+    })
+
+    send({ type: 'info', content: `⚡ Executing with ${activeModel}...` })
+
+    let fullResponse = ''
+    for await (const chunk of generator) {
+      if (chunk.type === 'token') {
+        fullResponse += chunk.content
+        send({ type: 'token', content: chunk.content })
+      } else if (chunk.type === 'info') {
+        send({ type: 'info', content: chunk.content })
+      } else if (chunk.type === 'error') {
+        send({ type: 'error', content: chunk.content })
+        break
+      }
+    }
+
+    send({ type: 'info', content: '✅ Task completed successfully' })
+    res.write('data: [DONE]\n\n')
+    res.end()
+  } catch (err) {
+    send({ type: 'error', content: err.message })
+    res.write('data: [DONE]\n\n')
+    res.end()
+  }
+})
+
 export default router
