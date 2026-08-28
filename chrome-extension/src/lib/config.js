@@ -117,10 +117,17 @@ export async function fetchMe() {
   try {
     const res = await fetch(`${API_BASE}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(10000),
     })
-    if (!res.ok) return null
+    if (res.status === 401) {
+      // Token genuinely invalid — clear it
+      await chrome.storage.local.remove(['authToken', 'userInfo'])
+      return null
+    }
+    if (!res.ok) return { _networkError: true } // keep token, backend may be cold-starting
     return res.json()
   } catch {
-    return null
+    // Network error / timeout — keep token, don't sign out
+    return { _networkError: true }
   }
 }

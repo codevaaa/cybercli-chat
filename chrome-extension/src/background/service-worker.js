@@ -224,8 +224,17 @@ async function refreshBadge(signedIn) {
   }
 }
 
-// Allow the side panel to open on action click
-chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: false }).catch(() => {})
+// ── Icon click opens the side panel directly (Grammarly-style, no popup flash) ──
+chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: true }).catch(() => {})
+
+// Fallback: explicit action click handler (works even if setPanelBehavior fails)
+chrome.action.onClicked.addListener((tab) => {
+  if (tab?.id) {
+    chrome.sidePanel.open({ tabId: tab.id }).catch((e) => {
+      console.warn('[Codeva] sidePanel open failed:', e.message)
+    })
+  }
+})
 
 // ── Rewrite with Diff View ────────────────────────────────────────────────────
 async function handleRewriteDiff(tab, originalText, prompt, action) {

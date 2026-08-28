@@ -20,11 +20,16 @@ async function init() {
 
   const token = await getToken()
   if (!token) return showAuth()
-  const me = await fetchMe()
-  if (!me) return showAuth()
 
+  // Token exists — show chat immediately (don't block on slow /auth/me)
   bindEvents()
   checkPending()
+
+  // Verify token in the background; only bounce to auth if token was truly invalid (401)
+  fetchMe().then((me) => {
+    // me === null means 401 (config.js cleared the token). Network errors return {_networkError:true}
+    if (me === null) showAuth()
+  }).catch(() => {})
 }
 
 function showAuth() {
