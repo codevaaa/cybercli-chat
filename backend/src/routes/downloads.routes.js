@@ -16,9 +16,9 @@ const FILE_MAP = {
   'Codeva-linux-x64.AppImage': { file: 'Codeva-linux-x86_64.AppImage', tag: 'latest' },
   'Codeva-linux-x64.deb': { file: 'Codeva-linux-amd64.deb', tag: 'latest' },
   // Agent Platform — separate release tag (agent-v*)
-  'CodeVaa-Agent-Platform-win-x64.exe': { file: 'CodeVaa-Agent-Platform-1.0.0-win-x64.exe', tag: 'agent-v1.0.0' },
-  'CodeVaa-Agent-Platform-mac-x64.dmg': { file: 'CodeVaa-Agent-Platform-1.0.0-mac-x64.dmg', tag: 'agent-v1.0.0' },
-  'CodeVaa-Agent-Platform-linux-x64.AppImage': { file: 'CodeVaa-Agent-Platform-1.0.0-linux-x64.AppImage', tag: 'agent-v1.0.0' },
+  'CodeVaa-Agent-Platform-win-x64.exe': { file: 'CodeVaa-Agent-Platform-1.0.1-win-x64.exe', tag: 'agent-v1.0.1' },
+  'CodeVaa-Agent-Platform-mac-x64.dmg': { file: 'CodeVaa-Agent-Platform-1.0.1-mac-x64.dmg', tag: 'agent-v1.0.1' },
+  'CodeVaa-Agent-Platform-linux-x64.AppImage': { file: 'CodeVaa-Agent-Platform-1.0.1-linux-x64.AppImage', tag: 'agent-v1.0.1' },
 }
 
 const DOWNLOAD_META = {
