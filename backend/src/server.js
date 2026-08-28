@@ -325,6 +325,16 @@ connectMongoDB().then(async () => {
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`Codeva API server running on port ${PORT}`)
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
+
+    // ── Keep-alive self-ping (prevents Render cold-start) ──
+    // Render free tier spins down after 15 min idle. Self-ping every 10 min keeps it warm.
+    if (process.env.NODE_ENV === 'production' && process.env.SELF_URL) {
+      setInterval(() => {
+        fetch(`${process.env.SELF_URL}/health`)
+          .then(() => console.log('[KeepAlive] Self-ping OK'))
+          .catch(() => {})
+      }, 10 * 60 * 1000) // every 10 minutes
+    }
   })
 })
 

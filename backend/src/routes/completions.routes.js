@@ -1,8 +1,56 @@
 import { Router } from 'express'
 import { requireAuth, optionalAuth } from '../middleware/auth.js'
 import { llmGateway } from '../services/llm/gateway.js'
+import { cacheKeyFor, getCached, setCached } from '../utils/responseCache.js'
 
 const router = Router()
+
+// ── Grammar check endpoint (cached, non-stream, fast) ──────────────────────────
+// Used by the Chrome extension. Same text → instant cached result.
+router.post('/grammar', optionalAuth, async (req, res) => {
+  const { text, language } = req.body
+  if (!text || typeof text !== 'string' || text.length < 2) {
+    return res.status(400).json({ error: 'text is required' })
+  }
+
+  const messages = [{
+    role: 'user',
+    content: `You are an expert multilingual proofreader (English, Hindi, Spanish, French, German). Analyze the text carefully. Catch spelling errors, incomplete/gibberish words, grammar mistakes, punctuation, awkward phrasing, and clarity issues.
+
+Return ONLY a JSON object (no markdown):
+{"tone":"formal|casual|confident|friendly|neutral|aggressive","language":"detected language","issues":[{"original":"exact substring","suggestion":"correction","type":"grammar|spelling|punctuation|clarity","reason":"brief reason"}]}
+
+Rules:
+- Flag misspelled/incomplete/non-words (e.g. "cybrefa", "recieve", "teh").
+- "original" MUST be an exact substring in the text.
+- If perfect, return empty issues [].
+
+Text:
+"""${text.slice(0, 3000)}"""`
+  }]
+
+  const model = 'groq/llama-3.1-8b'
+  const key = cacheKeyFor(messages, model)
+
+  // Serve from cache if available
+  const cached = getCached(key)
+  if (cached) {
+    return res.json({ ...cached, cached: true })
+  }
+
+  try {
+    const result = await llmGateway.completeNonStream({ messages, model, temperature: 0.2 })
+    let parsed = { tone: 'neutral', language: language || 'English', issues: [] }
+    try {
+      const match = (result.content || '').match(/\{[\s\S]*\}/)
+      if (match) parsed = JSON.parse(match[0])
+    } catch {}
+    setCached(key, parsed)
+    return res.json({ ...parsed, cached: false })
+  } catch (err) {
+    return res.status(500).json({ error: err.message, issues: [] })
+  }
+})
 
 router.post('/', optionalAuth, async (req, res) => {
   const { 

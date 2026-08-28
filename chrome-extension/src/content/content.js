@@ -16,7 +16,74 @@
 
   const API_BASE = 'https://cybercli-api.onrender.com/api/v1'
   const GRAMMAR_MODEL = 'groq/llama-3.1-8b'
-  const DEBOUNCE_MS = 1400
+  const DEBOUNCE_MS = 900 // faster now that local check is instant
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  LOCAL GRAMMAR ENGINE (Layer 1 — instant, <5ms, no network)
+  //  Inlined here because content scripts can't import ES modules.
+  // ═══════════════════════════════════════════════════════════════════════════
+  const CV_MISSPELLINGS = {
+    teh:'the',recieve:'receive',seperate:'separate',occured:'occurred',untill:'until',wich:'which',
+    becuase:'because',definately:'definitely',accomodate:'accommodate',acheive:'achieve',beleive:'believe',
+    calender:'calendar',collegue:'colleague',concious:'conscious',embarass:'embarrass',enviroment:'environment',
+    existance:'existence',foriegn:'foreign',goverment:'government',grammer:'grammar',gaurd:'guard',harrass:'harass',
+    independant:'independent',liason:'liaison',maintainance:'maintenance',neccessary:'necessary',noticable:'noticeable',
+    occassion:'occasion',persistant:'persistent',privelege:'privilege',publically:'publicly',reccomend:'recommend',
+    refered:'referred',relevent:'relevant',succesful:'successful',tommorow:'tomorrow',truely:'truly',
+    unfortunatly:'unfortunately',wierd:'weird',writen:'written',alot:'a lot',thier:'their',youre:"you're",
+    wont:"won't",cant:"can't",dont:"don't",isnt:"isn't",didnt:"didn't",wouldnt:"wouldn't",couldnt:"couldn't",
+    shouldnt:"shouldn't",hasnt:"hasn't",havent:"haven't",wasnt:"wasn't",werent:"weren't",arent:"aren't",
+    doesnt:"doesn't",wanna:'want to',gonna:'going to',gotta:'got to',cuz:'because',tho:'though',thru:'through',
+    ur:'your',pls:'please',plz:'please',thx:'thanks',ppl:'people',bcz:'because',bcoz:'because',
+  }
+  const CV_WORDS = new Set(['the','be','to','of','and','a','in','that','have','it','for','not','on','with','he','as','you','do','at','this','but','his','by','from','they','we','say','her','she','or','an','will','my','one','all','would','there','their','what','so','up','out','if','about','who','get','which','go','me','when','make','can','like','time','no','just','him','know','take','people','into','year','your','good','some','could','them','see','other','than','then','now','look','only','come','its','over','think','also','back','after','use','two','how','our','work','first','well','way','even','new','want','because','any','these','give','day','most','us','is','was','are','been','has','had','were','said','did','made','find','here','thing','many','hello','hi','hey','thanks','thank','please','yes','okay','cool','nice','great','sure','maybe','search','cyber','security','code','coding','number','name','email','password','login','submit','cancel'])
+
+  window.__cvLocalGrammar = function(text) {
+    const issues = []
+    if (!text || text.length < 2) return issues
+    const words = text.match(/\b[a-zA-Z']+\b/g) || []
+    const seen = new Set()
+    for (const word of words) {
+      const lower = word.toLowerCase()
+      if (seen.has(lower)) continue
+      if (CV_MISSPELLINGS[lower]) {
+        const c = CV_MISSPELLINGS[lower]
+        const sug = word[0] === word[0].toUpperCase() ? c[0].toUpperCase() + c.slice(1) : c
+        issues.push({ original: word, suggestion: sug, type: 'spelling', reason: 'Common misspelling', source: 'local' })
+        seen.add(lower)
+      }
+    }
+    // double words
+    let dm; const dw = /\b(\w+)\s+\1\b/gi
+    while ((dm = dw.exec(text)) !== null) issues.push({ original: dm[0], suggestion: dm[1], type: 'grammar', reason: 'Repeated word', source: 'local' })
+    // double spaces
+    if (/  +/.test(text)) issues.push({ original: '  ', suggestion: ' ', type: 'punctuation', reason: 'Multiple spaces', source: 'local' })
+    // lone lowercase i
+    if (/\bi\b(?!['’])/.test(text)) issues.push({ original: 'i', suggestion: 'I', type: 'grammar', reason: 'Pronoun "I" must be capitalized', source: 'local' })
+    // gibberish / not-a-word detection
+    for (const word of words) {
+      const lower = word.toLowerCase()
+      if (seen.has(lower) || lower.length < 4) continue
+      if (CV_WORDS.has(lower) || CV_MISSPELLINGS[lower]) continue
+      const hasVowel = /[aeiou]/i.test(lower)
+      const tooManyCons = /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(lower)
+      if (!hasVowel || tooManyCons) {
+        issues.push({ original: word, suggestion: '(verify spelling)', type: 'spelling', reason: 'Possible typo or misspelled word', source: 'local', lowConfidence: true })
+        seen.add(lower)
+      }
+    }
+    return issues
+  }
+
+  window.__cvLocalTone = function(text) {
+    const l = text.toLowerCase()
+    if (/\b(hereby|pursuant|regards|sincerely|furthermore|therefore|kindly)\b/.test(l)) return 'formal'
+    if (/\b(lol|haha|gonna|wanna|yeah|cool|awesome|dude|hey)\b/.test(l)) return 'casual'
+    if (/\b(must|will|definitely|certainly|guarantee|absolutely|ensure)\b/.test(l)) return 'confident'
+    if (/\b(thanks|please|appreciate|happy|glad|love|wonderful)\b/.test(l)) return 'friendly'
+    if (/[!]{2,}|\b(stupid|hate|terrible|awful|ridiculous)\b/.test(l)) return 'aggressive'
+    return 'neutral'
+  }
 
   let settings = { grammar: true, toolbar: true, floatingIcon: true }
   let authToken = null
@@ -152,62 +219,110 @@
     if (el !== activeField || !settings.grammar) return
     positionFab()
     clearTimeout(debounceTimer)
-    setFabState('idle')
-    debounceTimer = setTimeout(() => runGrammarCheck(el), DEBOUNCE_MS)
+
+    // Smart debounce: check immediately after sentence-end punctuation,
+    // otherwise wait the full debounce period. (Grammarly-style batching.)
+    const text = getText(el)
+    const endsWithSentence = /[.!?\n]\s*$/.test(text)
+    const delay = endsWithSentence ? 300 : DEBOUNCE_MS
+
+    // Instant local check happens with no delay for immediate feedback
+    const quickLocal = window.__cvLocalGrammar ? window.__cvLocalGrammar(text.trim()) : []
+    if (quickLocal.length > 0) {
+      setFabState('issues', quickLocal.length)
+    } else {
+      setFabState('idle')
+    }
+
+    debounceTimer = setTimeout(() => runGrammarCheck(el), delay)
   }
+
+  // Simple in-memory cache: text hash → result (avoids re-checking identical text)
+  const grammarCache = new Map()
+  function cacheKey(t) { return t.slice(0, 500) }
 
   async function runGrammarCheck(el) {
     const text = getText(el).trim()
-    if (text.length < 12 || text.length > 4000) { setFabState('idle'); return }
+    if (text.length < 3 || text.length > 4000) { setFabState('idle'); return }
     if (text === lastCheckedText) return
     lastCheckedText = text
-    setFabState('checking')
 
-    try {
-      const prompt = `You are a multilingual grammar and tone analyzer. Analyze the text (detect language automatically — works for English, Hindi, Spanish, French, German, and more).
+    // ── LAYER 1: INSTANT local check (<5ms, no network) ──
+    const localIssues = window.__cvLocalGrammar ? window.__cvLocalGrammar(text) : []
+    currentTone = window.__cvLocalTone ? window.__cvLocalTone(text) : 'neutral'
+    currentLanguage = /[\u0900-\u097F]/.test(text) ? 'Hindi' : 'English'
 
-Return ONLY a JSON object (no markdown, no prose) in this exact format:
-{"tone":"formal|casual|confident|friendly|neutral|aggressive","language":"detected language","issues":[{"original":"exact wrong substring","suggestion":"corrected substring","type":"grammar|spelling|punctuation|clarity","reason":"short reason"}]}
-
-Rules:
-- "tone" = the overall tone of the text (one word)
-- "language" = detected language name (e.g. "English", "Hindi", "Spanish")
-- "issues" = array of errors found. If text is perfect, use empty array []
-- Check grammar rules appropriate for the detected language
-- For Hindi/Devanagari, check spelling and sentence structure
-- For Spanish/French/German, check gender agreement, accents, conjugation
-
-Text:
-"""${text}"""`
-      const raw = await callAI(prompt, GRAMMAR_MODEL)
-      // Parse the JSON response
-      let parsed = null
-      try {
-        const jsonMatch = raw.match(/\{[\s\S]*\}/)
-        if (jsonMatch) parsed = JSON.parse(jsonMatch[0])
-      } catch {}
-
-      if (parsed && parsed.issues) {
-        currentIssues = Array.isArray(parsed.issues) ? parsed.issues : []
-        currentTone = parsed.tone || 'neutral'
-        currentLanguage = parsed.language || 'English'
-      } else {
-        // Fallback: try to parse as array (old format)
-        const arrMatch = raw.match(/\[[\s\S]*\]/)
-        currentIssues = arrMatch ? JSON.parse(arrMatch[0]) : []
-        currentTone = 'neutral'
-        currentLanguage = 'English'
-      }
-
-      if (Array.isArray(currentIssues) && currentIssues.length > 0) {
-        setFabState('issues', currentIssues.length)
-      } else {
-        setFabState('clean')
-      }
-    } catch (err) {
-      setFabState('idle')
-      if (err.auth) currentIssues = [{ auth: true }]
+    // Show local results IMMEDIATELY (Grammarly-style instant feedback)
+    if (localIssues.length > 0) {
+      currentIssues = localIssues
+      setFabState('issues', localIssues.length)
+    } else {
+      setFabState('checking') // spin while we do the deep API check
     }
+
+    // ── Cache check ──
+    const key = cacheKey(text)
+    if (grammarCache.has(key)) {
+      const cached = grammarCache.get(key)
+      currentIssues = mergeIssues(localIssues, cached.issues)
+      currentTone = cached.tone || currentTone
+      currentLanguage = cached.language || currentLanguage
+      setFabState(currentIssues.length ? 'issues' : 'clean', currentIssues.length)
+      return
+    }
+
+    // ── LAYER 2: ADVANCED API check via cached /grammar endpoint ──
+    try {
+      if (!authToken) {
+        const r = await chrome.storage.local.get('authToken')
+        authToken = r.authToken
+      }
+      if (!authToken) {
+        // Not signed in — show local results only
+        currentIssues = localIssues.filter(i => !i.lowConfidence)
+        setFabState(currentIssues.length > 0 ? 'issues' : 'clean', currentIssues.length)
+        return
+      }
+
+      const res = await fetch(`${API_BASE}/completions/grammar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ text, language: currentLanguage }),
+      })
+
+      if (res.status === 401) { authToken = null; currentIssues = [{ auth: true }]; setFabState('idle'); return }
+      if (!res.ok) throw new Error('grammar HTTP ' + res.status)
+
+      const parsed = await res.json()
+      const apiIssues = Array.isArray(parsed.issues) ? parsed.issues : []
+      currentTone = parsed.tone || currentTone
+      currentLanguage = parsed.language || currentLanguage
+
+      currentIssues = mergeIssues(localIssues, apiIssues)
+      grammarCache.set(key, { issues: apiIssues, tone: currentTone, language: currentLanguage })
+      if (grammarCache.size > 50) grammarCache.delete(grammarCache.keys().next().value)
+
+      setFabState(currentIssues.length > 0 ? 'issues' : 'clean', currentIssues.length)
+    } catch (err) {
+      // API failed — keep local results (still useful)
+      currentIssues = localIssues.filter(i => !i.lowConfidence)
+      setFabState(currentIssues.length > 0 ? 'issues' : 'clean', currentIssues.length)
+    }
+  }
+
+  // Merge and dedupe issues from local + API sources
+  function mergeIssues(local, api) {
+    const merged = [...local]
+    const seen = new Set(local.map(i => (i.original || '').toLowerCase()))
+    for (const iss of api) {
+      const k = (iss.original || '').toLowerCase()
+      if (!seen.has(k) && iss.original) {
+        merged.push(iss)
+        seen.add(k)
+      }
+    }
+    // Remove low-confidence local flags if API found nothing for that word
+    return merged.filter(i => !i.lowConfidence || api.length === 0)
   }
 
   fab.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation() })
@@ -240,8 +355,8 @@ Text:
     closeCard()
     card = document.createElement('div')
     card.className = 'cv-card'
+    // Horizontal position set now; vertical set after measuring (see below)
     const rect = fab.getBoundingClientRect()
-    card.style.top = `${window.scrollY + rect.bottom + 8}px`
     card.style.left = `${Math.max(12, window.scrollX + rect.right - 340)}px`
 
     if (currentIssues[0]?.auth) {
@@ -277,6 +392,18 @@ Text:
     }
 
     document.documentElement.appendChild(card)
+
+    // ── Smart vertical positioning: open UPWARD if not enough space below ──
+    const cardHeight = card.offsetHeight
+    const spaceBelow = window.innerHeight - rect.bottom
+    const spaceAbove = rect.top
+    if (spaceBelow < cardHeight + 20 && spaceAbove > spaceBelow) {
+      // Open above the field
+      card.style.top = `${window.scrollY + rect.top - cardHeight - 8}px`
+    } else {
+      // Open below (default)
+      card.style.top = `${window.scrollY + rect.bottom + 8}px`
+    }
 
     card.querySelector('.cv-card-close')?.addEventListener('click', closeCard)
     card.querySelector('.cv-signin')?.addEventListener('click', () => {
