@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  // Relative base so assets load under file:// in the packaged Electron app
+  base: './',
   server: {
     port: 5174,
     proxy: {

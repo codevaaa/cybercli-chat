@@ -17,13 +17,28 @@ import fs from 'fs'
 const __dirname    = path.dirname(fileURLToPath(import.meta.url))
 const isDev        = process.env.NODE_ENV === 'development'
 const PLATFORM_URL = 'http://localhost:4000'
-const UI_URL       = isDev
-  ? 'http://localhost:5174'
-  : `file://${path.join(process.resourcesPath || __dirname, isDev ? '../../ui-dist' : '../ui-dist', 'index.html')}`
+
+// Resolve the packaged UI index.html.
+// electron-builder copies ../ui-dist → resources/ui-dist (see extraResources).
+function resolveUiPath() {
+  if (isDev) return 'http://localhost:5174'
+  const candidates = [
+    path.join(process.resourcesPath || '', 'ui-dist', 'index.html'),
+    path.join(__dirname, '..', 'ui-dist', 'index.html'),
+    path.join(__dirname, '..', '..', 'ui-dist', 'index.html'),
+    path.join(app.getAppPath(), '..', 'ui-dist', 'index.html'),
+  ]
+  for (const c of candidates) {
+    try { if (c && fs.existsSync(c)) return c } catch {}
+  }
+  // Last resort — return the most likely path even if check failed
+  return candidates[0]
+}
 
 let mainWindow = null
 let tray       = null
 let platformProcess = null
+let autoUpdater = null
 
 // ── Platform Server ────────────────────────────────────────────────────────
 
@@ -80,15 +95,32 @@ async function createWindow() {
     icon: path.join(__dirname, '../assets/icon.png'),
   })
 
-  // Show splash while platform starts
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.show()
   })
 
-  mainWindow.loadURL(UI_URL)
+  // If the UI fails to load, show a helpful fallback instead of a blank screen
+  mainWindow.webContents.on('did-fail-load', (_e, errorCode, errorDesc, validatedURL) => {
+    console.error('[Desktop] UI failed to load:', errorCode, errorDesc, validatedURL)
+    mainWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(`
+      <html><body style="margin:0;background:#0A0A0F;color:#ECECEC;font-family:system-ui;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center">
+        <div style="width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#E8A590,#D97757);margin-bottom:16px"></div>
+        <h2 style="margin:0 0 8px">CodeVaa Agent Platform</h2>
+        <p style="color:#8b8b93;max-width:420px;line-height:1.6">The interface could not load. Reinstall the app or contact support.</p>
+        <p style="color:#555;font-size:12px;margin-top:20px">${errorDesc}</p>
+      </body></html>`))
+    mainWindow.show()
+  })
 
+  const uiPath = resolveUiPath()
   if (isDev) {
+    mainWindow.loadURL(uiPath)
     mainWindow.webContents.openDevTools({ mode: 'detach' })
+  } else {
+    // loadFile handles local paths + relative assets correctly
+    mainWindow.loadFile(uiPath).catch(err => {
+      console.error('[Desktop] loadFile failed:', err)
+    })
   }
 
   mainWindow.on('closed', () => { mainWindow = null })
@@ -141,17 +173,84 @@ ipcMain.handle('platform:openProject', async () => {
 
 ipcMain.handle('app:getVersion', () => app.getVersion())
 
+// ── Auto Updater ─────────────────────────────────────────────────────────────
+
+async function initAutoUpdater() {
+  try {
+    const pkg = await import('electron-updater')
+    autoUpdater = pkg.autoUpdater || pkg.default?.autoUpdater
+    if (!autoUpdater) return
+
+    autoUpdater.autoDownload = false
+    autoUpdater.autoInstallOnAppQuit = true
+    autoUpdater.allowPrerelease = false
+
+    autoUpdater.on('update-available', (info) => {
+      console.log('[Updater] Update available:', info?.version)
+      // Prompt the user
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'Update Available',
+        message: `A new version (${info?.version}) of CodeVaa Agent Platform is available.`,
+        detail: 'Would you like to download it now?',
+        buttons: ['Download', 'Later'],
+        defaultId: 0,
+      }).then(({ response }) => {
+        if (response === 0) autoUpdater.downloadUpdate().catch(e => console.error('[Updater] download failed', e))
+      })
+    })
+
+    autoUpdater.on('download-progress', (p) => {
+      if (mainWindow) mainWindow.setProgressBar((p.percent || 0) / 100)
+    })
+
+    autoUpdater.on('update-downloaded', (info) => {
+      if (mainWindow) mainWindow.setProgressBar(-1)
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'Update Ready',
+        message: `Version ${info?.version} has been downloaded.`,
+        detail: 'Restart the app to apply the update.',
+        buttons: ['Restart Now', 'Later'],
+        defaultId: 0,
+      }).then(({ response }) => {
+        if (response === 0) autoUpdater.quitAndInstall()
+      })
+    })
+
+    autoUpdater.on('error', (err) => {
+      const msg = err?.message || String(err)
+      // Suppress "no release" / network errors silently
+      if (/404|latest|ENOTFOUND|ETIMEDOUT|net::ERR|Cannot find/i.test(msg)) return
+      console.error('[Updater] Error:', msg)
+    })
+
+    // Check on startup (deferred) then every 4 hours
+    const check = () => autoUpdater.checkForUpdates().catch(() => {})
+    setTimeout(check, 10000)
+    setInterval(check, 4 * 60 * 60 * 1000)
+  } catch (err) {
+    console.error('[Updater] Failed to init:', err.message)
+  }
+}
+
 // ── App Lifecycle ──────────────────────────────────────────────────────────
 
 app.on('ready', async () => {
-  // Start embedded platform server
-  startPlatformServer()
-
-  // Wait a moment for platform to start
-  await new Promise(r => setTimeout(r, 1500))
+  // In dev, start the embedded platform server. In production, the UI connects
+  // to the hosted backend (cybercli-api.onrender.com) — no local server needed.
+  if (isDev) {
+    startPlatformServer()
+    await new Promise(r => setTimeout(r, 1500))
+  }
 
   createWindow()
   createTray()
+
+  // Initialize auto-updater (production only)
+  if (!isDev) {
+    initAutoUpdater()
+  }
 })
 
 app.on('window-all-closed', () => {
