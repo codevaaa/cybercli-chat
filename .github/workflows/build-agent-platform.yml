@@ -6,9 +6,13 @@ on:
       - 'agent-v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
+      fail-fast: false   # one platform failing must NOT cancel the others
       matrix:
         include:
           - os: windows-latest
@@ -27,17 +31,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: agent-platform/ui/package-lock.json
+          node-version: 20        # LTS — most compatible with electron-builder
+
+      - name: Install Linux build tools
+        if: matrix.platform == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fakeroot dpkg
 
       - name: Install UI dependencies
         working-directory: agent-platform/ui
-        run: npm ci || npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund
 
       - name: Build UI
         working-directory: agent-platform/ui
         run: npm run build
+
+      - name: Generate desktop icons
+        working-directory: agent-platform/desktop
+        run: node generate-icon.cjs
 
       - name: Install Desktop dependencies
         working-directory: agent-platform/desktop
@@ -45,9 +55,10 @@ jobs:
 
       - name: Build Desktop App (${{ matrix.platform }})
         working-directory: agent-platform/desktop
-        run: npm run build:${{ matrix.platform }}
+        run: npx electron-builder --${{ matrix.platform }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         continue-on-error: true
 
       - name: Upload artifacts
@@ -59,14 +70,13 @@ jobs:
             agent-platform/desktop/dist/*.dmg
             agent-platform/desktop/dist/*.AppImage
             agent-platform/desktop/dist/*.deb
-            agent-platform/desktop/dist/*.rpm
           if-no-files-found: ignore
 
-  # ── GitHub Release (tag pushes only) ─────────────────────────────────────────
+  # ── GitHub Release (runs even if some platforms failed) ──────────────────────
   release:
     needs: [build]
+    if: always() && startsWith(github.ref, 'refs/tags/agent-v')
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/agent-v')
     permissions:
       contents: write
     steps:
@@ -78,38 +88,30 @@ jobs:
           path: artifacts
 
       - name: List artifacts
-        run: find artifacts -type f | sort
+        run: find artifacts -type f | sort || echo "no artifacts"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: "CodeVaa Agent Platform ${{ github.ref_name }}"
+          tag_name: ${{ github.ref_name }}
           body: |
             ## CodeVaa Agent Platform ${{ github.ref_name }}
 
-            Autonomous multi-agent AI desktop app with 16 specialized agents, parallel execution, skills system, and full project awareness.
+            Autonomous multi-agent AI desktop app — 16 specialized agents, parallel execution, skills system, full project awareness.
 
             ### Downloads
             | Platform | File |
             |---|---|
-            | 🪟 Windows | CodeVaa-Agent-Platform-*-win-x64.exe |
-            | 🍎 macOS | CodeVaa-Agent-Platform-*-mac-x64.dmg |
-            | 🐧 Linux AppImage | CodeVaa-Agent-Platform-*-linux-x64.AppImage |
-            | 🐧 Linux deb | CodeVaa-Agent-Platform-*-linux-x64.deb |
-
-            ### Features
-            - 16 specialized AI agents (coder, researcher, reviewer, etc.)
-            - Parallel multi-agent execution
-            - 116 bundled skills
-            - Full project context awareness
-            - Self-evolving prompt loop
-            - WebSocket real-time orchestration
+            | Windows | CodeVaa-Agent-Platform-*-win-x64.exe |
+            | macOS | CodeVaa-Agent-Platform-*-mac-x64.dmg |
+            | Linux AppImage | CodeVaa-Agent-Platform-*-linux-x64.AppImage |
+            | Linux deb | CodeVaa-Agent-Platform-*-linux-amd64.deb |
           files: |
             artifacts/**/*.exe
             artifacts/**/*.dmg
             artifacts/**/*.AppImage
             artifacts/**/*.deb
-            artifacts/**/*.rpm
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
