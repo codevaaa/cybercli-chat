@@ -112,3 +112,56 @@
 2. "Load unpacked" → select `chrome-extension/` folder
 3. Sign in at cybermindcli.info (extension auto-captures token)
 4. Test on any page: type in text field, select text, right-click, etc.
+
+
+---
+
+## Intelligence Framework (v1.6) — How Codeva beats Grammarly + Claude
+
+### The Hybrid Engine (why it's smarter AND faster)
+
+```
+User types → 
+  ┌─ LAYER 1: LOCAL (instant, <5ms, offline-capable) ─────────┐
+  │  • 80+ misspelling dictionary (teh→the, recieve→receive)   │
+  │  • Confused words (its/it's, your/you're, to/too/two)      │
+  │  • Repeated words, double spaces, space-before-punctuation │
+  │  • Lone lowercase 'i', sentence capitalization             │
+  │  • Gibberish/non-word detection (catches "cybrefa")        │
+  │  • Local tone heuristic                                    │
+  └────────────────────────────────────────────────────────────┘
+              ↓ (shows instantly)
+  ┌─ LAYER 2: API (deep, cached, 900ms debounce) ─────────────┐
+  │  • Full LLM grammar/clarity/tone analysis                  │
+  │  • Multilingual (EN/HI/ES/FR/DE)                           │
+  │  • Cached server-side (same text = instant)                │
+  │  • Cached client-side (Map, 50 entries)                    │
+  └────────────────────────────────────────────────────────────┘
+              ↓
+  Merge + dedupe → show underlines + suggestions
+```
+
+### Why this is better than each competitor:
+
+**vs Grammarly:**
+- Grammarly's on-device model is proprietary/closed. Ours is transparent + extensible.
+- We add AI reasoning (Grammarly's free tier has no LLM).
+- We're multilingual out of the box.
+
+**vs Claude Chrome:**
+- Claude has no real-time grammar / inline writing help.
+- We have Grammarly-style FAB + underlines Claude lacks.
+- We add page reading + summarization + agentic actions like Claude.
+
+### Speed optimizations (full-stack):
+1. ✅ **Local-first** — obvious errors caught in <5ms, no network
+2. ✅ **Server cache** — LRU cache, same text = instant (responseCache.js)
+3. ✅ **Client cache** — Map of recent checks
+4. ✅ **Smart debounce** — 300ms after sentence-end, 900ms mid-word
+5. ✅ **Keep-alive ping** — backend stays warm (no cold-start)
+6. ✅ **Offline queue** — actions retry when back online
+
+### Accuracy improvements:
+- Explicit non-word detection prompt (fixes "cybrefa shows no issues")
+- Local dictionary catches high-frequency errors instantly
+- Confidence filtering: local gibberish flags removed if API confirms clean

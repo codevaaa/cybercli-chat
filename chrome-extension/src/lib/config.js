@@ -110,6 +110,38 @@ export async function complete({ messages, model = 'groq/llama-3.1-8b' }) {
   return text
 }
 
+/**
+ * Offline action queue — if a request fails due to no network, queue it
+ * and retry when back online.
+ */
+export async function queueOfflineAction(action) {
+  const { offlineQueue = [] } = await chrome.storage.local.get('offlineQueue')
+  offlineQueue.push({ ...action, queuedAt: Date.now() })
+  await chrome.storage.local.set({ offlineQueue: offlineQueue.slice(-20) }) // keep last 20
+}
+
+export async function processOfflineQueue(onResult) {
+  const { offlineQueue = [] } = await chrome.storage.local.get('offlineQueue')
+  if (offlineQueue.length === 0) return
+  const remaining = []
+  for (const action of offlineQueue) {
+    // Only retry actions younger than 1 hour
+    if (Date.now() - action.queuedAt > 3600000) continue
+    try {
+      const result = await complete({ messages: action.messages, model: action.model })
+      onResult?.(action, result)
+    } catch {
+      remaining.push(action) // still failing, keep for next time
+    }
+  }
+  await chrome.storage.local.set({ offlineQueue: remaining })
+}
+
+// Auto-process queue when back online
+if (typeof window !== 'undefined') {
+  window.addEventListener?.('online', () => processOfflineQueue())
+}
+
 /** Verify token + fetch user info */
 export async function fetchMe() {
   const token = await getToken()
