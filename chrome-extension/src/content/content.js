@@ -174,7 +174,7 @@
   const fab = document.createElement('div')
   fab.className = 'cv-fab'
   fab.style.display = 'none'
-  fab.innerHTML = `<div class="cv-fab-ring"></div><div class="cv-fab-core"></div><div class="cv-fab-count"></div>`
+  fab.innerHTML = `<div class="cv-fab-ring"></div><div class="cv-fab-core"><span class="cv-fab-mark">C</span></div><div class="cv-fab-count"></div>`
   document.documentElement.appendChild(fab)
 
   let activeField = null
@@ -355,9 +355,7 @@
     closeCard()
     card = document.createElement('div')
     card.className = 'cv-card'
-    // Horizontal position set now; vertical set after measuring (see below)
-    const rect = fab.getBoundingClientRect()
-    card.style.left = `${Math.max(12, window.scrollX + rect.right - 340)}px`
+    // Card uses position:fixed (viewport coords) — set after measuring below.
 
     if (currentIssues[0]?.auth) {
       card.innerHTML = authCardHTML()
@@ -391,19 +389,39 @@
       card.innerHTML = cardShell(`${currentIssues.length} suggestion${currentIssues.length > 1 ? 's' : ''}`, toneBar + items, true)
     }
 
+    // Fixed positioning (relative to viewport, not document) — robust on all pages
+    card.style.position = 'fixed'
     document.documentElement.appendChild(card)
 
-    // ── Smart vertical positioning: open UPWARD if not enough space below ──
-    const cardHeight = card.offsetHeight
-    const spaceBelow = window.innerHeight - rect.bottom
-    const spaceAbove = rect.top
-    if (spaceBelow < cardHeight + 20 && spaceAbove > spaceBelow) {
-      // Open above the field
-      card.style.top = `${window.scrollY + rect.top - cardHeight - 8}px`
+    // ── Smart positioning: measure card, decide up vs down ──
+    const fabRect = fab.getBoundingClientRect()
+    const cardW = card.offsetWidth || 340
+    const cardH = card.offsetHeight || 200
+    const gap = 8
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+
+    // Horizontal: align card's right edge near the FAB, clamp to viewport
+    let left = fabRect.right - cardW
+    left = Math.max(12, Math.min(left, vw - cardW - 12))
+
+    // Vertical: PREFER opening upward (above the FAB) since text fields are
+    // usually near the top of the page. Only go down if there's no room above.
+    const spaceAbove = fabRect.top
+    const spaceBelow = vh - fabRect.bottom
+    let top
+    if (spaceAbove >= cardH + gap) {
+      top = fabRect.top - cardH - gap        // open UP
+    } else if (spaceBelow >= cardH + gap) {
+      top = fabRect.bottom + gap             // open DOWN
     } else {
-      // Open below (default)
-      card.style.top = `${window.scrollY + rect.bottom + 8}px`
+      // Neither fits fully — pin to whichever side has more room, clamp
+      top = spaceAbove > spaceBelow ? gap : Math.max(gap, vh - cardH - gap)
     }
+    top = Math.max(8, Math.min(top, vh - cardH - 8))
+
+    card.style.left = `${left}px`
+    card.style.top = `${top}px`
 
     card.querySelector('.cv-card-close')?.addEventListener('click', closeCard)
     card.querySelector('.cv-signin')?.addEventListener('click', () => {
@@ -1380,5 +1398,34 @@ Transcript:
     })
   })
 
-  console.log('[Codeva] Content script ready v1.5 — dashboard, underlines, meetings, snippets')
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  FULL-PAGE SCREENSHOT support (GoFullPage-style) — dimension + scroll helpers
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === 'GET_PAGE_DIMENSIONS') {
+      sendResponse({
+        totalHeight: Math.max(
+          document.body.scrollHeight, document.documentElement.scrollHeight,
+          document.body.offsetHeight, document.documentElement.offsetHeight
+        ),
+        viewportHeight: window.innerHeight,
+        viewportWidth: window.innerWidth,
+        devicePixelRatio: window.devicePixelRatio || 1,
+      })
+      return true
+    }
+    if (msg.type === 'SCROLL_TO') {
+      window.scrollTo(0, msg.y)
+      // Hide our own UI during capture so it doesn't appear in the screenshot
+      const fabEl = document.querySelector('.cv-fab')
+      const tb = document.querySelector('.cv-toolbar')
+      if (fabEl) fabEl.style.visibility = msg.y === 0 ? '' : 'hidden'
+      if (tb) tb.style.display = 'none'
+      sendResponse({ ok: true })
+      return true
+    }
+  })
+
+  console.log('[Codeva] Content script ready v1.6 — hybrid intel, fullpage capture')
 })()

@@ -165,3 +165,32 @@ User types →
 - Explicit non-word detection prompt (fixes "cybrefa shows no issues")
 - Local dictionary catches high-frequency errors instantly
 - Confidence filtering: local gibberish flags removed if API confirms clean
+
+
+---
+
+## v1.3 — Sider + GoFullPage parity
+
+Researched Sider AI (universal sidebar, 20+ models, reads page, select-text
+actions, YouTube/PDF/chat) and GoFullPage (one-click full-page screenshot).
+
+### New: Full-Page Screenshot (GoFullPage-style)
+- Right-click → "Capture Full Page Screenshot"
+- Content script reports page dimensions + scrolls through the page
+- Background captures each viewport segment (rate-limited to Chrome's ~2/sec)
+- Dedicated stitching tab combines segments onto one canvas
+- Download as PNG / JPG or copy to clipboard
+- Hides Codeva UI during capture so it's clean
+
+### Sider parity (already had, confirmed):
+- ✅ Universal side panel on every site
+- ✅ Reads current page for context Q&A
+- ✅ Select-text actions (translate/explain/summarize/rewrite)
+- ✅ YouTube summary, PDF reader, multi-model chat
+
+### UX fixes v1.3:
+- FAB card now uses position:fixed (viewport coords) — robust everywhere
+- Card PREFERS opening upward (text fields are usually near page top)
+- Card clamps to viewport on all sides, scrolls internally if tall
+- Responsive: near-full-width on screens < 420px
+- FAB now shows "C" brand mark in the core (hidden during spinner/check states)

@@ -54,6 +54,7 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({ id: 'summarize_page', parentId: 'cv-root', title: 'Summarize this page', contexts: ['page'] })
     chrome.contextMenus.create({ id: 'ask_page', parentId: 'cv-root', title: 'Ask about this page', contexts: ['page'] })
     chrome.contextMenus.create({ id: 'screenshot_analyze', parentId: 'cv-root', title: 'Screenshot → AI Analysis', contexts: ['page'] })
+    chrome.contextMenus.create({ id: 'fullpage_screenshot', parentId: 'cv-root', title: 'Capture Full Page Screenshot', contexts: ['page'] })
     chrome.contextMenus.create({ id: 'cite_apa', parentId: 'cv-root', title: 'Generate Citation (APA)', contexts: ['page'] })
     chrome.contextMenus.create({ id: 'cite_mla', parentId: 'cv-root', title: 'Generate Citation (MLA)', contexts: ['page'] })
     chrome.contextMenus.create({ id: 'sep3', parentId: 'cv-root', type: 'separator', contexts: ['selection'] })
@@ -86,6 +87,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         }
       })
     })
+    return
+  }
+
+  if (info.menuItemId === 'fullpage_screenshot') {
+    captureFullPage(tab)
     return
   }
 
@@ -235,6 +241,46 @@ chrome.action.onClicked.addListener((tab) => {
     })
   }
 })
+
+// ── Full Page Screenshot (GoFullPage-style) ───────────────────────────────────
+async function captureFullPage(tab) {
+  try {
+    // 1. Ask content script for page dimensions + scroll plan
+    const dims = await chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_DIMENSIONS' })
+    if (!dims) return
+
+    const { totalHeight, viewportHeight, viewportWidth, devicePixelRatio } = dims
+    const segments = []
+    let y = 0
+
+    // 2. Scroll + capture each viewport segment
+    while (y < totalHeight) {
+      await chrome.tabs.sendMessage(tab.id, { type: 'SCROLL_TO', y })
+      await new Promise(r => setTimeout(r, 350)) // wait for scroll + lazy content
+
+      const dataUrl = await new Promise((resolve) => {
+        chrome.tabs.captureVisibleTab(null, { format: 'png' }, (url) => {
+          resolve(chrome.runtime.lastError ? null : url)
+        })
+      })
+      if (dataUrl) segments.push({ y, dataUrl })
+      y += viewportHeight
+      // Rate limit: captureVisibleTab is limited to ~2/sec
+      await new Promise(r => setTimeout(r, 550))
+    }
+
+    // 3. Restore scroll
+    await chrome.tabs.sendMessage(tab.id, { type: 'SCROLL_TO', y: 0 })
+
+    // 4. Open stitching page with the segments
+    await chrome.storage.local.set({
+      fullPageCapture: { segments, totalHeight, viewportWidth, viewportHeight, devicePixelRatio, url: tab.url, title: tab.title },
+    })
+    chrome.tabs.create({ url: chrome.runtime.getURL('src/capture/capture.html') })
+  } catch (err) {
+    console.error('[Codeva] Full page capture failed:', err)
+  }
+}
 
 // ── Rewrite with Diff View ────────────────────────────────────────────────────
 async function handleRewriteDiff(tab, originalText, prompt, action) {
