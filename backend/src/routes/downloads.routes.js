@@ -10,11 +10,12 @@ const GITHUB_RELEASE_BASE = `${GITHUB_REPO}/latest/download`
 // Map of friendly names to { file, tag } — desktop app uses 'latest',
 // Agent Platform uses its own 'agent-v1.0.0' tag.
 const FILE_MAP = {
+  // Desktop app — actual asset names in the v0.5.6 release
   'Codeva-win-x64.exe': { file: 'Codeva-win-x64.exe', tag: 'latest' },
   'Codeva-mac-universal.dmg': { file: 'Codeva-mac-universal.dmg', tag: 'latest' },
-  'Codeva-linux-x64.AppImage': { file: 'Codeva-linux-x64.AppImage', tag: 'latest' },
-  'Codeva-linux-x64.deb': { file: 'Codeva-linux-x64.deb', tag: 'latest' },
-  // Agent Platform — separate release tag
+  'Codeva-linux-x64.AppImage': { file: 'Codeva-linux-x86_64.AppImage', tag: 'latest' },
+  'Codeva-linux-x64.deb': { file: 'Codeva-linux-amd64.deb', tag: 'latest' },
+  // Agent Platform — separate release tag (agent-v*)
   'CodeVaa-Agent-Platform-win-x64.exe': { file: 'CodeVaa-Agent-Platform-1.0.0-win-x64.exe', tag: 'agent-v1.0.0' },
   'CodeVaa-Agent-Platform-mac-x64.dmg': { file: 'CodeVaa-Agent-Platform-1.0.0-mac-x64.dmg', tag: 'agent-v1.0.0' },
   'CodeVaa-Agent-Platform-linux-x64.AppImage': { file: 'CodeVaa-Agent-Platform-1.0.0-linux-x64.AppImage', tag: 'agent-v1.0.0' },
