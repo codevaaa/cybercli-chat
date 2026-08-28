@@ -542,10 +542,97 @@
   toolbar.addEventListener('mousedown', (e) => e.preventDefault())
   toolbar.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => {
+      const action = btn.dataset.act
+      const text = selectedText
       toolbar.style.display = 'none'
-      chrome.runtime.sendMessage({ type: 'RUN_ACTION', action: btn.dataset.act, text: selectedText })
+      runToolbarAction(action, text)
     })
   })
+
+  // Run a toolbar action IN-PAGE (no dependency on opening the side panel,
+  // which needs a user gesture that's lost by the time background handles it)
+  const TOOLBAR_PROMPTS = {
+    explain: (t) => `Explain this clearly and simply:\n\n"""${t}"""`,
+    rewrite_formal: (t) => `Rewrite this in a polished, professional tone. Return ONLY the rewritten text:\n\n"""${t}"""`,
+    rewrite_shorter: (t) => `Make this more concise while keeping key info. Return ONLY the shortened text:\n\n"""${t}"""`,
+    summarize: (t) => `Summarize this in 3-5 concise bullet points:\n\n"""${t}"""`,
+    translate: (t) => `You are an expert translator supporting 100+ languages including 20+ international languages (English, Spanish, French, German, Chinese, Japanese, Korean, Arabic, Russian, Portuguese, Italian, Dutch, Turkish, etc.) and 22+ Indian native languages (Hindi, Bengali, Telugu, Marathi, Tamil, Urdu, Gujarati, Kannada, Malayalam, Punjabi, Odia, Assamese, etc.).\n\nDetect the language of this text. If it's English, translate to Hindi; otherwise translate to fluent English. Show "(detected: <language>)" on a new line at the end:\n\n"""${t}"""`,
+  }
+
+  async function runToolbarAction(action, text) {
+    if (!text || text.length < 2) return
+    const builder = TOOLBAR_PROMPTS[action] || ((t) => t)
+    const title = { explain: 'Explanation', rewrite_formal: 'Improved', rewrite_shorter: 'Shortened', summarize: 'Summary', translate: 'Translation' }[action] || 'Result'
+
+    // Show a result card immediately with a loader
+    showResultCard(title, null, true)
+
+    try {
+      const result = await callAI(builder(text), action.startsWith('rewrite') ? 'gemini/gemini-2.5-flash' : GRAMMAR_MODEL)
+      showResultCard(title, result || '(no response)', false, action.startsWith('rewrite') ? text : null, result)
+    } catch (err) {
+      if (err.auth) {
+        showResultCard(title, null, false, null, null, true)
+      } else {
+        showResultCard(title, `⚠ ${err.message || 'Request failed'}`, false)
+      }
+    }
+  }
+
+  // In-page result card (reuses diff-card styling, viewport-centered)
+  let resultCard = null
+  function showResultCard(title, body, loading, originalForApply, rewritten, authNeeded) {
+    closeResultCard()
+    const backdrop = document.createElement('div')
+    backdrop.className = 'cv-diff-backdrop'
+    resultCard = document.createElement('div')
+    resultCard.className = 'cv-result-card'
+
+    let inner
+    if (authNeeded) {
+      inner = `<div class="cv-result-auth"><p>Sign in to Codeva to use this feature.</p><button class="cv-signin">Sign in</button></div>`
+    } else if (loading) {
+      inner = `<div class="cv-result-loading"><span class="cv-reply-spinner"></span> Working…</div>`
+    } else {
+      inner = `<div class="cv-result-body">${esc(body)}</div>`
+    }
+
+    resultCard.innerHTML = `
+      <div class="cv-result-head">
+        <span class="cv-result-title"><span class="cv-logo-dot"></span> ${title}</span>
+        <button class="cv-result-close">✕</button>
+      </div>
+      ${inner}
+      ${!loading && !authNeeded ? `<div class="cv-result-foot">
+        ${originalForApply ? '<button class="cv-result-btn primary cv-result-apply">Apply to page</button>' : ''}
+        <button class="cv-result-btn secondary cv-result-copy">Copy</button>
+      </div>` : ''}`
+
+    document.documentElement.appendChild(backdrop)
+    document.documentElement.appendChild(resultCard)
+
+    const close = () => { backdrop.remove(); resultCard?.remove(); resultCard = null }
+    backdrop.addEventListener('click', close)
+    resultCard.querySelector('.cv-result-close')?.addEventListener('click', close)
+    resultCard.querySelector('.cv-signin')?.addEventListener('click', () => chrome.runtime.sendMessage({ type: 'OPEN_AUTH' }))
+    resultCard.querySelector('.cv-result-copy')?.addEventListener('click', (e) => {
+      navigator.clipboard.writeText(body || rewritten || '')
+      e.target.textContent = 'Copied ✓'
+    })
+    resultCard.querySelector('.cv-result-apply')?.addEventListener('click', () => {
+      const sel = window.getSelection()
+      if (sel && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0)
+        range.deleteContents()
+        range.insertNode(document.createTextNode(rewritten || body))
+      }
+      close()
+    })
+  }
+  function closeResultCard() {
+    document.querySelectorAll('.cv-result-card, .cv-diff-backdrop').forEach(el => el.remove())
+    resultCard = null
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   //  MESSAGE HANDLERS (from background/popup)

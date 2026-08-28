@@ -4,18 +4,20 @@ import { r2FileExists, getR2PublicUrl, isR2Available } from '../services/downloa
 
 const router = Router()
 
-const GITHUB_RELEASE_BASE = 'https://github.com/codevaaa/cybercli-chat/releases/latest/download'
+const GITHUB_REPO = 'https://github.com/codevaaa/cybercli-chat/releases'
+const GITHUB_RELEASE_BASE = `${GITHUB_REPO}/latest/download`
 
-// Map of friendly names to actual GitHub release filenames
+// Map of friendly names to { file, tag } — desktop app uses 'latest',
+// Agent Platform uses its own 'agent-v1.0.0' tag.
 const FILE_MAP = {
-  'Codeva-win-x64.exe': 'Codeva-win-x64.exe',
-  'Codeva-mac-universal.dmg': 'Codeva-mac-universal.dmg',
-  'Codeva-linux-x64.AppImage': 'Codeva-linux-x64.AppImage',
-  'Codeva-linux-x64.deb': 'Codeva-linux-x64.deb',
-  // Agent Platform
-  'CodeVaa-Agent-Platform-win-x64.exe': 'CodeVaa-Agent-Platform-1.0.0-win-x64.exe',
-  'CodeVaa-Agent-Platform-mac-x64.dmg': 'CodeVaa-Agent-Platform-1.0.0-mac-x64.dmg',
-  'CodeVaa-Agent-Platform-linux-x64.AppImage': 'CodeVaa-Agent-Platform-1.0.0-linux-x64.AppImage',
+  'Codeva-win-x64.exe': { file: 'Codeva-win-x64.exe', tag: 'latest' },
+  'Codeva-mac-universal.dmg': { file: 'Codeva-mac-universal.dmg', tag: 'latest' },
+  'Codeva-linux-x64.AppImage': { file: 'Codeva-linux-x64.AppImage', tag: 'latest' },
+  'Codeva-linux-x64.deb': { file: 'Codeva-linux-x64.deb', tag: 'latest' },
+  // Agent Platform — separate release tag
+  'CodeVaa-Agent-Platform-win-x64.exe': { file: 'CodeVaa-Agent-Platform-1.0.0-win-x64.exe', tag: 'agent-v1.0.0' },
+  'CodeVaa-Agent-Platform-mac-x64.dmg': { file: 'CodeVaa-Agent-Platform-1.0.0-mac-x64.dmg', tag: 'agent-v1.0.0' },
+  'CodeVaa-Agent-Platform-linux-x64.AppImage': { file: 'CodeVaa-Agent-Platform-1.0.0-linux-x64.AppImage', tag: 'agent-v1.0.0' },
 }
 
 const DOWNLOAD_META = {
@@ -35,11 +37,13 @@ const DOWNLOAD_META = {
 router.get('/:filename', async (req, res, next) => {
   try {
     const { filename } = req.params
-    const githubFilename = FILE_MAP[filename]
+    const entry = FILE_MAP[filename]
 
-    if (!githubFilename) {
+    if (!entry) {
       return res.status(404).json({ error: 'File not found' })
     }
+    const githubFilename = entry.file
+    const isAgentPlatform = entry.tag !== 'latest'
 
     // --- Try R2 CDN first (fastest, cheapest) ---
     if (isR2Available()) {
@@ -47,15 +51,42 @@ router.get('/:filename', async (req, res, next) => {
       if (exists) {
         const cdnUrl = getR2PublicUrl(githubFilename)
         console.log(`[Download] R2 redirect: ${filename} → ${cdnUrl}`)
-        // 302 redirect to CDN — user gets file directly from edge
         return res.redirect(302, cdnUrl)
       }
     }
 
-    // --- Fallback: GitHub proxy ---
-    console.log(`[Download] GitHub proxy: ${filename}`)
-    const githubUrl = `${GITHUB_RELEASE_BASE}/${githubFilename}`
+    // --- GitHub: build URL from the correct release tag ---
+    const githubUrl = entry.tag === 'latest'
+      ? `${GITHUB_REPO}/latest/download/${githubFilename}`
+      : `${GITHUB_REPO}/download/${entry.tag}/${githubFilename}`
 
+    console.log(`[Download] Redirect to GitHub: ${githubUrl}`)
+
+    // Check if the release asset actually exists (HEAD request)
+    let head
+    try {
+      head = await fetch(githubUrl, { method: 'HEAD', redirect: 'follow' })
+    } catch {
+      head = { ok: false }
+    }
+
+    if (!head.ok) {
+      // Asset not built/uploaded yet — give a helpful message instead of raw 404
+      if (isAgentPlatform) {
+        return res.status(503).json({
+          error: 'Agent Platform installer is being built. Please check back shortly, or visit the releases page.',
+          releasesUrl: `${GITHUB_REPO}`,
+          building: true,
+        })
+      }
+      return res.status(404).json({ error: 'Release file not found on GitHub', releasesUrl: `${GITHUB_REPO}` })
+    }
+
+    // Redirect the browser straight to GitHub's CDN (faster, no proxy load)
+    return res.redirect(302, githubUrl)
+
+    // (Legacy proxy path below is unreachable but kept for reference)
+    // eslint-disable-next-line no-unreachable
     const response = await fetch(githubUrl, {
       headers: { 'Accept': 'application/octet-stream' },
     })

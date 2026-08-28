@@ -15,7 +15,7 @@ router.post('/grammar', optionalAuth, async (req, res) => {
 
   const messages = [{
     role: 'user',
-    content: `You are an expert multilingual proofreader (English, Hindi, Spanish, French, German). Analyze the text carefully. Catch spelling errors, incomplete/gibberish words, grammar mistakes, punctuation, awkward phrasing, and clarity issues.
+    content: `You are an expert multilingual proofreader supporting 20+ international languages (English, Spanish, French, German, Chinese, Japanese, Korean, Arabic, Russian, Portuguese, Italian, Dutch, Turkish, etc.) and 22+ Indian native languages (Hindi, Bengali, Telugu, Marathi, Tamil, Urdu, Gujarati, Kannada, Malayalam, Punjabi, Odia, Assamese, Sanskrit, etc.). Analyze the text carefully. Catch spelling errors, incomplete/gibberish words, grammar mistakes, punctuation, awkward phrasing, and clarity issues. Apply the grammar rules of the DETECTED language.
 
 Return ONLY a JSON object (no markdown):
 {"tone":"formal|casual|confident|friendly|neutral|aggressive","language":"detected language","issues":[{"original":"exact substring","suggestion":"correction","type":"grammar|spelling|punctuation|clarity","reason":"brief reason"}]}
