@@ -61,6 +61,11 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         continue-on-error: true
 
+      - name: List build output
+        working-directory: agent-platform/desktop
+        run: ls -la dist || dir dist
+        continue-on-error: true
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -70,6 +75,8 @@ jobs:
             agent-platform/desktop/dist/*.dmg
             agent-platform/desktop/dist/*.AppImage
             agent-platform/desktop/dist/*.deb
+            agent-platform/desktop/dist/*.yml
+            agent-platform/desktop/dist/*.blockmap
           if-no-files-found: ignore
 
   # ── GitHub Release (runs even if some platforms failed) ──────────────────────
@@ -112,6 +119,8 @@ jobs:
             artifacts/**/*.dmg
             artifacts/**/*.AppImage
             artifacts/**/*.deb
+            artifacts/**/*.yml
+            artifacts/**/*.blockmap
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
