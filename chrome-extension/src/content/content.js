@@ -15,6 +15,12 @@
   window.__codevaInjected = true
 
   const API_BASE = 'https://cybercli-api.onrender.com/api/v1'
+
+  // Active agent persona (from the curated /agents registry). Only the validated
+  // agentId is ever sent to the backend; the system prompt lives server-side.
+  let activeAgentId = null
+  let agentsCache = null // { personas, divisions } — fetched lazily, cached
+  chrome.storage.local.get('activeAgentId', (r) => { activeAgentId = r.activeAgentId || null })
   const GRAMMAR_MODEL = 'groq/llama-3.1-8b'
   const DEBOUNCE_MS = 900 // faster now that local check is instant
 
@@ -138,7 +144,13 @@
     const res = await fetch(`${API_BASE}/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], model, stream: false }),
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: prompt }],
+        model,
+        stream: false,
+        // Inject the active persona (validated server-side by agentId).
+        ...(activeAgentId ? { agentId: activeAgentId } : {}),
+      }),
     })
     if (res.status === 401) { authToken = null; throw { auth: true } }
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -724,24 +736,118 @@
 
   let slashMenu = null
 
+  // Lazily fetch the curated agent registry (cached for the page lifetime).
+  async function fetchAgents() {
+    if (agentsCache) return agentsCache
+    const res = await fetch(`${API_BASE}/agents`, { method: 'GET' })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    agentsCache = {
+      personas: Array.isArray(data?.personas) ? data.personas : [],
+      divisions: data?.divisions || {},
+    }
+    return agentsCache
+  }
+
+  function positionSlashMenu(el) {
+    const rect = el.getBoundingClientRect()
+    slashMenu.style.bottom = `${window.innerHeight - rect.top + 6}px`
+    slashMenu.style.left = `${rect.left}px`
+  }
+
+  // Render the agent persona picker inside the slash menu. Selecting one sets
+  // the active persona for subsequent AI actions (stored + used as agentId).
+  async function showAgentMenu(el, filter = '') {
+    closeSlashMenu()
+    slashMenu = document.createElement('div')
+    slashMenu.className = 'cv-slash-menu'
+    positionSlashMenu(el)
+    slashMenu.innerHTML = `<div class="cv-slash-head">Agents — loading…</div>`
+    document.documentElement.appendChild(slashMenu)
+
+    let agents = []
+    try {
+      const data = await fetchAgents()
+      agents = data.personas
+    } catch {
+      if (slashMenu) slashMenu.innerHTML = `<div class="cv-slash-head">Could not load agents</div>`
+      return
+    }
+    if (!slashMenu) return // closed while loading
+
+    const q = filter.trim().toLowerCase()
+    const matches = q
+      ? agents.filter(a => a.name.toLowerCase().includes(q) || (a.description || '').toLowerCase().includes(q))
+      : agents
+
+    const clearRow = activeAgentId
+      ? `<button class="cv-slash-item" data-agent="__clear__">
+           <span class="cv-slash-cmd">✕ Clear agent</span>
+           <span class="cv-slash-desc">Use the default assistant</span>
+         </button>`
+      : ''
+
+    slashMenu.innerHTML = `
+      <div class="cv-slash-head">Choose an Agent${activeAgentId ? ' (active: ' + esc(agentsCache.personas.find(a => a.id === activeAgentId)?.name || activeAgentId) + ')' : ''}</div>
+      ${clearRow}
+      ${matches.slice(0, 40).map(a => `
+        <button class="cv-slash-item" data-agent="${esc(a.id)}">
+          <span class="cv-slash-cmd">${esc(a.emoji || '🎭')} ${esc(a.name)}</span>
+          <span class="cv-slash-desc">${esc((a.vibe || a.description || '').slice(0, 40))}</span>
+        </button>`).join('') || `<div class="cv-slash-head">No agents match “${esc(filter)}”</div>`}`
+
+    slashMenu.querySelectorAll('.cv-slash-item').forEach(btn => {
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        const id = btn.dataset.agent
+        if (id === '__clear__') {
+          activeAgentId = null
+          chrome.storage.local.remove('activeAgentId')
+        } else {
+          activeAgentId = id
+          chrome.storage.local.set({ activeAgentId: id })
+        }
+        // Remove the "/agent…" trigger text from the field.
+        const currentVal = getText(el)
+        const newVal = currentVal.replace(/\/agent\s*$/i, '').replace(/\/\w*$/, '')
+        if (el.value !== undefined) { el.value = newVal } else { el.innerText = newVal }
+        el.dispatchEvent(new Event('input', { bubbles: true }))
+        el.focus()
+        closeSlashMenu()
+      })
+    })
+  }
+
   function showSlashMenu(el, filter = '') {
+    // Special dynamic command: /agent opens the persona picker.
+    if (/^\/agent/i.test(filter)) {
+      const rest = filter.replace(/^\/agent\s*/i, '')
+      showAgentMenu(el, rest)
+      return
+    }
+
     closeSlashMenu()
     const commands = Object.entries(PROMPT_LIBRARY).filter(([cmd]) =>
       cmd.toLowerCase().startsWith(filter.toLowerCase())
     )
-    if (commands.length === 0) return
+    // Surface /agent as a discoverable command too.
+    const showAgentEntry = '/agent'.startsWith(filter.toLowerCase())
+    if (commands.length === 0 && !showAgentEntry) return
 
     slashMenu = document.createElement('div')
     slashMenu.className = 'cv-slash-menu'
-    const rect = el.getBoundingClientRect()
-    slashMenu.style.bottom = `${window.innerHeight - rect.top + 6}px`
-    slashMenu.style.left = `${rect.left}px`
+    positionSlashMenu(el)
     slashMenu.innerHTML = `
       <div class="cv-slash-head">Prompt Library</div>
+      ${showAgentEntry ? `
+        <button class="cv-slash-item" data-cmd="/agent">
+          <span class="cv-slash-cmd">🎭 /agent</span>
+          <span class="cv-slash-desc">Pick an expert persona…</span>
+        </button>` : ''}
       ${commands.map(([cmd, desc]) => `
-        <button class="cv-slash-item" data-cmd="${cmd}">
-          <span class="cv-slash-cmd">${cmd}</span>
-          <span class="cv-slash-desc">${desc.slice(0, 35)}…</span>
+        <button class="cv-slash-item" data-cmd="${esc(cmd)}">
+          <span class="cv-slash-cmd">${esc(cmd)}</span>
+          <span class="cv-slash-desc">${esc(desc.slice(0, 35))}…</span>
         </button>`).join('')}`
 
     document.documentElement.appendChild(slashMenu)
@@ -750,6 +856,10 @@
       btn.addEventListener('mousedown', (e) => {
         e.preventDefault()
         const cmd = btn.dataset.cmd
+        if (cmd === '/agent') {
+          showAgentMenu(el, '')
+          return
+        }
         const prefix = PROMPT_LIBRARY[cmd]
         const currentVal = getText(el)
         const newVal = currentVal.replace(/\/\w*$/, '') + prefix
@@ -770,8 +880,13 @@
     const el = e.target
     if (!isEditable(el)) return
     const text = getText(el)
+    // Match either a plain slash command (/blog) or the /agent picker with an
+    // optional trailing filter (/agent front).
+    const agentMatch = text.match(/\/agent(\s+[\w-]*)?$/i)
     const slashMatch = text.match(/\/(\w*)$/)
-    if (slashMatch) {
+    if (agentMatch) {
+      showSlashMenu(el, '/agent' + (agentMatch[1] || ''))
+    } else if (slashMatch) {
       showSlashMenu(el, '/' + slashMatch[1])
     } else {
       closeSlashMenu()
