@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { requireAuth, optionalAuth } from '../middleware/auth.js'
 import { llmGateway } from '../services/llm/gateway.js'
 import { cacheKeyFor, getCached, setCached } from '../utils/responseCache.js'
+import { getPersonaById } from '../services/agents/registry.js'
 
 const router = Router()
 
@@ -64,11 +65,26 @@ router.post('/', optionalAuth, async (req, res) => {
     memoryEnabled = false,
     deepResearchEnabled = false,
     effort = 'low',
-    thinking = false
+    thinking = false,
+    agentId = null
   } = req.body
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages array is required' })
+  }
+
+  // Resolve the selected agent persona (if any) from the trusted server-side
+  // registry. Clients only send a validated `agentId`; the system prompt is
+  // NEVER taken from the client, preventing prompt-injection / jailbreaks.
+  let persona = null
+  if (agentId != null) {
+    if (typeof agentId !== 'string') {
+      return res.status(400).json({ error: 'agentId must be a string' })
+    }
+    persona = getPersonaById(agentId)
+    if (!persona) {
+      return res.status(400).json({ error: 'Unknown agentId' })
+    }
   }
 
   const lastUserMsg = messages.slice().reverse().find(m => m.role === 'user') || { content: '' }
@@ -85,6 +101,13 @@ Codeva has a flagship CLI and VS Code extension called "CyberCoder".
 If the user asks how to install CyberCoder (or Codeva CyberCoder), the correct installation command is via npm:
 \`npm install -g cybercli\`
 After installation, they can run \`cybercli\` or \`cybercoder\` in their terminal. Do not suggest pip, python, or cloning github for standard installation.`
+
+      // Inject the selected agent persona's trusted system prompt. This comes
+      // from the server-side registry only (validated agentId), so it cannot be
+      // used to smuggle arbitrary system instructions from the client.
+      if (persona) {
+        extraSystemContent += `\n\n[ACTIVE AGENT PERSONA: ${persona.name}]\nYou are now acting as the "${persona.name}" specialist. Adopt this expertise and follow these instructions for this conversation:\n${persona.systemPrompt}`
+      }
 
       // If user is authenticated, we can optionally fetch user settings
       if (req.user) {
@@ -183,7 +206,19 @@ After installation, they can run \`cybercli\` or \`cybercoder\` in their termina
     res.end()
   } else {
     try {
-      const result = await llmGateway.completeNonStream({ messages, model, temperature, effort, thinking })
+      let finalMessages = messages
+      // Same trusted persona injection for the non-streaming path.
+      if (persona) {
+        finalMessages = [
+          ...messages,
+          {
+            role: 'system',
+            content: `[ACTIVE AGENT PERSONA: ${persona.name}]\nYou are now acting as the "${persona.name}" specialist. Adopt this expertise and follow these instructions for this conversation:\n${persona.systemPrompt}`,
+            _skip_inject: true,
+          },
+        ]
+      }
+      const result = await llmGateway.completeNonStream({ messages: finalMessages, model, temperature, effort, thinking })
       res.json(result)
     } catch (error) {
       res.status(500).json({ error: error.message })
