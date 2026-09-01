@@ -4,7 +4,8 @@
  *
  * Commands:
  *   codeva run "<goal>"          — Run a goal with the full agent swarm
- *   codeva agent <type> "<task>" — Run a single specific agent
+ *   codeva agents [division]     — List expert agent personas from the backend
+ *   codeva ask <id> "<prompt>"   — One-shot chat with an expert persona
  *   codeva skills list           — List installed skills
  *   codeva skills add <file>     — Install a skill from a file
  *   codeva status                — Show platform status
@@ -23,7 +24,7 @@ import fs             from 'fs/promises'
 import path           from 'path'
 import open           from 'open'
 import Table          from 'cli-table3'
-import { PLATFORM_PORT, PLATFORM_HOST, PLATFORM_VERSION, PLATFORM_NAME } from '../../src/config.js'
+import { PLATFORM_PORT, PLATFORM_HOST, PLATFORM_VERSION, PLATFORM_NAME, BACKEND_API_BASE } from '../../src/config.js'
 
 const PLATFORM_URL = `http://${PLATFORM_HOST}:${PLATFORM_PORT}`
 const WS_URL       = `ws://${PLATFORM_HOST}:${PLATFORM_PORT}/ws`
@@ -446,5 +447,117 @@ Key patterns:
 <!-- Any APIs agents need to call or implement -->
 See: [link or inline docs]
 `
+
+// ── codeva agents ────────────────────────────────────────────────────────────
+// Lists the curated expert personas from the Codeva backend registry
+// (MIT-attributed agency-agents). These are the same personas the chat UI and
+// Chrome extension expose. Read-only, no auth required.
+const AGENT_ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+program
+  .command('agents [division]')
+  .description('List available expert agent personas (optionally filter by division)')
+  .action(async (division) => {
+    const spinner = ora('Fetching agent registry…').start()
+    try {
+      const url = new URL(`${BACKEND_API_BASE}/agents`)
+      if (division) url.searchParams.set('division', division)
+      const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      const personas = Array.isArray(data.personas) ? data.personas : []
+      spinner.succeed(chalk.green(`${personas.length} agent${personas.length === 1 ? '' : 's'} available`))
+
+      if (personas.length === 0) {
+        console.log(chalk.yellow('\nNo agents found for that filter.'))
+        return
+      }
+
+      // Group by division label for a readable listing.
+      const byDivision = {}
+      for (const p of personas) {
+        const label = p.divisionLabel || p.division || 'Other'
+        ;(byDivision[label] = byDivision[label] || []).push(p)
+      }
+
+      for (const label of Object.keys(byDivision)) {
+        console.log('\n' + chalk.bold.cyan(label))
+        const table = new Table({
+          head: [chalk.bold('ID'), chalk.bold('Agent'), chalk.bold('Vibe')],
+          style: { head: [], border: [] },
+          colWidths: [24, 22, 52],
+          wordWrap: true,
+        })
+        for (const p of byDivision[label]) {
+          table.push([p.id, `${p.emoji || ''} ${p.name}`, p.vibe || p.description || ''])
+        }
+        console.log(table.toString())
+      }
+
+      console.log(chalk.dim(`\nChat with one:  codeva ask <id> "your question"`))
+      console.log(chalk.dim(`Example:        codeva ask backend-architect "design a rate limiter"\n`))
+    } catch (err) {
+      spinner.fail(chalk.red(`Could not fetch agents: ${err.message}`))
+      console.log(chalk.dim(`Backend: ${BACKEND_API_BASE}  (set CODEVA_BACKEND_URL to override)`))
+      process.exit(1)
+    }
+  })
+
+// ── codeva ask ────────────────────────────────────────────────────────────────
+// One-shot chat with a specific expert persona via the backend /completions API.
+program
+  .command('ask <agentId> <prompt>')
+  .description('Ask an expert agent persona a one-shot question')
+  .option('-m, --model <model>', 'Model to use', 'auto')
+  .option('-k, --key <apiKey>', 'Codeva API key (or set CODEVA_API_KEY env var)')
+  .action(async (agentId, prompt, opts) => {
+    if (!AGENT_ID_RE.test(agentId)) {
+      console.error(chalk.red(`Invalid agent id: "${agentId}". Run "codeva agents" to see valid ids.`))
+      process.exit(1)
+    }
+
+    const apiKey = opts.key || process.env.CODEVA_API_KEY || null
+    const spinner = ora(`Asking ${agentId}…`).start()
+
+    try {
+      // Validate the agent id against the registry first for a friendly error.
+      const check = await fetch(`${BACKEND_API_BASE}/agents/${agentId}`, { signal: AbortSignal.timeout(10000) })
+      if (check.status === 404) {
+        spinner.fail(chalk.red(`Unknown agent "${agentId}". Run "codeva agents" to list them.`))
+        process.exit(1)
+      }
+
+      const headers = { 'Content-Type': 'application/json' }
+      if (apiKey) headers.Authorization = `Bearer ${apiKey}`
+
+      const res = await fetch(`${BACKEND_API_BASE}/completions`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          model: opts.model,
+          stream: false,
+          agentId,
+        }),
+        signal: AbortSignal.timeout(120000),
+      })
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => '')
+        throw new Error(`HTTP ${res.status}${body ? ' — ' + body.slice(0, 200) : ''}`)
+      }
+
+      const data = await res.json()
+      const content = data.content || data.choices?.[0]?.message?.content || '(no response)'
+      spinner.succeed(chalk.green(`${agentId} replied`))
+      console.log('\n' + boxen(chalk.white(content), {
+        padding: 1, margin: 1, borderColor: 'cyan', borderStyle: 'round',
+        title: agentId, titleAlignment: 'left',
+      }))
+    } catch (err) {
+      spinner.fail(chalk.red(`Failed: ${err.message}`))
+      process.exit(1)
+    }
+  })
 
 program.parse()
