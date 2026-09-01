@@ -3,6 +3,7 @@ import mongoose from 'mongoose'
 import { z } from 'zod'
 import { requireAuth } from '../middleware/auth.js'
 import { llmGateway } from '../services/llm/gateway.js'
+import { getPersonaById } from '../services/agents/registry.js'
 import Thread from '../models/Thread.js'
 import Message from '../models/Message.js'
 import { useFallbackMode } from '../utils/fallbackDb.js'
@@ -315,11 +316,27 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     memoryEnabled = false,
     deepResearchEnabled = false,
     effort = 'low',
-    thinking = false
+    thinking = false,
+    agentId = null
   } = req.body
   
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages array is required' })
+  }
+
+  // Resolve the selected agent persona from the trusted server-side registry.
+  // The client only sends a validated `agentId`; the system prompt is never
+  // accepted from the client, so this cannot be used to inject arbitrary
+  // instructions or jailbreak the model.
+  let persona = null
+  if (agentId != null) {
+    if (typeof agentId !== 'string') {
+      return res.status(400).json({ error: 'agentId must be a string' })
+    }
+    persona = getPersonaById(agentId)
+    if (!persona) {
+      return res.status(400).json({ error: 'Unknown agentId' })
+    }
   }
 
   if (!isValidId(req.params.id)) {
@@ -373,6 +390,13 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
 
     // 2. Fetch UserSettings and construct system prompt additions
     let extraSystemContent = ""
+
+    // Inject the selected agent persona's trusted system prompt (server-side
+    // registry only). Placed first so downstream user instructions still apply.
+    if (persona) {
+      extraSystemContent += `\n\n[ACTIVE AGENT PERSONA: ${persona.name}]\nYou are now acting as the "${persona.name}" specialist. Adopt this expertise and follow these instructions for this conversation:\n${persona.systemPrompt}`
+    }
+
     try {
       // Fetch User Settings
       const UserSettings = (await import('../models/UserSettings.js')).default

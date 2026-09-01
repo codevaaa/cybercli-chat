@@ -701,6 +701,155 @@ function ModelSelector({ selectedModel, onSelect, userPlan, effortLevel, setEffo
   )
 }
 
+// ─── Agent Persona Selector ──────────────────────────────────────────────────
+// Lets the user activate a specialist persona (from the curated, MIT-attributed
+// agency-agents registry). The client only sends a validated `agentId`; the
+// system prompt lives server-side, so nothing here can inject instructions.
+
+function AgentSelector({ selectedAgentId, onSelect }) {
+  const [open, setOpen] = useState(false)
+  const [agents, setAgents] = useState([])
+  const [divisions, setDivisions] = useState({})
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [query, setQuery] = useState('')
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Lazy-load the registry the first time the picker opens.
+  useEffect(() => {
+    if (!open || agents.length > 0 || loading) return
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    api.get('/agents')
+      .then(({ data }) => {
+        if (cancelled) return
+        setAgents(Array.isArray(data?.personas) ? data.personas : [])
+        setDivisions(data?.divisions || {})
+      })
+      .catch(() => { if (!cancelled) setError('Could not load agents') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [open, agents.length, loading])
+
+  const selectedAgent = agents.find(a => a.id === selectedAgentId) || null
+
+  const filtered = query.trim()
+    ? agents.filter(a =>
+        a.name.toLowerCase().includes(query.toLowerCase()) ||
+        (a.description || '').toLowerCase().includes(query.toLowerCase()))
+    : agents
+
+  // Group filtered agents by division for a clean menu.
+  const grouped = filtered.reduce((acc, a) => {
+    (acc[a.division] = acc[a.division] || []).push(a)
+    return acc
+  }, {})
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        title={selectedAgent ? `Agent: ${selectedAgent.name}` : 'Choose an expert agent'}
+        className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
+          selectedAgent
+            ? 'text-[#D97757] bg-[#D97757]/10'
+            : 'text-foreground-secondary hover:text-foreground-primary hover:bg-black/5 dark:hover:bg-white/5'
+        }`}
+      >
+        <span>{selectedAgent ? `${selectedAgent.emoji} ${selectedAgent.name}` : '🎭 Agent'}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-foreground-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute bottom-full mb-2 left-0 z-50 rounded-xl border border-border-subtle w-[300px] overflow-hidden shadow-lg"
+            style={{ background: 'var(--bg-elevated)', backdropFilter: 'blur(24px)' }}
+          >
+            <div className="p-2 border-b border-border-subtle">
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-background-secondary/40">
+                <Search className="w-3.5 h-3.5 text-foreground-muted shrink-0" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search agents…"
+                  className="bg-transparent text-[13px] text-foreground-primary placeholder:text-foreground-muted outline-none w-full"
+                />
+              </div>
+            </div>
+
+            <div className="max-h-[320px] overflow-y-auto p-1">
+              {selectedAgent && (
+                <button
+                  onClick={() => { onSelect(null); setOpen(false) }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-center gap-2 text-foreground-secondary"
+                >
+                  <X className="w-3.5 h-3.5 shrink-0" />
+                  <span className="text-[13px]">Clear agent (default assistant)</span>
+                </button>
+              )}
+
+              {loading && (
+                <div className="px-3 py-6 flex items-center justify-center text-foreground-muted">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </div>
+              )}
+
+              {error && !loading && (
+                <div className="px-3 py-4 text-[13px] text-red-500">{error}</div>
+              )}
+
+              {!loading && !error && filtered.length === 0 && (
+                <div className="px-3 py-4 text-[13px] text-foreground-muted">No agents found.</div>
+              )}
+
+              {!loading && !error && Object.keys(grouped).map((div) => (
+                <div key={div} className="mb-1">
+                  <div className="px-3 pt-2 pb-1 text-[10.5px] font-semibold uppercase tracking-wider text-foreground-muted">
+                    {divisions[div] || div}
+                  </div>
+                  {grouped[div].map((a) => {
+                    const isSelected = a.id === selectedAgentId
+                    return (
+                      <button
+                        key={a.id}
+                        onClick={() => { onSelect(a.id); setOpen(false) }}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-foreground-primary/5 transition-all flex items-start gap-2.5"
+                      >
+                        <span className="text-[15px] leading-none mt-0.5 shrink-0">{a.emoji}</span>
+                        <span className="flex flex-col min-w-0 flex-1">
+                          <span className="text-[13px] text-foreground-primary font-medium flex items-center gap-1.5">
+                            {a.name}
+                            {isSelected && <Check className="w-3.5 h-3.5 text-[#D97757] shrink-0" />}
+                          </span>
+                          <span className="text-[11.5px] text-foreground-muted leading-tight line-clamp-2">{a.vibe || a.description}</span>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ─── Input Area ───────────────────────────────────────────────────────────────
 
 function InputArea({
@@ -711,6 +860,8 @@ function InputArea({
   loading,
   selectedModel,
   onModelChange,
+  selectedAgentId,
+  onAgentChange,
   effortLevel,
   setEffortLevel,
   thinkingEnabled,
@@ -1100,6 +1251,11 @@ function InputArea({
             thinkingEnabled={thinkingEnabled}
             setThinkingEnabled={setThinkingEnabled}
             onRequirePro={onRequirePro}
+          />
+
+          <AgentSelector
+            selectedAgentId={selectedAgentId}
+            onSelect={onAgentChange}
           />
 
           <div className="h-6 w-px bg-border-subtle mx-1" />
@@ -3247,6 +3403,7 @@ export default function ChatPage() {
   const [activeProject, setActiveProject] = useState(null)
   const [activeStyle, setActiveStyle] = useState(null)
   const [selectedModel, setSelectedModel] = useState('codeva/abhimanyu')
+  const [selectedAgentId, setSelectedAgentId] = useState(null)
   const [effortLevel, setEffortLevel] = useState('low')
   const [thinkingEnabled, setThinkingEnabled] = useState(false)
   const [copied, setCopied] = useState(null)
@@ -4518,7 +4675,8 @@ export default function ChatPage() {
           project_id: activeProject?._id || null,
           style_id: activeStyle?._id || null,
           effort: effortLevel,
-          thinking: thinkingEnabled
+          thinking: thinkingEnabled,
+          agentId: selectedAgentId || null
         })
       })
       if (!res.ok) {
@@ -4669,7 +4827,7 @@ export default function ChatPage() {
       setLoading(false)
     }
     return true
-  }, [input, loading, activeThreadId, messages, selectedModel, webSearchEnabled, deepResearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions, userPlan, effortLevel, thinkingEnabled])
+  }, [input, loading, activeThreadId, messages, selectedModel, selectedAgentId, webSearchEnabled, deepResearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions, userPlan, effortLevel, thinkingEnabled])
 
   // ── User info (from state & localStorage) ──
   const [userName, setUserName] = useState(() => localStorage.getItem('user_name') || 'User')
@@ -5471,6 +5629,8 @@ export default function ChatPage() {
                         loading={loading || isWarmingUp}
                         selectedModel={selectedModel}
                         onModelChange={setSelectedModel}
+                        selectedAgentId={selectedAgentId}
+                        onAgentChange={setSelectedAgentId}
                         effortLevel={effortLevel}
                         setEffortLevel={setEffortLevel}
                         thinkingEnabled={thinkingEnabled}
@@ -5560,6 +5720,8 @@ export default function ChatPage() {
                         loading={loading || isWarmingUp}
                         selectedModel={selectedModel}
                         onModelChange={setSelectedModel}
+                        selectedAgentId={selectedAgentId}
+                        onAgentChange={setSelectedAgentId}
                         effortLevel={effortLevel}
                         setEffortLevel={setEffortLevel}
                         thinkingEnabled={thinkingEnabled}
