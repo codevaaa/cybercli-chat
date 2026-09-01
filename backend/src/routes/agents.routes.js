@@ -60,7 +60,14 @@ router.get('/', optionalAuth, (req, res) => {
     const includePrompt = wantPrompt && Boolean(req.user)
 
     const personas = listPersonas({ division, includePrompt })
-    setCacheHeaders(res)
+    // Prompt-included responses vary by auth, so they must not land in a shared
+    // cache. Only the anonymous, prompt-free listing is publicly cacheable.
+    if (includePrompt) {
+      res.setHeader('Cache-Control', 'private, max-age=60')
+      res.setHeader('Vary', 'Authorization')
+    } else {
+      setCacheHeaders(res)
+    }
     res.json({
       count: personas.length,
       total: PERSONA_COUNT,
