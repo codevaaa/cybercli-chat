@@ -9,6 +9,7 @@ export async function refreshEditorSession(req, res) {
   try {
     const auth = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY, { auth: { autoRefreshToken: false, persistSession: false } })
     const { data, error } = await auth.auth.refreshSession({ refresh_token: token })
+    if (error && (error.name === 'AuthRetryableFetchError' || error.status >= 500 || /fetch|network|ENOTFOUND/i.test(error.message || ''))) return res.status(503).json({ error: 'Account authentication is temporarily unavailable. Please try again shortly.' })
     if (error || !data?.session || !data.user) return res.status(401).json({ error: 'Sign in to Codeva again' })
     const account = await User.findOne({ supabase_id: data.user.id }).select('status').lean()
     if (!account || ['banned', 'suspended'].includes(account.status)) return res.status(403).json({ error: 'This account cannot access Codeva' })

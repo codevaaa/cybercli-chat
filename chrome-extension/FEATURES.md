@@ -1,4 +1,4 @@
-# Extension feature verification — 1.4.0
+# Extension feature verification — 1.5.0
 
 This file describes source and test evidence, not a production deployment certificate.
 
@@ -9,10 +9,15 @@ This file describes source and test evidence, not a production deployment certif
 | Page summaries and explanation | Implemented | Chromium verifies that actual article content and source URL reach the API request. |
 | Model selection | Implemented | Reads the API catalog, with automatic fallback; backend tests verify Madhav routing and Council plan access. |
 | Writing review | Implemented | Chromium checks request, suggestion review and replacement; backend validates exact offsets and output. |
+| Reviewed rewrites and undo | Implemented | Six actions use the authenticated rewrite endpoint; Chromium checks explicit apply, undo, and stale-draft rejection. |
+| Dictionary and writing preferences | Implemented | Dictionary validation and spelling-only suppression tested on server/client; Chromium checks learning a term. Goals and dialect reach server prompts. |
+| Website pause | Implemented | Domain-boundary unit checks and Chromium verify automatic writing requests stop on a paused site. |
 | On-page grammar | Implemented for standard fields | Chromium checks textarea corrections, stale-response protection and rich text formatting. |
 | Inline highlights | Implemented where CSS Highlight API exists | Uses document ranges without inserting an HTML overlay into the editor. |
 | System/light/dark appearance | Implemented | Chromium checks both system appearance and persistent settings at narrow width. |
-| Login/sign-out | Implemented | Trusted origins and payload normalization are unit tested; extension sign-out is checked in Chromium. Live Supabase login still needs deployment smoke testing. |
+| Login/signup/sign-out | Implemented | Built React app + unpacked MV3 tests cover Google PKCE callback, provisioning, signup email verification/resend, outage recovery and extension ACK. Real account consent remains a manual acceptance item. |
+| Session refresh | Implemented | Unit tests check serialized token rotation, outages, revoked sessions, logout races and account switching. |
+| Original Codeva mark | Implemented | Native SVG source and matching 16–512px toolbar assets; no third-party logo dependency. |
 | Full-page capture | Implemented with limits | Preview assembly/PNG link checked in Chromium. Capture requires the original tab, max 30 viewports, max 60M pixels and bounded session storage. Live context-menu capture is a manual acceptance item. |
 | Smart Compose | Existing, hardened for stale replies | Setting works; continuation now uses native field updates. Broad website compatibility not certified. |
 | Slash prompts and snippets | Existing | Separate website/command compatibility testing remains. |
@@ -21,4 +26,4 @@ This file describes source and test evidence, not a production deployment certif
 | Citations | Existing | Generated from page metadata; no fabricated “copied to clipboard” claim in the context-menu handoff. |
 | Security scanning / universal editor support | Not certified | Do not infer support from old marketing text or the legacy popup. |
 
-See README.md for installation, backend rollout, privacy behavior, and tests. Desktop and CyberCoder source were inspected for integration context; they were not rebuilt or changed by this extension upgrade.
+See README.md for installation, backend rollout, privacy behavior, and tests. The desktop build passes with the shared web authentication changes. The independent CyberCoder checkout remains unchanged and clean.

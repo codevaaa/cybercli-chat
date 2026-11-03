@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../stores/authStore.js'
 import { CodevaMark } from '../../components/ui/CodevaLogo'
 import { Tooltip } from '../../components/ui/Tooltip.jsx'
-import { supabase } from '../../lib/supabase.js'
-import { editorAuthQuery, returnToEditor } from '../../lib/editorAuth.js'
+import { authDestination, authFlowQuery, authPagePath } from '../../lib/authFlow.js'
+import { returnToEditor } from '../../lib/editorAuth.js'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -14,19 +14,20 @@ export default function LoginPage() {
   const redirect = searchParams.get('redirect') || ''
   const port = searchParams.get('port') || ''
 
-  const { session, signInWithEmail, signInWithOAuth, loading, error, clearError } = useAuthStore()
+  const { session, signInWithEmail, signInWithOAuth, loading, accountReady, error, clearError } = useAuthStore()
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [focusedField, setFocusedField] = useState(null)
   const [editorError, setEditorError] = useState('')
   const editorReturn = current => { try { return returnToEditor(current, searchParams) } catch (err) { setEditorError(err.message); return true } }
-  const editorQuery = redirect === 'ide' ? (() => { try { return editorAuthQuery(searchParams) } catch { return '' } })() : ''
 
   const method = searchParams.get('method') || ''
+  const autoStarted = useRef(false)
 
   // Handle instant redirect if already logged in
   useEffect(() => {
-    if (!loading && session) {
+    if (!loading && session && accountReady) {
+      try { authFlowQuery(searchParams) } catch (err) { setEditorError(err.message); return }
       if (redirect === 'cli' && port) {
         window.location.href = `http://127.0.0.1:${port}/callback?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token)}`
         return
@@ -37,67 +38,29 @@ export default function LoginPage() {
         editorReturn(session)
         return
       } else {
-        navigate(redirect || '/chat')
+        navigate(authDestination(searchParams))
         return
       }
     }
 
-    if (method === 'google' && !loading && !session) {
+    if (method === 'google' && !loading && !session && !autoStarted.current) {
+      autoStarted.current = true
       handleGoogleSignIn()
     }
-  }, [method, loading, session, redirect, port])
+  }, [method, loading, session, accountReady, redirect, port, navigate, searchParams])
 
   const handleGoogleSignIn = async () => {
     clearError()
-    try {
-      let nextPath = redirect || '/chat'
-      let callbackQuery = `?action=login&next=${encodeURIComponent(nextPath)}`
-
-      if (redirect === 'cli' && port) {
-        // Pass redirect and port directly to AuthCallbackPage so it intercepts it
-        callbackQuery = `?action=login&redirect=cli&port=${port}`
-      } else if (redirect === 'desktop') {
-        callbackQuery = `?action=login&redirect=desktop`
-      } else if (redirect === 'ide') {
-        callbackQuery = `?action=login&${editorAuthQuery(searchParams)}`
-      }
-
-      const redirectTo = `${window.location.origin}/auth/callback${callbackQuery}`
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo }
-      })
-      if (error) throw error
-      if (data.url) {
-        window.location.href = data.url
-      }
-    } catch (err) {
-      if (redirect === 'ide') setEditorError(err.message)
-      console.error('Google Sign In error:', err)
-    }
+    const result = await signInWithOAuth('google', searchParams)
+    if (result.success) window.location.assign(result.url)
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     clearError()
-    const result = await signInWithEmail(form.email, form.password)
-    if (result.success) {
-      if (redirect === 'cli' && port) {
-        window.location.href = `http://127.0.0.1:${port}/callback?token=${encodeURIComponent(result.session?.access_token)}`
-      } else if (redirect === 'desktop') {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
-        }
-      } else if (redirect === 'ide') {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          editorReturn(session)
-        }
-      } else {
-        navigate(redirect || '/chat')
-      }
-    }
+    try { authFlowQuery(searchParams) } catch (err) { setEditorError(err.message); return }
+    // The session-ready effect owns navigation for every sign-in method.
+    await signInWithEmail(form.email, form.password)
   }
 
   return (
@@ -255,12 +218,12 @@ export default function LoginPage() {
         <div className="text-center mt-6 space-y-2">
           <p className="text-xs text-foreground-secondary/80">
             Don&apos;t have an account?{' '}
-            <Link to={`/auth/signup${editorQuery ? `?${editorQuery}` : ''}`} className="text-accent hover:underline font-semibold transition-all">
+            <Link to={authPagePath('signup', searchParams)} className="text-accent hover:underline font-semibold transition-all">
               Sign up free
             </Link>
           </p>
           <p>
-            <Link to={`/auth/magic-link${editorQuery ? `?${editorQuery}` : ''}`} className="text-[11px] text-foreground-secondary/40 hover:text-foreground-secondary hover:underline transition-colors font-medium">
+            <Link to={authPagePath('magic-link', searchParams)} className="text-[11px] text-foreground-secondary/40 hover:text-foreground-secondary hover:underline transition-colors font-medium">
               Use magic link instead →
             </Link>
           </p>

@@ -87,6 +87,9 @@ function matchQuery(doc, query) {
           const docValStr = docValue ? docValue.toString() : ''
           const opValStr = opVal ? opVal.toString() : ''
           if (docValStr === opValStr) return false
+        } else if (op === '$nin') {
+          if (!Array.isArray(opVal)) return false
+          if (opVal.some(item => String(item) === String(docValue))) return false
         }
       }
     } else {
@@ -141,14 +144,31 @@ export async function saveDoc(modelName, doc) {
 }
 
 // Update a document in place
-export async function findOneAndUpdateDoc(modelName, query, update, options = {}) {
+export async function findOneAndUpdateDoc(modelName, query, update, options = {}, schema) {
   const docs = readDocs(modelName)
   const index = docs.findIndex(d => matchQuery(d, query))
   
   if (index === -1) {
     if (options.upsert) {
       const newDoc = { _id: new mongoose.Types.ObjectId().toString(), createdAt: new Date().toISOString() }
-      applyUpdate(newDoc, update)
+      if (options.setDefaultsOnInsert && schema?.paths) {
+        for (const [key, config] of Object.entries(schema.paths)) {
+          if (key in newDoc || config.defaultValue === undefined) continue
+          const value = typeof config.defaultValue === 'function' ? config.defaultValue.call(newDoc) : config.defaultValue
+          if (value !== undefined) newDoc[key] = JSON.parse(JSON.stringify(value))
+        }
+      }
+      for (const [key, value] of Object.entries(query || {})) {
+        if (!key.startsWith('$') && (value === null || typeof value !== 'object' || value instanceof Date || value instanceof mongoose.Types.ObjectId)) newDoc[key] = value
+      }
+      applyUpdate(newDoc, update, true)
+      // Guard schema-level unique keys, including a banned account excluded by
+      // the upsert predicate. This read/modify/write is synchronous per process.
+      for (const [key, config] of Object.entries(schema?.paths || {})) {
+        if (config.options?.unique && newDoc[key] !== undefined && docs.some(doc => String(doc[key]) === String(newDoc[key]))) {
+          throw Object.assign(new Error('Duplicate unique field'), { code: 11000 })
+        }
+      }
       docs.push(newDoc)
       writeDocs(modelName, docs)
       return newDoc
@@ -164,8 +184,9 @@ export async function findOneAndUpdateDoc(modelName, query, update, options = {}
 }
 
 // Helper to apply Mongoose update operator values
-function applyUpdate(doc, update) {
+function applyUpdate(doc, update, inserting = false) {
   if (!update) return
+  if (inserting && update.$setOnInsert) Object.assign(doc, update.$setOnInsert)
   
   if (update.$set) {
     Object.assign(doc, update.$set)
@@ -185,6 +206,13 @@ function applyUpdate(doc, update) {
       } else {
         doc[key].push(val)
       }
+    }
+  }
+  if (update.$addToSet) {
+    for (const [key, value] of Object.entries(update.$addToSet)) {
+      if (!Array.isArray(doc[key])) doc[key] = []
+      const values = value && typeof value === 'object' && Array.isArray(value.$each) ? value.$each : [value]
+      for (const item of values) if (!doc[key].some(existing => JSON.stringify(existing) === JSON.stringify(item))) doc[key].push(item)
     }
   }
   
@@ -369,9 +397,9 @@ function createFallbackModel(modelName, schema) {
   FallbackModel.find = (query) => new FallbackQuery(findDocs(modelName, query))
   FallbackModel.findOne = (query) => new FallbackQuery(findOneDoc(modelName, query))
   FallbackModel.findById = (id) => new FallbackQuery(findOneDoc(modelName, { _id: id }))
-  FallbackModel.findOneAndUpdate = (query, update, options) => new FallbackQuery(findOneAndUpdateDoc(modelName, query, update, options))
-  FallbackModel.findByIdAndUpdate = (id, update, options) => new FallbackQuery(findOneAndUpdateDoc(modelName, { _id: id }, update, options))
-  FallbackModel.updateOne = (query, update, options) => new FallbackQuery(findOneAndUpdateDoc(modelName, query, update, options))
+  FallbackModel.findOneAndUpdate = (query, update, options) => new FallbackQuery(findOneAndUpdateDoc(modelName, query, update, options, schema))
+  FallbackModel.findByIdAndUpdate = (id, update, options) => new FallbackQuery(findOneAndUpdateDoc(modelName, { _id: id }, update, options, schema))
+  FallbackModel.updateOne = (query, update, options) => new FallbackQuery(findOneAndUpdateDoc(modelName, query, update, options, schema))
   FallbackModel.updateMany = (query, update, options) => new FallbackQuery(updateManyDocs(modelName, query, update, options))
   FallbackModel.findOneAndDelete = (query) => new FallbackQuery(findOneAndDeleteDoc(modelName, query))
   FallbackModel.findByIdAndDelete = (id) => new FallbackQuery(findOneAndDeleteDoc(modelName, { _id: id }))

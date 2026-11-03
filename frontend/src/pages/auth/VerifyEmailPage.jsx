@@ -1,6 +1,7 @@
+import { authCallbackUrl, authFlowQuery, checkAuthAvailability, authErrorMessage } from '../../lib/authFlow.js'
+import { authApiBase } from '../../lib/authSession.js'
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { editorAuthQuery } from '../../lib/editorAuth.js'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import { Mail, RefreshCw, Check } from 'lucide-react'
@@ -10,22 +11,25 @@ import { Tooltip } from '../../components/ui/Tooltip.jsx'
 
 export default function VerifyEmailPage() {
   const [params] = useSearchParams()
-  const email = useAuthStore(state => state.user?.email)
+  const location = useLocation()
+  const accountEmail = useAuthStore(state => state.user?.email)
+  const email = location.state?.email || accountEmail
   const [resent, setResent] = useState(false)
   const [resending, setResending] = useState(false)
   const [error, setError] = useState('')
   let query = ''
-  try { query = editorAuthQuery(params) } catch { /* Invalid targets never receive a session. */ }
+  try { query = authFlowQuery(params).toString() } catch { /* Invalid targets never receive a session. */ }
 
   const handleResend = async () => {
     setResending(true)
     setError('')
     try {
       if (!email) throw new Error('Return to sign up to enter the email address you want to verify.')
-      const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${window.location.origin}/auth/callback?action=signup${query ? `&${query}` : ''}` } })
+      await checkAuthAvailability(authApiBase())
+      const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: authCallbackUrl(window.location.origin, query, 'signup') } })
       if (error) throw error
       setResent(true)
-    } catch (err) { setError(err.message) }
+    } catch (err) { setError(authErrorMessage(err)) }
     finally { setResending(false) }
   }
 
@@ -53,7 +57,7 @@ export default function VerifyEmailPage() {
             Verify your email
           </h1>
           <p className="text-sm text-foreground-muted mt-2 text-center">
-            We sent a verification link to your email address.
+            {email ? <>We sent a verification link to <span className="break-all">{email}</span>.</> : 'We sent a verification link to your email address.'}
           </p>
         </div>
 

@@ -9,6 +9,10 @@
  */
 
 import { isTrustedAuthSender, normalizeAuthSync, requestBackend, completionTextFromBody } from '../lib/background-api.js'
+import { API_BASE } from '../lib/config.js'
+import { createSessionManager, CREDENTIAL_KEYS } from '../lib/session.js'
+const sessions = createSessionManager({ storage: chrome.storage.local, base: API_BASE })
+let authSyncGeneration = 0
 
 const SITE_URL = 'https://cybermindcli.info'
 const AUTH_URL = `${SITE_URL}/auth/login?from=extension`
@@ -106,15 +110,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || sender.id !== chrome.runtime.id) return false
   switch (msg.type) {
     case 'API_REQUEST':
-      getToken().then(token => requestBackend(msg, token)).then(sendResponse)
+      brokerRequest(msg).then(sendResponse)
         .catch(err => sendResponse({ error: err.message }))
+      return true
+    case 'GET_SESSION':
+      if (!isExtensionPage(sender)) { sendResponse({ error: 'Untrusted session request' }); return false }
+      sessions.get({ force: msg.force === true, expectedToken: msg.expectedToken }).then(token => sendResponse({ token }))
+        .catch(error => sendResponse({ error: error.message }))
       return true
     case 'AUTH_TOKEN': {
       const auth = normalizeAuthSync(msg)
       if (!isTrustedAuthSender(sender) || !auth) {
         sendResponse({ error: 'Untrusted authentication source' }); return false
       }
-      syncAuth(auth).then(() => sendResponse({ ok: true })).catch(() => sendResponse({ error: 'Could not sync account' }))
+      syncAuth(auth).then(() => sendResponse({ ok: true })).catch(error => sendResponse({ error: error.message }))
       return true
     }
     case 'GET_AUTH_TOKEN':
@@ -122,7 +131,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       getToken().then(token => sendResponse({ token })); return true
     case 'LOGOUT':
       if (!isExtensionPage(sender)) return false
-      chrome.storage.local.set({ extensionSignedOut: true }).then(() => chrome.storage.local.remove(['authToken', 'userInfo']))
+      authSyncGeneration++
+      chrome.storage.local.set({ extensionSignedOut: true }).then(() => chrome.storage.local.remove(CREDENTIAL_KEYS))
         .then(() => { refreshBadge(false); sendResponse({ ok: true }) }).catch(() => sendResponse({ error: 'Sign out failed' }))
       return true
     case 'OPEN_AUTH':
@@ -203,8 +213,17 @@ chrome.commands?.onCommand.addListener((command, tab) => {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 async function getToken() {
-  const { authToken } = await chrome.storage.local.get('authToken')
-  return authToken || null
+  return sessions.get()
+}
+async function brokerRequest(message) {
+  let token = await getToken()
+  let response = await requestBackend(message, token)
+  if (response.status === 401 && token) {
+    const fresh = await sessions.get({ force: true, expectedToken: token })
+    if (fresh && fresh !== token) { token = fresh; response = await requestBackend(message, fresh) }
+    if (response.status === 401) await sessions.clear(token)
+  }
+  return response
 }
 
 async function queuePrompt(prompt) {
@@ -216,10 +235,24 @@ async function openPanelWithPrompt(tab, prompt) {
   await opening
 }
 async function syncAuth(auth) {
+  const generation = ++authSyncGeneration
   const stored = await chrome.storage.local.get(['authToken', 'extensionSignedOut'])
-  if (stored.extensionSignedOut && auth.token) return
-  if (!auth.token) { await chrome.storage.local.remove(['authToken', 'userInfo']); await refreshBadge(false); return }
-  if (stored.authToken !== auth.token) await chrome.storage.local.set({ authToken: auth.token, userInfo: auth.user })
+  if (stored.extensionSignedOut && auth.token) throw new Error('Choose Sign in from the extension to reconnect your account.')
+  if (!auth.token) { await chrome.storage.local.remove(CREDENTIAL_KEYS); await refreshBadge(false); return }
+  if (stored.authToken !== auth.token) {
+    let response
+    try { response = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${auth.token}` }, signal: AbortSignal.timeout(15000) }) }
+    catch { throw new Error('The account service could not be reached. Please try again shortly.') }
+    if (!response.ok) throw new Error([401, 403].includes(response.status) ? 'This account session is invalid or unavailable. Please sign in again.' : 'Account authentication is temporarily unavailable. Please try again shortly.')
+    const profile = await response.json()
+    if (!profile.user?.id) throw new Error('The server could not verify your account. Please try again.')
+  }
+  if (generation !== authSyncGeneration) throw new Error('The account session changed. Please reconnect.')
+  const latest = await chrome.storage.local.get('extensionSignedOut')
+  if (latest.extensionSignedOut) throw new Error('Choose Sign in from the extension to reconnect your account.')
+  await chrome.storage.local.set({ authToken: auth.token, userInfo: auth.user,
+    ...(stored.authToken !== auth.token ? { authRefreshToken: auth.refreshToken || null, authExpiresAt: auth.expiresAt || 0 } :
+      { ...(auth.refreshToken ? { authRefreshToken: auth.refreshToken } : {}), ...(auth.expiresAt ? { authExpiresAt: auth.expiresAt } : {}) }) })
   await refreshBadge(true)
 }
 chrome.storage.onChanged.addListener((changes, area) => {

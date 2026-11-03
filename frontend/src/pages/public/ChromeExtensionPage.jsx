@@ -4,6 +4,7 @@ import { Chrome, Zap, Globe, FileText, Code2, Shield, ArrowRight, Download } fro
 import ScrollReveal from '@components/ui/ScrollReveal'
 import SEOHead from '@components/seo/SEOHead'
 import { Tooltip } from '@components/ui/Tooltip'
+import BrowserMark from '@components/ui/BrowserMark'
 
 /**
  * /chrome-extension — Codeva browser workspace and unpacked installation.
@@ -11,10 +12,10 @@ import { Tooltip } from '@components/ui/Tooltip'
 
 const FEATURES = [
   { icon: FileText, title: 'Understand the current page', desc: 'Attach readable page text for summaries and explanations with the source URL included.' },
-  { icon: Globe, title: 'Refine your writing', desc: 'Review grammar, spelling, and clarity suggestions. Apply the changes you choose or request a rewrite.' },
+  { icon: Globe, title: 'Refine your writing', desc: 'Review grammar, spelling, and clarity. Preview six rewrite styles, apply or undo edits, and set your own dictionary and writing goals.' },
   { icon: Code2, title: 'Explain code', desc: 'Highlight code on any page and get a clear explanation with examples.' },
   { icon: Zap, title: 'Pick up where you left off', desc: 'Search saved conversations, recover drafts, and export chats. History stays in this browser, separately for each account.' },
-  { icon: Shield, title: 'Choose what you share', desc: 'Page context starts off. Submitted text is processed through Codeva and its AI providers; automatic writing assistance can be disabled in Settings.' },
+  { icon: Shield, title: 'Choose what you share', desc: 'Page context starts off. Pause writing assistance per website or in Settings. Submitted text is processed through Codeva and its AI providers.' },
   { icon: Chrome, title: 'A workspace beside your page', desc: 'Use the side panel, context menu, or selection toolbar on supported websites, with system, light, and dark themes.' },
 ]
 
@@ -27,7 +28,7 @@ export default function ChromeExtensionPage() {
         <ScrollReveal>
           <div className="text-center mb-16">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#C96442]/30 bg-[#C96442]/10 text-[#C96442] text-sm font-medium mb-6">
-              <Chrome className="w-4 h-4" /> Chrome Extension
+              <BrowserMark size={24} /> Chrome Extension
             </motion.div>
             <h1 className="text-4xl md:text-5xl font-serif font-normal text-[#f5f4ef] mb-5" style={{ fontFamily: "'Instrument Serif', serif" }}>
               A helping hand<br/>across all your tabs
@@ -36,8 +37,8 @@ export default function ChromeExtensionPage() {
               Chat beside your work, understand a page, and refine your writing with your existing Codeva account.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Tooltip content="Download Codeva 1.4.0 for an unpacked Chrome installation">
-                <a href="https://github.com/codevaaa/cybercli-chat/raw/refs/heads/main/artifacts/codeva-extension-1.4.0-2026-11-03.zip" className="px-7 py-3.5 bg-[#f5f4ef] text-[#1a1a18] rounded-xl font-bold transition-all hover:bg-white flex items-center gap-2">
+              <Tooltip content="Download Codeva 1.5.0 for an unpacked Chrome installation">
+                <a href="https://github.com/codevaaa/cybercli-chat/raw/refs/heads/main/artifacts/codeva-extension-1.5.0-2026-11-04.zip" className="px-7 py-3.5 bg-[#f5f4ef] text-[#1a1a18] rounded-xl font-bold transition-all hover:bg-white flex items-center gap-2">
                   <Download className="w-5 h-5" /> Download extension ZIP
                 </a>
               </Tooltip>

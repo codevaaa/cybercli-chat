@@ -16,3 +16,7 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent);
 .account-actions button { font-size: 11px; }
 #settings-status { color: var(--accent); min-height: 18px; }
 @media(max-width: 500px) { body { padding: 24px 14px; } section { padding: 18px; } h1 { font-size: 30px; } }
+
+section textarea { display: block; width: 100%; resize: vertical; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin: 10px 0 12px; }
+
+.back-link { display: inline-flex; gap: 10px; align-items: center; }

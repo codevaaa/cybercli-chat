@@ -7,9 +7,10 @@ import '../lib/writing.js'
 
 const $ = id => document.getElementById(id)
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char])
-const { normalizeIssues, applyIssues } = globalThis.CodevaWriting
+const { normalizeIssues, applyIssues, metrics, filterDictionary, dictionaryWords } = globalThis.CodevaWriting
 let workspace = { conversations: [], activeId: null }, storageKey = null, view = 'chat'
 let activeRequest = null, writingRequest = null, authGeneration = 0, claimingPrompt = false, deleted = null
+let issueFilter = 'all', rewriteCandidate = null, writingUndo = []
 let writeSnapshot = '', writeIssues = [], saveChain = Promise.resolve(), draftTimer, checkpointAt = 0
 const activeChat = () => workspace.conversations.find(c => c.id === workspace.activeId)
 const busy = () => !!activeRequest
@@ -43,13 +44,13 @@ function draftChanged() { clearTimeout(draftTimer); draftTimer = setTimeout(pers
 
 async function connectAccount() {
   const generation = ++authGeneration
-  const token = await getToken()
+  const token = await getToken().catch(async () => (await chrome.storage.local.get('authToken')).authToken || null)
   if (generation !== authGeneration) return
   const key = token ? accountKey(token) : null
   if (key !== storageKey) {
     activeRequest?.abort(); writingRequest?.abort()
     activeRequest = null; setBusy(false)
-    storageKey = key; deleted = null
+    storageKey = key; deleted = null; writingUndo = []
     $('sp-undo-delete').hidden = true
     $('sp-use-page').checked = false
     const stored = key ? (await chrome.storage.local.get(key))[key] : null
@@ -232,15 +233,55 @@ async function checkPending() {
 
 function resetWriting() {
   writingRequest?.abort(); writeSnapshot = ''; writeIssues = []; $('sp-issues').replaceChildren(); $('sp-apply-all').hidden = true
-  const text = $('sp-writing').value
-  $('sp-writing-count').textContent = `${text.trim() ? text.trim().split(/\s+/).length : 0} words · ${text.length.toLocaleString()} / 6,000 characters`
+  const text = $('sp-writing').value, measured = metrics(text)
+  rewriteCandidate = null; $('sp-rewrite-review').hidden = true
+  $('sp-undo-writing').disabled = !writingUndo.length || writingUndo.at(-1).after !== text
+  $('sp-writing-count').textContent = `${measured.words} words · ${text.length.toLocaleString()} / 6,000 characters`
+  $('sp-writing-metrics').textContent = `${measured.sentences} sentences · estimated reading time ${measured.readingSeconds} seconds`
   $('sp-writing-status').textContent = 'Check your draft to see grammar, spelling, and clarity suggestions.'
 }
 function renderIssues() {
-  $('sp-issues').innerHTML = writeIssues.map((issue, index) => `<article class="issue"><small>${esc(issue.type)}</small><p><del>${esc(issue.original)}</del> → <ins>${esc(issue.suggestion || '(delete)')}</ins></p><p>${esc(issue.reason)}</p><div class="issue-actions"><button class="sp-mini-btn" data-dismiss="${index}">Dismiss</button><button class="sp-mini-btn" data-apply="${index}">Apply change</button></div></article>`).join('')
+  $('sp-issues').innerHTML = writeIssues.map((issue, index) => {
+    if (issueFilter === 'clarity' && issue.type !== 'clarity' || issueFilter === 'correctness' && issue.type === 'clarity') return ''
+    return `<article class="issue"><small>${esc(issue.type)}</small><p><del>${esc(issue.original)}</del> → <ins>${esc(issue.suggestion || '(delete)')}</ins></p><p>${esc(issue.reason)}</p><div class="issue-actions">${issue.type === 'spelling' ? `<button class="sp-mini-btn" data-learn="${index}">Add to dictionary</button>` : ''}<button class="sp-mini-btn" data-dismiss="${index}">Dismiss</button><button class="sp-mini-btn" data-apply="${index}">Apply change</button></div></article>`
+  }).join('')
   $('sp-apply-all').hidden = !writeIssues.length
+  $('sp-apply-all').textContent = `Apply all ${writeIssues.length} suggestions`
   $('sp-issues').querySelectorAll('[data-dismiss]').forEach(button => button.onclick = () => { writeIssues.splice(Number(button.dataset.dismiss), 1); renderIssues() })
   $('sp-issues').querySelectorAll('[data-apply]').forEach(button => button.onclick = () => applyWriting([writeIssues[Number(button.dataset.apply)]]))
+  $('sp-issues').querySelectorAll('[data-learn]').forEach(button => button.onclick = async () => {
+    const issue = writeIssues[Number(button.dataset.learn)]
+    const { settings = {} } = await chrome.storage.local.get('settings')
+    const words = dictionaryWords([...(settings.dictionary || []), issue.original])
+    await chrome.storage.local.set({ settings: { ...settings, dictionary: words } })
+    writeIssues = filterDictionary(writeIssues, words); renderIssues()
+    $('sp-writing-status').textContent = 'Dictionary updated for future writing checks.'
+  })
+}
+function saveWritingChange(before, after) {
+  writingUndo.push({ before, after }); writingUndo = writingUndo.slice(-10)
+  $('sp-writing').value = after; resetWriting(); persist()
+}
+function setWritingBusy(value) {
+  $('sp-check').disabled = value; $('sp-check').textContent = value ? 'Working…' : 'Check writing'
+  document.querySelectorAll('[data-rewrite]').forEach(button => { button.disabled = value })
+}
+async function rewriteDraft(mode) {
+  const text = $('sp-writing').value
+  if (text.trim().length < 2) { $('sp-writing-status').textContent = 'Add a draft before rewriting.'; return }
+  writingRequest?.abort()
+  const controller = new AbortController(), key = storageKey; writingRequest = controller
+  setWritingBusy(true); $('sp-writing-status').textContent = 'Preparing a rewrite for you to review…'
+  try {
+    const { writingGoals = {}, settings = {} } = await chrome.storage.local.get(['writingGoals', 'settings'])
+    const result = await apiJSON('/completions/rewrite', { method: 'POST', body: { text, mode, goals: writingGoals, dictionary: settings.dictionary || [] }, signal: controller.signal })
+    if (controller.signal.aborted || key !== storageKey || $('sp-writing').value !== text) return
+    if (result.original !== text || typeof result.rewritten !== 'string' || !result.rewritten.trim()) throw new Error('The editor returned an invalid rewrite. Your draft has been kept.')
+    rewriteCandidate = { original: text, rewritten: result.rewritten }
+    $('sp-rewrite-text').textContent = result.rewritten; $('sp-rewrite-review').hidden = false
+    $('sp-writing-status').textContent = 'Rewrite ready. Review it before applying.'
+  } catch (error) { if (!controller.signal.aborted) $('sp-writing-status').textContent = error.message }
+  finally { if (writingRequest === controller) { writingRequest = null; setWritingBusy(false) } }
 }
 function applyWriting(changes) {
   if ($('sp-writing').value !== writeSnapshot) { resetWriting(); return }
@@ -250,7 +291,7 @@ function applyWriting(changes) {
       const delta = changes.filter(c => c.end <= issue.start).reduce((sum, c) => sum + c.suggestion.length - c.original.length, 0)
       return { ...issue, start: issue.start + delta, end: issue.end + delta }
     })
-    $('sp-writing').value = next; resetWriting(); writeSnapshot = next; writeIssues = remaining
+    saveWritingChange(old, next); writeSnapshot = next; writeIssues = remaining
     renderIssues(); $('sp-writing-status').textContent = `${changes.length} change${changes.length === 1 ? '' : 's'} applied. ${remaining.length} remaining.`; persist()
   } catch (error) { $('sp-writing-status').textContent = error.message }
 }
@@ -259,18 +300,18 @@ async function checkWriting() {
   if (text.trim().length < 2) { $('sp-writing-status').textContent = 'Enter at least two characters to check.'; return }
   writingRequest?.abort()
   const controller = new AbortController(); writingRequest = controller
-  $('sp-check').disabled = true; $('sp-check').textContent = 'Checking…'; $('sp-writing-status').textContent = 'Checking grammar, spelling, and clarity…'
+  setWritingBusy(true); $('sp-writing-status').textContent = 'Checking grammar, spelling, and clarity…'
   const key = storageKey
   try {
-    const { writingGoals = {} } = await chrome.storage.local.get('writingGoals')
-    const result = await apiJSON('/completions/grammar', { method: 'POST', body: { text, goals: writingGoals }, signal: controller.signal })
+    const { writingGoals = {}, settings = {} } = await chrome.storage.local.get(['writingGoals', 'settings'])
+    const result = await apiJSON('/completions/grammar', { method: 'POST', body: { text, goals: writingGoals, dictionary: settings.dictionary || [] }, signal: controller.signal })
     if (controller.signal.aborted || key !== storageKey || $('sp-writing').value !== text) return
     if (!Array.isArray(result.issues)) throw new Error('The server returned an invalid proofreading response. Please try again.')
-    writeSnapshot = text; writeIssues = normalizeIssues(text, result.issues)
+    writeSnapshot = text; writeIssues = filterDictionary(normalizeIssues(text, result.issues), settings.dictionary || [])
     $('sp-writing-status').textContent = `${writeIssues.length ? `${writeIssues.length} suggestion${writeIssues.length === 1 ? '' : 's'}` : 'No issues found in this check'} · ${result.language || 'Language detected'} · ${result.tone || 'neutral'} tone`
     renderIssues()
   } catch (error) { if (!controller.signal.aborted) $('sp-writing-status').textContent = error.message }
-  finally { if (writingRequest === controller) { writingRequest = null; $('sp-check').disabled = false; $('sp-check').textContent = 'Check writing' } }
+  finally { if (writingRequest === controller) { writingRequest = null; setWritingBusy(false) } }
 }
 function renderHistory() {
   const query = $('sp-history-search').value.toLowerCase()
@@ -303,7 +344,7 @@ function themeLabel(theme = 'system') {
 async function init() {
   $('sp-logo').innerHTML = ICONS.logo; $('sp-auth-logo').innerHTML = ICONS.logo
   $('sp-settings').innerHTML = ICONS.settings; $('sp-send').innerHTML = ICONS.send
-  $('sp-signin').onclick = () => chrome.tabs.create({ url: AUTH_URL })
+  $('sp-signin').onclick = () => chrome.runtime.sendMessage({ type: 'OPEN_AUTH' }).catch(error => status(error.message, 'error'))
   $('sp-settings').onclick = () => chrome.runtime.openOptionsPage()
   $('sp-theme').onclick = cycleTheme
   $('sp-send').onclick = send
@@ -322,11 +363,33 @@ async function init() {
     try { const result = await currentPage('GET_SELECTION'); if (!result.text?.trim()) throw new Error('Select text on the webpage first.'); $('sp-writing').value = result.text.slice(0, 6000); resetWriting(); persist() }
     catch (error) { $('sp-writing-status').textContent = error.message }
   }
-  document.querySelectorAll('[data-rewrite]').forEach(button => button.onclick = () => {
-    const text = $('sp-writing').value.trim()
-    if (!text) { $('sp-writing-status').textContent = 'Add a draft before rewriting.'; return }
-    const instruction = { formal: 'Rewrite in a professional tone', casual: 'Rewrite in a friendly, natural tone', shorter: 'Make this concise while preserving the key information', longer: 'Expand this clearly without inventing facts' }[button.dataset.rewrite]
-    runPrompt(`${instruction}. Return only the rewritten text.\n\n${text}`)
+  document.querySelectorAll('[data-rewrite]').forEach(button => button.onclick = () => rewriteDraft(button.dataset.rewrite))
+  $('sp-rewrite-apply').onclick = () => {
+    if (!rewriteCandidate || $('sp-writing').value !== rewriteCandidate.original) { resetWriting(); return }
+    saveWritingChange(rewriteCandidate.original, rewriteCandidate.rewritten)
+    $('sp-writing-status').textContent = 'Rewrite applied. You can undo this change.'
+  }
+  $('sp-rewrite-copy').onclick = () => copyText(rewriteCandidate?.rewritten || '', $('sp-rewrite-copy'))
+  $('sp-rewrite-dismiss').onclick = () => { rewriteCandidate = null; $('sp-rewrite-review').hidden = true }
+  $('sp-undo-writing').onclick = () => {
+    const change = writingUndo.at(-1)
+    if (!change || change.after !== $('sp-writing').value) return
+    writingUndo.pop(); $('sp-writing').value = change.before; resetWriting(); persist()
+    $('sp-writing-status').textContent = 'Last AI change undone.'
+  }
+  document.querySelectorAll('[data-issue-filter]').forEach(button => button.onclick = () => {
+    issueFilter = button.dataset.issueFilter
+    document.querySelectorAll('[data-issue-filter]').forEach(item => item.setAttribute('aria-pressed', String(item === button)))
+    renderIssues()
+  })
+  const { writingGoals = {} } = await chrome.storage.local.get('writingGoals')
+  document.querySelectorAll('[data-writing-goal]').forEach(select => {
+    if (writingGoals[select.dataset.writingGoal]) select.value = writingGoals[select.dataset.writingGoal]
+    select.onchange = async () => {
+      const { writingGoals: current = {} } = await chrome.storage.local.get('writingGoals')
+      await chrome.storage.local.set({ writingGoals: { ...current, [select.dataset.writingGoal]: select.value } })
+      resetWriting()
+    }
   })
   $('sp-history-search').oninput = renderHistory
   $('sp-undo-delete').onclick = () => { if (!deleted) return; workspace.conversations.unshift(deleted); deleted = null; $('sp-undo-delete').hidden = true; renderHistory(); persist() }

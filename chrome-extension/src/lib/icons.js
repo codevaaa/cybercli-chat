@@ -1,3 +1,4 @@
+import { BRAND_LOGO } from './brand.js'
 /**
  * Codeva Extension — Inline icon set (stroke-based, 24x24 viewBox)
  * Replaces emoji with clean line icons for a professional UI.
@@ -7,20 +8,7 @@
 const stroke = 'stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"'
 
 export const ICONS = {
-  logo: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="2" opacity="0.25"/><circle cx="50" cy="50" r="34" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/><circle cx="50" cy="50" r="9" fill="currentColor"/><g fill="currentColor">
-    ${Array.from({ length: 8 }).map((_, i) => {
-      const a = (i / 8) * Math.PI * 2
-      const tipX = (50 + Math.cos(a + 0.28) * 42).toFixed(1)
-      const tipY = (50 + Math.sin(a + 0.28) * 42).toFixed(1)
-      const outX = (50 + Math.cos(a + 0.12) * 33).toFixed(1)
-      const outY = (50 + Math.sin(a + 0.12) * 33).toFixed(1)
-      const baseX = (50 + Math.cos(a) * 16).toFixed(1)
-      const baseY = (50 + Math.sin(a) * 16).toFixed(1)
-      const cutX = (50 + Math.cos(a + 0.24) * 24).toFixed(1)
-      const cutY = (50 + Math.sin(a + 0.24) * 24).toFixed(1)
-      return `<polygon points="${baseX},${baseY} ${outX},${outY} ${tipX},${tipY} ${cutX},${cutY}" opacity="0.9"/>`
-    }).join('')}
-  </g></svg>`,
+  logo: BRAND_LOGO,
 
   spellcheck: `<svg viewBox="0 0 24 24" ${stroke}><path d="M4 20l4-11 4 11M5.5 15.5h5M14 12l3-8 3 8M15.2 9.5h3.6"/><path d="M9 20a9 9 0 1 1 12.5-8.3" opacity="0"/></svg>`,
   wand: `<svg viewBox="0 0 24 24" ${stroke}><path d="M15 4V2M15 16v-2M8 9h2M2 9h2M20 9h2M17.8 11.8L19 13M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5"/></svg>`,

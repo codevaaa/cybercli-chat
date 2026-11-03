@@ -149,9 +149,8 @@
   font-size: 13px; font-weight: 600; color: var(--cv-text);
 }
 .cv-logo-dot {
-  width: 9px; height: 9px; border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, var(--cv-accent-2), var(--cv-accent));
-  box-shadow: 0 0 8px rgba(217,119,87,0.6);
+  display: inline-block; flex-shrink: 0; width: 18px; height: 18px; border-radius: 5px;
+  background: url('../../assets/icons/codeva-mark.svg') center / contain no-repeat;
 }
 .cv-card-head-actions { display: flex; align-items: center; gap: 6px; }
 .cv-fixall {
@@ -534,3 +533,12 @@
 ::highlight(codeva-punctuation) { text-decoration: underline wavy #3876ba; text-underline-offset: 3px; }
 ::highlight(codeva-clarity) { text-decoration: underline wavy #8d54ad; text-underline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .cv-fab, .cv-fab *, .cv-card, .cv-toolbar { animation: none !important; transition: none !important; } }
+
+:root[data-codeva-paused="true"] :is(.cv-fab,.cv-toolbar,.cv-card,.cv-slash-menu,.cv-ghost-overlay,.cv-reply-btn,.cv-pdf-bar) { display: none !important; }
+.cv-card .cv-dictionary, .cv-card .cv-pause-site { border: 0; background: transparent; color: var(--cv-accent); font: inherit; font-size: 11px; cursor: pointer; padding: 8px; }
+.cv-card .cv-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
+
+.cv-fab-mark { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; }
+.cv-fab-mark svg { width: 20px; height: 20px; }
+.cv-fab-core { background: #202b25; box-shadow: none; border: 1px solid var(--cv-accent); }
+.cv-fab-mark { color: #f0b094; }

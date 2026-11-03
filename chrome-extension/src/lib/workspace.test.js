@@ -32,3 +32,17 @@ test('overlapping, absent and speculative issues cannot change the draft', () =>
   const issues = normalizeIssues(text, [{ original: 'teh', suggestion: 'the', start: 0 }, { original: 'teh teh', suggestion: 'the' }, { original: 'missing', suggestion: 'bad' }, { original: 'teh', suggestion: '(verify)', lowConfidence: true }])
   assert.equal(issues.length, 1); assert.equal(applyIssues(text, issues), 'the teh')
 })
+test('personal dictionaries normalize duplicates and suppress spelling only', () => {
+  const words = globalThis.CodevaWriting.dictionaryWords('Codevaa\n codevaa \nBad<script>\nHyperScale')
+  assert.deepEqual(words, ['Codevaa', 'HyperScale'])
+  const filtered = globalThis.CodevaWriting.filterDictionary([{ original: 'Codevaa', type: 'spelling' }, { original: 'Codevaa', type: 'grammar' }], words)
+  assert.equal(filtered.length, 1); assert.equal(filtered[0].type, 'grammar')
+})
+test('writing metrics are measured and website pauses respect domain boundaries', () => {
+  const { metrics, isSitePaused } = globalThis.CodevaWriting
+  assert.deepEqual(metrics(''), { words: 0, sentences: 0, characters: 0, readingSeconds: 0 })
+  assert.equal(metrics('Hello team. Thank you!').sentences, 2)
+  assert.equal(metrics('Hello team.').words, 2)
+  assert.equal(isSitePaused('mail.example.test', ['example.test']), true)
+  assert.equal(isSitePaused('evil-example.test', ['example.test']), false)
+})

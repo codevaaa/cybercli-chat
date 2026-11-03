@@ -1,3 +1,4 @@
+import '../lib/writing.js'
 import { initTheme } from '../lib/theme.js'
 import { getToken, getUser } from '../lib/config.js'
 import { accountKey } from '../lib/workspace.js'
@@ -12,13 +13,23 @@ function saveSetting(group, key, value) {
   }).catch(() => notify('Could not save preferences. Please try again.'))
 }
 async function showAccount() {
-  const [token, user] = await Promise.all([getToken(), getUser()])
-  $('account').textContent = token ? `Connected${user?.email ? ` as ${user.email}` : ' to your Codeva account'}.` : 'No account connected.'
-  $('sign-out').disabled = !token; $('clear-history').disabled = !token
+  try {
+    const [token, user] = await Promise.all([getToken(), getUser()])
+    $('account').textContent = token ? `Connected${user?.email ? ` as ${user.email}` : ' to your Codeva account'}.` : 'No account connected.'
+    $('sign-out').disabled = !token; $('clear-history').disabled = !token
+  } catch {
+    const { authToken } = await chrome.storage.local.get('authToken')
+    $('account').textContent = authToken ? 'Connection temporarily unavailable. Your saved session has been kept.' : 'No account connected.'
+    $('sign-out').disabled = !authToken; $('clear-history').disabled = !authToken
+  }
 }
 async function init() {
   await initTheme()
   const { settings = {}, writingGoals = {} } = await chrome.storage.local.get(['settings', 'writingGoals'])
+  $('dictionary').value = (settings.dictionary || []).join('\n')
+  $('disabled-sites').value = (settings.disabledSites || []).join('\n')
+  $('save-dictionary').onclick = () => { const words = CodevaWriting.dictionaryWords($('dictionary').value); $('dictionary').value = words.join('\n'); saveSetting('settings', 'dictionary', words) }
+  $('save-sites').onclick = () => { const sites = [...new Set($('disabled-sites').value.split(/[,\n]+/).map(value => value.trim().toLowerCase()).filter(value => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/.test(value)))].slice(0, 50); $('disabled-sites').value = sites.join('\n'); saveSetting('settings', 'disabledSites', sites) }
   $('theme').value = settings.theme || 'system'
   $('theme').onchange = () => saveSetting('settings', 'theme', $('theme').value)
   document.querySelectorAll('[data-setting]').forEach(input => {
@@ -32,7 +43,7 @@ async function init() {
   $('sign-in').onclick = () => chrome.runtime.sendMessage({ type: 'OPEN_AUTH' })
   $('sign-out').onclick = async () => { await chrome.runtime.sendMessage({ type: 'LOGOUT' }); notify('Signed out of the extension.'); showAccount() }
   $('clear-history').onclick = async () => {
-    const token = await getToken(); if (!token) return
+    const { authToken: token } = await chrome.storage.local.get('authToken'); if (!token) return
     await chrome.storage.local.remove(accountKey(token)); notify('This account’s local history was cleared.');
   }
   chrome.storage.onChanged.addListener((changes, area) => { if (area === 'local' && changes.authToken) showAccount() })

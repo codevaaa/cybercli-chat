@@ -1,4 +1,4 @@
-import { API_BASE, clearExpiredToken } from './config.js'
+import { API_BASE } from './config.js'
 
 const MAX_AUTH_TOKEN_LENGTH = 16_384
 const MAX_PROFILE_VALUE_LENGTH = 512
@@ -15,7 +15,7 @@ export function isTrustedAuthSender(sender) {
  * extension must never persist arbitrary objects or an unbounded token passed
  * through a runtime message.
  */
-export function normalizeAuthSync({ token, user } = {}) {
+export function normalizeAuthSync({ token, user, refreshToken, expiresAt } = {}) {
   if (token === null) return { token: null, user: null }
   if (typeof token !== 'string') return null
 
@@ -31,7 +31,9 @@ export function normalizeAuthSync({ token, user } = {}) {
     }
   }
 
-  return { token: normalizedToken, user: Object.keys(normalizedUser).length ? normalizedUser : null }
+  return { token: normalizedToken, user: Object.keys(normalizedUser).length ? normalizedUser : null,
+    ...(typeof refreshToken === 'string' && refreshToken.length <= MAX_AUTH_TOKEN_LENGTH && refreshToken.trim() ? { refreshToken: refreshToken.trim() } : {}),
+    ...(Number.isFinite(expiresAt) && expiresAt > 0 ? { expiresAt } : {}) }
 }
 
 /** Read the supported non-streaming completion response shapes. */
@@ -60,6 +62,5 @@ export async function requestBackend({ endpoint, body }, token) {
     ...(endpoint === '/agents' ? {} : { body: JSON.stringify(payload) }),
     signal: AbortSignal.timeout(120000),
   })
-  if (res.status === 401) await clearExpiredToken(token)
   return { status: res.status, body: await res.text(), contentType: res.headers.get('content-type') || 'application/json' }
 }

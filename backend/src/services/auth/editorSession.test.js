@@ -15,6 +15,10 @@ test('editor refresh validates input, handles expired tokens and refuses banned/
   for (const value of [null, 'short', 'a'.repeat(2049), 'a'.repeat(20)+' ']) assert.equal((await request(app).post('/refresh').send({ refresh_token: value })).status, 400)
   result = { error: new Error('expired') }
   assert.equal((await request(app).post('/refresh').send({ refresh_token: 'fixture-refresh-token' })).status, 401)
+  for (const error of [Object.assign(new Error('Temporary service failure'), { status: 503 }), Object.assign(new Error('Unavailable'), { name: 'AuthRetryableFetchError' }), new Error('fetch failed')]) {
+    result = { error }
+    assert.equal((await request(app).post('/refresh').send({ refresh_token: 'fixture-refresh-token' })).status, 503)
+  }
   result = { data: { user: { id: 'fixture' }, session: { access_token: 'next-token', refresh_token: 'next-refresh', expires_at: 123 } } }
   for (const next of [null, { status: 'banned' }, { status: 'suspended' }]) {
     account = next; assert.equal((await request(app).post('/refresh').send({ refresh_token: 'fixture-refresh-token' })).status, 403)

@@ -5,178 +5,49 @@ import { Loader2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import { CodevaMark } from '../../components/ui/CodevaLogo'
+import { authDestination, authFlowQuery, authPagePath, authErrorMessage, resolveAuthSession } from '../../lib/authFlow.js'
 import { returnToEditor } from '../../lib/editorAuth.js'
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate()
   const { initialize } = useAuthStore()
-  const [status, setStatus] = useState('processing') // 'processing' | 'success' | 'error'
+  const [status, setStatus] = useState('processing')
   const [errorMessage, setErrorMessage] = useState('')
   const [isDesktopRedirect, setIsDesktopRedirect] = useState(false)
+  const returnToLogin = () => {
+    try { navigate(authPagePath('login', window.location.search)) } catch { navigate('/auth/login') }
+  }
 
   useEffect(() => {
+    let cancelled = false, redirectTimer
     const handleAuthCallback = async () => {
       try {
-        // Parse code from query parameters (for PKCE flow)
-        const params = new URLSearchParams(window.location.search)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
-
-        // Detect if this is a password recovery/reset event
-        const isRecovery = hashParams.get('type') === 'recovery' || params.get('type') === 'recovery'
-        const code = params.get('code')
-        const next = isRecovery ? '/auth/reset-password' : (params.get('next') || '/chat')
-
-        // Check if this is a desktop/IDE app redirect flow
-        const redirectParam = params.get('redirect') === 'desktop'
-        const isIdeRedirect = params.get('redirect') === 'ide'
-        const isCliRedirect = params.get('redirect') === 'cli'
-        const cliPort = params.get('port')
-        const finishEditor = async current => {
-          if (!isIdeRedirect) return false
-          await initialize()
-          if (params.get('action') === 'signup') {
-            const { default: api } = await import('../../lib/api.js')
-            await api.post('/auth/sync', { platform: 'ide' })
-          }
-          return returnToEditor(current, params)
+        const href = window.location.href, params = new URLSearchParams(window.location.search)
+        const hash = new URLSearchParams(window.location.hash.slice(1))
+        authFlowQuery(params) // Reject unsafe native callback destinations first.
+        const session = await resolveAuthSession(supabase, href)
+        await initialize()
+        if (cancelled) return
+        const state = useAuthStore.getState()
+        if (!state.accountReady) throw new Error(state.error || 'Could not finish connecting your account. Please try again.')
+        // Remove credentials and single-use codes from browser history.
+        window.history.replaceState(null, '', `/auth/callback?${authFlowQuery(params)}`)
+        const target = params.get('redirect')
+        setIsDesktopRedirect(['ide', 'cli', 'desktop'].includes(target))
+        if (target === 'ide') returnToEditor(session, params)
+        else if (target === 'cli') window.location.href = `http://127.0.0.1:${params.get('port')}/callback?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token || '')}`
+        else if (target === 'desktop') window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token || '')}`
+        else {
+          const recovery = hash.get('type') === 'recovery' || params.get('type') === 'recovery'
+          redirectTimer = setTimeout(() => navigate(recovery ? '/auth/reset-password' : authDestination(params), { replace: true }), 500)
         }
-        
-        if (redirectParam || isCliRedirect || isIdeRedirect) setIsDesktopRedirect(true)
-
-        // Check for error parameters in hash or search
-        const errorDescription = params.get('error_description') || hashParams.get('error_description')
-        const errorCode = params.get('error') || hashParams.get('error')
-
-        if (errorCode === 'otp_expired' || (errorDescription && (errorDescription.includes('expired') || errorDescription.includes('already used')))) {
-          const { data: { session } } = await supabase.auth.getSession()
-          if (session) {
-            if (await finishEditor(session)) { setStatus('success'); return }
-            setStatus('success')
-            await initialize()
-            setTimeout(() => {
-              navigate(next)
-            }, 1500)
-            return
-          } else {
-            setStatus('already_verified')
-            return
-          }
-        }
-
-        if (errorCode || errorDescription) {
-          throw new Error(errorDescription || 'Authentication failed')
-        }
-
-        if (code) {
-          try {
-            // Exchange code for session
-            const { error } = await supabase.auth.exchangeCodeForSession(code)
-            if (error) throw error
-          } catch (exchangeErr) {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (session) {
-              if (await finishEditor(session)) { setStatus('success'); return }
-              setStatus('success')
-              await initialize()
-              setTimeout(() => {
-                navigate(next)
-              }, 1500)
-              return
-            } else if (
-              exchangeErr.message?.toLowerCase().includes('already') ||
-              exchangeErr.message?.toLowerCase().includes('expired') ||
-              exchangeErr.message?.toLowerCase().includes('invalid grant') ||
-              exchangeErr.message?.toLowerCase().includes('flow_state_not_found')
-            ) {
-              setStatus('already_verified')
-              return
-            } else {
-              throw exchangeErr
-            }
-          }
-        }
-
-        // Fetch session to confirm auth is successful
-        const { data: { session } } = await supabase.auth.getSession()
-
-        if (session) {
-          // Desktop / IDE / CLI redirect: send token via deep link protocol or localhost server
-          if (redirectParam || isCliRedirect || isIdeRedirect) {
-            const token = session.access_token
-            const refresh = session.refresh_token || ''
-            if (isCliRedirect && cliPort) {
-              window.location.href = `http://127.0.0.1:${cliPort}/callback?token=${encodeURIComponent(token)}&refresh=${encodeURIComponent(refresh)}`
-            } else if (isIdeRedirect) {
-              // Signup must sync the existing registry before the native API
-              // verifies the account; no separate editor account is created.
-              await finishEditor(session)
-            } else {
-              // Fallback to codeva:// deep link with token
-              window.location.href = `codeva://auth?token=${encodeURIComponent(token)}&refresh=${encodeURIComponent(refresh)}`
-            }
-            setStatus('success')
-            return
-          }
-
-          setStatus('success')
-          // Initialize auth store to sync session details and state
-          await initialize()
-
-          // IMPORTANT: Auth Overhaul Logic
-          const action = params.get('action') || hashParams.get('action') || 'login'
-          try {
-            // Import api client dynamically to avoid circular dependencies if any
-            const { default: api } = await import('../../lib/api.js')
-            
-            if (action === 'login') {
-              const { data } = await api.post('/auth/check-user')
-              if (!data.exists) {
-                // strict enforcement: force signup
-                await useAuthStore.getState().signOut()
-                navigate('/auth/signup?error=not_found')
-                return
-              }
-              if (data.banned) {
-                await useAuthStore.getState().signOut()
-                throw new Error('This account has been suspended.')
-              }
-            } else if (action === 'signup') {
-              // Create user in MongoDB
-              await api.post('/auth/sync', { platform: isCliRedirect ? 'cli' : (redirectParam ? 'desktop' : 'web') })
-            }
-          } catch (syncErr) {
-            console.error('Auth sync/check error:', syncErr)
-            if (action === 'login' && syncErr.response?.status === 403) {
-               await useAuthStore.getState().signOut()
-               throw new Error(syncErr.response.data?.reason || 'Account suspended')
-            }
-          }
-
-          // Small delay for showing success checkmark
-          setTimeout(() => {
-            navigate(next)
-          }, 1500)
-        } else {
-          // If no session is found, we might have been navigated here directly or session setup is incomplete
-          // Try to initialize anyway in case it was a hash redirect (implicit flow)
-          await initialize()
-          const currentSession = useAuthStore.getState().session
-          if (currentSession) {
-            if (await finishEditor(currentSession)) { setStatus('success'); return }
-            setStatus('success')
-            setTimeout(() => navigate(next), 1500)
-          } else {
-            throw new Error('No session could be established. Please try logging in directly.')
-          }
-        }
-      } catch (err) {
-        console.error('Authentication callback error:', err)
-        setStatus('error')
-        setErrorMessage(err.message || 'An error occurred during authentication.')
+        setStatus('success')
+      } catch (error) {
+        if (!cancelled) { setStatus('error'); setErrorMessage(authErrorMessage(error)) }
       }
     }
-
     handleAuthCallback()
+    return () => { cancelled = true; clearTimeout(redirectTimer) }
   }, [navigate, initialize])
 
   return (
@@ -220,24 +91,6 @@ export default function AuthCallbackPage() {
             </div>
           )}
 
-          {status === 'already_verified' && (
-            <div className="flex flex-col items-center w-full">
-              <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mb-4">
-                <ShieldCheck className="w-8 h-8 text-green-500" />
-              </div>
-              <p className="text-foreground-primary font-medium">Email Confirmed!</p>
-              <p className="text-xs text-foreground-muted mt-2 text-center max-w-[320px]">
-                Your email is already verified. This often happens if your email client pre-scanned the confirmation link.
-              </p>
-              <button
-                onClick={() => navigate('/auth/login')}
-                className="mt-6 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-accent hover:bg-accent-dark transition-all shadow-sm"
-              >
-                Go to Login
-              </button>
-            </div>
-          )}
-
           {status === 'error' && (
             <div className="flex flex-col items-center w-full">
               <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
@@ -248,7 +101,7 @@ export default function AuthCallbackPage() {
                 {errorMessage}
               </p>
               <button
-                onClick={() => navigate('/auth/login')}
+                onClick={returnToLogin}
                 className="mt-6 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-accent hover:bg-accent-dark transition-all shadow-sm"
               >
                 Return to Login

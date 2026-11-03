@@ -16,7 +16,7 @@ export const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, s
 
 export const verifyJWT = async (token) => {
   if (!supabaseUrl || !supabaseKey) {
-    return { user: null, error: new Error('Supabase not configured') }
+    return { user: null, error: new Error('Account sign-in is not configured'), unavailable: true }
   }
 
   try {
@@ -24,7 +24,7 @@ export const verifyJWT = async (token) => {
     if (error) throw error
     return { user, error: null }
   } catch (error) {
-    return { user: null, error }
+    return { user: null, error, unavailable: error?.name === 'AuthRetryableFetchError' || error?.status >= 500 || /fetch|network|ENOTFOUND/i.test(error?.message || '') }
   }
 }
 

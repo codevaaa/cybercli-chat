@@ -101,7 +101,8 @@ export const requireAuth = async (req, res, next) => {
     return res.status(401).json({ error: 'Invalid authorization header format' })
   }
 
-  const { user, error } = await verifyJWT(token)
+  const { user, error, unavailable } = await verifyJWT(token)
+  if (unavailable) return res.status(503).json({ error: 'The account sign-in service is temporarily unavailable. Please try again shortly.', code: 'AUTH_PROJECT_UNAVAILABLE' })
 
   if (error || !user) {
     return res.status(401).json({ error: 'Invalid or expired token' })
@@ -118,6 +119,7 @@ export const requireAuth = async (req, res, next) => {
     id: user.id,
     email: user.email,
     plan: dbPlan || user.user_metadata?.plan_tier || 'free',
+    auth_profile: { name: user.user_metadata?.full_name || user.user_metadata?.name || '', avatar_url: user.user_metadata?.avatar_url || '', provider: user.app_metadata?.provider || 'email' },
   }
 
   next()
@@ -160,7 +162,8 @@ export const optionalAuth = async (req, res, next) => {
 
   // Fallback to Supabase JWT
   if (authHeader.startsWith('Bearer ')) {
-    const { user } = await verifyJWT(token)
+    const { user, unavailable } = await verifyJWT(token)
+    if (unavailable) return res.status(503).json({ error: 'The account sign-in service is temporarily unavailable. Please try again shortly.', code: 'AUTH_PROJECT_UNAVAILABLE' })
     if (user) {
       if (await isUserBanned(user.id)) return res.status(403).json({ error: 'Account suspended', banned: true })
       req.user = {

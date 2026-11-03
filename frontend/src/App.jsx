@@ -65,6 +65,7 @@ import ResetPasswordPage from '@pages/auth/ResetPasswordPage'
 import MagicLinkPage from '@pages/auth/MagicLinkPage'
 import VerifyEmailPage from '@pages/auth/VerifyEmailPage'
 import AuthCallbackPage from '@pages/auth/AuthCallbackPage'
+import ExtensionConnectPage from '@pages/auth/ExtensionConnectPage'
 
 import ChatPage from '@pages/app/ChatPage'
 import AnonymousChatPage from '@pages/app/AnonymousChatPage'
@@ -95,7 +96,7 @@ const PUBLIC_PATHS = [
 ]
 const AUTH_PATHS = [
   '/auth/signup', '/auth/login', '/auth/forgot-password',
-  '/auth/reset-password', '/auth/magic-link', '/auth/verify-email', '/auth/callback'
+  '/auth/reset-password', '/auth/magic-link', '/auth/verify-email', '/auth/callback', '/auth/extension'
 ]
 
 function App() {
@@ -239,6 +240,7 @@ function App() {
 
           {/* ── Auth Routes ── */}
           <Route path="/auth/signup" element={<SignupPage />} />
+          <Route path="/auth/extension" element={<ExtensionConnectPage />} />
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/auth/reset-password" element={<ResetPasswordPage />} />

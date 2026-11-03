@@ -11,6 +11,7 @@ if (supabaseUrl && supabaseAnonKey) {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
+      flowType: 'pkce',
     },
   })
 } else {
@@ -21,6 +22,9 @@ if (supabaseUrl && supabaseAnonKey) {
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
       signInWithPassword: async () => ({ error: new Error('Supabase not configured') }),
       signUp: async () => ({ error: new Error('Supabase not configured') }),
+      signInWithOAuth: async () => ({ error: new Error('Account sign-in is not configured') }),
+      signInWithOtp: async () => ({ error: new Error('Account sign-in is not configured') }),
+      exchangeCodeForSession: async () => ({ error: new Error('Account sign-in is not configured') }),
       signOut: async () => ({}),
       resetPasswordForEmail: async () => ({ error: new Error('Supabase not configured') }),
     },

@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../lib/supabase.js'
+import { authCallbackUrl, authErrorMessage, checkAuthAvailability } from '../lib/authFlow.js'
+import { authApiBase, syncAccountSession } from '../lib/authSession.js'
+let initializing = null, authSubscription = null, desktopBound = false, sessionWork = null, authRevision = 0
 
 const dispatchAuthSync = (session) => {
   if (typeof window !== 'undefined') {
@@ -13,7 +16,7 @@ const dispatchAuthSync = (session) => {
         name: session.user.user_metadata?.name || ''
       } : null
     }
-    window.postMessage(payload, '*')
+    window.postMessage(payload, window.location.origin)
     window.dispatchEvent(new CustomEvent('cybercli-auth-change', { detail: payload }))
     
     // Sync session state directly with desktop main process to skip landing on next boot
@@ -23,184 +26,154 @@ const dispatchAuthSync = (session) => {
   }
 }
 
+function cacheSession(session) {
+  if (session?.access_token) {
+    localStorage.setItem('codeva-account-ready', 'false')
+    localStorage.setItem('sb-access-token', session.access_token)
+    localStorage.setItem('user_name', session.user?.user_metadata?.name || session.user?.email || '')
+    localStorage.setItem('user_email', session.user?.email || '')
+  } else for (const key of ['sb-access-token', 'user_name', 'user_email', 'codeva-account-ready']) localStorage.removeItem(key)
+}
+async function establishSession(session, set, get) {
+  if (!session?.access_token) {
+    authRevision++; sessionWork = null; cacheSession(null)
+    set({ session: null, user: null, loading: false, accountReady: false }); dispatchAuthSync(null)
+    return
+  }
+  if (sessionWork?.token === session.access_token) {
+    await sessionWork.promise
+    if (get().session?.access_token === session.access_token && get().accountReady) set({ loading: false })
+    return
+  }
+  const revision = ++authRevision
+  const promise = (async () => {
+    cacheSession(session)
+    set({ session, user: session.user, loading: true, accountReady: false, error: null })
+    try {
+      await syncAccountSession(session, new URLSearchParams(window.location.search).get('from') === 'extension' ? 'extension' : 'web')
+      if (revision !== authRevision) return
+      localStorage.setItem('codeva-account-ready', 'true')
+      set({ loading: false, accountReady: true, error: null }); dispatchAuthSync(session)
+    } catch (error) {
+      if (revision !== authRevision) return
+      set({ loading: false, accountReady: false, error: authErrorMessage(error) })
+      sessionWork = null
+      if ([401, 403].includes(error.status)) {
+        await supabase.auth.signOut()
+        cacheSession(null); set({ session: null, user: null }); dispatchAuthSync(null)
+      }
+    }
+  })()
+  sessionWork = { token: session.access_token, promise }
+  return promise
+}
+
 export const useAuthStore = create(
   persist(
     (set, get) => ({
       user: null,
       session: null,
       loading: true,
+      accountReady: false,
       error: null,
 
       initialize: async () => {
-        set({ loading: true, error: null })
-
-        try {
-          // Check for desktop auth token (Electron IPC)
-          if (typeof window !== 'undefined' && window.electronAPI?.onAuthToken) {
-            window.electronAPI.onAuthToken((payload) => {
-              const token = typeof payload === 'string' ? payload : payload.token;
-              const refresh = typeof payload === 'string' ? '' : payload.refresh || '';
-              
-              localStorage.setItem('sb-access-token', token)
-              
-              if (refresh) {
-                // Properly inject session into Supabase SDK so it persists across reloads
-                supabase.auth.setSession({ access_token: token, refresh_token: refresh }).then(({ data }) => {
-                  if (data.user) {
-                    localStorage.setItem('user_name', data.user.user_metadata?.name || data.user.email || '')
-                    localStorage.setItem('user_email', data.user.email || '')
-                    set({ user: data.user, session: data.session, loading: false })
-                  }
-                })
-              } else {
-                // Fallback if no refresh token
-                supabase.auth.getUser(token).then(({ data }) => {
-                  if (data.user) {
-                    localStorage.setItem('user_name', data.user.user_metadata?.name || data.user.email || '')
-                    localStorage.setItem('user_email', data.user.email || '')
-                    set({ user: data.user, session: { access_token: token, user: data.user }, loading: false })
-                  }
-                })
-              }
-            })
-          }
-
-          const { data: { session } } = await supabase.auth.getSession()
-          if (session?.access_token) {
-            localStorage.setItem('sb-access-token', session.access_token)
-            localStorage.setItem('user_name', session.user?.user_metadata?.name || session.user?.email || '')
-            localStorage.setItem('user_email', session.user?.email || '')
-          } else {
-            localStorage.removeItem('sb-access-token')
-          }
-          set({ session, user: session?.user || null, loading: false })
-          dispatchAuthSync(session)
-
-          supabase.auth.onAuthStateChange((_event, session) => {
-            if (session?.access_token) {
-              localStorage.setItem('sb-access-token', session.access_token)
-              localStorage.setItem('user_name', session.user?.user_metadata?.name || session.user?.email || '')
-              localStorage.setItem('user_email', session.user?.email || '')
-            } else {
-              localStorage.removeItem('sb-access-token')
-              localStorage.removeItem('user_name')
-              localStorage.removeItem('user_email')
+        if (initializing) return initializing
+        const work = (async () => {
+          set({ loading: true, error: null })
+          try {
+            if (!authSubscription) {
+              const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+                // SDK callbacks must return before any session API is awaited.
+                queueMicrotask(() => { establishSession(session, set, get).catch(error => set({ error: authErrorMessage(error), loading: false, accountReady: false })) })
+              })
+              authSubscription = data.subscription
             }
-            set({ session, user: session?.user || null })
-            dispatchAuthSync(session)
-          })
-        } catch (error) {
-          set({ error: error.message, loading: false })
-        }
+            if (!desktopBound && window.electronAPI?.onAuthToken) {
+              desktopBound = true
+              window.electronAPI.onAuthToken(async payload => {
+                try {
+                  const token = typeof payload === 'string' ? payload : payload.token
+                  const refresh = typeof payload === 'string' ? '' : payload.refresh || ''
+                  const result = refresh ? await supabase.auth.setSession({ access_token: token, refresh_token: refresh }) : await supabase.auth.getUser(token)
+                  if (result.error) throw result.error
+                  await establishSession(result.data.session || { access_token: token, user: result.data.user }, set, get)
+                } catch (error) { set({ loading: false, error: authErrorMessage(error), accountReady: false }) }
+              })
+            }
+            const { data, error } = await supabase.auth.getSession()
+            if (error) throw error
+            await establishSession(data.session, set, get)
+          } catch (error) { set({ error: authErrorMessage(error), loading: false, accountReady: false }) }
+        })()
+        initializing = work
+        try { await work } finally { if (initializing === work) initializing = null }
       },
 
       signInWithEmail: async (email, password) => {
         set({ loading: true, error: null })
-
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+          await checkAuthAvailability(authApiBase())
+          const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
           if (error) throw error
-
-          if (data.session?.access_token) {
-            localStorage.setItem('sb-access-token', data.session.access_token)
-            localStorage.setItem('user_name', data.user?.user_metadata?.name || data.user?.email || '')
-            localStorage.setItem('user_email', data.user?.email || '')
-
-            // Explicit DB Check for strict login enforcement
-            try {
-              const { default: api } = await import('../lib/api.js')
-              const { data: checkData } = await api.post('/auth/check-user')
-              if (!checkData.exists) {
-                await supabase.auth.signOut()
-                throw new Error('Account not found. Please sign up.')
-              }
-              if (checkData.banned) {
-                await supabase.auth.signOut()
-                throw new Error('This account has been suspended.')
-              }
-            } catch (err) {
-              if (err.message === 'Account not found. Please sign up.' || err.message === 'This account has been suspended.') {
-                throw err
-              }
-              // Ignore network errors so we don't completely lock users out if DB is slow
-            }
-          }
-          set({ session: data.session, user: data.user, loading: false })
-          dispatchAuthSync(data.session)
-          return { success: true }
+          await establishSession(data.session, set, get)
+          if (!get().accountReady) throw new Error(get().error || 'Could not connect your account. Please try again.')
+          return { success: true, session: data.session }
         } catch (error) {
-          set({ error: error.message, loading: false })
-          return { success: false, error: error.message }
+          const message = authErrorMessage(error); set({ error: message, loading: false })
+          return { success: false, error: message }
         }
       },
 
-      signUpWithEmail: async (email, password, name, editorQuery = '') => {
+      signUpWithEmail: async (email, password, name, flowQuery = '') => {
         set({ loading: true, error: null })
-
         try {
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: { name },
-              emailRedirectTo: `${window.location.origin}/auth/callback?action=signup${editorQuery ? `&${editorQuery}` : ''}`,
-            },
-          })
+          await checkAuthAvailability(authApiBase())
+          const { data, error } = await supabase.auth.signUp({ email: email.trim(), password,
+            options: { data: { name }, emailRedirectTo: authCallbackUrl(window.location.origin, flowQuery, 'signup') } })
           if (error) throw error
-
-          if (data.session?.access_token) {
-            localStorage.setItem('sb-access-token', data.session.access_token)
-            localStorage.setItem('user_name', data.user?.user_metadata?.name || data.user?.email || '')
-            localStorage.setItem('user_email', data.user?.email || '')
-            
-            // Sync user to DB immediately if session is returned
-            try {
-              const { default: api } = await import('../lib/api.js')
-              await api.post('/auth/sync', { platform: 'web' })
-            } catch (e) {
-              console.error('Failed to sync new user:', e)
-            }
-          }
-          set({ session: data.session, user: data.user, loading: false })
-          dispatchAuthSync(data.session)
-          return { success: true, needsVerification: !data.session }
+          if (data.session) {
+            await establishSession(data.session, set, get)
+            if (!get().accountReady) throw new Error(get().error || 'Could not connect your account.')
+          } else set({ loading: false })
+          return { success: true, needsVerification: !data.session, session: data.session }
         } catch (error) {
-          set({ error: error.message, loading: false })
-          return { success: false, error: error.message }
+          const message = authErrorMessage(error); set({ error: message, loading: false })
+          return { success: false, error: message }
         }
       },
 
-      signInWithOAuth: async (provider) => {
+      signInWithOAuth: async (provider, params = window.location.search, action = 'login') => {
         set({ loading: true, error: null })
-
         try {
-          const { data, error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: window.location.origin } })
+          await checkAuthAvailability(authApiBase())
+          const { data, error } = await supabase.auth.signInWithOAuth({ provider,
+            options: { redirectTo: authCallbackUrl(window.location.origin, params, action), skipBrowserRedirect: true } })
           if (error) throw error
-
-          return { success: true, url: data.url }
+          if (!data?.url) throw new Error('No sign-in link was returned. Please try again.')
+          set({ loading: false }); return { success: true, url: data.url }
         } catch (error) {
-          set({ error: error.message, loading: false })
-          return { success: false, error: error.message }
+          const message = authErrorMessage(error); set({ error: message, loading: false })
+          return { success: false, error: message }
         }
       },
 
-      signInWithMagicLink: async (email, editorQuery = '') => {
+      signInWithMagicLink: async (email, flowQuery = '') => {
         set({ loading: true, error: null })
-
         try {
-          const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: editorQuery ? `${window.location.origin}/auth/callback?action=login&${editorQuery}` : window.location.origin } })
+          await checkAuthAvailability(authApiBase())
+          const { error } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: authCallbackUrl(window.location.origin, flowQuery) } })
           if (error) throw error
-
-          set({ loading: false })
-          return { success: true }
+          set({ loading: false }); return { success: true }
         } catch (error) {
-          set({ error: error.message, loading: false })
-          return { success: false, error: error.message }
+          const message = authErrorMessage(error); set({ error: message, loading: false })
+          return { success: false, error: message }
         }
       },
 
       signOut: async () => {
-        set({ loading: true })
+        authRevision++; sessionWork = null
+        set({ loading: true, accountReady: false })
 
         try {
           await supabase.auth.signOut()
@@ -228,7 +201,7 @@ export const useAuthStore = create(
               document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
             }
           })
-          set({ user: null, session: null, loading: false })
+          set({ user: null, session: null, loading: false, accountReady: false })
           dispatchAuthSync(null)
 
           if (typeof window !== 'undefined' && window.electronAPI?.backToLanding) {
@@ -242,14 +215,15 @@ export const useAuthStore = create(
         set({ loading: true, error: null })
 
         try {
-          const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/reset-password` })
+          await checkAuthAvailability(authApiBase())
+          const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/auth/reset-password` })
           if (error) throw error
 
           set({ loading: false })
           return { success: true }
         } catch (error) {
-          set({ error: error.message, loading: false })
-          return { success: false, error: error.message }
+          const message = authErrorMessage(error); set({ error: message, loading: false })
+          return { success: false, error: message }
         }
       },
 

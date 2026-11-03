@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
-import { grammarInput, grammarMessages, parseGrammar } from '../services/writing/grammar.js'
+import { grammarInput, grammarMessages, parseGrammar, rewriteMessages } from '../services/writing/grammar.js'
 import { streamLifetime } from '../services/llm/streamLifetime.js'
 import { requireAuth, optionalAuth } from '../middleware/auth.js'
 import { llmGateway } from '../services/llm/gateway.js'
@@ -25,11 +25,24 @@ router.post('/grammar', requireAuth, grammarLimiter, async (req, res) => {
     const result = await llmGateway.completeNonStream({ messages, model, temperature: 0.1, plan: req.user.plan || 'free' })
     if (result.error) throw new Error('Proofreading unavailable')
     const parsed = parseGrammar(result.content, input.text)
+    const dictionary = new Set((input.dictionary || []).map(word => word.normalize('NFKC').toLocaleLowerCase()))
+    parsed.issues = parsed.issues.filter(issue => issue.type !== 'spelling' || !dictionary.has(issue.original.normalize('NFKC').toLocaleLowerCase()))
     setCached(key, parsed)
     return res.json({ ...parsed, cached: false })
   } catch {
     return res.status(502).json({ error: 'AI proofreading is temporarily unavailable. Please try again.' })
   }
+})
+
+router.post('/rewrite', requireAuth, grammarLimiter, async (req, res) => {
+  let messages
+  try { messages = rewriteMessages(req.body) }
+  catch (error) { return res.status(400).json({ error: error.message }) }
+  try {
+    const result = await llmGateway.completeNonStream({ messages, model: 'auto', temperature: 0.3, plan: req.user.plan || 'free' })
+    if (result.error || typeof result.content !== 'string' || !result.content.trim() || result.content.length > 16000) throw new Error('Invalid rewrite')
+    res.json({ original: req.body.text, rewritten: result.content.trim(), mode: req.body.mode })
+  } catch { res.status(502).json({ error: 'The writing editor is temporarily unavailable. Your draft has been kept. Please try again.' }) }
 })
 
 router.post('/', optionalAuth, async (req, res) => {

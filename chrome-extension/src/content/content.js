@@ -14,7 +14,7 @@
   if (window.__codevaInjected) return
   window.__codevaInjected = true
 
-  const { normalizeIssues } = globalThis.CodevaWriting
+  const { normalizeIssues, filterDictionary, isSitePaused, dictionaryWords } = globalThis.CodevaWriting
 
   // Active agent persona (from the curated /agents registry). Only the validated
   // agentId is ever sent to the backend; the system prompt lives server-side.
@@ -53,7 +53,7 @@
     }
     for (const match of text.matchAll(/\b(\w+)\s+\1\b/gi)) issues.push({ original: match[0], suggestion: match[1], start: match.index, type: 'grammar', reason: 'Repeated word' })
     for (const match of text.matchAll(/\bi\b(?!['’])/g)) issues.push({ original: 'i', suggestion: 'I', start: match.index, type: 'grammar', reason: 'Capitalize the pronoun “I”' })
-    return normalizeIssues(text, issues)
+    return filterDictionary(normalizeIssues(text, issues), settings.dictionary || [])
   }
 
   window.__cvLocalTone = function(text) {
@@ -74,11 +74,14 @@
     settings = { grammar: true, toolbar: true, floatingIcon: true, ...(r.settings || {}) }
     authToken = r.authToken || null
     document.documentElement.dataset.codevaTheme = settings.theme || 'system'
+    document.documentElement.dataset.codevaPaused = String(isSitePaused(location.hostname, settings.disabledSites))
   })
   chrome.storage.onChanged.addListener((changes) => {
     if (changes.settings) {
       settings = { ...settings, ...changes.settings.newValue }
       document.documentElement.dataset.codevaTheme = settings.theme || 'system'
+      document.documentElement.dataset.codevaPaused = String(isSitePaused(location.hostname, settings.disabledSites))
+      grammarSequence++; lastCheckedText = ''; currentIssues = filterDictionary(currentIssues, settings.dictionary || []); closeCard(); removeInlineUnderlines()
       if (!settings.grammar) { grammarSequence++; currentIssues = []; closeCard(); removeInlineUnderlines() }
       if (!settings.smartCompose) removeGhostOverlay()
       if (!settings.inlineUnderlines) removeInlineUnderlines()
@@ -89,16 +92,38 @@
 
   // ── Auth capture on cybermindcli.info ───────────────────────────────────────
   if (['https://cybermindcli.info', 'https://www.cybermindcli.info'].includes(location.origin)) {
-    let lastToken
-    const pushToken = (payload) => {
+    let lastToken, lastAttempt = 0
+    const pushToken = async (payload, requestId) => {
       const token = payload ? payload.token : localStorage.getItem('sb-access-token')
-      if (token === lastToken || (lastToken === undefined && !token && !payload)) return
-      lastToken = token
+      if (!requestId && (token === lastToken || (lastToken === undefined && !token && !payload) || Date.now() - lastAttempt < 15000)) return
+      lastAttempt = Date.now()
+      if (token && !payload && localStorage.getItem('codeva-account-ready') === 'false') {
+        if (requestId) window.postMessage({ type: 'CODEVA_EXTENSION_AUTH_RESULT', requestId, ok: false, error: 'Account setup is still finishing. Please try again shortly.' }, location.origin)
+        return
+      }
       const user = payload?.user || { email: localStorage.getItem('user_email') || '', name: localStorage.getItem('user_name') || '' }
-      chrome.runtime.sendMessage({ type: 'AUTH_TOKEN', token: token || null, user }).catch(() => {})
+      let refreshToken, expiresAt
+      // Read only the SDK session whose access token matches the authenticated
+      // website session. Tokens never enter a URL or a page acknowledgement.
+      for (let i = 0; token && i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (!/^sb-.+-auth-token$/.test(key)) continue
+        try {
+          const session = JSON.parse(localStorage.getItem(key))
+          if (session.access_token === token) { refreshToken = session.refresh_token; expiresAt = session.expires_at; break }
+        } catch { /* Ignore unrelated storage. */ }
+      }
+      let result
+      try {
+        result = await chrome.runtime.sendMessage({ type: 'AUTH_TOKEN', token: token || null, user, refreshToken, expiresAt })
+        if (result?.ok) lastToken = token
+      } catch { result = { error: 'Reload the extension and this page, then try again.' } }
+      if (requestId) window.postMessage({ type: 'CODEVA_EXTENSION_AUTH_RESULT', requestId, ok: !!result?.ok, error: result?.error || '' }, location.origin)
     }
     window.addEventListener('message', event => {
-      if (event.source === window && event.origin === location.origin && event.data?.type === 'CYBERCLI_AUTH_SYNC') pushToken(event.data)
+      if (event.source !== window || event.origin !== location.origin) return
+      if (event.data?.type === 'CYBERCLI_AUTH_SYNC') pushToken(event.data)
+      if (event.data?.type === 'CODEVA_EXTENSION_REQUEST_SYNC' && typeof event.data.requestId === 'string' && event.data.requestId.length <= 64) pushToken(null, event.data.requestId)
     })
     window.addEventListener('storage', event => { if (event.key === 'sb-access-token') pushToken() })
     pushToken()
@@ -108,6 +133,7 @@
   // ── Helpers ──────────────────────────────────────────────────────────────
   // Cross-origin requests run in the extension worker using manifest host permissions.
   async function apiRequest(endpoint, body) {
+    if (isSitePaused(location.hostname, settings.disabledSites)) throw new Error('Codeva writing assistance is paused on this website.')
     const result = await chrome.runtime.sendMessage({ type: 'API_REQUEST', endpoint, body })
     if (!result || result.error) throw new Error(result?.error || 'Extension API connection failed')
     return new Response(result.body, { status: result.status, headers: { 'Content-Type': result.contentType } })
@@ -115,7 +141,7 @@
   const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
   function isEditable(el) {
-    if (!el || el.disabled || el.readOnly || el.closest?.('.cv-card,.cv-result-card,.cv-diff-card')) return false
+    if (isSitePaused(location.hostname, settings.disabledSites) || !el || el.disabled || el.readOnly || el.closest?.('.cv-card,.cv-result-card,.cv-diff-card')) return false
     if (/password|one-time-code|cc-|credit|card.?number|cvc|cvv|secret|token/i.test(`${el.autocomplete || ''} ${el.name || ''} ${el.id || ''}`)) return false
     const tag = el.tagName ? el.tagName.toLowerCase() : ''
     if (tag === 'textarea') return true
@@ -230,7 +256,7 @@
   const fab = document.createElement('div')
   fab.className = 'cv-fab'
   fab.style.display = 'none'
-  fab.innerHTML = `<div class="cv-fab-ring"></div><div class="cv-fab-core"><span class="cv-fab-mark">C</span></div><div class="cv-fab-count"></div>`
+  fab.innerHTML = `<div class="cv-fab-ring"></div><div class="cv-fab-core"><span class="cv-fab-mark"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M42 19a18 18 0 1 0 1 25" stroke="currentColor" stroke-width="7" stroke-linecap="round"/><path d="m32 37 15-15 5 5-15 15-7 2 2-7Z" fill="currentColor"/></svg></span></div><div class="cv-fab-count"></div>`
   document.documentElement.appendChild(fab)
 
   let activeField = null
@@ -315,7 +341,7 @@
     try {
       const goals = await getWritingGoals() || {}
       if (!fresh()) return
-      const key = JSON.stringify([text, goals])
+      const key = JSON.stringify([text, goals, settings.dictionary || []])
       const cached = grammarCache.get(key)
       if (cached) { currentIssues = cached.issues; currentTone = cached.tone; currentLanguage = cached.language; checkStatus = 'complete' }
       else {
@@ -323,13 +349,13 @@
         if (!fresh()) return
         if (!token) { currentIssues = local; checkStatus = 'local' }
         else {
-          const response = await apiRequest('/completions/grammar', { text, goals })
+          const response = await apiRequest('/completions/grammar', { text, goals, dictionary: settings.dictionary || [] })
           if (!fresh()) return
           if (!response.ok) throw new Error('AI check unavailable')
           const result = await response.json()
           if (!fresh()) return
           if (!Array.isArray(result.issues)) throw new Error('Invalid proofreading result')
-          currentIssues = normalizeIssues(text, [...result.issues, ...local])
+          currentIssues = filterDictionary(normalizeIssues(text, [...result.issues, ...local]), settings.dictionary || [])
           currentTone = ['formal','casual','confident','friendly','neutral','aggressive'].includes(result.tone) ? result.tone : 'neutral'
           currentLanguage = typeof result.language === 'string' ? result.language.slice(0, 50) : 'Unknown'
           checkStatus = 'complete'
@@ -405,7 +431,7 @@
             <span class="cv-arrow">→</span>
             <span class="cv-new">${esc(iss.suggestion)}</span>
           </div>
-          <button class="cv-apply" data-i="${i}">Apply</button>
+          <button class="cv-apply" data-i="${i}">Apply</button>${iss.type === 'spelling' ? `<button class="cv-dictionary" data-i="${i}">Add to dictionary</button>` : ''}
         </div>`).join('')
       card.innerHTML = cardShell(`${currentIssues.length} suggestion${currentIssues.length > 1 ? 's' : ''}`, toneBar + items, true)
     }
@@ -449,6 +475,16 @@
       chrome.runtime.sendMessage({ type: 'OPEN_AUTH' })
     })
     card.querySelector('.cv-fixall')?.addEventListener('click', applyAllFixes)
+    card.querySelector('.cv-pause-site')?.addEventListener('click', async () => {
+      const { settings: current = {} } = await chrome.storage.local.get('settings')
+      await chrome.storage.local.set({ settings: { ...current, disabledSites: [...new Set([...(current.disabledSites || []), location.hostname])] } })
+      closeCard()
+    })
+    card.querySelectorAll('.cv-dictionary').forEach(button => button.onclick = async () => {
+      const issue = currentIssues[Number(button.dataset.i)]; if (!issue) return
+      const { settings: current = {} } = await chrome.storage.local.get('settings')
+      await chrome.storage.local.set({ settings: { ...current, dictionary: dictionaryWords([...(current.dictionary || []), issue.original]) } })
+    })
     card.querySelectorAll('.cv-apply').forEach(btn => {
       btn.addEventListener('click', () => {
         applyFix(parseInt(btn.dataset.i))
@@ -471,7 +507,7 @@
         </div>
       </div>
       <div class="cv-card-body">${body}</div>
-      <div class="cv-card-foot">Powered by Codeva AI</div>`
+      <div class="cv-card-foot">Codeva writing assistant <button class="cv-pause-site">Pause on this website</button></div>`
   }
 
   function authCardHTML() {
@@ -532,7 +568,7 @@
   let selectedText = ''
 
   document.addEventListener('mouseup', (e) => {
-    if (!settings.toolbar) return
+    if (!settings.toolbar || isSitePaused(location.hostname, settings.disabledSites)) return
     if (e.target.closest('.cv-toolbar') || e.target.closest('.cv-card')) return
     setTimeout(() => {
       const sel = window.getSelection()

@@ -1,4 +1,4 @@
-# Codeva browser workspace — 1.4.0
+# Codeva browser workspace — 1.5.0
 
 A Manifest V3 Chrome extension connected to the same Codeva API as the web, desktop, and CyberCoder clients. Vanilla JavaScript, with no build step.
 
@@ -6,10 +6,12 @@ A Manifest V3 Chrome extension connected to the same Codeva API as the web, desk
 
 - **Assistant:** streaming chat, stop, retry/regenerate, escaped Markdown, copy, account-scoped local conversations, draft recovery, search, delete with undo, and Markdown export.
 - **Page assistance:** explicitly attach the current webpage or use Summarize/Explain actions. The request includes the page title, source URL, and up to 15,000 characters of readable text. Text inside form controls is excluded from page extraction.
-- **Writing workspace:** proofread up to 6,000 characters, review each suggestion, dismiss or apply changes, copy the revised draft, and request a professional/friendly/shorter/expanded version in chat.
+- **Writing workspace:** proofread up to 6,000 characters, filter correctness/clarity suggestions, review or apply changes, and undo the last AI edit. Six rewrite actions return a preview before replacing your draft. Measured word/sentence counts and reading time update as you type.
+- **Writing preferences:** personal dictionary (up to 200 terms), audience/formality goals, American/British/detected spelling, and per-website pauses. Dictionary and website preferences stay on this device.
 - **On-page writing:** debounced AI checks with local spelling fallback, exact position fixes, stale response protection, and CSS highlights in supported contenteditable fields. Applying fixes preserves unrelated rich text markup.
 - **Appearance:** system theme by default, with persistent light/dark overrides. Settings and content surfaces follow the same preference.
-- **Account:** website login sync from the exact HTTPS Codeva origins, session refresh/logout sync, a working extension sign-out, and expired-token handling that preserves newer sessions.
+- **Account:** Google/email/signup/magic-link flows preserve extension context. The website provisions the verified account before handing it off; the extension validates it and acknowledges success. Background refresh rotates credentials with race protection. Temporary service outages keep saved credentials; rejected sessions require sign-in again.
+- **Brand:** original Codeva C-and-pen vector mark, with matching 16–512px icons and themed content/settings surfaces.
 - **Capture:** bounded full-page screenshot capture with a session-only preview and PNG download. Keep the source tab selected during capture. Sticky headers and dynamic page layout can still appear in captures.
 
 Model choices come from `/api/v1/models`, with automatic routing available if the catalog is unavailable. Catalog names are server-side product aliases; the gateway resolves providers and applies account plans. A product name does not guarantee a particular upstream model or quality level.
@@ -19,7 +21,7 @@ Model choices come from `/api/v1/models`, with automatic routing available if th
 1. Open `chrome://extensions` and enable **Developer mode**.
 2. Choose **Load unpacked** and select this `chrome-extension` folder, or extract the release ZIP and select its folder.
 3. After updating, click **Reload** on the extension and reload existing webpages so their content scripts update.
-4. Click Codeva’s toolbar icon. Sign in at https://cybermindcli.info if needed; an already signed-in website tab should be reloaded once.
+4. Click Codeva’s toolbar icon and choose **Sign in**. Finish Google or email sign-in on the website. The connection page confirms when the extension acknowledges the session. Reload an already-open website tab after upgrading the extension.
 5. Use **Assistant**, **Writing**, and **History**. The header theme button cycles System → Light → Dark; Settings offers a direct choice.
 
 Shortcuts: Ctrl+Shift+S opens the panel; Ctrl+Shift+G checks the active writing field. macOS uses Command. Chrome may reserve a shortcut; customize it at `chrome://extensions/shortcuts`.
@@ -29,9 +31,9 @@ Shortcuts: Ctrl+Shift+S opens the panel; Ctrl+Shift+G checks the active writing 
 Production API: `https://cybercli-api.onrender.com/api/v1`.
 Website: `https://cybermindcli.info` (also supports the `www` origin).
 
-The matching backend changes are in `backend/src/routes/completions.routes.js` and `backend/src/services/writing/grammar.js`. Deploy those with the existing backend before expecting the new 6,000-character proofreading contract, validation, per-account caching/rate limit, model alias fix, and stream cancellation behavior in production. This source update does not deploy itself.
+Deploy the matching backend and frontend with this package. New endpoints include public `/auth/health`, authenticated `/auth/sync`, rate-limited `/auth/session/refresh`, and authenticated `/completions/rewrite`. Authentication availability checks prevent navigation to an unavailable project. The existing Supabase project must be active and its redirect allowlist must include the website callback; code cannot restore a paused/deleted provider project.
 
-The grammar endpoint requires authentication and allows 30 checks per minute per account per backend process. It returns HTTP 400 for invalid input, 401 for missing/invalid auth, 429 for excess requests, and 502 when valid proofreading output is unavailable. The main API limiter also applies. Invalid provider JSON is an error, rather than an “all clear”.
+Grammar and rewrite share a limit of 30 requests per minute per account per backend process. They return HTTP 400 for invalid input, 401 for missing/invalid auth, 429 for excess requests, and 502 when valid output is unavailable. Provider outages during session verification/refresh return 503. The main API limiter also applies. Invalid proofreading JSON is an error, rather than an “all clear”.
 
 ## Privacy and storage
 
@@ -40,7 +42,7 @@ The grammar endpoint requires authentication and allows 30 checks per minute per
 - Page context is off by default. It is read when selected by the user and refreshed from the active tab before sending.
 - Conversations and drafts are saved in `chrome.storage.local`, separately by account. They are browser-local, not synchronized to the web app’s MongoDB chat history. Settings can clear the current account’s history.
 - Full-page captures live in `chrome.storage.session` until the browser session ends. Capture pages are not web-accessible resources.
-- No provider API keys are bundled. The extension uses the user’s website access token, validated by the backend.
+- No provider API keys are bundled. Account access and refresh tokens are stored in extension-local storage and validated/refreshed by the backend. They are excluded from connection-page URLs and acknowledgements. Sign-out removes both credentials.
 
 ## Compatibility limits
 
@@ -55,9 +57,11 @@ From this folder:
 ```powershell
 npm test
 npm run test:browser
+# First run `npm run build` in ../frontend, then:
+npm run test:auth
 ```
 
-The browser suite uses Playwright installed with `backend` and its Chromium runtime. It loads the real unpacked extension, uses mocked backend responses and an article/editor fixture, and checks UI/extension integration. It does not spend production provider quota or certify live authenticated model output. Screenshots are saved under `artifacts/extension` in the repository.
+The browser suites use Playwright installed with `backend` and its Chromium runtime. They load the real unpacked extension, mock external responses, and check article/editor behavior plus the built React website’s Google PKCE callback, provisioning, signup verification/resend, outage handling, and extension acknowledgement. They do not spend production provider quota or certify real Google account consent or live authenticated model output. Screenshots are saved under `artifacts/extension` in the repository. `npm run icons` regenerates the SVG and PNG sizes from the original vector source.
 
 From the backend folder:
 

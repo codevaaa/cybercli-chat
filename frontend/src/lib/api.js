@@ -1,19 +1,9 @@
 import axios from 'axios'
+import { authApiBase } from './authSession.js'
 import { supabase } from './supabase.js'
 import { useAuthStore } from '../stores/authStore.js'
 
-const getApiBase = () => {
-  if (import.meta.env?.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL
-  }
-  const hostname = window.location.hostname
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:5000/api/v1'
-  }
-  return 'https://cybercli-api.onrender.com/api/v1'
-}
-
-export let API_BASE = getApiBase()
+export let API_BASE = authApiBase()
 
 const api = axios.create({
   baseURL: API_BASE,

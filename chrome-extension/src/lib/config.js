@@ -22,6 +22,11 @@ export const TASK_MODELS = {
 
 /** Get stored auth token */
 export async function getToken() {
+  if (chrome.runtime?.sendMessage) {
+    const session = await chrome.runtime.sendMessage({ type: 'GET_SESSION' })
+    if (session?.error) throw new Error(session.error)
+    return session?.token || null
+  }
   const { authToken } = await chrome.storage.local.get('authToken')
   return authToken || null
 }
@@ -42,18 +47,32 @@ export async function getUser() {
  * @param {Function} opts.onError
  */
 export async function clearExpiredToken(expectedToken) {
-  if (await getToken() === expectedToken) await chrome.storage.local.remove(['authToken', 'userInfo'])
+  const { authToken } = await chrome.storage.local.get('authToken')
+  if (authToken === expectedToken) await chrome.storage.local.remove(['authToken', 'authRefreshToken', 'authExpiresAt', 'userInfo'])
+}
+
+async function authenticatedFetch(path, options, initialToken) {
+  let token = initialToken === undefined ? await getToken() : initialToken
+  const run = value => fetch(`${API_BASE}${path}`, { ...options, headers: { ...options.headers, ...(value ? { Authorization: `Bearer ${value}` } : {}) } })
+  let response = await run(token)
+  if (response.status === 401 && token) {
+    if (chrome.runtime?.sendMessage) {
+      const refreshed = await chrome.runtime.sendMessage({ type: 'GET_SESSION', force: true, expectedToken: token })
+      if (refreshed?.error) throw new Error(refreshed.error)
+      if (refreshed?.token && refreshed.token !== token) { token = refreshed.token; response = await run(token) }
+    }
+    if (response.status === 401) await clearExpiredToken(token)
+  }
+  return response
 }
 
 export async function apiJSON(path, { method = 'GET', body, signal } = {}) {
-  const token = await getToken()
-  const res = await fetch(`${API_BASE}${path}`, {
-    method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  const res = await authenticatedFetch(path, {
+    method, headers: { 'Content-Type': 'application/json' },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(20000),
   })
   const data = await res.json().catch(() => ({}))
-  if (res.status === 401) await clearExpiredToken(token)
   if (!res.ok || data.error) {
     const error = new Error(typeof data.error === 'string' ? data.error : `Request failed (HTTP ${res.status}). Please try again.`)
     error.auth = res.status === 401
@@ -64,17 +83,16 @@ export async function apiJSON(path, { method = 'GET', body, signal } = {}) {
 }
 
 export async function streamCompletion({ messages, model = 'auto', onToken, onInfo, onDone, onError, signal }) {
-  const token = await getToken()
-  if (!token) { onError?.({ auth: true, message: 'Please sign in to Codeva' }); return }
   let reader
   try {
-    const res = await fetch(`${API_BASE}/completions`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    const token = await getToken()
+    if (!token) { onError?.({ auth: true, message: 'Please sign in to Codeva' }); return }
+    const res = await authenticatedFetch('/completions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages, model, stream: true }),
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(180000)]) : AbortSignal.timeout(180000),
-    })
+    }, token)
     if (!res.ok) {
-      if (res.status === 401) await clearExpiredToken(token)
       const detail = await res.json().catch(() => ({}))
       onError?.({ auth: res.status === 401, message: res.status === 401 ? 'Session expired. Sign in again.' :
         typeof detail.error === 'string' ? detail.error : res.status === 429 ? 'Rate limit reached. Please wait a moment.' : `Request failed (HTTP ${res.status}). Please try again.` })
@@ -159,21 +177,11 @@ export async function processOfflineQueue(onResult) {
 
 /** Verify token + fetch user info */
 export async function fetchMe() {
-  const token = await getToken()
-  if (!token) return null
   try {
-    const res = await fetch(`${API_BASE}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(10000),
-    })
-    if (res.status === 401) {
-      // Token genuinely invalid — clear it
-      await clearExpiredToken(token)
-      return await getToken() ? { _networkError: true } : null
-    }
-    if (!res.ok) return { _networkError: true } // keep token, backend may be cold-starting
-    return res.json()
-  } catch {
+    if (!await getToken()) return null
+    return await apiJSON('/auth/me')
+  } catch (error) {
+    if (error.auth) return null
     // Network error / timeout — keep token, don't sign out
     return { _networkError: true }
   }

@@ -60,9 +60,18 @@
       <label for="sp-writing" class="field-label">Your draft</label>
       <textarea id="sp-writing" class="writing-input" rows="8" maxlength="6000" placeholder="Paste a draft, or bring in selected text from the page…"></textarea>
       <div class="writing-meta"><span id="sp-writing-count">0 words · 0 / 6,000 characters</span><button id="sp-import" class="text-btn">Use selection</button></div>
+      <p id="sp-writing-metrics" class="draft-metrics">0 sentences · estimated reading time 0 seconds</p>
+      <details class="writing-goals"><summary>Writing goals</summary><div class="goal-fields">
+        <label>Audience<select id="sp-goal-audience" data-writing-goal="audience"><option value="general">General</option><option value="expert">Experts</option><option value="executive">Leadership</option><option value="casual">Friends</option><option value="academic">Academic</option></select></label>
+        <label>Tone<select id="sp-goal-formality" data-writing-goal="formality"><option value="neutral">Neutral</option><option value="formal">Formal</option><option value="casual">Casual</option><option value="academic">Academic</option><option value="conversational">Conversational</option></select></label>
+        <label>English spelling<select id="sp-goal-dialect" data-writing-goal="dialect"><option value="auto">Detect</option><option value="en-US">American</option><option value="en-GB">British</option></select></label>
+      </div></details>
       <div class="writing-actions"><button id="sp-check" class="primary">Check writing</button><button id="sp-copy-draft" class="secondary">Copy draft</button></div>
-      <div class="rewrite-actions" aria-label="Rewrite draft"><button data-rewrite="formal">Professional</button><button data-rewrite="casual">Friendly</button><button data-rewrite="shorter">Shorter</button><button data-rewrite="longer">Expand</button></div>
+      <div class="rewrite-actions" aria-label="Rewrite draft"><button data-rewrite="formal">Professional</button><button data-rewrite="casual">Friendly</button><button data-rewrite="shorter">Shorter</button><button data-rewrite="longer">Expand</button><button data-rewrite="confident">Confident</button><button data-rewrite="simplify">Simplify</button></div>
+      <section id="sp-rewrite-review" class="rewrite-review" hidden><h2>Review your rewrite</h2><p>Your current draft changes only when you apply this version.</p><pre id="sp-rewrite-text"></pre><div class="writing-actions"><button id="sp-rewrite-apply" class="primary">Apply rewrite</button><button id="sp-rewrite-copy" class="secondary">Copy rewrite</button><button id="sp-rewrite-dismiss" class="text-btn">Dismiss</button></div></section>
+      <button id="sp-undo-writing" class="text-btn" disabled>Undo last AI change</button>
       <div id="sp-writing-status" role="status" class="writing-status">Suggestions appear here. Your draft stays yours until you apply a change.</div>
+      <div class="issue-filters" aria-label="Filter writing suggestions"><button data-issue-filter="all" aria-pressed="true">All</button><button data-issue-filter="correctness" aria-pressed="false">Correctness</button><button data-issue-filter="clarity" aria-pressed="false">Clarity</button></div>
       <button id="sp-apply-all" class="secondary" hidden>Apply all suggestions</button>
       <div id="sp-issues" class="sp-issues"></div>
     </section>

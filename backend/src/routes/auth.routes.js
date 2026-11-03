@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
 import { refreshEditorSession } from '../services/auth/editorSession.js'
+import { syncAccountRegistry } from '../services/auth/accountRegistry.js'
+import { createAuthAvailability } from '../services/auth/availability.js'
 import { requireAuth } from '../middleware/auth.js'
 import supabase from '../config/supabase.js'
 import User from '../models/User.js'
@@ -16,7 +18,14 @@ import Workflow from '../models/Workflow.js'
 import ImageUsage from '../models/ImageUsage.js'
 
 const router = Router()
+const authAvailability = createAuthAvailability({ url: process.env.SUPABASE_URL, key: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY })
+router.get('/health', async (_req, res) => {
+  const status = await authAvailability()
+  res.setHeader('Cache-Control', 'no-store')
+  res.status(status.ready ? 200 : 503).json(status)
+})
 router.post('/ide-refresh', rateLimit({ windowMs: 60000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false }), refreshEditorSession)
+router.post('/session/refresh', rateLimit({ windowMs: 60000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false }), refreshEditorSession)
 
 // Client IP, honouring the proxy (Render/Vercel) forwarding header.
 function clientIp(req) {
@@ -39,53 +48,12 @@ router.post('/sync', requireAuth, async (req, res, next) => {
     const platform = (req.body?.platform || 'web').toString().slice(0, 20)
     const ip = clientIp(req)
 
-    let user = await User.findOne({ supabase_id: id })
-
-    if (user && user.isBanned()) {
-      return res.status(403).json({
-        banned: true,
-        reason: user.ban_reason || 'This account has been suspended for violating our usage policy.',
-      })
-    }
-
-    if (!user) {
-      // Pull richer profile from Supabase if available.
-      let name = ''
-      let avatar = ''
-      let provider = 'email'
-      try {
-        const { data } = await supabase.auth.admin.getUserById(id)
-        const meta = data?.user?.user_metadata || {}
-        name = meta.full_name || meta.name || ''
-        avatar = meta.avatar_url || meta.picture || ''
-        provider = data?.user?.app_metadata?.provider || 'email'
-      } catch { /* best-effort enrichment */ }
-
-      user = await User.create({
-        supabase_id: id,
-        email: email || '',
-        name,
-        avatar_url: avatar,
-        provider,
-        platforms: [platform],
-        signup_ip: ip,
-        last_ip: ip,
-        login_count: 1,
-        last_seen_at: new Date(),
-      })
-    } else {
-      const platforms = new Set(user.platforms || [])
-      platforms.add(platform)
-      user.platforms = Array.from(platforms)
-      user.last_ip = ip
-      user.last_seen_at = new Date()
-      user.login_count = (user.login_count || 0) + 1
-      if (email && !user.email) user.email = email
-      await user.save()
-    }
+    const user = await syncAccountRegistry({ store: User, identity: req.user, platform, ip })
 
     res.json({ banned: false, plan: user.plan || 'free', status: user.status })
   } catch (err) {
+    if (err.status === 403) return res.status(403).json({ banned: true, reason: err.message })
+    if (err.status === 503) return res.status(503).json({ error: 'Could not connect your account. Please try again shortly.' })
     next(err)
   }
 })

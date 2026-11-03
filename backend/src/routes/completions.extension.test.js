@@ -93,3 +93,18 @@ test('public Madhav model resolves consistently and Council respects account acc
   await request(app).post('/completions').set('Authorization', 'free').send({ model: 'council', messages: [{ role: 'user', content: 'Hello' }] }).expect(403)
   await request(app).post('/completions').set('Authorization', 'chat').send({ model: {}, messages: [{ role: 'user', content: 'Hello' }] }).expect(400)
 })
+test('writing dictionary and goals are validated, and rewrites return a reviewable draft', async () => {
+  output = JSON.stringify({ tone: 'neutral', language: 'English', issues: [{ original: 'Codevaa', suggestion: 'Codeva', type: 'spelling' }] })
+  const response = await request(app).post('/completions/grammar').set('Authorization', 'dictionary').send({ text: 'Hello Codevaa', dictionary: ['Codevaa', '<script>'], goals: { dialect: 'en-GB' } }).expect(200)
+  assert.equal(response.body.issues.length, 0)
+  assert.ok(calls.at(-1).messages.some(m => m.content.includes('en-GB')))
+  assert.ok(calls.at(-1).messages.some(m => m.content.includes('Codevaa')))
+  output = 'Hello team, thank you for your help.'
+  const rewritten = await request(app).post('/completions/rewrite').set('Authorization', 'rewrite').send({ text: 'hey team thanks', mode: 'formal' }).expect(200)
+  assert.equal(rewritten.body.original, 'hey team thanks'); assert.equal(rewritten.body.rewritten, output)
+  assert.equal(calls.at(-1).plan, 'pro'); assert.equal(calls.at(-1).model, 'auto')
+  await request(app).post('/completions/rewrite').send({ text: 'Hello', mode: 'formal' }).expect(401)
+  await request(app).post('/completions/rewrite').set('Authorization', 'rewrite').send({ text: 'Hello', mode: 'inject' }).expect(400)
+  output = ''
+  await request(app).post('/completions/rewrite').set('Authorization', 'rewrite').send({ text: 'Hello', mode: 'formal' }).expect(502)
+})

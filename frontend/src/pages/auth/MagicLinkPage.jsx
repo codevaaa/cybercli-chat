@@ -1,6 +1,6 @@
+import { authFlowQuery, authPagePath } from '../../lib/authFlow.js'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { editorAuthQuery } from '../../lib/editorAuth.js'
 import { Mail, ArrowRight, Loader2, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../stores/authStore.js'
@@ -18,7 +18,7 @@ export default function MagicLinkPage() {
     e.preventDefault()
     clearError()
     let query
-    try { query = editorAuthQuery(searchParams) } catch (err) { useAuthStore.setState({ error: err.message }); return }
+    try { query = authFlowQuery(searchParams).toString() } catch (err) { useAuthStore.setState({ error: err.message }); return }
     const result = await signInWithMagicLink(email, query)
     if (result.success) setSent(true)
   }
@@ -83,7 +83,7 @@ export default function MagicLinkPage() {
                     Use a different email
                   </button>
                   <Link
-                    to={`/auth/login${searchParams.get("redirect") === "ide" ? `?${searchParams.toString()}` : ""}`}
+                    to={authPagePath('login', searchParams)}
                     className="text-xs text-foreground-muted hover:text-foreground-secondary transition-colors font-medium"
                   >
                     Back to password sign in
@@ -165,7 +165,7 @@ export default function MagicLinkPage() {
         <div className="text-center mt-6">
           <p className="text-sm text-foreground-secondary">
             Prefer a password?{' '}
-            <Link to={`/auth/login${searchParams.get("redirect") === "ide" ? `?${searchParams.toString()}` : ""}`} className="text-accent hover:text-accent-dark font-semibold transition-colors">
+            <Link to={authPagePath('login', searchParams)} className="text-accent hover:text-accent-dark font-semibold transition-colors">
               Sign in with password
             </Link>
           </p>
