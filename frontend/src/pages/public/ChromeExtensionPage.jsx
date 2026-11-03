@@ -6,23 +6,22 @@ import SEOHead from '@components/seo/SEOHead'
 import { Tooltip } from '@components/ui/Tooltip'
 
 /**
- * /chrome-extension — CyberCoder for Chrome product page.
- * Matches claude.com/claude-for-chrome structure: hero, features, safety, FAQ.
+ * /chrome-extension — Codeva browser workspace and unpacked installation.
  */
 
 const FEATURES = [
-  { icon: FileText, title: 'Summarize any page', desc: 'Get concise bullet-point summaries of articles, docs, and research papers in one click.' },
-  { icon: Globe, title: 'Translate content', desc: 'Translate page content or selected text to any language instantly.' },
+  { icon: FileText, title: 'Understand the current page', desc: 'Attach readable page text for summaries and explanations with the source URL included.' },
+  { icon: Globe, title: 'Refine your writing', desc: 'Review grammar, spelling, and clarity suggestions. Apply the changes you choose or request a rewrite.' },
   { icon: Code2, title: 'Explain code', desc: 'Highlight code on any page and get a clear explanation with examples.' },
-  { icon: Zap, title: 'Extract structured data', desc: 'Pull tables, lists, and key facts from pages as JSON or Markdown.' },
-  { icon: Shield, title: 'Browse safely', desc: 'CyberCoder never stores page content on our servers. Processing happens via your chosen provider.' },
-  { icon: Chrome, title: 'Works everywhere', desc: 'Side panel, popup, context menu, floating button — access AI from any tab without switching.' },
+  { icon: Zap, title: 'Pick up where you left off', desc: 'Search saved conversations, recover drafts, and export chats. History stays in this browser, separately for each account.' },
+  { icon: Shield, title: 'Choose what you share', desc: 'Page context starts off. Submitted text is processed through Codeva and its AI providers; automatic writing assistance can be disabled in Settings.' },
+  { icon: Chrome, title: 'A workspace beside your page', desc: 'Use the side panel, context menu, or selection toolbar on supported websites, with system, light, and dark themes.' },
 ]
 
 export default function ChromeExtensionPage() {
   return (
     <div className="min-h-screen bg-[#1a1a18] pt-32 pb-20 px-6">
-      <SEOHead title="CyberCoder for Chrome — AI in your browser" path="/chrome-extension" />
+      <SEOHead title="Codeva for Chrome — Your browser workspace" path="/chrome-extension" />
       <div className="max-w-4xl mx-auto">
         {/* Hero */}
         <ScrollReveal>
@@ -34,17 +33,17 @@ export default function ChromeExtensionPage() {
               A helping hand<br/>across all your tabs
             </h1>
             <p className="text-lg text-gray-400 max-w-xl mx-auto mb-8">
-              CyberCoder in Chrome summarizes pages, explains code, extracts data, translates content, and chats — all without leaving your browser. Free tier available.
+              Chat beside your work, understand a page, and refine your writing with your existing Codeva account.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Tooltip content="Download the Chrome Extension">
-                <a href="https://chromewebstore.google.com/search/cybercoder" target="_blank" rel="noopener noreferrer" className="px-7 py-3.5 bg-[#f5f4ef] text-[#1a1a18] rounded-xl font-bold transition-all hover:bg-white flex items-center gap-2">
-                  <Download className="w-5 h-5" /> Add to Chrome
+              <Tooltip content="Download Codeva 1.4.0 for an unpacked Chrome installation">
+                <a href="https://github.com/codevaaa/cybercli-chat/raw/refs/heads/main/artifacts/codeva-extension-1.4.0-2026-11-03.zip" className="px-7 py-3.5 bg-[#f5f4ef] text-[#1a1a18] rounded-xl font-bold transition-all hover:bg-white flex items-center gap-2">
+                  <Download className="w-5 h-5" /> Download extension ZIP
                 </a>
               </Tooltip>
-              <Tooltip content="Connect to an AI Provider">
-                <Link to="/providers" className="px-7 py-3.5 border border-white/10 text-[#f5f4ef] rounded-xl font-medium hover:bg-white/5 transition-colors">
-                  Connect a provider
+              <Tooltip content="Connect your existing Codeva account">
+                <Link to="/auth/login?from=extension" className="px-7 py-3.5 border border-white/10 text-[#f5f4ef] rounded-xl font-medium hover:bg-white/5 transition-colors">
+                  Sign in to Codeva
                 </Link>
               </Tooltip>
             </div>
@@ -75,19 +74,19 @@ export default function ChromeExtensionPage() {
             <h2 className="text-2xl font-serif font-normal text-[#f5f4ef] mb-6" style={{ fontFamily: "'Instrument Serif', serif" }}>A refreshing way to work on the web</h2>
             <div className="grid sm:grid-cols-3 gap-6">
               <div>
-                <div className="text-2xl mb-2">1️⃣</div>
-                <h4 className="text-sm font-semibold text-[#f5f4ef] mb-1">Install & connect</h4>
-                <p className="text-xs text-gray-400">Add to Chrome, connect a free provider (Groq or Gemini), done.</p>
+                <div className="text-2xl mb-2" aria-hidden="true">01</div>
+                <h4 className="text-sm font-semibold text-[#f5f4ef] mb-1">Load the extension</h4>
+                <p className="text-xs text-gray-400">Extract the ZIP. Open chrome://extensions, enable Developer mode, and choose Load unpacked. Select the extracted folder.</p>
               </div>
               <div>
-                <div className="text-2xl mb-2">2️⃣</div>
-                <h4 className="text-sm font-semibold text-[#f5f4ef] mb-1">Use anywhere</h4>
-                <p className="text-xs text-gray-400">Right-click, keyboard shortcut, or click the icon. Works on any page.</p>
+                <div className="text-2xl mb-2" aria-hidden="true">02</div>
+                <h4 className="text-sm font-semibold text-[#f5f4ef] mb-1">Connect your account</h4>
+                <p className="text-xs text-gray-400">Sign in on the Codeva website, reload existing webpages, and click the extension icon to open your workspace.</p>
               </div>
               <div>
-                <div className="text-2xl mb-2">3️⃣</div>
+                <div className="text-2xl mb-2" aria-hidden="true">03</div>
                 <h4 className="text-sm font-semibold text-[#f5f4ef] mb-1">Get results</h4>
-                <p className="text-xs text-gray-400">Summaries, translations, explanations, and data — streamed in real time.</p>
+                <p className="text-xs text-gray-400">Chat, attach a page, or review a draft in Writing. Chrome internal pages and some specialized editors restrict access.</p>
               </div>
             </div>
           </div>
@@ -96,7 +95,7 @@ export default function ChromeExtensionPage() {
         {/* CTA */}
         <ScrollReveal>
           <div className="text-center">
-            <h2 className="text-2xl font-serif font-normal text-[#f5f4ef] mb-4" style={{ fontFamily: "'Instrument Serif', serif" }}>CyberCoder can work in your browser and desktop</h2>
+            <h2 className="text-2xl font-serif font-normal text-[#f5f4ef] mb-4" style={{ fontFamily: "'Instrument Serif', serif" }}>Codeva across your browser and desktop</h2>
             <p className="text-sm text-gray-400 mb-6 max-w-md mx-auto">Use the Chrome extension for web tasks, the VS Code extension for coding, and the desktop app for everything else.</p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Tooltip content="Download Desktop App">

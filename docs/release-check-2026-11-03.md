@@ -17,6 +17,7 @@ This release collects the current pending source changes in the existing `codeva
 | Frozen dossier evaluation | 50/50 fixtures passed |
 | Brahma data/builder guard tests | 7 tests passed |
 | GitHub workflow YAML and Windows updater PowerShell syntax | Validated after repairing the existing release workflow’s here-string indentation |
+| Browser extension installation page | Production build and Chromium smoke pass; ZIP button targets the published 1.4.0 archive, account sign-in and unpacked-install instructions are present |
 
 The browser suite uses fixture sessions and mocked AI responses. The frozen eval disables network. These checks do not certify live provider quality, GPU training, generated installer signing, or production database migrations.
 
