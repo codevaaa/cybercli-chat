@@ -37,6 +37,10 @@ Thumbs.db
 # Testing
 coverage/
 .nyc_output/
+__pycache__/
+*.py[cod]
+backend/data/dossier-artifacts/
+backend/src/services/dossier/sandbox/__pycache__/
 
 # Misc
 .cache/
@@ -67,6 +71,10 @@ editor-builder/vscode-oss/
 
 # Codevaa IDE — on-demand microsoft/vscode shallow clone (never commit full tree)
 ide/upstream/vscode/
+editors/code-oss/
+editors/VSCode-*/
+artifacts/codeva-editor/
+scripts/ide/node_modules/
 
 
 # Temp/output files
@@ -77,3 +85,15 @@ frontend/build_output.txt
 # Test files with potential secrets
 backend/test_ravan.js
 test_ravan.js
+
+# Brahma V1 datasets, model cache, virtualenv, and trained weights stay local.
+models/brahma/.venv/
+models/brahma/cache/
+models/brahma/data/raw/
+models/brahma/data/processed/
+models/brahma/data/images/
+models/brahma/artifacts/
+models/brahma/reports/*.json
+models/brahma/reports/*.jsonl
+models/brahma/reports/*.log
+models/brahma/builder/workspaces/

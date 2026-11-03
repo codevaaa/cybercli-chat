@@ -1,0 +1,30 @@
+{
+  "id": "codeva-38",
+  "prompt": "Build a study cards app for two sample users. Keep each owner's rows private. Case 38.",
+  "pack": "commerce",
+  "spec": {
+    "will_build": [
+      "Show owner study cards"
+    ],
+    "must_never": [
+      "Expose secrets"
+    ],
+    "acceptance": [
+      "Show study cards after login"
+    ]
+  },
+  "expected": {
+    "original": true,
+    "pending_blocked": true,
+    "can_build": true,
+    "builder_hidden": true,
+    "missing_judge_blocks": true,
+    "missing_replay_fails": true,
+    "material_supported": true,
+    "citation": true
+  },
+  "material": {
+    "text": "The stock ledger records inventory changes for study cards. Revenue records money received from sales.",
+    "question": "stock inventory"
+  }
+}

@@ -1,24 +1,20 @@
 import { Router } from 'express'
 import { Readable } from 'node:stream'
 import { r2FileExists, getR2PublicUrl, isR2Available } from '../services/downloads/r2Service.js'
+import { editorArtifact, editorCatalog } from '../services/downloads/editorRelease.js'
 
 const router = Router()
 
 const GITHUB_REPO = 'https://github.com/codevaaa/cybercli-chat/releases'
 const GITHUB_RELEASE_BASE = `${GITHUB_REPO}/latest/download`
 
-// Map of friendly names to { file, tag } — desktop app uses 'latest',
-// Agent Platform uses its own 'agent-v1.0.0' tag.
+// Download allowlist for the main desktop app.
 const FILE_MAP = {
   // Desktop app — actual asset names in the v0.5.6 release
   'Codeva-win-x64.exe': { file: 'Codeva-win-x64.exe', tag: 'latest' },
   'Codeva-mac-universal.dmg': { file: 'Codeva-mac-universal.dmg', tag: 'latest' },
   'Codeva-linux-x64.AppImage': { file: 'Codeva-linux-x86_64.AppImage', tag: 'latest' },
   'Codeva-linux-x64.deb': { file: 'Codeva-linux-amd64.deb', tag: 'latest' },
-  // Agent Platform — separate release tag (agent-v*)
-  'CodeVaa-Agent-Platform-win-x64.exe': { file: 'CodeVaa-Agent-Platform-1.0.1-win-x64.exe', tag: 'agent-v1.0.1' },
-  'CodeVaa-Agent-Platform-mac-x64.dmg': { file: 'CodeVaa-Agent-Platform-1.0.1-mac-x64.dmg', tag: 'agent-v1.0.1' },
-  'CodeVaa-Agent-Platform-linux-x64.AppImage': { file: 'CodeVaa-Agent-Platform-1.0.1-linux-x64.AppImage', tag: 'agent-v1.0.1' },
 }
 
 const DOWNLOAD_META = {
@@ -26,10 +22,24 @@ const DOWNLOAD_META = {
   'Codeva-mac-universal.dmg': { platform: 'macos', name: 'Codeva for Mac', size: '~80 MB', arch: 'universal' },
   'Codeva-linux-x64.AppImage': { platform: 'linux', name: 'Codeva for Linux (AppImage)', size: '~75 MB', arch: 'x64' },
   'Codeva-linux-x64.deb': { platform: 'linux', name: 'Codeva for Linux (.deb)', size: '~70 MB', arch: 'amd64' },
-  'CodeVaa-Agent-Platform-win-x64.exe': { platform: 'windows', name: 'Agent Platform for Windows', size: '~85 MB', arch: 'x64' },
-  'CodeVaa-Agent-Platform-mac-x64.dmg': { platform: 'macos', name: 'Agent Platform for Mac', size: '~90 MB', arch: 'x64' },
-  'CodeVaa-Agent-Platform-linux-x64.AppImage': { platform: 'linux', name: 'Agent Platform for Linux', size: '~80 MB', arch: 'x64' },
 }
+
+// Editor installers are distinct from the existing chat desktop releases.
+// Only complete artifacts in the release manifest are downloadable, logged out.
+router.get('/editor', async (_req, res, next) => {
+  try { res.setHeader('Cache-Control', 'no-store'); res.json({ downloads: await editorCatalog() }) } catch (error) { next(error) }
+})
+router.get('/editor/:filename', async (req, res, next) => {
+  try {
+    const artifact = await editorArtifact(req.params.filename)
+    if (!artifact) return res.status(404).json({ error: 'Codeva editor installer has not been published for this platform' })
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Checksum-SHA256', artifact.sha256)
+    if (artifact.remoteUrl) return res.redirect(302, artifact.remoteUrl)
+    res.download(artifact.file, artifact.filename, error => { if (error) next(error) })
+  } catch (error) { next(error) }
+})
 
 /**
  * Primary: R2 CDN redirect (fast, zero egress cost)
@@ -44,7 +54,6 @@ router.get('/:filename', async (req, res, next) => {
       return res.status(404).json({ error: 'File not found' })
     }
     const githubFilename = entry.file
-    const isAgentPlatform = entry.tag !== 'latest'
 
     // --- Try R2 CDN first (fastest, cheapest) ---
     if (isR2Available()) {
@@ -73,13 +82,6 @@ router.get('/:filename', async (req, res, next) => {
 
     if (!head.ok) {
       // Asset not built/uploaded yet — give a helpful message instead of raw 404
-      if (isAgentPlatform) {
-        return res.status(503).json({
-          error: 'Agent Platform installer is being built. Please check back shortly, or visit the releases page.',
-          releasesUrl: `${GITHUB_REPO}`,
-          building: true,
-        })
-      }
       return res.status(404).json({ error: 'Release file not found on GitHub', releasesUrl: `${GITHUB_REPO}` })
     }
 

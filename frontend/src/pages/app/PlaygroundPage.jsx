@@ -6,20 +6,18 @@ export default function PlaygroundPage() {
   const [prompt, setPrompt] = useState('')
   const [response, setResponse] = useState('')
   const [loading, setLoading] = useState(false)
-  const [model, setModel] = useState('brahma-v1')
+  const [model, setModel] = useState('auto')
+  const [system, setSystem] = useState('')
 
   const handleTest = async () => {
     if (!prompt) return
     setLoading(true)
     setResponse('')
     
-    // We need to fetch an API key or use the user's token.
-    // Assuming we use our /v1/chat/completions endpoint which we just made.
-    // However, from the frontend, it requires an API key, so we'll just proxy through an authenticated route or simulate it if we have a key.
-    // Actually, for the dashboard playground, it's easier to create a backend route or we can just show a mock UI.
     try {
-      const res = await api.post('/v1/chat/completions', {
+      const res = await api.post('/agent/complete', {
         model,
+        system: system.trim() || undefined,
         messages: [{ role: 'user', content: prompt }],
         stream: false
       })
@@ -43,8 +41,8 @@ export default function PlaygroundPage() {
           onChange={e => setModel(e.target.value)}
           className="bg-background-secondary border border-border-subtle text-sm rounded-lg px-3 py-1.5"
         >
-          <option value="brahma-v1">Brahma-v1 (10xThink)</option>
-          <option value="llama-3-70b">Llama 3 70B</option>
+          <option value="auto">Auto</option>
+          <option value="codeva/ravan">Ravan</option>
         </select>
       </header>
 
@@ -54,6 +52,8 @@ export default function PlaygroundPage() {
           <textarea 
             className="h-32 bg-background-secondary border border-border-subtle rounded-xl p-4 text-sm mb-6 resize-none"
             placeholder="You are a helpful coding assistant..."
+            value={system}
+            onChange={e => setSystem(e.target.value)}
           />
 
           <label className="text-sm font-semibold mb-2">User Prompt</label>

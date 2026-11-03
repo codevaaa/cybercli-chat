@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="MrCodevaa Prism M">
+  <defs><filter id="soft-shadow" x="-30%" y="-100%" width="160%" height="300%"><feGaussianBlur stdDeviation="3"/></filter></defs>
+  <style>@media(max-width:32px){.shadow{display:none}}</style>
+  <ellipse class="shadow" cx="64" cy="115" rx="38" ry="4" fill="#000" opacity=".28" filter="url(#soft-shadow)"/>
+  <path id="left-face" fill="#8C3E1C" d="M18 34 40 47 64 70 64 93 40 68 40 107 18 94Z"/>
+  <path id="right-face" fill="#E7A27A" d="M64 70 88 47 110 34 110 94 88 107 88 68 64 93Z"/>
+  <path id="top-face" fill="#F6F1E7" d="M18 34 40 20 64 44 88 20 110 34 88 47 64 70 40 47Z"/>
+</svg>

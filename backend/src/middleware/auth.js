@@ -15,7 +15,7 @@ const PLAN_TTL_MS = 60_000
 const banCache = new Map()
 const BAN_TTL_MS = 30_000
 
-async function resolveUserPlan(userId) {
+export async function resolveUserPlan(userId) {
   if (!userId) return 'free'
   const cached = planCache.get(userId)
   if (cached && Date.now() - cached.at < PLAN_TTL_MS) return cached.plan
@@ -35,7 +35,7 @@ async function resolveUserPlan(userId) {
  * Fails OPEN (returns false) on DB errors so an outage never locks everyone out,
  * but a definitive banned record is always enforced.
  */
-async function isUserBanned(userId) {
+export async function isUserBanned(userId) {
   if (!userId) return false
   const cached = banCache.get(userId)
   if (cached && Date.now() - cached.at < BAN_TTL_MS) return cached.banned
@@ -139,6 +139,7 @@ export const optionalAuth = async (req, res, next) => {
     try {
       const apiKeyDoc = await ApiKey.findOne({ key_hash: ApiKey.hashKey(token), is_active: true })
       if (apiKeyDoc) {
+        if (await isUserBanned(apiKeyDoc.user_id)) return res.status(403).json({ error: 'Account suspended', banned: true })
         ApiKey.updateOne(
           { _id: apiKeyDoc._id },
           { $set: { last_used_at: new Date() }, $inc: { usage_count: 1 } },
@@ -161,10 +162,11 @@ export const optionalAuth = async (req, res, next) => {
   if (authHeader.startsWith('Bearer ')) {
     const { user } = await verifyJWT(token)
     if (user) {
+      if (await isUserBanned(user.id)) return res.status(403).json({ error: 'Account suspended', banned: true })
       req.user = {
         id: user.id,
         email: user.email,
-        plan: user.user_metadata?.plan_tier || 'free',
+        plan: await resolveUserPlan(user.id),
       }
     }
   }
@@ -199,6 +201,7 @@ export const authenticateCLI = async (req, res, next) => {
   if (!apiKeyDoc) {
     return res.status(401).json({ error: 'Invalid or revoked API key' })
   }
+  if (await isUserBanned(apiKeyDoc.user_id)) return res.status(403).json({ error: 'Account suspended', banned: true })
 
   // Validate session
   const session = await CLISession.findOne({
@@ -223,7 +226,7 @@ export const authenticateCLI = async (req, res, next) => {
   req.session = session
   req.user = {
     id: apiKeyDoc.user_id,
-    plan: 'pro'
+    plan: await resolveUserPlan(apiKeyDoc.user_id)
   }
 
   next()

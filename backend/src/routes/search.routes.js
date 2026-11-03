@@ -5,23 +5,36 @@ import Message from '../models/Message.js'
 
 const router = Router()
 
+router.post('/web', requireAuth, async (req, res, next) => {
+  const { query, limit = 5 } = req.body
+  if (typeof query !== 'string' || !query.trim() || query.length > 1000 || !Number.isInteger(limit) || limit < 1 || limit > 10) {
+    return res.status(400).json({ error: 'query (1–1000 characters) and limit (1–10) are required' })
+  }
+  try {
+    const { performWebSearch } = await import('../utils/webSearch.js')
+    const results = await performWebSearch(query.trim())
+    res.json({ results: results.slice(0, limit) })
+  } catch (err) { next(err) }
+})
+
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { q } = req.query
     if (!q || typeof q !== 'string') {
       return res.json({ query: q || '', results: [], total: 0 })
     }
+    const searchText = q.slice(0, 1000).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
     // Search threads by title
     const threads = await Thread.find({
       user_id: req.user.id,
-      title: { $regex: q, $options: 'i' }
+      title: { $regex: searchText, $options: 'i' }
     }).sort({ updatedAt: -1 }).limit(15)
 
     // Search messages by content
     const messages = await Message.find({
       user_id: req.user.id,
-      content: { $regex: q, $options: 'i' }
+      content: { $regex: searchText, $options: 'i' }
     }).populate('thread_id', 'title').sort({ updatedAt: -1 }).limit(15)
 
     const results = []

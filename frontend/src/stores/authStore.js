@@ -134,7 +134,7 @@ export const useAuthStore = create(
         }
       },
 
-      signUpWithEmail: async (email, password, name) => {
+      signUpWithEmail: async (email, password, name, editorQuery = '') => {
         set({ loading: true, error: null })
 
         try {
@@ -143,7 +143,7 @@ export const useAuthStore = create(
             password,
             options: {
               data: { name },
-              emailRedirectTo: `${window.location.origin}/auth/callback?action=signup`,
+              emailRedirectTo: `${window.location.origin}/auth/callback?action=signup${editorQuery ? `&${editorQuery}` : ''}`,
             },
           })
           if (error) throw error
@@ -184,11 +184,11 @@ export const useAuthStore = create(
         }
       },
 
-      signInWithMagicLink: async (email) => {
+      signInWithMagicLink: async (email, editorQuery = '') => {
         set({ loading: true, error: null })
 
         try {
-          const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } })
+          const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: editorQuery ? `${window.location.origin}/auth/callback?action=login&${editorQuery}` : window.location.origin } })
           if (error) throw error
 
           set({ loading: false })

@@ -1,0 +1,24 @@
+{
+  "id": "codeva-03",
+  "prompt": "  Build a class timetable app for two sample users. Keep each owner's rows private. Case 3.\r\nनमस्ते 🌏  ",
+  "pack": "general",
+  "spec": {
+    "will_build": [
+      "Show owner class timetable"
+    ],
+    "must_never": [
+      "Expose secrets"
+    ],
+    "acceptance": [
+      "Show class timetable after login"
+    ]
+  },
+  "expected": {
+    "original": true,
+    "pending_blocked": true,
+    "can_build": true,
+    "builder_hidden": true,
+    "missing_judge_blocks": true,
+    "missing_replay_fails": true
+  }
+}

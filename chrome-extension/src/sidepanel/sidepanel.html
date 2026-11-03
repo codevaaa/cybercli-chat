@@ -1,62 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="system">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Codeva AI</title>
+  <meta name="color-scheme" content="light dark" />
+  <title>Codeva — Your browser workspace</title>
+  <link rel="stylesheet" href="../styles/theme.css" />
   <link rel="stylesheet" href="../styles/sidepanel.css" />
 </head>
 <body>
   <div id="app">
     <header class="sp-header">
-      <div class="sp-brand">
-        <span class="sp-logo" id="sp-logo"></span>
-        <span class="sp-title">Codeva AI</span>
-      </div>
+      <a class="sp-brand" href="https://cybermindcli.info/chat" target="_blank" rel="noopener noreferrer" aria-label="Open Codeva web app">
+        <span class="sp-logo" id="sp-logo" aria-hidden="true"></span>
+        <span><strong>Codeva</strong><span class="brand-caption">Your browser workspace</span></span>
+      </a>
       <div class="sp-head-actions">
-        <button id="sp-new" class="ic-btn" title="New chat"></button>
-        <button id="sp-settings" class="ic-btn" title="Settings"></button>
+        <button id="sp-new" class="ic-btn" title="New conversation" aria-label="New conversation">+</button>
+        <button id="sp-theme" class="ic-btn" title="Theme: system" aria-label="Theme: system">◐</button>
+        <button id="sp-settings" class="ic-btn" title="Settings" aria-label="Settings"></button>
       </div>
     </header>
-
-    <!-- Auth gate -->
-    <div id="sp-auth" class="sp-auth" hidden>
-      <span class="sp-auth-logo" id="sp-auth-logo"></span>
-      <h2>Sign in to Codeva</h2>
-      <p>Use your free Codeva account to unlock the assistant.</p>
-      <button id="sp-signin" class="sp-btn-primary">Sign in</button>
-    </div>
-
-    <!-- Chat -->
-    <main id="sp-chat" class="sp-chat">
-      <div class="sp-welcome" id="sp-welcome">
-        <span class="sp-welcome-logo" id="sp-welcome-logo"></span>
-        <h2>How can I help?</h2>
-        <p>Select text on any page for instant actions, or ask below.</p>
-        <div class="sp-chips" id="sp-chips">
-          <button data-q="Summarize this page">Summarize page</button>
-          <button data-q="Explain the key concepts on this page">Explain page</button>
-          <button data-q="Help me write a professional email">Write email</button>
-          <button data-q="Review my code for bugs">Review code</button>
+    <nav class="sp-tabs" aria-label="Workspace">
+      <button data-view="chat" aria-current="page">Assistant</button>
+      <button data-view="write">Writing</button>
+      <button data-view="history">History</button>
+    </nav>
+    <div id="sp-status" class="sp-status" role="status" aria-live="polite">Connecting to your workspace…</div>
+    <section id="sp-auth" class="sp-auth" hidden>
+      <span class="sp-auth-logo" id="sp-auth-logo" aria-hidden="true"></span>
+      <p class="eyebrow">One account. Every workspace.</p>
+      <h1>A little help,<br />wherever you work.</h1>
+      <p>Chat, understand a page, and refine your writing with your Codeva account.</p>
+      <button id="sp-signin" class="primary">Sign in to Codeva <span aria-hidden="true">↗</span></button>
+      <p class="fine-print">Already signed in? Open the website once to connect this extension.</p>
+    </section>
+    <section id="sp-chat-view" class="sp-view" hidden>
+      <div class="sp-context">
+        <label><input type="checkbox" id="sp-use-page" /> <span>Use current page</span></label>
+        <button id="sp-refresh-page" class="text-btn" aria-label="Refresh page context">Refresh</button>
+        <p id="sp-page-label">Page content is shared only when you turn this on or choose a page action.</p>
+      </div>
+      <main id="sp-chat" class="sp-chat" aria-label="Conversation"></main>
+      <footer class="sp-footer">
+        <div class="sp-input-wrap">
+          <label class="sr-only" for="sp-input">Message Codeva</label>
+          <textarea id="sp-input" rows="2" placeholder="Ask, explore, or make something…" maxlength="20000"></textarea>
+          <div class="composer-bottom">
+            <label class="sr-only" for="sp-model">AI model</label>
+            <select id="sp-model"><option value="auto">Automatic routing</option></select>
+            <button id="sp-send" class="sp-send" aria-label="Send message"></button>
+          </div>
         </div>
-      </div>
-    </main>
-
-    <footer class="sp-footer">
-      <div class="sp-input-wrap">
-        <textarea id="sp-input" rows="1" placeholder="Message Codeva…"></textarea>
-        <button id="sp-send" class="sp-send"></button>
-      </div>
-      <div class="sp-model-row">
-        <select id="sp-model">
-          <option value="codeva-ravan-v1">Ravan · Code</option>
-          <option value="gemini/gemini-2.5-flash">Sahadeva · Vision</option>
-          <option value="opencode/deepseek-v4-pro">Madhav · Research</option>
-          <option value="groq/llama-3.1-8b">Arjun · Fast</option>
-        </select>
-        <span class="sp-hint">Enter to send</span>
-      </div>
-    </footer>
+        <div class="composer-note"><span id="sp-model-status">Models route through your Codeva server</span><span>Enter ↵</span></div>
+      </footer>
+    </section>
+    <section id="sp-write-view" class="sp-view writing-view" hidden>
+      <div class="section-heading"><p class="eyebrow">Make every word count</p><h1>Your voice, refined.</h1><p>Check grammar and clarity, then review each change.</p></div>
+      <label for="sp-writing" class="field-label">Your draft</label>
+      <textarea id="sp-writing" class="writing-input" rows="8" maxlength="6000" placeholder="Paste a draft, or bring in selected text from the page…"></textarea>
+      <div class="writing-meta"><span id="sp-writing-count">0 words · 0 / 6,000 characters</span><button id="sp-import" class="text-btn">Use selection</button></div>
+      <div class="writing-actions"><button id="sp-check" class="primary">Check writing</button><button id="sp-copy-draft" class="secondary">Copy draft</button></div>
+      <div class="rewrite-actions" aria-label="Rewrite draft"><button data-rewrite="formal">Professional</button><button data-rewrite="casual">Friendly</button><button data-rewrite="shorter">Shorter</button><button data-rewrite="longer">Expand</button></div>
+      <div id="sp-writing-status" role="status" class="writing-status">Suggestions appear here. Your draft stays yours until you apply a change.</div>
+      <button id="sp-apply-all" class="secondary" hidden>Apply all suggestions</button>
+      <div id="sp-issues" class="sp-issues"></div>
+    </section>
+    <section id="sp-history-view" class="sp-view history-view" hidden>
+      <div class="section-heading"><p class="eyebrow">Pick up where you left off</p><h1>Your conversations.</h1><p>Saved in this browser, separately for each account.</p></div>
+      <label class="sr-only" for="sp-history-search">Search conversations</label><input id="sp-history-search" class="history-search" type="search" placeholder="Search conversations…" />
+      <div class="history-tools"><button id="sp-export" class="secondary">Export current chat</button><button id="sp-undo-delete" class="text-btn" hidden>Undo delete</button></div>
+      <div id="sp-history-list"></div>
+    </section>
   </div>
   <script src="sidepanel.js" type="module"></script>
 </body>

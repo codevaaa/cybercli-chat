@@ -14,7 +14,7 @@
   if (window.__codevaInjected) return
   window.__codevaInjected = true
 
-  const API_BASE = 'https://cybercli-api.onrender.com/api/v1'
+  const { normalizeIssues } = globalThis.CodevaWriting
 
   // Active agent persona (from the curated /agents registry). Only the validated
   // agentId is ever sent to the backend; the system prompt lives server-side.
@@ -46,39 +46,14 @@
 
   window.__cvLocalGrammar = function(text) {
     const issues = []
-    if (!text || text.length < 2) return issues
-    const words = text.match(/\b[a-zA-Z']+\b/g) || []
-    const seen = new Set()
-    for (const word of words) {
-      const lower = word.toLowerCase()
-      if (seen.has(lower)) continue
-      if (CV_MISSPELLINGS[lower]) {
-        const c = CV_MISSPELLINGS[lower]
-        const sug = word[0] === word[0].toUpperCase() ? c[0].toUpperCase() + c.slice(1) : c
-        issues.push({ original: word, suggestion: sug, type: 'spelling', reason: 'Common misspelling', source: 'local' })
-        seen.add(lower)
-      }
+    for (const match of text.matchAll(/\b[a-zA-Z']+\b/g)) {
+      const word = match[0], correction = CV_MISSPELLINGS[word.toLowerCase()]
+      if (correction) issues.push({ original: word, suggestion: word[0] === word[0].toUpperCase() ? correction[0].toUpperCase() + correction.slice(1) : correction,
+        start: match.index, type: 'spelling', reason: 'Common misspelling' })
     }
-    // double words
-    let dm; const dw = /\b(\w+)\s+\1\b/gi
-    while ((dm = dw.exec(text)) !== null) issues.push({ original: dm[0], suggestion: dm[1], type: 'grammar', reason: 'Repeated word', source: 'local' })
-    // double spaces
-    if (/  +/.test(text)) issues.push({ original: '  ', suggestion: ' ', type: 'punctuation', reason: 'Multiple spaces', source: 'local' })
-    // lone lowercase i
-    if (/\bi\b(?!['’])/.test(text)) issues.push({ original: 'i', suggestion: 'I', type: 'grammar', reason: 'Pronoun "I" must be capitalized', source: 'local' })
-    // gibberish / not-a-word detection
-    for (const word of words) {
-      const lower = word.toLowerCase()
-      if (seen.has(lower) || lower.length < 4) continue
-      if (CV_WORDS.has(lower) || CV_MISSPELLINGS[lower]) continue
-      const hasVowel = /[aeiou]/i.test(lower)
-      const tooManyCons = /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(lower)
-      if (!hasVowel || tooManyCons) {
-        issues.push({ original: word, suggestion: '(verify spelling)', type: 'spelling', reason: 'Possible typo or misspelled word', source: 'local', lowConfidence: true })
-        seen.add(lower)
-      }
-    }
-    return issues
+    for (const match of text.matchAll(/\b(\w+)\s+\1\b/gi)) issues.push({ original: match[0], suggestion: match[1], start: match.index, type: 'grammar', reason: 'Repeated word' })
+    for (const match of text.matchAll(/\bi\b(?!['’])/g)) issues.push({ original: 'i', suggestion: 'I', start: match.index, type: 'grammar', reason: 'Capitalize the pronoun “I”' })
+    return normalizeIssues(text, issues)
   }
 
   window.__cvLocalTone = function(text) {
@@ -98,41 +73,112 @@
   chrome.storage.local.get(['settings', 'authToken'], (r) => {
     settings = { grammar: true, toolbar: true, floatingIcon: true, ...(r.settings || {}) }
     authToken = r.authToken || null
+    document.documentElement.dataset.codevaTheme = settings.theme || 'system'
   })
   chrome.storage.onChanged.addListener((changes) => {
-    if (changes.settings) settings = { ...settings, ...changes.settings.newValue }
+    if (changes.settings) {
+      settings = { ...settings, ...changes.settings.newValue }
+      document.documentElement.dataset.codevaTheme = settings.theme || 'system'
+      if (!settings.grammar) { grammarSequence++; currentIssues = []; closeCard(); removeInlineUnderlines() }
+      if (!settings.smartCompose) removeGhostOverlay()
+      if (!settings.inlineUnderlines) removeInlineUnderlines()
+      positionFab()
+    }
     if (changes.authToken) authToken = changes.authToken.newValue
   })
 
   // ── Auth capture on cybermindcli.info ───────────────────────────────────────
-  if (location.hostname.includes('cybermindcli.info')) {
-    const pushToken = () => {
-      const t = localStorage.getItem('sb-access-token')
-      const email = localStorage.getItem('user_email') || ''
-      const name = localStorage.getItem('user_name') || ''
-      if (t) chrome.runtime.sendMessage({ type: 'AUTH_TOKEN', token: t, user: { email, name } })
+  if (['https://cybermindcli.info', 'https://www.cybermindcli.info'].includes(location.origin)) {
+    let lastToken
+    const pushToken = (payload) => {
+      const token = payload ? payload.token : localStorage.getItem('sb-access-token')
+      if (token === lastToken || (lastToken === undefined && !token && !payload)) return
+      lastToken = token
+      const user = payload?.user || { email: localStorage.getItem('user_email') || '', name: localStorage.getItem('user_name') || '' }
+      chrome.runtime.sendMessage({ type: 'AUTH_TOKEN', token: token || null, user }).catch(() => {})
     }
+    window.addEventListener('message', event => {
+      if (event.source === window && event.origin === location.origin && event.data?.type === 'CYBERCLI_AUTH_SYNC') pushToken(event.data)
+    })
+    window.addEventListener('storage', event => { if (event.key === 'sb-access-token') pushToken() })
     pushToken()
-    setInterval(pushToken, 4000)
+    setInterval(() => pushToken(), 4000)
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
+  // Cross-origin requests run in the extension worker using manifest host permissions.
+  async function apiRequest(endpoint, body) {
+    const result = await chrome.runtime.sendMessage({ type: 'API_REQUEST', endpoint, body })
+    if (!result || result.error) throw new Error(result?.error || 'Extension API connection failed')
+    return new Response(result.body, { status: result.status, headers: { 'Content-Type': result.contentType } })
+  }
   const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
   function isEditable(el) {
-    if (!el) return false
+    if (!el || el.disabled || el.readOnly || el.closest?.('.cv-card,.cv-result-card,.cv-diff-card')) return false
+    if (/password|one-time-code|cc-|credit|card.?number|cvc|cvv|secret|token/i.test(`${el.autocomplete || ''} ${el.name || ''} ${el.id || ''}`)) return false
     const tag = el.tagName ? el.tagName.toLowerCase() : ''
     if (tag === 'textarea') return true
     if (tag === 'input') {
       const t = (el.type || 'text').toLowerCase()
-      return ['text', 'search', 'email', 'url', ''].includes(t)
+      return ['text', 'search', ''].includes(t)
     }
     if (el.isContentEditable) return true
     return false
   }
 
   function getText(el) {
-    return el.value !== undefined ? el.value : el.innerText || ''
+    return el.value !== undefined ? el.value : el.textContent || ''
+  }
+
+  function fieldRange(field, start, end) {
+    const walker = document.createTreeWalker(field, NodeFilter.SHOW_TEXT)
+    let node, offset = 0, first = null, last = null
+    while ((node = walker.nextNode())) {
+      const next = offset + node.textContent.length
+      if (!first && start <= next) first = [node, start - offset]
+      if (end <= next) { last = [node, end - offset]; break }
+      offset = next
+    }
+    if (!first || !last) return null
+    const range = document.createRange(); range.setStart(...first); range.setEnd(...last); return range
+  }
+  function replaceFieldRange(field, start, end, replacement) {
+    field.focus()
+    if (field.value !== undefined) {
+      const old = field.value, value = old.slice(0, start) + replacement + old.slice(end)
+      const prototype = field.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
+      Object.getOwnPropertyDescriptor(prototype, 'value').set.call(field, value)
+      field.setSelectionRange?.(start + replacement.length, start + replacement.length)
+    } else {
+      const range = fieldRange(field, start, end)
+      if (!range) return false
+      range.deleteContents(); range.insertNode(document.createTextNode(replacement))
+    }
+    field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertReplacementText', data: replacement }))
+    return true
+  }
+  function captureRewriteTarget(text) {
+    const field = activeField
+    if (!isEditable(field)) return null
+    const snapshot = getText(field)
+    if (field.value !== undefined) {
+      const raw = snapshot.slice(field.selectionStart, field.selectionEnd)
+      if (raw.trim() !== text.trim()) return null
+      const start = field.selectionStart + raw.indexOf(text.trim())
+      return { field, snapshot, start, end: start + text.trim().length }
+    }
+    const selection = window.getSelection()
+    if (!selection?.rangeCount) return null
+    const range = selection.getRangeAt(0)
+    if (!field.contains(range.commonAncestorContainer) || range.toString().trim() !== text.trim()) return null
+    const prefix = range.cloneRange(); prefix.selectNodeContents(field); prefix.setEnd(range.startContainer, range.startOffset)
+    const start = prefix.toString().length + range.toString().indexOf(text.trim())
+    return { field, snapshot, start, end: start + text.trim().length }
+  }
+  function applyRewrite(target, replacement) {
+    if (!target?.field?.isConnected || getText(target.field) !== target.snapshot) return false
+    return replaceFieldRange(target.field, target.start, target.end, replacement)
   }
 
   async function callAI(prompt, model = GRAMMAR_MODEL) {
@@ -141,16 +187,12 @@
       authToken = r.authToken
     }
     if (!authToken) throw { auth: true }
-    const res = await fetch(`${API_BASE}/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-      body: JSON.stringify({
+    const res = await apiRequest('/completions', {
         messages: [{ role: 'user', content: prompt }],
         model,
         stream: false,
         // Inject the active persona (validated server-side by agentId).
         ...(activeAgentId ? { agentId: activeAgentId } : {}),
-      }),
     })
     if (res.status === 401) { authToken = null; throw { auth: true } }
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -158,7 +200,9 @@
     const ct = res.headers.get('content-type') || ''
     if (ct.includes('application/json')) {
       const data = await res.json()
-      return data.content || data.choices?.[0]?.message?.content || ''
+      const content = data.content || data.choices?.[0]?.message?.content
+      if (data.error || typeof content !== 'string' || !content.trim()) throw new Error(typeof data.error === 'string' ? data.error : 'The server returned no text. Please retry.')
+      return content
     }
     // SSE fallback
     const reader = res.body.getReader()
@@ -192,13 +236,16 @@
   let activeField = null
   let debounceTimer = null
   let lastCheckedText = ''
+  let checkedSnapshot = ''
+  let grammarSequence = 0
+  let checkStatus = 'local'
   let currentIssues = []
   let currentTone = 'neutral'
   let currentLanguage = 'English'
   let fabState = 'idle' // idle | checking | issues | clean
 
   function positionFab() {
-    if (!activeField) { fab.style.display = 'none'; return }
+    if (!activeField || !activeField.isConnected || !settings.floatingIcon || !settings.grammar) { fab.style.display = 'none'; return }
     const rect = activeField.getBoundingClientRect()
     if (rect.width < 40 || rect.height < 20) { fab.style.display = 'none'; return }
     fab.style.display = 'flex'
@@ -221,6 +268,7 @@
   function onFieldFocus(e) {
     const el = e.target
     if (!isEditable(el) || !settings.floatingIcon) return
+    if (activeField !== el) { grammarSequence++; lastCheckedText = ''; checkedSnapshot = ''; currentIssues = []; closeCard() }
     activeField = el
     setFabState('idle')
     positionFab()
@@ -229,6 +277,7 @@
   function onFieldInput(e) {
     const el = e.target
     if (el !== activeField || !settings.grammar) return
+    grammarSequence++; currentIssues = []; checkedSnapshot = ''; checkStatus = 'local'; removeInlineUnderlines(); closeCard()
     positionFab()
     clearTimeout(debounceTimer)
 
@@ -251,90 +300,50 @@
 
   // Simple in-memory cache: text hash → result (avoids re-checking identical text)
   const grammarCache = new Map()
-  function cacheKey(t) { return t.slice(0, 500) }
-
   async function runGrammarCheck(el) {
-    const text = getText(el).trim()
-    if (text.length < 3 || text.length > 4000) { setFabState('idle'); return }
+    if (el !== activeField || !settings.grammar || !isEditable(el)) return
+    const text = getText(el)
+    if (text.trim().length < 3 || text.length > 6000) { setFabState('idle'); return }
     if (text === lastCheckedText) return
     lastCheckedText = text
-
-    // ── LAYER 1: INSTANT local check (<5ms, no network) ──
-    const localIssues = window.__cvLocalGrammar ? window.__cvLocalGrammar(text) : []
-    currentTone = window.__cvLocalTone ? window.__cvLocalTone(text) : 'neutral'
-    currentLanguage = /[\u0900-\u097F]/.test(text) ? 'Hindi' : 'English'
-
-    // Show local results IMMEDIATELY (Grammarly-style instant feedback)
-    if (localIssues.length > 0) {
-      currentIssues = localIssues
-      setFabState('issues', localIssues.length)
-    } else {
-      setFabState('checking') // spin while we do the deep API check
-    }
-
-    // ── Cache check ──
-    const key = cacheKey(text)
-    if (grammarCache.has(key)) {
-      const cached = grammarCache.get(key)
-      currentIssues = mergeIssues(localIssues, cached.issues)
-      currentTone = cached.tone || currentTone
-      currentLanguage = cached.language || currentLanguage
-      setFabState(currentIssues.length ? 'issues' : 'clean', currentIssues.length)
-      return
-    }
-
-    // ── LAYER 2: ADVANCED API check via cached /grammar endpoint ──
+    const sequence = ++grammarSequence
+    const fresh = () => sequence === grammarSequence && el === activeField && getText(el) === text && settings.grammar
+    const local = window.__cvLocalGrammar(text)
+    checkedSnapshot = text; currentIssues = local; checkStatus = 'local'
+    currentTone = window.__cvLocalTone(text); currentLanguage = /[\u0900-\u097F]/.test(text) ? 'Hindi' : 'English'
+    setFabState(local.length ? 'issues' : 'checking', local.length)
     try {
-      if (!authToken) {
-        const r = await chrome.storage.local.get('authToken')
-        authToken = r.authToken
+      const goals = await getWritingGoals() || {}
+      if (!fresh()) return
+      const key = JSON.stringify([text, goals])
+      const cached = grammarCache.get(key)
+      if (cached) { currentIssues = cached.issues; currentTone = cached.tone; currentLanguage = cached.language; checkStatus = 'complete' }
+      else {
+        const { authToken: token } = await chrome.storage.local.get('authToken'); authToken = token
+        if (!fresh()) return
+        if (!token) { currentIssues = local; checkStatus = 'local' }
+        else {
+          const response = await apiRequest('/completions/grammar', { text, goals })
+          if (!fresh()) return
+          if (!response.ok) throw new Error('AI check unavailable')
+          const result = await response.json()
+          if (!fresh()) return
+          if (!Array.isArray(result.issues)) throw new Error('Invalid proofreading result')
+          currentIssues = normalizeIssues(text, [...result.issues, ...local])
+          currentTone = ['formal','casual','confident','friendly','neutral','aggressive'].includes(result.tone) ? result.tone : 'neutral'
+          currentLanguage = typeof result.language === 'string' ? result.language.slice(0, 50) : 'Unknown'
+          checkStatus = 'complete'
+          grammarCache.set(key, { issues: currentIssues, tone: currentTone, language: currentLanguage })
+          if (grammarCache.size > 50) grammarCache.delete(grammarCache.keys().next().value)
+        }
       }
-      if (!authToken) {
-        // Not signed in — show local results only
-        currentIssues = localIssues.filter(i => !i.lowConfidence)
-        setFabState(currentIssues.length > 0 ? 'issues' : 'clean', currentIssues.length)
-        return
-      }
-
-      const res = await fetch(`${API_BASE}/completions/grammar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ text, language: currentLanguage }),
-      })
-
-      if (res.status === 401) { authToken = null; currentIssues = [{ auth: true }]; setFabState('idle'); return }
-      if (!res.ok) throw new Error('grammar HTTP ' + res.status)
-
-      const parsed = await res.json()
-      const apiIssues = Array.isArray(parsed.issues) ? parsed.issues : []
-      currentTone = parsed.tone || currentTone
-      currentLanguage = parsed.language || currentLanguage
-
-      currentIssues = mergeIssues(localIssues, apiIssues)
-      grammarCache.set(key, { issues: apiIssues, tone: currentTone, language: currentLanguage })
-      if (grammarCache.size > 50) grammarCache.delete(grammarCache.keys().next().value)
-
-      setFabState(currentIssues.length > 0 ? 'issues' : 'clean', currentIssues.length)
-    } catch (err) {
-      // API failed — keep local results (still useful)
-      currentIssues = localIssues.filter(i => !i.lowConfidence)
-      setFabState(currentIssues.length > 0 ? 'issues' : 'clean', currentIssues.length)
+    } catch {
+      if (!fresh()) return
+      currentIssues = local; checkStatus = 'unavailable'; lastCheckedText = ''
     }
-  }
-
-  // Merge and dedupe issues from local + API sources
-  function mergeIssues(local, api) {
-    const merged = [...local]
-    const seen = new Set(local.map(i => (i.original || '').toLowerCase()))
-    for (const iss of api) {
-      const k = (iss.original || '').toLowerCase()
-      if (!seen.has(k) && iss.original) {
-        merged.push(iss)
-        seen.add(k)
-      }
-    }
-    // Remove low-confidence local flags if API found nothing for that word
-    return merged.filter(i => !i.lowConfidence || api.length === 0)
+    if (!fresh()) return
+    setFabState(currentIssues.length ? 'issues' : checkStatus === 'complete' ? 'clean' : 'idle', currentIssues.length)
+    if (card) openGrammarCard()
   }
 
   fab.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation() })
@@ -377,14 +386,14 @@
       card.innerHTML = cardShell('Codeva', `
         <div class="cv-card-clean">
           <div class="cv-check-big">✓</div>
-          <div>Looks great! No issues found.</div>
+          <div>${checkStatus === 'complete' ? 'No issues found in this check.' : checkStatus === 'unavailable' ? 'AI check unavailable. Only basic local spelling was checked.' : 'Basic local check only. Sign in for AI proofreading.'}</div>
           <div class="cv-tone-row">
             <span class="cv-tone-chip cv-tone-${currentTone}">${currentTone}</span>
-            <span class="cv-lang-chip">${currentLanguage}</span>
+            <span class="cv-lang-chip">${esc(currentLanguage)}</span>
           </div>
         </div>`)
     } else {
-      const toneBar = `<div class="cv-tone-row"><span class="cv-tone-chip cv-tone-${currentTone}">Tone: ${currentTone}</span><span class="cv-lang-chip">${currentLanguage}</span></div>`
+      const toneBar = `<p class="cv-check-scope">${checkStatus === 'complete' ? 'AI proofreading' : 'Basic local suggestions · AI check unavailable'}</p><div class="cv-tone-row"><span class="cv-tone-chip cv-tone-${currentTone}">Tone: ${currentTone}</span><span class="cv-lang-chip">${esc(currentLanguage)}</span></div>`
       const items = currentIssues.map((iss, i) => `
         <div class="cv-issue" data-i="${i}">
           <div class="cv-issue-top">
@@ -480,31 +489,21 @@
   }
 
   function applyFix(i) {
-    const iss = currentIssues[i]
-    if (!iss || !activeField) return
-    if (activeField.value !== undefined) {
-      activeField.value = activeField.value.replace(iss.original, iss.suggestion)
-      activeField.dispatchEvent(new Event('input', { bubbles: true }))
-    } else {
-      activeField.innerText = activeField.innerText.replace(iss.original, iss.suggestion)
-      activeField.dispatchEvent(new Event('input', { bubbles: true }))
-    }
-    lastCheckedText = '' // allow re-check
+    const issue = currentIssues[i]
+    if (!issue || !activeField || getText(activeField) !== checkedSnapshot) { closeCard(); lastCheckedText = ''; return }
+    const field = activeField
+    removeInlineUnderlines()
+    replaceFieldRange(field, issue.start, issue.end, issue.suggestion)
+    lastCheckedText = ''; currentIssues = []; closeCard()
+    clearTimeout(debounceTimer); debounceTimer = setTimeout(() => runGrammarCheck(field), 300)
   }
-
   function applyAllFixes() {
-    if (!activeField) return
-    let val = getText(activeField)
-    currentIssues.forEach(iss => { if (iss.original) val = val.replace(iss.original, iss.suggestion) })
-    if (activeField.value !== undefined) {
-      activeField.value = val
-    } else {
-      activeField.innerText = val
-    }
-    activeField.dispatchEvent(new Event('input', { bubbles: true }))
-    currentIssues = []
-    setFabState('clean')
-    closeCard()
+    if (!activeField || getText(activeField) !== checkedSnapshot) { closeCard(); return }
+    const field = activeField, issues = [...currentIssues].sort((a, b) => b.start - a.start)
+    removeInlineUnderlines()
+    for (const issue of issues) replaceFieldRange(field, issue.start, issue.end, issue.suggestion)
+    currentIssues = []; lastCheckedText = ''; closeCard(); setFabState('idle')
+    clearTimeout(debounceTimer); debounceTimer = setTimeout(() => runGrammarCheck(field), 300)
   }
 
   function closeCard() {
@@ -575,13 +574,14 @@
     if (!text || text.length < 2) return
     const builder = TOOLBAR_PROMPTS[action] || ((t) => t)
     const title = { explain: 'Explanation', rewrite_formal: 'Improved', rewrite_shorter: 'Shortened', summarize: 'Summary', translate: 'Translation' }[action] || 'Result'
+    const target = action.startsWith('rewrite') ? captureRewriteTarget(text) : null
 
     // Show a result card immediately with a loader
     showResultCard(title, null, true)
 
     try {
       const result = await callAI(builder(text), action.startsWith('rewrite') ? 'gemini/gemini-2.5-flash' : GRAMMAR_MODEL)
-      showResultCard(title, result || '(no response)', false, action.startsWith('rewrite') ? text : null, result)
+      showResultCard(title, result || '(no response)', false, target, result)
     } catch (err) {
       if (err.auth) {
         showResultCard(title, null, false, null, null, true)
@@ -628,17 +628,11 @@
     resultCard.querySelector('.cv-result-close')?.addEventListener('click', close)
     resultCard.querySelector('.cv-signin')?.addEventListener('click', () => chrome.runtime.sendMessage({ type: 'OPEN_AUTH' }))
     resultCard.querySelector('.cv-result-copy')?.addEventListener('click', (e) => {
-      navigator.clipboard.writeText(body || rewritten || '')
-      e.target.textContent = 'Copied ✓'
+      navigator.clipboard.writeText(body || rewritten || '').then(() => { e.target.textContent = 'Copied' }).catch(() => { e.target.textContent = 'Copy failed' })
     })
     resultCard.querySelector('.cv-result-apply')?.addEventListener('click', () => {
-      const sel = window.getSelection()
-      if (sel && sel.rangeCount > 0) {
-        const range = sel.getRangeAt(0)
-        range.deleteContents()
-        range.insertNode(document.createTextNode(rewritten || body))
-      }
-      close()
+      if (applyRewrite(originalForApply, rewritten || body)) close()
+      else resultCard.querySelector('.cv-result-apply').textContent = 'Draft changed. Copy this result instead.'
     })
   }
   function closeResultCard() {
@@ -652,22 +646,24 @@
 
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === 'GET_SELECTION') {
-      sendResponse({ text: window.getSelection().toString().trim() })
+      const field = document.activeElement
+      sendResponse({ text: isEditable(field) && field.value !== undefined ? field.value.slice(field.selectionStart, field.selectionEnd) : window.getSelection().toString().trim() })
     }
     if (msg.type === 'GET_PAGE_CONTENT') {
       sendResponse({ content: extractPage(), title: document.title, url: location.href })
     }
-    if (msg.type === 'TRIGGER_GRAMMAR' && activeField) {
-      runGrammarCheck(activeField)
+    if (msg.type === 'TRIGGER_GRAMMAR') {
+      if (activeField) { lastCheckedText = ''; runGrammarCheck(activeField) }
+      sendResponse({ ok: !!activeField })
     }
-    return true
+    return false
   })
 
   function extractPage() {
     const clone = document.body.cloneNode(true)
-    clone.querySelectorAll('script,style,nav,footer,header,aside,noscript,svg,.cv-toolbar,.cv-fab,.cv-card').forEach(n => n.remove())
+    clone.querySelectorAll('script,style,nav,footer,header,aside,noscript,svg,input,textarea,[contenteditable],[hidden],[aria-hidden="true"],[class^="cv-"]').forEach(n => n.remove())
     const main = clone.querySelector('main,article,[role="main"]') || clone
-    return (main.innerText || '').replace(/\n{3,}/g, '\n\n').trim().slice(0, 15000)
+    return (main.innerText || main.textContent || '').replace(/\n{3,}/g, '\n\n').trim().slice(0, 15000)
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -739,7 +735,7 @@
   // Lazily fetch the curated agent registry (cached for the page lifetime).
   async function fetchAgents() {
     if (agentsCache) return agentsCache
-    const res = await fetch(`${API_BASE}/agents`, { method: 'GET' })
+    const res = await apiRequest('/agents')
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
     agentsCache = {
@@ -904,17 +900,12 @@
   // Override RUN_ACTION to show diff view for rewrite actions
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === 'REWRITE_RESULT' && msg.original && msg.rewritten) {
+      const target = captureRewriteTarget(msg.original)
       showDiffView(msg.original, msg.rewritten, (accepted) => {
-        // Replace selection with accepted text
-        const sel = window.getSelection()
-        if (sel.rangeCount > 0) {
-          const range = sel.getRangeAt(0)
-          range.deleteContents()
-          range.insertNode(document.createTextNode(accepted))
-        }
+        if (!applyRewrite(target, accepted)) navigator.clipboard.writeText(accepted).catch(() => {})
       })
     }
-    return true
+    return false
   })
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -993,7 +984,7 @@
       const prompt = `You are an autocomplete engine. Given the text so far, predict the next 5-15 words the user is likely to type. Return ONLY the predicted continuation (no quotes, no explanation, no preamble).${goalsCtx}\n\nText so far: "${text.slice(-200)}"\n\nContinuation:`
       const suggestion = await callAI(prompt, 'groq/llama-3.1-8b')
       const clean = suggestion.trim().replace(/^["']|["']$/g, '').slice(0, 80)
-      if (clean.length > 3) {
+      if (clean.length > 3 && field === activeField && document.activeElement === field && getText(field).trim() === text && settings.smartCompose) {
         renderGhost(field, clean)
       }
     } catch {
@@ -1005,13 +996,8 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Tab' && ghostText && activeField && !e.shiftKey) {
       e.preventDefault()
-      const current = getText(activeField)
-      if (activeField.value !== undefined) {
-        activeField.value = current + ghostText
-      } else {
-        activeField.innerText = current + ghostText
-      }
-      activeField.dispatchEvent(new Event('input', { bubbles: true }))
+      const current = getText(activeField), continuation = ghostText
+      replaceFieldRange(activeField, current.length, current.length, continuation)
       // Move cursor to end
       if (activeField.setSelectionRange) {
         const len = activeField.value.length
@@ -1095,7 +1081,7 @@
             if (reply.trim()) {
               // Insert reply into compose box
               if (box.isContentEditable) {
-                box.innerHTML = `<div>${reply.trim().replace(/\n/g, '<br>')}</div>`
+                box.innerHTML = `<div>${esc(reply.trim()).replace(/\n/g, '<br>')}</div>`
               } else if (box.value !== undefined) {
                 box.value = reply.trim()
               }
@@ -1380,13 +1366,9 @@ Format: ${style.toUpperCase()}`
       // Send base64 image to Gemini Vision via our completions endpoint
       const prompt = `Analyze this screenshot. Describe what you see, identify any text, UI elements, errors, or notable content. Be detailed and helpful.`
       const messages = [
-        { role: 'user', content: `${prompt}\n\n![screenshot](${base64Image})` }
+        { role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: base64Image } }] }
       ]
-      const res = await fetch(`${API_BASE}/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ messages, model: 'gemini/gemini-2.5-flash', stream: false }),
-      })
+      const res = await apiRequest('/completions', { messages, model: 'gemini/gemini-2.5-flash', stream: false })
       if (!res.ok) return 'Analysis failed (HTTP ' + res.status + ')'
 
       const ct = res.headers.get('content-type') || ''
@@ -1445,56 +1427,22 @@ Format: ${style.toUpperCase()}`
 
   // ═══════════════════════════════════════════════════════════════════════════
   //  INLINE UNDERLINES — overlay colored wavy underlines on grammar errors
-  //  Works on contentEditable elements (Gmail, Notion, Google Docs, etc.)
+  //  Works on standard contenteditable fields where CSS Highlight is available.
   // ═══════════════════════════════════════════════════════════════════════════
 
   let underlineOverlay = null
 
   function showInlineUnderlines(field, issues) {
-    if (!field.isContentEditable || !settings.inlineUnderlines) return
     removeInlineUnderlines()
-
-    const text = field.innerText || ''
-    if (!text || issues.length === 0) return
-
-    underlineOverlay = document.createElement('div')
-    underlineOverlay.className = 'cv-underline-overlay'
-    underlineOverlay.setAttribute('aria-hidden', 'true')
-
-    // Copy field's computed styles for positioning
-    const cs = window.getComputedStyle(field)
-    underlineOverlay.style.cssText = `
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; overflow: hidden; z-index: 1;
-      font-family: ${cs.fontFamily}; font-size: ${cs.fontSize};
-      line-height: ${cs.lineHeight}; padding: ${cs.padding};
-      white-space: pre-wrap; word-break: break-word;
-      color: transparent;
-    `
-
-    // Build highlighted content
-    let html = text
-    // Sort issues by position (longest first to avoid overlap issues)
-    const sorted = [...issues].filter(i => i.original && text.includes(i.original))
-      .sort((a, b) => b.original.length - a.original.length)
-
-    sorted.forEach(iss => {
-      const typeClass = `cv-ul-${iss.type || 'grammar'}`
-      html = html.replace(
-        iss.original,
-        `<mark class="cv-underline-mark ${typeClass}" title="${esc(iss.reason || '')}">${esc(iss.original)}</mark>`
-      )
-    })
-    underlineOverlay.innerHTML = html
-
-    // Position relative to field
-    field.style.position = field.style.position || 'relative'
-    field.appendChild(underlineOverlay)
+    if (!field.isContentEditable || !settings.inlineUnderlines || !globalThis.CSS?.highlights || !globalThis.Highlight) return
+    for (const type of ['grammar', 'spelling', 'punctuation', 'clarity']) {
+      const ranges = issues.filter(issue => issue.type === type).map(issue => fieldRange(field, issue.start, issue.end)).filter(Boolean)
+      if (ranges.length) CSS.highlights.set(`codeva-${type}`, new Highlight(...ranges))
+    }
   }
-
   function removeInlineUnderlines() {
+    for (const type of ['grammar', 'spelling', 'punctuation', 'clarity']) globalThis.CSS?.highlights?.delete(`codeva-${type}`)
     if (underlineOverlay) { underlineOverlay.remove(); underlineOverlay = null }
-    document.querySelectorAll('.cv-underline-overlay').forEach(el => el.remove())
   }
 
   // Hook into grammar check results to show underlines
@@ -1614,20 +1562,27 @@ Transcript:
         viewportHeight: window.innerHeight,
         viewportWidth: window.innerWidth,
         devicePixelRatio: window.devicePixelRatio || 1,
+        scrollX: window.scrollX,
+        scrollY: window.scrollY,
       })
       return true
     }
     if (msg.type === 'SCROLL_TO') {
-      window.scrollTo(0, msg.y)
+      window.scrollTo({ left: 0, top: msg.y, behavior: 'instant' })
       // Hide our own UI during capture so it doesn't appear in the screenshot
       const fabEl = document.querySelector('.cv-fab')
       const tb = document.querySelector('.cv-toolbar')
-      if (fabEl) fabEl.style.visibility = msg.y === 0 ? '' : 'hidden'
+      if (fabEl) fabEl.style.visibility = 'hidden'
       if (tb) tb.style.display = 'none'
-      sendResponse({ ok: true })
+      sendResponse({ ok: true, y: window.scrollY })
       return true
+    }
+    if (msg.type === 'RESTORE_CAPTURE') {
+      window.scrollTo({ left: msg.x || 0, top: msg.y || 0, behavior: 'instant' })
+      fab.style.visibility = ''
+      sendResponse({ ok: true })
     }
   })
 
-  console.log('[Codeva] Content script ready v1.6 — hybrid intel, fullpage capture')
+  console.log('[Codeva] Browser workspace ready v1.4.0')
 })()

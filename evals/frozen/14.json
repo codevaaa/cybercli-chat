@@ -1,0 +1,25 @@
+{
+  "id": "codeva-14",
+  "prompt": "Build a expense diary app for two sample users. Keep each owner's rows private. Case 14.",
+  "pack": "general",
+  "spec": {
+    "will_build": [
+      "Everyone can see expense diary",
+      "Only I can see expense diary"
+    ],
+    "must_never": [
+      "Expose secrets"
+    ],
+    "acceptance": [
+      "Show expense diary after login"
+    ]
+  },
+  "expected": {
+    "original": true,
+    "pending_blocked": true,
+    "can_build": false,
+    "builder_hidden": true,
+    "missing_judge_blocks": true,
+    "missing_replay_fails": true
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "codeva-18",
+  "prompt": "Build a study cards app for two sample users. Keep each owner's rows private. Case 18.",
+  "pack": "general",
+  "spec": {
+    "will_build": [
+      "Everyone can see study cards",
+      "Only I can see study cards"
+    ],
+    "must_never": [
+      "Expose secrets"
+    ],
+    "acceptance": [
+      "Show study cards after login"
+    ]
+  },
+  "expected": {
+    "original": true,
+    "pending_blocked": true,
+    "can_build": false,
+    "builder_hidden": true,
+    "missing_judge_blocks": true,
+    "missing_replay_fails": true
+  }
+}

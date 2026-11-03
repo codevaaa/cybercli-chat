@@ -1,4 +1,6 @@
 import { Router } from 'express'
+import rateLimit from 'express-rate-limit'
+import { refreshEditorSession } from '../services/auth/editorSession.js'
 import { requireAuth } from '../middleware/auth.js'
 import supabase from '../config/supabase.js'
 import User from '../models/User.js'
@@ -14,6 +16,7 @@ import Workflow from '../models/Workflow.js'
 import ImageUsage from '../models/ImageUsage.js'
 
 const router = Router()
+router.post('/ide-refresh', rateLimit({ windowMs: 60000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false }), refreshEditorSession)
 
 // Client IP, honouring the proxy (Render/Vercel) forwarding header.
 function clientIp(req) {

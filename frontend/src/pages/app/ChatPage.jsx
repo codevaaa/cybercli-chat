@@ -12,6 +12,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
+import remarkGfm from 'remark-gfm'
+import ResponseActivity from '../../components/chat/ResponseActivity.jsx'
 import rehypeKatex from 'rehype-katex'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -320,39 +322,25 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
               </div>
             </div>
           ) : (
-            <div className="text-base text-foreground-primary prose-custom w-full pt-1 overflow-x-hidden break-words">
-              {isStreaming && (
-                <div className="mb-3">
-                  <details open className="group">
-                    <summary className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#D97757] opacity-80 cursor-pointer select-none">
-                      <div className="w-3 h-3 rounded-full border-[1.5px] border-[#D97757] border-t-transparent animate-spin" />
-                      <span className="group-open:hidden">Thinking...</span>
-                      <span className="hidden group-open:inline">Thinking</span>
-                      <span className="text-[9px] font-mono text-foreground-muted font-normal normal-case ml-1" id="thinking-timer"></span>
-                    </summary>
-                    {msg.thinkingContent && (
-                      <div className="mt-2 pl-5 text-xs text-foreground-muted/70 italic border-l-2 border-[#D97757]/20 leading-relaxed whitespace-pre-wrap">
-                        {msg.thinkingContent}
-                      </div>
-                    )}
-                  </details>
-                </div>
-              )}
+            <div className="text-[15px] sm:text-base leading-7 text-foreground-primary prose-custom min-w-0 w-full pt-1 break-words">
+              <ResponseActivity active={isStreaming} hasContent={Boolean(msg.content)} details={msg.thinkingContent} />
               <ReactMarkdown
-                remarkPlugins={[remarkMath]}
+                remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex]}
                 components={{
                   img: ({ src, alt }) => <ImageGeneratorWidget src={src} alt={alt} />,
+                  pre: ({ children }) => <div className="min-w-0">{children}</div>,
+                  table: ({ children }) => <div className="w-full overflow-x-auto my-4"><table>{children}</table></div>,
                   code({ node, inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '')
-                    if (!inline && match) {
-                      const lang = match[1].toLowerCase()
+                    if (match || String(children).endsWith('\n')) {
+                      const lang = match?.[1]?.toLowerCase() || 'text'
                       if (lang === 'pdf' || lang === 'docx' || lang === 'pptx') {
                         return <DocumentArtifact format={lang} content={String(children).replace(/\n$/, '')} />
                       }
                       return (
                         <CodeBlock
-                          language={match[1]}
+                          language={lang}
                           value={String(children).replace(/\n$/, '')}
                           codeExecutionEnabled={codeExecutionEnabled}
                         />
@@ -3384,6 +3372,8 @@ function ComingSoonView({ title, description }) {
 
 // ─── Main ChatPage ────────────────────────────────────────────────────────────
 
+import { readSSE } from '../../lib/readSSE.js'
+
 export default function ChatPage() {
   const { threadId } = useParams()
   const [showProModal, setShowProModal] = useState(false)
@@ -3398,6 +3388,17 @@ export default function ChatPage() {
   const [threads, setThreads] = useState([])
   const [threadsLoading, setThreadsLoading] = useState(true)
   const [loading, setLoading] = useState(false)
+  const chatRequestRef = useRef(null)
+  useEffect(() => {
+    const request = chatRequestRef.current
+    if (request && request.threadId !== threadId) {
+      request.controller.abort()
+      chatRequestRef.current = null
+      setStreamingIndex(null)
+      setLoading(false)
+    }
+  }, [threadId])
+  useEffect(() => () => chatRequestRef.current?.controller.abort(), [])
   
   // Project & Style State
   const [activeProject, setActiveProject] = useState(null)
@@ -3803,7 +3804,7 @@ export default function ChatPage() {
       if (creatingThreadRef.current === threadId) {
         creatingThreadRef.current = null
       } else {
-        loadMessages(threadId)
+        if (chatRequestRef.current?.threadId !== threadId) loadMessages(threadId)
       }
     } else {
       activeThreadIdRef.current = null
@@ -3884,6 +3885,7 @@ export default function ChatPage() {
     setError(null)
     try {
       const { data } = await api.get(`/chat/${id}/messages`)
+      if (activeThreadIdRef.current !== id) return
       setMessages(data.messages || [])
       const thread = threads.find(t => t._id === id)
       if (thread?.model_id) setSelectedModel(thread.model_id)
@@ -3892,9 +3894,9 @@ export default function ChatPage() {
       }
     } catch (err) {
       console.error('Failed to load messages:', err)
-      setError('Failed to load conversation.')
+      if (activeThreadIdRef.current === id) setError('Failed to load conversation.')
     } finally {
-      setLoading(false)
+      if (activeThreadIdRef.current === id) setLoading(false)
     }
   }
 
@@ -4646,187 +4648,89 @@ export default function ChatPage() {
     }
     const userMsg = { role: 'user', content: userText }
     const history = [...messages.map(m => ({ role: m.role, content: m.content })), userMsg, ...extraSystemMessages]
-
-    setMessages(prev => [...prev, userMsg])
-
-    // Setup streaming output bubble
-    const assistantMsg = { role: 'assistant', content: '', model: activeModel }
-    setMessages(prev => [...prev, assistantMsg])
-    const assistantIdx = messages.length + 1
-    setStreamingIndex(assistantIdx)
+    const clientId = crypto.randomUUID()
+    const controller = new AbortController()
+    chatRequestRef.current?.controller.abort()
+    chatRequestRef.current = { threadId: currentId, controller }
+    setMessages(prev => [...prev, userMsg, { role: 'assistant', content: '', model: activeModel, clientId }])
+    setStreamingIndex(messages.length + 1)
     let fullReply = ''
     let spokenIndex = 0
+    const updateResponse = patch => {
+      if (controller.signal.aborted) return
+      setMessages(prev => prev.map(message => message.clientId === clientId ? { ...message, ...(typeof patch === 'function' ? patch(message) : patch) } : message))
+    }
 
     try {
       const res = await fetch(`${API_BASE}/chat/${currentId}/messages`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
-          messages: history,
-          model: activeModel,
-          webSearchEnabled,
-          deepResearchEnabled,
-          codeExecutionEnabled,
-          imageGenerationEnabled,
-          memoryEnabled,
-          project_id: activeProject?._id || null,
-          style_id: activeStyle?._id || null,
-          effort: effortLevel,
-          thinking: thinkingEnabled,
-          agentId: selectedAgentId || null
-        })
+          messages: history, model: activeModel, webSearchEnabled, deepResearchEnabled,
+          codeExecutionEnabled, imageGenerationEnabled, memoryEnabled,
+          project_id: activeProject?._id || null, style_id: activeStyle?._id || null,
+          effort: effortLevel, thinking: thinkingEnabled, agentId: selectedAgentId || null,
+        }),
       })
       if (!res.ok) {
         if (res.status === 401) {
           await useAuthStore.getState().signOut()
           navigate('/auth/login')
-          return
-        }
-        if (res.status === 429) {
-          // Rate limited — extract retry time and show countdown
-          let retrySeconds = 60
-          try {
-            const errBody = await res.json()
-            retrySeconds = errBody.retryAfter || parseInt(res.headers.get('RateLimit-Reset')) || 60
-          } catch {}
-          setMessages(prev => {
-            const next = [...prev]
-            if (next.length > 0) {
-              next[next.length - 1] = { ...next[next.length - 1], content: `⏱️ Rate limit reached. Please wait ${retrySeconds} seconds...`, rateLimitUntil: Date.now() + retrySeconds * 1000 }
-            }
-            return next
-          })
-          setStreamingIndex(null)
-          setLoading(false)
           return false
         }
-        const errText = await res.text().catch(() => `HTTP ${res.status}`)
-        throw new Error(`Stream error ${res.status}: ${errText}`)
+        if (res.status === 429) {
+          const errBody = await res.json().catch(() => ({}))
+          const retrySeconds = Math.min(86400, Math.max(1, Number(errBody.retryAfter) || Number(res.headers.get('Retry-After')) || 60))
+          updateResponse({ content: `Rate limit reached. Please wait ${retrySeconds} seconds.`, rateLimitUntil: Date.now() + retrySeconds * 1000 })
+          return false
+        }
+        throw new Error(`Response failed (${res.status})`)
       }
-
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let streamBuffer = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        streamBuffer += decoder.decode(value, { stream: true })
-        
-        const lines = streamBuffer.split('\n')
-        // Preserve incomplete line for next packet
-        streamBuffer = lines.pop() || ''
-
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed.startsWith('data: ')) continue
-          const raw = trimmed.slice(6)
-          if (raw === '[DONE]') break
-          try {
-            const parsed = JSON.parse(raw)
-             if (parsed.type === 'token') {
-              fullReply += parsed.content
-              setMessages(prev => {
-                const next = [...prev]
-                if (next.length > 0) {
-                  next[next.length - 1] = { ...next[next.length - 1], content: fullReply }
-                }
-                return next
-              })
-
-              if (voiceChatOpenRef.current) {
-                const textSegment = fullReply.slice(spokenIndex)
-                const sentenceBoundaries = /[.!?]+(?=\s+|$)/g
-                let sentenceMatch
-                let lastPos = 0
-                while ((sentenceMatch = sentenceBoundaries.exec(textSegment)) !== null) {
-                  const endPos = sentenceMatch.index + sentenceMatch[0].length
-                  const sentence = textSegment.slice(lastPos, endPos).trim()
-                  if (sentence.length > 0) {
-                    speak(sentence)
-                  }
-                  lastPos = endPos
-                }
-                if (lastPos > 0) {
-                  spokenIndex += lastPos
-                }
-              }
-            } else if (parsed.type === 'info') {
-              setMessages(prev => {
-                const next = [...prev]
-                if (next.length > 0) {
-                  next[next.length - 1] = { ...next[next.length - 1], content: parsed.content }
-                }
-                return next
-              })
-            } else if (parsed.type === 'council_responses') {
-              // Store individual council model responses for visualization
-              try {
-                const councilData = JSON.parse(parsed.content)
-                setMessages(prev => {
-                  const next = [...prev]
-                  if (next.length > 0) {
-                    next[next.length - 1] = { ...next[next.length - 1], councilResponses: councilData }
-                  }
-                  return next
-                })
-              } catch {}
-            } else if (parsed.type === 'suggestions') {
-              // Store follow-up suggestions
-              setMessages(prev => {
-                const next = [...prev]
-                if (next.length > 0) {
-                  next[next.length - 1] = { ...next[next.length - 1], suggestions: parsed.content }
-                }
-                return next
-              })
-            } else if (parsed.type === 'error') {
-              setMessages(prev => {
-                const next = [...prev]
-                if (next.length > 0) {
-                  next[next.length - 1] = { ...next[next.length - 1], content: `Error: ${parsed.content}` }
-                }
-                return next
-              })
+      for await (const parsed of readSSE(res.body, controller.signal)) {
+        if (parsed.type === 'token') {
+          fullReply += parsed.content || ''
+          updateResponse({ content: fullReply })
+          if (voiceChatOpenRef.current) {
+            const textSegment = fullReply.slice(spokenIndex)
+            const boundaries = /[.!?]+(?=\s+|$)/g
+            let match, lastPos = 0
+            while ((match = boundaries.exec(textSegment)) !== null) {
+              const endPos = match.index + match[0].length
+              const sentence = textSegment.slice(lastPos, endPos).trim()
+              if (sentence) speak(sentence)
+              lastPos = endPos
             }
-          } catch {}
+            spokenIndex += lastPos
+          }
+        } else if (parsed.type === 'info') {
+          updateResponse(message => ({ thinkingContent: [message.thinkingContent, parsed.content].filter(Boolean).join('\n') }))
+        } else if (parsed.type === 'council_responses') {
+          try { updateResponse({ councilResponses: JSON.parse(parsed.content) }) } catch {}
+        } else if (parsed.type === 'suggestions') {
+          updateResponse({ suggestions: parsed.content })
+        } else if (parsed.type === 'error' || parsed.error) {
+          throw new Error(parsed.content || parsed.error?.message || parsed.error || 'Provider response failed')
         }
       }
-
+      controller.signal.throwIfAborted()
+      if (voiceChatOpenRef.current && fullReply.slice(spokenIndex).trim()) speak(fullReply.slice(spokenIndex).trim())
       await loadMessages(currentId)
       await loadThreads()
-
-      // Speak result if voice overlay is currently open
-      if (voiceChatOpenRef.current) {
-        const remaining = fullReply.slice(spokenIndex).trim()
-        if (remaining.length > 0) {
-          speak(remaining)
-        }
-      }
+      return true
     } catch (err) {
-      console.error('Chat stream error:', err)
-      const isNetworkError = err.message.includes('Failed to fetch')
-      const errorMessage = isNetworkError 
-        ? `Cannot reach server. (${err.name}: ${err.message}) [ID: ${currentId}]` 
-        : `Error: ${err.message}`
-        
-      setMessages(prev => {
-        const next = [...prev]
-        if (next.length > 0) {
-          next[next.length - 1] = { ...next[next.length - 1], content: errorMessage }
-        }
-        return next
-      })
+      if (controller.signal.aborted) return false
+      const errorMessage = err.message.includes('Failed to fetch') ? 'Cannot reach the server. Please check your connection.' : `Error: ${err.message}`
+      updateResponse({ content: fullReply ? `${fullReply}\n\n${errorMessage}` : errorMessage })
       setError(errorMessage)
       return false
     } finally {
-      setStreamingIndex(null)
-      setLoading(false)
+      if (chatRequestRef.current?.controller === controller) {
+        chatRequestRef.current = null
+        setStreamingIndex(null)
+        setLoading(false)
+      }
     }
-    return true
   }, [input, loading, activeThreadId, messages, selectedModel, selectedAgentId, webSearchEnabled, deepResearchEnabled, codeExecutionEnabled, imageGenerationEnabled, memoryEnabled, speak, incognitoMode, currentVoice, customInstructions, userPlan, effortLevel, thinkingEnabled])
 
   // ── User info (from state & localStorage) ──
@@ -5707,6 +5611,7 @@ export default function ChatPage() {
                     </div>
                     {/* Input pinned at bottom */}
                     <div className="px-3 py-3 sm:px-4 sm:py-4 border-t border-border-subtle bg-background-primary flex-shrink-0 chat-input-safe">
+                      {loading && chatRequestRef.current && <button onClick={() => chatRequestRef.current?.controller.abort()} className="block mx-auto mb-2 px-3 py-1.5 rounded-lg border border-white/15 text-xs text-text-secondary hover:text-white">Stop response</button>}
                       <InputArea
                         userPlan={userPlan}
                         onRequirePro={() => setShowProModal(true)}

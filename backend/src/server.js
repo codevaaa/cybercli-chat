@@ -12,7 +12,6 @@ import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import mongoSanitize from 'express-mongo-sanitize'
-import xss from 'xss-clean'
 import cookieParser from 'cookie-parser'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -35,6 +34,9 @@ import executeRoutes from './routes/execute.routes.js'
 import imagesRoutes from './routes/images.routes.js'
 import contactRoutes from './routes/contact.routes.js'
 import projectsRoutes from './routes/projects.routes.js'
+import dossierRoutes from './routes/dossier.routes.js'
+import { fork } from 'node:child_process'
+import { useFallbackMode } from './utils/fallbackDb.js'
 import stylesRoutes from './routes/styles.routes.js'
 import workflowsRoutes from './routes/workflows.routes.js'
 import inviteRoutes from './routes/invite.routes.js'
@@ -42,15 +44,16 @@ import feedbackRoutes from './routes/feedback.routes.js'
 import supportRoutes from './routes/support.routes.js'
 import cliRoutes from './routes/cli.routes.js'
 import downloadsRoutes from './routes/downloads.routes.js'
+import editorUpdatesRoutes from './routes/editorUpdates.routes.js'
 import v1Routes from './routes/v1.routes.js'
 import agentRoutes from './routes/agent.routes.js'
 import agentsRoutes from './routes/agents.routes.js'
 import ideRoutes from './routes/ide.routes.js'
-import platformRoutes from './routes/platform.routes.js'
 import statusRoutes from './routes/status.routes.js'
 import orgRoutes from './routes/org.routes.js'
 import huntRoutes from './routes/hunt.routes.js'
 import compareRoutes from './routes/compare.routes.js'
+import brahmaRoutes from './routes/brahma.routes.js'
 import http from 'http'
 import ApiKey from './models/ApiKey.js'
 import Feedback from './models/Feedback.js'
@@ -97,12 +100,6 @@ app.use(helmet({
   frameguard: { action: 'deny' },
 }))
 
-// Data Sanitization against NoSQL query injection
-app.use(mongoSanitize())
-
-// Data Sanitization against XSS
-app.use(xss())
-
 app.use(cors({
   origin: (origin, callback) => {
     const whitelist = process.env.FRONTEND_URL?.split(',') || []
@@ -126,7 +123,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-CLI-Session'],
 }))
 
 // Auth/API specific strict rate limiting
@@ -152,7 +149,7 @@ const limiter = rateLimit({
   handler: (req, res) => {
     res.status(429).json({
       error: 'Too many requests',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000),
+      retryAfter: Math.max(1, Math.ceil((Number(req.rateLimit.resetTime) - Date.now()) / 1000)),
     })
   },
 })
@@ -174,6 +171,8 @@ app.post('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }), (r
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use(cookieParser())
+// Parse the body before removing MongoDB operators from user input.
+app.use(mongoSanitize())
 
 // Request logging
 app.use(requestLogger)
@@ -221,6 +220,7 @@ app.use('/api/v1/images', imagesRoutes)
 app.use('/api/v1/art', imagesRoutes) // Alias for /images to bypass adblockers
 app.use('/api/v1/contact', contactRoutes)
 app.use('/api/v1/projects', projectsRoutes)
+app.use('/api/v1/studio', dossierRoutes)
 app.use('/api/v1/styles', stylesRoutes)
 app.use('/api/v1/workflows', workflowsRoutes)
 app.use('/api/v1/invite', inviteRoutes)
@@ -228,14 +228,15 @@ app.use('/api/v1/feedback', feedbackRoutes)
 app.use('/api/v1/support', supportRoutes)
 app.use('/api/v1/cli', cliRoutes)
 app.use('/api/v1/downloads', downloadsRoutes)
+app.use('/api/v1/editor-updates', editorUpdatesRoutes)
 app.use('/api/v1/agent',    agentRoutes)
 app.use('/api/v1/agents',   agentsRoutes) // Curated persona registry (agency-agents)
 app.use('/api/v1/ide',      ideRoutes)
-app.use('/api/v1/platform', platformRoutes)
 app.use('/api/v1/status', statusRoutes)
 app.use('/api/v1/orgs', orgRoutes)
 app.use('/api/v1/hunt', huntRoutes)
 app.use('/api/v1/compare', compareRoutes)
+app.use('/api/v1/brahma', brahmaRoutes)
 app.use('/v1', v1Routes)
 
 
@@ -327,6 +328,11 @@ connectMongoDB().then(async () => {
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`Codeva API server running on port ${PORT}`)
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
+    if (!useFallbackMode() && process.env.DOSSIER_WORKER_ENABLED !== 'false') {
+      const worker = fork(fileURLToPath(new URL('./services/dossier/worker.js', import.meta.url)), [], { stdio: 'inherit', windowsHide: true })
+      worker.on('error', () => console.error('Dossier worker could not start'))
+      process.once('exit', () => worker.kill())
+    }
 
     // ── Keep-alive self-ping (prevents Render cold-start) ──
     // Render free tier spins down after 15 min idle. Self-ping every 10 min keeps it warm.

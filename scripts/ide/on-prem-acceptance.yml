@@ -1,0 +1,29 @@
+# Test overlay for the same production profile; no replacement API/runtime.
+services:
+  api:
+    image: codeva-onprem-acceptance:local
+    ports: !override ["127.0.0.1:13891:3000"]
+    environment:
+      NODE_OPTIONS: --require /acceptance/network-audit.cjs
+      CODEVA_ACCEPTANCE_SERVICE: api
+      DOSSIER_PREVIEW_ORIGIN: http://127.0.0.1:13892
+    volumes:
+      - ./scripts/ide/on-prem-network-audit.cjs:/acceptance/network-audit.cjs:ro
+      - ./artifacts/codeva-editor/on-prem-audit:/acceptance-log
+  runtime:
+    image: codeva-onprem-acceptance:local
+    environment:
+      NODE_OPTIONS: --require /acceptance/network-audit.cjs
+      CODEVA_ACCEPTANCE_SERVICE: runtime
+    volumes:
+      - ./scripts/ide/on-prem-network-audit.cjs:/acceptance/network-audit.cjs:ro
+      - ./artifacts/codeva-editor/on-prem-audit:/acceptance-log
+  preview-api:
+    image: codeva-onprem-acceptance:local
+    ports: !override ["127.0.0.1:13892:3000"]
+    environment:
+      NODE_OPTIONS: --require /acceptance/network-audit.cjs
+      CODEVA_ACCEPTANCE_SERVICE: preview
+    volumes:
+      - ./scripts/ide/on-prem-network-audit.cjs:/acceptance/network-audit.cjs:ro
+      - ./artifacts/codeva-editor/on-prem-audit:/acceptance-log

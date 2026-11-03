@@ -1,0 +1,9 @@
+{
+  "displayName": "MrCodevaa",
+  "description": "MrCodevaa assistant for the existing Codeva project API",
+  "signIn": "MrCodevaa: Sign In",
+  "signOut": "MrCodevaa: Sign Out",
+  "apiBaseUrl": "Existing Codeva API base URL. HTTP is allowed only for loopback development.",
+  "webUrl": "Existing Codeva web login origin.",
+  "dossier": "MrCodevaa"
+}

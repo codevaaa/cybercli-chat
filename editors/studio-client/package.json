@@ -1,0 +1,104 @@
+{
+  "name": "codeva-studio",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "0.2.0",
+  "publisher": "codeva",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.139.0"
+  },
+  "main": "./extension.cjs",
+  "enabledApiProposals": ["defaultChatParticipant", "chatParticipantAdditions", "terminalSelection"],
+  "activationEvents": [
+    "onView:codeva.dossier",
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeva.signIn",
+        "title": "%signIn%"
+      },
+      {
+        "command": "codeva.signOut",
+        "title": "%signOut%"
+      },
+      { "command": "codeva.inlineEdit", "title": "MrCodevaa: Edit Selection" },
+      { "command": "codeva.reviewChanges", "title": "MrCodevaa: Review Agent Changes" },
+      { "command": "codeva.acceptChanges", "title": "MrCodevaa: Accept Diff", "icon": "$(check)" },
+      { "command": "codeva.rejectChanges", "title": "MrCodevaa: Reject Diff", "icon": "$(close)" },
+      { "command": "codeva.checkpoint", "title": "MrCodevaa: Restore Last Green Checkpoint" },
+      { "command": "codeva.openAgents", "title": "MrCodevaa: Open Projects" },
+      { "command": "codeva.openChat", "title": "MrCodevaa: Open Chat" },
+      { "command": "codeva.openSettings", "title": "MrCodevaa: Account and Settings" },
+      { "command": "codeva.openAccount", "title": "MrCodevaa: Codeva Account" },
+      { "command": "codeva.askAboutTerminal", "title": "MrCodevaa: Explain Selected Terminal Output" }
+    ],
+    "languageModelChatProviders": [{ "vendor": "codeva", "displayName": "Codeva" }],
+    "chatParticipants": [{ "id": "codeva.mrcodevaa", "name": "MrCodevaa", "fullName": "MrCodevaa", "description": "Codeva account chat and reviewed dossier builds", "isDefault": true, "modes": ["ask", "agent", "edit"], "commands": [{ "name": "plan", "description": "Create a project and review its specification" }, { "name": "build", "description": "Run the accepted dossier project" }, { "name": "fix", "description": "Propose a fix for user acceptance" }, { "name": "review", "description": "Review pending agent changes" }, { "name": "checkpoint", "description": "Restore the last green checkpoint" }] }],
+    "configuration": {
+      "title": "MrCodevaa",
+      "properties": {
+        "codeva.apiBaseUrl": {
+          "type": "string",
+          "default": "https://cybercli-api.onrender.com/api/v1",
+          "description": "%apiBaseUrl%"
+        },
+        "codeva.webUrl": {
+          "type": "string",
+          "default": "https://cybermindcli.info",
+          "description": "%webUrl%"
+        },
+        "codeva.localTabEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Local tab suggestions only; after 100ms nothing is shown. No chat fallback."
+        },
+        "codeva.chat.responseStyle": {
+          "type": "string", "enum": ["concise", "balanced", "detailed"], "default": "balanced",
+          "description": "Controls how concise or detailed Codeva chat responses should be."
+        },
+        "codeva.chat.responseLanguage": {
+          "type": "string", "enum": ["auto", "en", "hi"], "default": "auto",
+          "description": "Choose automatic language matching, English, or Hindi for Codeva responses."
+        },
+        "codeva.chat.agentId": {
+          "type": "string", "default": "",
+          "description": "Optional persona ID from Codeva's curated agent library. Choose a persona in the MrCodevaa sidebar."
+        }
+      }
+    },
+    "menus": {
+      "editor/context": [{ "command": "codeva.inlineEdit", "when": "editorHasSelection", "group": "MrCodevaa" }],
+      "terminal/context": [{ "command": "codeva.askAboutTerminal", "when": "terminalFocus", "group": "1_codeva" }],
+      "editor/title": [
+        { "command": "codeva.acceptChanges", "when": "resourceScheme == mrcodevaa-diff && codeva.hasReview", "group": "navigation" },
+        { "command": "codeva.rejectChanges", "when": "resourceScheme == mrcodevaa-diff && codeva.hasReview", "group": "navigation" }
+      ],
+      "view/title": [{ "command": "codeva.openAgents", "when": "view == codeva.dossier", "group": "navigation" }]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codeva",
+          "title": "MrCodevaa",
+          "icon": "./icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codeva": [
+        {
+          "type": "webview",
+          "id": "codeva.dossier",
+          "name": "%dossier%"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "test": "node --test *.test.cjs",
+    "build": "node --check extension.cjs && node --check client.cjs && node --check auth.cjs && node --check chat.cjs && node --check preview.cjs && node --check view.js"
+  }
+}

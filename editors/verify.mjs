@@ -1,0 +1,57 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import assert from 'node:assert/strict'
+import { fileURLToPath } from 'node:url'
+import { execFileSync } from 'node:child_process'
+import { IDE_PRODUCT_NAME, IDE_PRODUCTION_API, publicApiUrl } from '../shared/editor-release.mjs'
+const root = path.dirname(fileURLToPath(import.meta.url)), checkout = path.join(root, 'code-oss')
+const git = args => execFileSync('git', args, { cwd: checkout, encoding: 'utf8' }).trim()
+assert.equal(fs.readFileSync(path.join(checkout, 'BASE.txt'), 'utf8'), '1.139.0')
+assert.equal(git(['rev-parse', 'HEAD']), '2242ebbb54efeeb0129e08e919e7e8d43033cd83')
+assert.equal(git(['rev-parse', '1.139.0^{commit}']), git(['rev-parse', 'HEAD']))
+const old = JSON.parse(git(['show', 'HEAD:product.json'])), product = JSON.parse(fs.readFileSync(path.join(checkout, 'product.json'), 'utf8'))
+const allowed = ['nameShort', 'nameLong', 'applicationName', 'dataFolderName', 'win32MutexName', 'urlProtocol', 'extensionsGallery', 'extensionEnabledApiProposals', 'quality', 'updateUrl', 'downloadUrl', 'win32DirName', 'win32NameVersion', 'win32RegValueName', 'win32ShellNameShort', 'win32AppUserModelId', 'win32x64AppId', 'win32arm64AppId', 'win32x64UserAppId', 'win32arm64UserAppId', 'darwinBundleIdentifier', 'linuxDesktopName', 'linuxIconName', 'defaultChatAgent', 'builtInExtensionsEnabledWithAutoUpdates', 'trustedExtensionAuthAccess']
+for (const key of new Set([...Object.keys(old), ...Object.keys(product)])) if (!allowed.includes(key)) assert.deepEqual(product[key], old[key])
+assert.equal(product.nameLong, IDE_PRODUCT_NAME)
+assert.equal(product.extensionsGallery.serviceUrl, 'https://open-vsx.org/vscode/gallery')
+const manifest = JSON.parse(fs.readFileSync(path.join(checkout, 'extensions/codeva-studio/package.json'), 'utf8'))
+assert.equal(manifest.contributes.viewsContainers.activitybar.length, 1)
+assert.equal(manifest.contributes.configuration.properties['codeva.apiBaseUrl'].default, publicApiUrl(process.env.CODEVA_IDE_API_BASE_URL || IDE_PRODUCTION_API))
+assert.equal(product.updateUrl, `${manifest.contributes.configuration.properties['codeva.apiBaseUrl'].default}/editor-updates`)
+assert.equal(product.quality, 'stable')
+assert.equal(product.defaultChatAgent, undefined, 'GitHub entitlement service must not own Codeva chat')
+assert.ok(!product.builtInExtensionsEnabledWithAutoUpdates.some(id => id.toLowerCase() === 'github.copilot-chat'), 'Copilot Chat must not auto-install into MrCodevaa profiles')
+assert.ok(!Object.values(product.trustedExtensionAuthAccess).flat().some(id => id.toLowerCase() === 'github.copilot-chat'), 'Codeva profiles must not trust the Copilot Chat extension for GitHub auth')
+assert.deepEqual(product.extensionEnabledApiProposals['codeva.codeva-studio'], ['defaultChatParticipant', 'chatParticipantAdditions', 'terminalSelection'])
+assert.equal(manifest.contributes.chatParticipants[0].id, 'codeva.mrcodevaa')
+assert.equal(manifest.contributes.chatParticipants[0].isDefault, true)
+for (const file of ['extension.cjs', 'client.cjs', 'preview.cjs', 'view.js', 'view.css', 'workbench.cjs', 'auth.cjs', 'chat.cjs', 'session.cjs', 'features.cjs']) {
+  assert.equal(fs.readFileSync(path.join(checkout, 'extensions/codeva-studio', file), 'utf8'), fs.readFileSync(path.join(root, 'studio-client', file), 'utf8'))
+  assert.ok(!/llmGateway|DossierEngine|process\.env.*(?:API_KEY|PROVIDER)/.test(fs.readFileSync(path.join(root, 'studio-client', file), 'utf8')))
+}
+assert.ok(manifest.contributes.menus['terminal/context'].some(item => item.command === 'codeva.askAboutTerminal'))
+assert.ok(manifest.contributes.menus['view/title'].some(item => item.command === 'codeva.openAgents'))
+assert.ok(manifest.contributes.commands.some(command => command.command === 'codeva.openAgents' && command.title === 'MrCodevaa: Open Projects'))
+assert.equal(manifest.contributes.configuration.properties['codeva.chat.responseStyle'].default, 'balanced')
+assert.equal(manifest.contributes.configuration.properties['codeva.chat.responseLanguage'].default, 'auto')
+const chatSetup = fs.readFileSync(path.join(checkout, 'src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupContributions.ts'), 'utf8')
+assert.ok(chatSetup.includes("'Sign in to Codeva'"), 'Native sign-in must use the Codeva label')
+assert.ok(chatSetup.includes("executeCommand('codeva.signIn')"), 'Native sign-in must route through the Codeva account flow')
+const accounts = fs.readFileSync(path.join(checkout, 'src/vs/workbench/services/accounts/browser/defaultAccount.ts'), 'utf8')
+assert.ok(accounts.includes("executeCommand('codeva.signIn')"), 'Native Accounts must open Codeva sign-in')
+const projects = fs.readFileSync(path.join(checkout, 'src/vs/workbench/contrib/chat/electron-browser/agentSessions/agentSessionsActions.ts'), 'utf8')
+assert.ok(projects.includes("executeCommand('codeva.openAgents')"), 'Open Agents action must open Codeva projects')
+assert.ok(projects.includes('Open MrCodevaa Projects'), 'Project action must be branded')
+const about = fs.readFileSync(path.join(checkout, 'src/vs/platform/dialogs/electron-browser/dialog.ts'), 'utf8')
+assert.ok(about.includes("productService.applicationName === 'mrcodevaa'"), 'About must omit upstream Copilot runtime metadata in MrCodevaa')
+const walkthrough = fs.readFileSync(path.join(checkout, 'src/vs/workbench/contrib/chat/browser/agentSessions/agentSessionsBanner.ts'), 'utf8')
+assert.ok(walkthrough.includes('Open Codeva Projects'), 'The Agents walkthrough must use the Codeva project flow')
+const languageModels = fs.readFileSync(path.join(checkout, 'src/vs/workbench/api/common/extHostLanguageModels.ts'), 'utf8')
+assert.ok(languageModels.includes("extension.identifier.value.toLowerCase() === 'codeva.codeva-studio'"), 'Native Codeva chat must resolve its API-backed default model')
+const chatInput = fs.readFileSync(path.join(checkout, 'src/vs/workbench/contrib/chat/browser/widget/input/chatInputPart.ts'), 'utf8')
+assert.ok(!chatInput.includes("mode.isBuiltin ? { name: mode.name.get(), content: '', isBuiltin: true }"), 'Do not synthesize a partial mode request that omits chat variables')
+const colors = JSON.parse(fs.readFileSync(path.join(checkout, 'extensions/theme-defaults/themes/2026-dark.json'), 'utf8')).colors
+assert.equal(colors['button.background'], '#C4622D')
+assert.equal(colors['focusBorder'], '#C4622D')
+assert.equal(colors['editor.background'], '#0B0C0F')
+console.log('PASS exact 1.139.0 base, permitted branding, Open VSX and API-only sidebar source; native IDE boot is a separate acceptance gate.')

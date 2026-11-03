@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "benchmark": "Brahma V1 held-out capability checks; prompts are not included in training",
+  "tasks": [
+    {
+      "id": "coding-safe-first-item",
+      "category": "coding",
+      "prompt": "Write a TypeScript function first<T>(items: T[] | null | undefined): T | undefined that safely returns the first item. Include a tiny test example and explain the empty case.",
+      "max_new_tokens": 320,
+      "checks": ["Array.isArray", "undefined"]
+    },
+    {
+      "id": "ide-fill-in-middle-clamp",
+      "category": "ide_completion",
+      "prompt": "Complete only the missing expression. Prefix: export function clamp(value: number, min: number, max: number): number { return <FILL_ME>; }",
+      "max_new_tokens": 80,
+      "checks": ["Math.min", "Math.max"]
+    },
+    {
+      "id": "hinglish-debug",
+      "category": "hindi_hinglish",
+      "prompt": "Is Express route mein user ke input se Mongo query ban rahi hai. Hinglish mein safe fix samjhao aur short ESM code example do: User.find({name: req.query.name})",
+      "max_new_tokens": 300,
+      "checks": ["allowlist", "parameter"]
+    },
+    {
+      "id": "tool-use-read-file",
+      "category": "tool_use",
+      "prompt": "Inspect the generated UI component before proposing changes. Call read_file once with the relative path src/App.tsx.",
+      "max_new_tokens": 180,
+      "checks": ["read_file"],
+      "tools": [
+        {"type": "function", "function": {"name": "read_file", "description": "Read one file within the generated project workspace", "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"], "additionalProperties": false}}}
+      ]
+    },
+    {
+      "id": "image-understanding-settings",
+      "category": "image_understanding",
+      "prompt": "Read the visible title, input labels, and primary action from this screenshot. Do not invent controls that are not visible.",
+      "image": "fixtures/settings-screen.png",
+      "max_new_tokens": 180,
+      "checks": ["Account Settings", "Email", "Password", "Save changes"]
+    },
+    {
+      "id": "screenshot-to-react-ui",
+      "category": "screenshot_to_ui",
+      "prompt": "Create a React and TypeScript implementation of this settings screen. Return a concise component structure and JSX with semantic form labels, a responsive two-column desktop layout that stacks on mobile, and a visible Save changes button.",
+      "image": "fixtures/settings-screen.png",
+      "max_new_tokens": 520,
+      "checks": ["label", "input", "button", "Save changes"]
+    }
+  ]
+}

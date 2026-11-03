@@ -1,0 +1,30 @@
+{
+  "id": "codeva-32",
+  "prompt": "Build a stock ledger app for two sample users. Keep each owner's rows private. Case 32.",
+  "pack": "commerce",
+  "spec": {
+    "will_build": [
+      "Show owner stock ledger"
+    ],
+    "must_never": [
+      "Expose secrets"
+    ],
+    "acceptance": [
+      "Show stock ledger after login"
+    ]
+  },
+  "expected": {
+    "original": true,
+    "pending_blocked": true,
+    "can_build": true,
+    "builder_hidden": true,
+    "missing_judge_blocks": true,
+    "missing_replay_fails": true,
+    "material_supported": true,
+    "citation": true
+  },
+  "material": {
+    "text": "The stock ledger records inventory changes for stock ledger. Revenue records money received from sales.",
+    "question": "stock inventory"
+  }
+}

@@ -5,11 +5,14 @@
  * Landing → Sign In → Browser Auth → Deep Link → Desktop Chat
  */
 
-import { app, BrowserWindow, ipcMain, shell, dialog, Menu, Tray, nativeImage } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, dialog, Menu, Tray, nativeImage, Notification } from 'electron'
+import type { IpcMainInvokeEvent } from 'electron'
+import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
+import type { AppUpdater, UpdateInfo, ProgressInfo } from 'electron-updater'
 // Defer electron-updater load to prevent cold-start freezes
-let autoUpdater: any = null
+let autoUpdater: AppUpdater | null = null
 
 async function initAutoUpdater() {
   if (isDev) return null
@@ -36,27 +39,27 @@ async function initAutoUpdater() {
       mainWindow?.webContents.send('update:checking')
     })
 
-    autoUpdater.on('update-available', (info) => {
+    autoUpdater.on('update-available', (info: UpdateInfo) => {
       console.log('[Updater] Update available:', info?.version)
       mainWindow?.webContents.send('update:available', info)
     })
     
-    autoUpdater.on('update-not-available', (info) => {
+    autoUpdater.on('update-not-available', (info: UpdateInfo) => {
       console.log('[Updater] Already up-to-date:', info?.version)
       mainWindow?.webContents.send('update:none')
     })
     
-    autoUpdater.on('download-progress', (progressObj) => {
+    autoUpdater.on('download-progress', (progressObj: ProgressInfo) => {
       console.log('[Updater] Download progress:', Math.round(progressObj?.percent || 0) + '%')
       mainWindow?.webContents.send('update:progress', progressObj)
     })
     
-    autoUpdater.on('update-downloaded', (info) => {
+    autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
       console.log('[Updater] Update downloaded:', info?.version)
       mainWindow?.webContents.send('update:downloaded', info)
     })
     
-    autoUpdater.on('error', (err) => {
+    autoUpdater.on('error', (err: Error) => {
       const msg = err?.message || String(err)
       // Suppress the expected "no release yet" and network errors silently
       if (
@@ -78,7 +81,7 @@ async function initAutoUpdater() {
     // Check once on startup (deferred 20s so UI is fully rendered first)
     // then once every 4 hours while the app is open
     const doCheck = () => {
-      autoUpdater.checkForUpdates().catch((err) => {
+      autoUpdater?.checkForUpdates().catch((err: Error) => {
         const msg = (err?.message || '').slice(0, 120)
         if (!msg.includes('404') && !msg.includes('latest.yml') && !msg.includes('ENOTFOUND')) {
           console.error('[Updater] checkForUpdates error:', msg)
@@ -113,6 +116,51 @@ const RESOURCES_DIR = path.join(APP_ROOT, 'resources')
 const WEB_APP_URL = 'https://cybermindcli.info/chat'
 const WEB_AUTH_URL = 'https://cybermindcli.info/auth/login'
 const FRONTEND_DEV_URL = 'http://localhost:5173'
+
+function trustedRendererUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    if (url.protocol === 'file:') return ['landing.html', 'login.html', 'kalikal-hunter.html'].some(name => path.resolve(fileURLToPath(url)) === path.join(RENDERER_DIR, name))
+    return url.origin === new URL(WEB_APP_URL).origin || (isDev && url.origin === new URL(FRONTEND_DEV_URL).origin)
+  } catch { return false }
+}
+
+function handleIpc(channel: string, handler: (event: IpcMainInvokeEvent, ...args: any[]) => any) {
+  ipcMain.handle(channel, (event, ...args) => {
+    if (event.senderFrame !== event.sender.mainFrame || !trustedRendererUrl(event.senderFrame?.url || '')) throw new Error('Untrusted desktop IPC sender')
+    return handler(event, ...args)
+  })
+}
+
+const selectedFiles = new Map<number, Set<string>>()
+function fileGrants(event: IpcMainInvokeEvent) {
+  if (!selectedFiles.has(event.sender.id)) {
+    selectedFiles.set(event.sender.id, new Set())
+    event.sender.once('destroyed', () => selectedFiles.delete(event.sender.id))
+  }
+  return selectedFiles.get(event.sender.id)!
+}
+function requireSelectedFile(event: IpcMainInvokeEvent, value: string) {
+  if (typeof value !== 'string') throw new Error('Invalid file path')
+  const actual = fs.realpathSync(value)
+  if (!fileGrants(event).has(actual)) throw new Error('Select this file using the native file picker first')
+  if (fs.statSync(actual).size > 5 * 1024 * 1024) throw new Error('File exceeds the 5 MB limit')
+  return actual
+}
+
+app.on('web-contents-created', (_event, contents) => {
+  contents.on('will-attach-webview', event => event.preventDefault())
+  contents.on('will-navigate', (event, url) => {
+    if (!trustedRendererUrl(url)) {
+      event.preventDefault()
+      if (/^https?:\/\//.test(url)) shell.openExternal(url).catch(() => {})
+    }
+  })
+  contents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//.test(url)) shell.openExternal(url).catch(() => {})
+    return { action: 'deny' }
+  })
+})
 
 // ─── State ────────────────────────────────────────────────────
 
@@ -284,11 +332,8 @@ function createMainWindow(): BrowserWindow {  const win = new BrowserWindow({
 
   // External links open in system browser
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('http') && !url.includes('cybermindcli.info') && !url.includes('localhost')) {
-      shell.openExternal(url)
-      return { action: 'deny' }
-    }
-    return { action: 'allow' }
+    if (/^https?:\/\//.test(url)) shell.openExternal(url).catch(() => {})
+    return { action: 'deny' }
   })
 
   return win
@@ -511,24 +556,24 @@ function completeAuth(token: string, refresh: string = '') {
 // ─── IPC Handlers ───────────────────────────────────────────
 
 // Window controls — detect which window sent the message
-ipcMain.handle('window:minimize', (event) => {
+handleIpc('window:minimize', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)
   win?.minimize()
 })
 
-ipcMain.handle('window:maximize', (event) => {
+handleIpc('window:maximize', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)
   if (win?.isMaximized()) win.unmaximize()
   else win?.maximize()
 })
 
-ipcMain.handle('window:close', (event) => {
+handleIpc('window:close', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)
   win?.close()
 })
 
 // Auth flow: Landing → Sign In
-ipcMain.handle('auth:open-signin', () => {
+handleIpc('auth:open-signin', () => {
   console.log('[Codeva] IPC: auth:open-signin received')
   
   if (!loginWindow || loginWindow.isDestroyed()) {
@@ -546,7 +591,7 @@ ipcMain.handle('auth:open-signin', () => {
 })
 
 // Auth flow: Sign In → Back to Landing
-ipcMain.handle('auth:back-to-landing', () => {
+handleIpc('auth:back-to-landing', () => {
   console.log('[Codeva] IPC: auth:back-to-landing received')
   
   if (!landingWindow || landingWindow.isDestroyed()) {
@@ -563,7 +608,7 @@ ipcMain.handle('auth:back-to-landing', () => {
 })
 
 // Auth flow: Open browser for auth
-ipcMain.handle('auth:open-login', async (_event, opts?: { method?: string; email?: string }) => {
+handleIpc('auth:open-login', async (_event, opts?: { method?: string; email?: string }) => {
   console.log('[Codeva] IPC: auth:open-login, method:', opts?.method)
   
   // Start local auth server for robust callback handling
@@ -581,7 +626,7 @@ ipcMain.handle('auth:open-login', async (_event, opts?: { method?: string; email
 })
 
 // Auth flow: Complete (from deep link)
-ipcMain.handle('auth:complete', (_event, payload: any) => {
+handleIpc('auth:complete', (_event, payload: any) => {
   if (typeof payload === 'string') {
     completeAuth(payload, '')
   } else {
@@ -590,7 +635,7 @@ ipcMain.handle('auth:complete', (_event, payload: any) => {
 })
 
 // Landing → skip auth, go directly to main
-ipcMain.handle('landing:open-main', () => {
+handleIpc('landing:open-main', () => {
   console.log('[Codeva] IPC: landing:open-main received')
   
   if (!mainWindow || mainWindow.isDestroyed()) {
@@ -611,7 +656,7 @@ ipcMain.handle('landing:open-main', () => {
 })
 
 // Set session state
-ipcMain.handle('auth:set-session', (_event, hasSession: boolean) => {
+handleIpc('auth:set-session', (_event, hasSession: boolean) => {
   console.log('[Codeva] IPC: auth:set-session', hasSession)
   try {
     const sessionFile = path.join(app.getPath('userData'), 'session_state.json')
@@ -621,7 +666,7 @@ ipcMain.handle('auth:set-session', (_event, hasSession: boolean) => {
   }
 })
 
-ipcMain.handle('auth:save-token', (_event, payload: { token: string; expiresAt: number }) => {
+handleIpc('auth:save-token', (_event, payload: { token: string; expiresAt: number }) => {
   try {
     const authTokenFile = path.join(app.getPath('userData'), 'auth_token.json')
     fs.writeFileSync(authTokenFile, JSON.stringify(payload))
@@ -633,7 +678,7 @@ ipcMain.handle('auth:save-token', (_event, payload: { token: string; expiresAt: 
   }
 })
 
-ipcMain.handle('auth:clear-token', () => {
+handleIpc('auth:clear-token', () => {
   try {
     const authTokenFile = path.join(app.getPath('userData'), 'auth_token.json')
     const sessionFile = path.join(app.getPath('userData'), 'session_state.json')
@@ -645,14 +690,14 @@ ipcMain.handle('auth:clear-token', () => {
 })
 
 // App info
-ipcMain.handle('app:get-info', () => ({
+handleIpc('app:get-info', () => ({
   version: app.getVersion(),
   platform: process.platform,
   isPackaged: app.isPackaged,
 }))
 
 // Open Kali_Kal Hunter window (MAX plan users)
-ipcMain.handle('hunter:open', (_event, token?: string) => {
+handleIpc('hunter:open', (_event, token?: string) => {
   console.log('[Codeva] IPC: hunter:open received, token present:', !!token)
   if (!hunterWindow || hunterWindow.isDestroyed()) {
     hunterWindow = createHunterWindow()
@@ -678,7 +723,8 @@ import { spawn, type ChildProcess } from 'node:child_process'
 
 let hunterProcess: ChildProcess | null = null
 
-ipcMain.handle('hunter:spawn-local', async (_event, args: { target: string; command?: string }) => {
+handleIpc('hunter:spawn-local', async (_event, args: { target: string; command?: string }) => {
+  if (_event.sender !== hunterWindow?.webContents) throw new Error('Local engine is available only in the Hunter window')
   const { target, command = 'hunt' } = args
   
   // Find hunter-engine relative to app
@@ -703,6 +749,7 @@ ipcMain.handle('hunter:spawn-local', async (_event, args: { target: string; comm
     const pythonCmd = isWin ? 'python' : 'python3'
     hunterProcess = spawn(pythonCmd, [engineScript, command, '--target', target], {
       cwd: hunterDir,
+      windowsHide: true,
       env: { ...process.env, PYTHONUNBUFFERED: '1' },
     })
 
@@ -734,7 +781,7 @@ ipcMain.handle('hunter:spawn-local', async (_event, args: { target: string; comm
   }
 })
 
-ipcMain.handle('hunter:kill-local', () => {
+handleIpc('hunter:kill-local', () => {
   if (hunterProcess && !hunterProcess.killed) {
     hunterProcess.kill('SIGTERM')
     hunterProcess = null
@@ -744,46 +791,68 @@ ipcMain.handle('hunter:kill-local', () => {
 })
 
 // File system
-ipcMain.handle('fs:read-file', async (_event, filePath: string) => {
+handleIpc('fs:read-file', async (_event, filePath: string) => {
   try {
-    const content = await fs.promises.readFile(filePath, 'utf-8')
+    const content = await fs.promises.readFile(requireSelectedFile(_event, filePath), 'utf-8')
     return { success: true, content }
   } catch (err) {
     return { success: false, error: (err as Error).message }
   }
 })
 
-ipcMain.handle('fs:write-file', async (_event, filePath: string, content: string) => {
+handleIpc('fs:write-file', async (_event, filePath: string, content: string) => {
   try {
-    await fs.promises.writeFile(filePath, content, 'utf-8')
+    if (typeof content !== 'string' || Buffer.byteLength(content) > 5 * 1024 * 1024) throw new Error('Invalid or oversized file content')
+    const win = BrowserWindow.fromWebContents(_event.sender)
+    if (!win) throw new Error('No source window')
+    const destination = await dialog.showSaveDialog(win, { defaultPath: typeof filePath === 'string' ? path.basename(filePath) : 'export.txt' })
+    if (destination.canceled || !destination.filePath) return { success: false, canceled: true }
+    await fs.promises.writeFile(destination.filePath, content, 'utf-8')
+    fileGrants(_event).add(fs.realpathSync(destination.filePath))
     return { success: true }
   } catch (err) {
     return { success: false, error: (err as Error).message }
   }
 })
 
-ipcMain.handle('fs:select-file', async () => {
-  const win = mainWindow || landingWindow
+handleIpc('fs:select-file', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
   if (!win) return { success: false, error: 'No window' }
   const result = await dialog.showOpenDialog(win, {
     properties: ['openFile'],
   })
   if (result.canceled) return { success: false, canceled: true }
-  const content = await fs.promises.readFile(result.filePaths[0], 'utf-8')
+  fileGrants(event).add(fs.realpathSync(result.filePaths[0]))
+  const content = await fs.promises.readFile(requireSelectedFile(event, result.filePaths[0]), 'utf-8')
   return { success: true, path: result.filePaths[0], content }
 })
 
 // Drag & drop
-ipcMain.handle('dragdrop:read-files', async (_event, filePaths: string[]) => {
+handleIpc('dragdrop:read-files', async (_event, filePaths: string[]) => {
+  if (!Array.isArray(filePaths) || !filePaths.length || filePaths.length > 20 || filePaths.some(p => typeof p !== 'string')) throw new Error('Drop between 1 and 20 files')
+  const owner = BrowserWindow.fromWebContents(_event.sender)
+  if (!owner) throw new Error('Desktop window unavailable')
+  const requested = filePaths.map(p => fs.realpathSync(p))
+  const unapproved = requested.filter(p => !fileGrants(_event).has(p))
+  if (unapproved.length) {
+    const decision = await dialog.showMessageBox(owner, {
+      type: 'question', title: 'Read dropped files',
+      message: 'Allow CodeVaa to read these files or list these folders?',
+      detail: unapproved.join('\n'), buttons: ['Cancel', 'Allow'], defaultId: 0, cancelId: 0,
+    })
+    if (decision.response !== 1) return { success: false, cancelled: true, files: [] }
+    for (const selected of unapproved) fileGrants(_event).add(selected)
+  }
   const results = []
-  for (const fp of filePaths) {
+  for (const fp of requested) {
     try {
-      const stats = await fs.promises.stat(fp)
+      const approvedPath = requireSelectedFile(_event, fp)
+      const stats = await fs.promises.stat(approvedPath)
       if (stats.isDirectory()) {
-        const files = await fs.promises.readdir(fp)
+          const files = await fs.promises.readdir(approvedPath)
         results.push({ type: 'directory', path: fp, files })
       } else {
-        const content = await fs.promises.readFile(fp, 'utf-8')
+          const content = await fs.promises.readFile(approvedPath, 'utf-8')
         results.push({ type: 'file', path: fp, name: path.basename(fp), content, size: stats.size })
       }
     } catch (err) {
@@ -794,18 +863,17 @@ ipcMain.handle('dragdrop:read-files', async (_event, filePaths: string[]) => {
 })
 
 // Notifications
-ipcMain.handle('notify:show', (_event, title: string, body: string) => {
-  const { Notification } = require('electron')
+handleIpc('notify:show', (_event, title: string, body: string) => {
   new Notification({ title, body }).show()
 })
 
 // Auto-updater
-ipcMain.handle('update:restart', () => {
+handleIpc('update:restart', () => {
   if (autoUpdater) {
     autoUpdater.quitAndInstall()
   }
 })
-ipcMain.handle('update:check', async () => {
+handleIpc('update:check', async () => {
   try {
     const updater = await initAutoUpdater()
     if (!updater) return { success: false, error: 'Auto-updater not available' }
@@ -815,7 +883,7 @@ ipcMain.handle('update:check', async () => {
     return { success: false, error: (err as Error).message }
   }
 })
-ipcMain.handle('update:download', async () => {
+handleIpc('update:download', async () => {
   try {
     const updater = await initAutoUpdater()
     if (!updater) return { success: false, error: 'Auto-updater not available' }

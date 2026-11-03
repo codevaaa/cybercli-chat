@@ -505,3 +505,32 @@
 @media (max-width: 520px) {
   .cv-result-card { width: calc(100vw - 20px); }
 }
+
+/* Theme tokens are scoped to Codeva surfaces; the host page is never recolored. */
+:is(.cv-fab,.cv-card,.cv-toolbar,.cv-diff-card,.cv-result-card,.cv-slash-menu,.cv-pdf-bar) {
+  --cv-accent: #a94528; --cv-accent-2: #d97757; --cv-bg: #fffdfa; --cv-bg-2: #f2eee7;
+  --cv-border: #ded9d0; --cv-text: #292822; --cv-muted: #68655c;
+  --cv-green: #28734d; --cv-red: #b53036; --cv-yellow: #895a12;
+  color: var(--cv-text); font-family: 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
+  font-kerning: normal; text-rendering: optimizeLegibility;
+}
+[data-codeva-theme="dark"] :is(.cv-fab,.cv-card,.cv-toolbar,.cv-diff-card,.cv-result-card,.cv-slash-menu,.cv-pdf-bar) {
+  --cv-accent: #e39a7e; --cv-accent-2: #eeb69e; --cv-bg: #20211e; --cv-bg-2: #292a26;
+  --cv-border: #393b34; --cv-text: #eeeee7; --cv-muted: #b0b2a7; --cv-green: #8dcca4; --cv-red: #f4a4a7;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-codeva-theme="light"]):not([data-codeva-theme="dark"]) :is(.cv-fab,.cv-card,.cv-toolbar,.cv-diff-card,.cv-result-card,.cv-slash-menu,.cv-pdf-bar) {
+    --cv-accent: #e39a7e; --cv-accent-2: #eeb69e; --cv-bg: #20211e; --cv-bg-2: #292a26;
+    --cv-border: #393b34; --cv-text: #eeeee7; --cv-muted: #b0b2a7; --cv-green: #8dcca4; --cv-red: #f4a4a7;
+  }
+}
+.cv-card .cv-issue-reason, .cv-card .cv-card-empty, .cv-card .cv-card-clean { color: var(--cv-text); }
+.cv-check-scope { color: var(--cv-muted); font-size: 11px; margin: 0 0 10px; }
+.cv-diff-card, .cv-result-card { background: var(--cv-bg); color: var(--cv-text); }
+.cv-diff-card h3, .cv-diff-col { color: var(--cv-text); }
+.cv-card button:focus-visible, .cv-toolbar button:focus-visible, .cv-result-card button:focus-visible { outline: 2px solid var(--cv-accent); outline-offset: 2px; }
+::highlight(codeva-grammar) { text-decoration: underline wavy #c23940; text-underline-offset: 3px; }
+::highlight(codeva-spelling) { text-decoration: underline wavy #ad6a00; text-underline-offset: 3px; }
+::highlight(codeva-punctuation) { text-decoration: underline wavy #3876ba; text-underline-offset: 3px; }
+::highlight(codeva-clarity) { text-decoration: underline wavy #8d54ad; text-underline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .cv-fab, .cv-fab *, .cv-card, .cv-toolbar { animation: none !important; transition: none !important; } }

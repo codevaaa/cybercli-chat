@@ -1,0 +1,24 @@
+{
+  "id": "codeva-29",
+  "prompt": "Build a sales dashboard app for two sample users. Keep each owner's rows private. Case 29.",
+  "pack": "cs",
+  "spec": {
+    "will_build": [
+      "Show owner sales dashboard"
+    ],
+    "must_never": [
+      "Expose secrets"
+    ],
+    "acceptance": [
+      "Show sales dashboard after login"
+    ]
+  },
+  "expected": {
+    "original": true,
+    "pending_blocked": true,
+    "can_build": true,
+    "builder_hidden": true,
+    "missing_judge_blocks": true,
+    "missing_replay_fails": true
+  }
+}

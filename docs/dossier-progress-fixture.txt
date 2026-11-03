@@ -1,0 +1,5 @@
+id: 1
+data: {"seq":1,"time":"2026-10-01T06:02:49.019Z","project_id":"6abdf789611039a2511917da","state":"listen","agent_id":"Listener","provider":null,"model":null,"spec_line_ids":[],"kind":"prompt_saved"}
+
+: heartbeat
+

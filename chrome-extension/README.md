@@ -1,114 +1,67 @@
-# Codeva AI Chrome Extension
+# Codeva browser workspace — 1.4.0
 
-> AI-powered writing, grammar, coding, and research assistant. Grammarly + Claude-level intelligence on every webpage.
+A Manifest V3 Chrome extension connected to the same Codeva API as the web, desktop, and CyberCoder clients. Vanilla JavaScript, with no build step.
 
-## 35+ Features
+## Working core
 
-### Writing & Grammar (Grammarly-level)
-1. **Real-time grammar checking** — Underlines errors as you type
-2. **Spelling correction** — Auto-detects and suggests fixes
-3. **Punctuation fixes** — Missing commas, periods, colons
-4. **Tone detection** — Professional/casual/confident/friendly
-5. **Rewrite → Formal** — One-click professional rewrite
-6. **Rewrite → Casual** — Make text conversational
-7. **Make Shorter** — Condense without losing meaning
-8. **Expand / Elaborate** — Add detail and examples
-9. **Fix Tone** — Business-appropriate communication
-10. **Sentence clarity** — Simplify complex sentences
-11. **Passive voice detection** — Suggests active alternatives
-12. **Word choice suggestions** — Better vocabulary alternatives
-13. **Readability score** — Flesch-Kincaid grade level
+- **Assistant:** streaming chat, stop, retry/regenerate, escaped Markdown, copy, account-scoped local conversations, draft recovery, search, delete with undo, and Markdown export.
+- **Page assistance:** explicitly attach the current webpage or use Summarize/Explain actions. The request includes the page title, source URL, and up to 15,000 characters of readable text. Text inside form controls is excluded from page extraction.
+- **Writing workspace:** proofread up to 6,000 characters, review each suggestion, dismiss or apply changes, copy the revised draft, and request a professional/friendly/shorter/expanded version in chat.
+- **On-page writing:** debounced AI checks with local spelling fallback, exact position fixes, stale response protection, and CSS highlights in supported contenteditable fields. Applying fixes preserves unrelated rich text markup.
+- **Appearance:** system theme by default, with persistent light/dark overrides. Settings and content surfaces follow the same preference.
+- **Account:** website login sync from the exact HTTPS Codeva origins, session refresh/logout sync, a working extension sign-out, and expired-token handling that preserves newer sessions.
+- **Capture:** bounded full-page screenshot capture with a session-only preview and PNG download. Keep the source tab selected during capture. Sticky headers and dynamic page layout can still appear in captures.
 
-### Research & Understanding
-14. **Explain This** — ELI5 any selected text
-15. **Summarize** — Bullet-point summaries of selections
-16. **Summarize Page** — Full webpage summarization
-17. **Extract Key Points** — Top 5 insights from any page
-18. **Define Word/Term** — Instant dictionary + examples
-19. **Translate** — Any language → English/Hindi/etc.
-20. **Ask About Page** — Q&A about current page content
-21. **Citation Generator** — Generate APA/MLA/Chicago citations
+Model choices come from `/api/v1/models`, with automatic routing available if the catalog is unavailable. Catalog names are server-side product aliases; the gateway resolves providers and applies account plans. A product name does not guarantee a particular upstream model or quality level.
 
-### Code Assistance
-22. **Explain Code** — Step-by-step code explanation
-23. **Improve Code** — Performance + readability improvements
-24. **Debug/Find Bugs** — Identify issues and security flaws
-25. **Convert Language** — JS↔Python↔Rust↔Go etc.
-26. **Generate Tests** — Write unit tests for selected code
-27. **Add Comments** — Document code with clear comments
-28. **Regex Helper** — Explain or generate regex patterns
+## Install locally
 
-### Security (Unique to Codeva)
-29. **Security Header Scan** — Check any site's security headers
-30. **Cookie Analysis** — Flag insecure cookies
-31. **CSP Audit** — Content Security Policy checker
-32. **CORS Check** — Cross-origin misconfiguration detection
+1. Open `chrome://extensions` and enable **Developer mode**.
+2. Choose **Load unpacked** and select this `chrome-extension` folder, or extract the release ZIP and select its folder.
+3. After updating, click **Reload** on the extension and reload existing webpages so their content scripts update.
+4. Click Codeva’s toolbar icon. Sign in at https://cybermindcli.info if needed; an already signed-in website tab should be reloaded once.
+5. Use **Assistant**, **Writing**, and **History**. The header theme button cycles System → Light → Dark; Settings offers a direct choice.
 
-### Productivity
-33. **Floating Selection Toolbar** — Quick actions on text select
-34. **Side Panel Chat** — Full chat interface alongside any page
-35. **Keyboard Shortcuts** — Ctrl+Shift+C (popup), Ctrl+Shift+S (side panel), Ctrl+Shift+G (grammar)
-36. **Context Menu Integration** — Right-click for all actions
-37. **Page Screenshot + Vision** — Capture and analyze with AI
+Shortcuts: Ctrl+Shift+S opens the panel; Ctrl+Shift+G checks the active writing field. macOS uses Command. Chrome may reserve a shortcut; customize it at `chrome://extensions/shortcuts`.
 
-## Architecture
+## Backend and rollout
 
-```
-chrome-extension/
-├── manifest.json              # Manifest V3
-├── src/
-│   ├── background/           # Service worker (context menus, auth, API)
-│   │   └── service-worker.js
-│   ├── content/              # Content script (grammar, toolbar, page extraction)
-│   │   └── content.js
-│   ├── popup/                # Quick action popup (360x400px)
-│   │   ├── popup.html
-│   │   └── popup.js
-│   ├── sidepanel/            # Full chat side panel
-│   │   ├── sidepanel.html
-│   │   └── sidepanel.js
-│   ├── options/              # Settings page
-│   │   └── options.html
-│   ├── styles/               # CSS files
-│   │   ├── content.css
-│   │   ├── popup.css
-│   │   └── sidepanel.css
-│   └── lib/                  # Shared utilities
-└── assets/
-    └── icons/                # Extension icons (16/32/48/128px)
+Production API: `https://cybercli-api.onrender.com/api/v1`.
+Website: `https://cybermindcli.info` (also supports the `www` origin).
+
+The matching backend changes are in `backend/src/routes/completions.routes.js` and `backend/src/services/writing/grammar.js`. Deploy those with the existing backend before expecting the new 6,000-character proofreading contract, validation, per-account caching/rate limit, model alias fix, and stream cancellation behavior in production. This source update does not deploy itself.
+
+The grammar endpoint requires authentication and allows 30 checks per minute per account per backend process. It returns HTTP 400 for invalid input, 401 for missing/invalid auth, 429 for excess requests, and 502 when valid proofreading output is unavailable. The main API limiter also applies. Invalid provider JSON is an error, rather than an “all clear”.
+
+## Privacy and storage
+
+- Chat/page requests and writing text are processed through Codeva’s API and its configured AI providers.
+- When automatic grammar or Smart Compose is enabled, text in supported writing fields is sent while typing. Disable them in Settings to submit text manually instead. Password, payment, and recognizable secret/token fields are excluded; this is a heuristic, so disable automatic assistance on sensitive sites.
+- Page context is off by default. It is read when selected by the user and refreshed from the active tab before sending.
+- Conversations and drafts are saved in `chrome.storage.local`, separately by account. They are browser-local, not synchronized to the web app’s MongoDB chat history. Settings can clear the current account’s history.
+- Full-page captures live in `chrome.storage.session` until the browser session ends. Capture pages are not web-accessible resources.
+- No provider API keys are bundled. The extension uses the user’s website access token, validated by the backend.
+
+## Compatibility limits
+
+Chrome internal pages, the Chrome Web Store, and some built-in PDF/canvas editors cannot be read or edited by ordinary content scripts. Textareas, text inputs, and standard contenteditable fields are the tested baseline. Specialized editors may need site-specific adapters. Formatting is preserved for grammar replacements outside the changed range; a rewrite intentionally replaces the selected range with plain text.
+
+Older code for slash prompts, Gmail/LinkedIn replies, YouTube captions, PDF overlays, citations, and snippets remains in the repository. It depends on website DOM structure/caption access and is not included in the new core compatibility claim. The legacy popup is not the toolbar entry point. This release does not certify those integrations or claim ChatGPT/Grammarly feature parity, security scanner coverage, or exhaustive language support.
+
+## Validation
+
+From this folder:
+
+```powershell
+npm test
+npm run test:browser
 ```
 
-## Install (Development)
+The browser suite uses Playwright installed with `backend` and its Chromium runtime. It loads the real unpacked extension, uses mocked backend responses and an article/editor fixture, and checks UI/extension integration. It does not spend production provider quota or certify live authenticated model output. Screenshots are saved under `artifacts/extension` in the repository.
 
-1. Open `chrome://extensions`
-2. Enable "Developer mode"
-3. Click "Load unpacked"
-4. Select the `chrome-extension/` directory
+From the backend folder:
 
-## Authentication
-
-Users must sign in to cybermindcli.info. The extension automatically captures the auth token when the user logs in on the website. No separate login flow needed.
-
-## Tech Stack
-
-- **Manifest V3** (latest Chrome extension standard)
-- **Vanilla JS** (no build step needed — loads directly)
-- **Codeva API** (streaming SSE for real-time responses)
-- **Chrome Side Panel API** (persistent chat alongside any page)
-- **Context Menus API** (right-click integration)
-- **Storage API** (settings + auth persistence)
-
-## Competitors Covered
-
-| Feature | Grammarly | Claude Ext. | Codeva |
-|---------|-----------|------------|--------|
-| Grammar check | ✅ | ❌ | ✅ |
-| Spelling | ✅ | ❌ | ✅ |
-| Tone detection | ✅ | ❌ | ✅ |
-| Rewrite options | ✅ | ✅ | ✅ |
-| Code assistance | ❌ | ✅ | ✅ |
-| Security scan | ❌ | ❌ | ✅ |
-| Page summarize | ❌ | ✅ | ✅ |
-| Side panel chat | ❌ | ✅ | ✅ |
-| Translate | ❌ | ✅ | ✅ |
-| Free tier | ❌ ($12/mo) | ❌ ($20/mo) | ✅ |
+```powershell
+npm test
+node --experimental-test-module-mocks --experimental-test-coverage --test-coverage-include=src/services/writing/grammar.js --test src/routes/completions.extension.test.js
+```

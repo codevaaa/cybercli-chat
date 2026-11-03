@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "nvidia/OpenCodeInstruct",
+      "revision": "8f3ba5bafe4d6e8db46082cf7ae6741bc370604d",
+      "purpose": "Filtered text coding instructions with execution/test metadata",
+      "license": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "NVIDIA Corporation; OpenCodeInstruct",
+      "mode": "stream_subset",
+      "max_rows": 12000,
+      "filter": "average_test_score >= 0.9; at least 90% of unit tests pass; bounded lengths; deterministic 5% held-out split",
+      "status": "approved_for_filtered_download",
+      "allowed_for_training": true,
+      "evaluation_split": "not used"
+    },
+    {
+      "id": "HuggingFaceM4/WebSight",
+      "revision": "b11f8172f89c992b56ac702319e02c428cca4a4e",
+      "purpose": "Screenshot-to-HTML/CSS examples",
+      "license": "CC-BY-4.0; card also requests honoring underlying source licenses",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "HuggingFaceM4; WebSight dataset",
+      "mode": "stream_subset",
+      "max_rows": 2000,
+      "filter": "valid image/code pairs; source terms/provenance reviewed; exact and near duplicates removed",
+      "allowed_for_training": false,
+      "blocked_reason": "Enable only after sample-level underlying-source license review is recorded."
+    },
+    {
+      "id": "justmalhar/fluent-dev",
+      "revision": "10db9c345bcff2d0d7904adfcd55f307031cb1a5",
+      "purpose": "UI-component screenshot-to-HTML/CSS examples",
+      "license": "MIT (dataset card)",
+      "license_url": "https://opensource.org/license/mit/",
+      "attribution": "Fluent Dev UI Dataset; justmalhar",
+      "mode": "stream_subset",
+      "max_rows": 1646,
+      "filter": "valid image/code pairs; exact duplicates removed; use official validation split for evaluation",
+      "status": "approved_for_filtered_download",
+      "allowed_for_training": true,
+      "evaluation_split": "official validation split",
+      "source_rights_note": "Dataset card states MIT; component source contributors and their original source licenses are not enumerated. Re-review this dataset card and rights before any public checkpoint release."
+    },
+    {
+      "id": "CodeVaa/synthetic-seed",
+      "purpose": "React/TypeScript/Node FIM and tool-use traces",
+      "license": "CodeVaa-authored synthetic examples",
+      "mode": "local_curated",
+      "max_rows": 7,
+      "filter": "Only the seven synthetic rows in prepare_data.py; no repository source is included",
+      "status": "approved_for_filtered_download",
+      "allowed_for_training": true,
+      "evaluation_split": "not used"
+    },
+    {
+      "id": "CodeVaa/repository-samples",
+      "purpose": "Future internal FIM and tool-use traces",
+      "license": "Per-file rights and contributor review required",
+      "mode": "local_curated",
+      "max_rows": 0,
+      "filter": "No secrets; per-file authorship and rights attestation; tests pass; source-level held-out split",
+      "allowed_for_training": false,
+      "blocked_reason": "No project files are currently approved for training."
+    }
+  ]
+}

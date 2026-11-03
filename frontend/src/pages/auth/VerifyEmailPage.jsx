@@ -1,19 +1,32 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { editorAuthQuery } from '../../lib/editorAuth.js'
+import { supabase } from '../../lib/supabase.js'
+import { useAuthStore } from '../../stores/authStore.js'
 import { Mail, RefreshCw, Check } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { CodevaMark } from '../../components/ui/CodevaLogo'
 import { Tooltip } from '../../components/ui/Tooltip.jsx'
 
 export default function VerifyEmailPage() {
+  const [params] = useSearchParams()
+  const email = useAuthStore(state => state.user?.email)
   const [resent, setResent] = useState(false)
   const [resending, setResending] = useState(false)
+  const [error, setError] = useState('')
+  let query = ''
+  try { query = editorAuthQuery(params) } catch { /* Invalid targets never receive a session. */ }
 
   const handleResend = async () => {
     setResending(true)
-    await new Promise(r => setTimeout(r, 1200))
-    setResending(false)
-    setResent(true)
+    setError('')
+    try {
+      if (!email) throw new Error('Return to sign up to enter the email address you want to verify.')
+      const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${window.location.origin}/auth/callback?action=signup${query ? `&${query}` : ''}` } })
+      if (error) throw error
+      setResent(true)
+    } catch (err) { setError(err.message) }
+    finally { setResending(false) }
   }
 
   return (
@@ -77,6 +90,7 @@ export default function VerifyEmailPage() {
 
             {/* Resend actions */}
             <div className="space-y-3 pt-2">
+              {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
               {resent ? (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
@@ -100,7 +114,7 @@ export default function VerifyEmailPage() {
               )}
 
               <Link
-                to="/auth/login"
+                to={`/auth/login${query ? `?${query}` : ''}`}
                 className="w-full flex items-center justify-center py-3 rounded-xl border border-border-subtle text-foreground-secondary text-sm hover:border-accent hover:text-accent font-semibold transition-all"
               >
                 Already verified? Sign in
@@ -116,4 +130,3 @@ export default function VerifyEmailPage() {
     </div>
   )
 }
-

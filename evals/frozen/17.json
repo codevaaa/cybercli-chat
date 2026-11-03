@@ -1,0 +1,25 @@
+{
+  "id": "codeva-17",
+  "prompt": "Build a course tracker app for two sample users. Keep each owner's rows private. Case 17.",
+  "pack": "general",
+  "spec": {
+    "will_build": [
+      "Everyone can see course tracker",
+      "Only I can see course tracker"
+    ],
+    "must_never": [
+      "Expose secrets"
+    ],
+    "acceptance": [
+      "Show course tracker after login"
+    ]
+  },
+  "expected": {
+    "original": true,
+    "pending_blocked": true,
+    "can_build": false,
+    "builder_hidden": true,
+    "missing_judge_blocks": true,
+    "missing_replay_fails": true
+  }
+}

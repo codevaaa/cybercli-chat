@@ -6,6 +6,7 @@ import { useAuthStore } from '../../stores/authStore.js'
 import { CodevaMark } from '../../components/ui/CodevaLogo'
 import { Tooltip } from '../../components/ui/Tooltip.jsx'
 import { supabase } from '../../lib/supabase.js'
+import { editorAuthQuery, returnToEditor } from '../../lib/editorAuth.js'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -17,6 +18,9 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [focusedField, setFocusedField] = useState(null)
+  const [editorError, setEditorError] = useState('')
+  const editorReturn = current => { try { return returnToEditor(current, searchParams) } catch (err) { setEditorError(err.message); return true } }
+  const editorQuery = redirect === 'ide' ? (() => { try { return editorAuthQuery(searchParams) } catch { return '' } })() : ''
 
   const method = searchParams.get('method') || ''
 
@@ -30,7 +34,7 @@ export default function LoginPage() {
         window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token)}`
         return
       } else if (redirect === 'ide') {
-        window.location.href = `codevaa://auth?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token)}`
+        editorReturn(session)
         return
       } else {
         navigate(redirect || '/chat')
@@ -48,14 +52,14 @@ export default function LoginPage() {
     try {
       let nextPath = redirect || '/chat'
       let callbackQuery = `?action=login&next=${encodeURIComponent(nextPath)}`
-      
+
       if (redirect === 'cli' && port) {
         // Pass redirect and port directly to AuthCallbackPage so it intercepts it
         callbackQuery = `?action=login&redirect=cli&port=${port}`
       } else if (redirect === 'desktop') {
         callbackQuery = `?action=login&redirect=desktop`
       } else if (redirect === 'ide') {
-        callbackQuery = `?action=login&redirect=ide`
+        callbackQuery = `?action=login&${editorAuthQuery(searchParams)}`
       }
 
       const redirectTo = `${window.location.origin}/auth/callback${callbackQuery}`
@@ -68,6 +72,7 @@ export default function LoginPage() {
         window.location.href = data.url
       }
     } catch (err) {
+      if (redirect === 'ide') setEditorError(err.message)
       console.error('Google Sign In error:', err)
     }
   }
@@ -87,7 +92,7 @@ export default function LoginPage() {
       } else if (redirect === 'ide') {
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
-          window.location.href = `codevaa://auth?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token || '')}`
+          editorReturn(session)
         }
       } else {
         navigate(redirect || '/chat')
@@ -126,14 +131,14 @@ export default function LoginPage() {
         {/* Auth Card Container */}
         <div className="w-full bg-background-elevated border border-border-subtle rounded-2xl p-8 sm:p-10 shadow-[0_4px_24px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_32px_rgba(0,0,0,0.2)] transition-all duration-300">
           <AnimatePresence>
-            {error && (
+            {(error || editorError) && (
               <motion.div
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 className="mb-6 p-3.5 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-500 font-medium"
               >
-                {error}
+                {error || editorError}
               </motion.div>
             )}
           </AnimatePresence>
@@ -250,12 +255,12 @@ export default function LoginPage() {
         <div className="text-center mt-6 space-y-2">
           <p className="text-xs text-foreground-secondary/80">
             Don&apos;t have an account?{' '}
-            <Link to="/auth/signup" className="text-accent hover:underline font-semibold transition-all">
+            <Link to={`/auth/signup${editorQuery ? `?${editorQuery}` : ''}`} className="text-accent hover:underline font-semibold transition-all">
               Sign up free
             </Link>
           </p>
           <p>
-            <Link to="/auth/magic-link" className="text-[11px] text-foreground-secondary/40 hover:text-foreground-secondary hover:underline transition-colors font-medium">
+            <Link to={`/auth/magic-link${editorQuery ? `?${editorQuery}` : ''}`} className="text-[11px] text-foreground-secondary/40 hover:text-foreground-secondary hover:underline transition-colors font-medium">
               Use magic link instead →
             </Link>
           </p>

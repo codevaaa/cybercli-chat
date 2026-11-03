@@ -1,0 +1,30 @@
+{
+  "id": "codeva-35",
+  "prompt": "Build a library loans app for two sample users. Keep each owner's rows private. Case 35.",
+  "pack": "commerce",
+  "spec": {
+    "will_build": [
+      "Show owner library loans"
+    ],
+    "must_never": [
+      "Expose secrets"
+    ],
+    "acceptance": [
+      "Show library loans after login"
+    ]
+  },
+  "expected": {
+    "original": true,
+    "pending_blocked": true,
+    "can_build": true,
+    "builder_hidden": true,
+    "missing_judge_blocks": true,
+    "missing_replay_fails": true,
+    "material_supported": true,
+    "citation": true
+  },
+  "material": {
+    "text": "The stock ledger records inventory changes for library loans. Revenue records money received from sales.",
+    "question": "stock inventory"
+  }
+}

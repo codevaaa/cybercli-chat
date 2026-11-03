@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID as uuidv4 } from 'node:crypto'
 import CLISession from '../models/CLISession.js'
 import KnowledgeGraph from '../models/KnowledgeGraph.js'
 import UsageAnalytics from '../models/UsageAnalytics.js'

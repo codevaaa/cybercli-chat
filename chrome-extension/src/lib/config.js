@@ -41,72 +41,91 @@ export async function getUser() {
  * @param {Function} opts.onDone
  * @param {Function} opts.onError
  */
-export async function streamCompletion({ messages, model = 'codeva-ravan-v1', onToken, onInfo, onDone, onError }) {
-  const token = await getToken()
-  if (!token) {
-    onError?.({ auth: true, message: 'Please sign in to Codeva' })
-    return
-  }
+export async function clearExpiredToken(expectedToken) {
+  if (await getToken() === expectedToken) await chrome.storage.local.remove(['authToken', 'userInfo'])
+}
 
+export async function apiJSON(path, { method = 'GET', body, signal } = {}) {
+  const token = await getToken()
+  const res = await fetch(`${API_BASE}${path}`, {
+    method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(20000),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (res.status === 401) await clearExpiredToken(token)
+  if (!res.ok || data.error) {
+    const error = new Error(typeof data.error === 'string' ? data.error : `Request failed (HTTP ${res.status}). Please try again.`)
+    error.auth = res.status === 401
+    error.status = res.status
+    throw error
+  }
+  return data
+}
+
+export async function streamCompletion({ messages, model = 'auto', onToken, onInfo, onDone, onError, signal }) {
+  const token = await getToken()
+  if (!token) { onError?.({ auth: true, message: 'Please sign in to Codeva' }); return }
+  let reader
   try {
     const res = await fetch(`${API_BASE}/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ messages, model, stream: true }),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(180000)]) : AbortSignal.timeout(180000),
     })
-
     if (!res.ok) {
-      if (res.status === 401) {
-        await chrome.storage.local.remove(['authToken', 'userInfo'])
-        onError?.({ auth: true, message: 'Session expired. Please sign in again.' })
-        return
-      }
-      if (res.status === 429) {
-        onError?.({ message: 'Rate limit reached. Please wait a moment.' })
-        return
-      }
-      throw new Error(`HTTP ${res.status}`)
+      if (res.status === 401) await clearExpiredToken(token)
+      const detail = await res.json().catch(() => ({}))
+      onError?.({ auth: res.status === 401, message: res.status === 401 ? 'Session expired. Sign in again.' :
+        typeof detail.error === 'string' ? detail.error : res.status === 429 ? 'Rate limit reached. Please wait a moment.' : `Request failed (HTTP ${res.status}). Please try again.` })
+      return
     }
-
-    const reader = res.body.getReader()
+    if ((res.headers.get('content-type') || '').includes('application/json')) {
+      const data = await res.json()
+      if (data.error) { onError?.({ message: String(data.error) }); return }
+      const content = data.content || data.choices?.[0]?.message?.content
+      if (typeof content !== 'string' || !content) throw new Error('The server returned an empty response. Please try again.')
+      onToken?.(content); onDone?.(); return
+    }
+    reader = res.body.getReader()
     const decoder = new TextDecoder()
     let buffer = ''
-
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
+      buffer += done ? decoder.decode() : decoder.decode(value, { stream: true })
       const lines = buffer.split('\n')
       buffer = lines.pop() || ''
-
+      if (done && buffer) { lines.push(buffer); buffer = '' }
       for (const line of lines) {
-        if (!line.startsWith('data: ')) continue
-        const raw = line.slice(6).trim()
+        if (!line.startsWith('data:')) continue
+        const raw = line.slice(5).trim()
         if (raw === '[DONE]') { onDone?.(); return }
-        try {
-          const parsed = JSON.parse(raw)
-          if (parsed.type === 'token') onToken?.(parsed.content)
-          else if (parsed.type === 'info') onInfo?.(parsed.content)
-          else if (parsed.type === 'error') { onError?.({ message: parsed.content }); return }
-        } catch {}
+        let event
+        try { event = JSON.parse(raw) } catch { continue }
+        if (event.type === 'token' && typeof event.content === 'string') onToken?.(event.content)
+        else if (event.type === 'info') onInfo?.(event.content)
+        else if (event.type === 'error') { onError?.({ message: String(event.content || 'Response failed') }); return }
       }
+      if (done) break
     }
-    onDone?.()
-  } catch (err) {
-    onError?.({ message: err.message })
+    throw new Error('The connection ended before the response finished. You can retry.')
+  } catch (error) {
+    onError?.({ stopped: error.name === 'AbortError', message: error.name === 'AbortError' ? 'Response stopped' : error.message })
+  } finally {
+    if (reader) { await reader.cancel().catch(() => {}); reader.releaseLock() }
   }
 }
 
 /** Non-streaming completion — returns full text */
-export async function complete({ messages, model = 'groq/llama-3.1-8b' }) {
+export async function complete({ messages, model = 'auto' }) {
   let text = ''
+  let failure
   await streamCompletion({
     messages, model,
     onToken: (t) => { text += t },
+    onError: (err) => { failure = err },
   })
+  if (failure) throw new Error(failure.message)
   return text
 }
 
@@ -137,10 +156,6 @@ export async function processOfflineQueue(onResult) {
   await chrome.storage.local.set({ offlineQueue: remaining })
 }
 
-// Auto-process queue when back online
-if (typeof window !== 'undefined') {
-  window.addEventListener?.('online', () => processOfflineQueue())
-}
 
 /** Verify token + fetch user info */
 export async function fetchMe() {
@@ -153,8 +168,8 @@ export async function fetchMe() {
     })
     if (res.status === 401) {
       // Token genuinely invalid — clear it
-      await chrome.storage.local.remove(['authToken', 'userInfo'])
-      return null
+      await clearExpiredToken(token)
+      return await getToken() ? { _networkError: true } : null
     }
     if (!res.ok) return { _networkError: true } // keep token, backend may be cold-starting
     return res.json()

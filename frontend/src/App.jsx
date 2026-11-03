@@ -77,14 +77,11 @@ import VoicePage from '@pages/app/VoicePage'
 import VoiceChatPage from '@pages/app/VoiceChatPage'
 import VoiceSettingsPage from '@pages/app/VoiceSettingsPage'
 import ProjectsPage from '@pages/app/ProjectsPage'
+import DossierStudio from '@pages/app/DossierStudio'
 import UsagePage from '@pages/app/UsagePage'
 import WorkflowsPage from '@pages/app/WorkflowsPage'
 import DiscoverPage from '@pages/app/DiscoverPage'
 import PlaygroundPage from '@pages/app/PlaygroundPage'
-
-import PlatformPage from '@pages/platform/PlatformPage'
-import PlatformWelcome from '@pages/platform/PlatformWelcome'
-import PlatformSettings from '@pages/platform/PlatformSettings'
 
 const PUBLIC_PATHS = [
   '/', '/features', '/models', '/pricing', '/contact', '/about',
@@ -103,6 +100,12 @@ const AUTH_PATHS = [
 
 function App() {
   const location = useLocation()
+
+  useEffect(() => {
+    // Retire cached settings and dismissal state belonging to the removed product.
+    try { localStorage.removeItem('codeva_platform_settings_cache') } catch { /* Storage may be disabled. */ }
+    try { sessionStorage.removeItem('agent_banner_dismissed') } catch { /* Storage may be disabled. */ }
+  }, [])
 
   useEffect(() => {
     // Public/marketing pages stay Codevaa dark forever.
@@ -264,15 +267,12 @@ function App() {
           <Route path="/voice-chat" element={<ProtectedRoute><VoiceChatPage /></ProtectedRoute>} />
           <Route path="/voice-settings" element={<ProtectedRoute><VoiceSettingsPage /></ProtectedRoute>} />
           <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+          <Route path="/projects/studio/:projectId" element={<ProtectedRoute><DossierStudio /></ProtectedRoute>} />
           <Route path="/usage" element={<ProtectedRoute><UsagePage /></ProtectedRoute>} />
           <Route path="/workflows" element={<ProtectedRoute><WorkflowsPage /></ProtectedRoute>} />
           <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
           <Route path="/playground" element={<ProtectedRoute><PlaygroundPage /></ProtectedRoute>} />
-
-          {/* ── Agent Platform Routes ── */}
-          <Route path="/platform" element={<ProtectedRoute><PlatformPage /></ProtectedRoute>} />
-          <Route path="/platform/welcome" element={<ProtectedRoute><PlatformWelcome /></ProtectedRoute>} />
-          <Route path="/platform/settings" element={<ProtectedRoute><PlatformSettings /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to={session ? '/chat' : '/'} replace />} />
         </Routes>
         </ErrorBoundary>
       </main>

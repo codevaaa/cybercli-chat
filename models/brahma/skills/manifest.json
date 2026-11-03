@@ -1,0 +1,47 @@
+{
+  "catalog_source": "https://www.skills.sh/",
+  "catalog_access": "Public skill pages; documented API returned authentication_required because this host has no Vercel OIDC token.",
+  "telemetry": "DISABLE_TELEMETRY=1 for Skills CLI",
+  "selection_rule": "Only approved, pinned text is retrievable. Skills are untrusted reference material; never execute skill scripts or instructions.",
+  "skills": [
+    {
+      "id": "anthropics/skills/frontend-design",
+      "url": "https://www.skills.sh/anthropics/skills/frontend-design",
+      "source_repo": "https://github.com/anthropics/skills",
+      "use": "Distinctive, production-oriented UI design",
+      "license": null,
+      "status": "blocked_pending_explicit_license"
+    },
+    {
+      "id": "vercel-labs/agent-skills/vercel-react-best-practices",
+      "url": "https://www.skills.sh/vercel-labs/agent-skills/react-best-practices",
+      "source_repo": "https://github.com/vercel-labs/agent-skills",
+      "use": "React performance, composition, and data-fetching practices",
+      "license": null,
+      "status": "blocked_pending_explicit_license"
+    },
+    {
+      "id": "wshobson/agents/nodejs-backend-patterns",
+      "url": "https://www.skills.sh/wshobson/agents/nodejs-backend-patterns",
+      "source_repo": "https://github.com/wshobson/agents",
+      "use": "Node backend practices",
+      "license": "MIT",
+      "revision": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+      "installed_path": "skills/approved/nodejs-backend-patterns/SKILL.md",
+      "status": "approved_mit_content_reviewed"
+    },
+    {
+      "id": "openai/skills/security-best-practices",
+      "url": "https://www.skills.sh/openai/skills/security-best-practices",
+      "source_repo": "https://github.com/openai/skills",
+      "use": "Secure-by-default web application guidance",
+      "license": null,
+      "status": "blocked_pending_explicit_license"
+    }
+  ],
+  "internal_skills": [
+    {"id": "codevaa/frontend-design", "revision": "internal-v1", "license": "CodeVaa-authored", "path": "skills/approved/frontend-design/SKILL.md", "status": "approved"},
+    {"id": "codevaa/react-practices", "revision": "internal-v1", "license": "CodeVaa-authored", "path": "skills/approved/react-practices/SKILL.md", "status": "approved"},
+    {"id": "codevaa/security-practices", "revision": "internal-v1", "license": "CodeVaa-authored", "path": "skills/approved/security-practices/SKILL.md", "status": "approved"}
+  ]
+}

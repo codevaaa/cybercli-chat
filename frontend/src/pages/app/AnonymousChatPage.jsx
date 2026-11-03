@@ -68,6 +68,23 @@ function ErrorScreen({ error, onRetry }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AnonymousChatPage() {
+  // The current prototype stores messages locally and simulates delivery.
+  // Keep it out of the shipped product until the relay and audited encryption are connected.
+  if (!import.meta.env.DEV || import.meta.env.VITE_ANON_CHAT_PREVIEW !== 'true') {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background-primary p-8 text-foreground-primary">
+        <div className="max-w-md text-center">
+          <h1 className="text-xl font-semibold mb-3">Private messaging is not available yet</h1>
+          <p className="text-foreground-muted leading-relaxed">Message delivery and end-to-end encryption are still being integrated. You can continue using AI chat while we finish this feature.</p>
+          <a className="inline-block mt-6 text-accent underline" href="/chat">Return to AI chat</a>
+        </div>
+      </main>
+    )
+  }
+  return <AnonymousChatPreview />
+}
+
+function AnonymousChatPreview() {
   const { session } = useAuthStore()
   const plan        = session?.user?.user_metadata?.plan ?? 'free'
   const planIsMax   = plan === 'max'

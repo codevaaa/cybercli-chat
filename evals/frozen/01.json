@@ -1,0 +1,24 @@
+{
+  "id": "codeva-01",
+  "prompt": "  Build a private notes app for two sample users. Keep each owner's rows private. Case 1.\r\nनमस्ते 🌏  ",
+  "pack": "general",
+  "spec": {
+    "will_build": [
+      "Show owner private notes"
+    ],
+    "must_never": [
+      "Expose secrets"
+    ],
+    "acceptance": [
+      "Show private notes after login"
+    ]
+  },
+  "expected": {
+    "original": true,
+    "pending_blocked": true,
+    "can_build": true,
+    "builder_hidden": true,
+    "missing_judge_blocks": true,
+    "missing_replay_fails": true
+  }
+}

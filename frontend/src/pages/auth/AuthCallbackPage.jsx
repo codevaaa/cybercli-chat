@@ -5,6 +5,7 @@ import { Loader2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import { CodevaMark } from '../../components/ui/CodevaLogo'
+import { returnToEditor } from '../../lib/editorAuth.js'
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate()
@@ -30,6 +31,15 @@ export default function AuthCallbackPage() {
         const isIdeRedirect = params.get('redirect') === 'ide'
         const isCliRedirect = params.get('redirect') === 'cli'
         const cliPort = params.get('port')
+        const finishEditor = async current => {
+          if (!isIdeRedirect) return false
+          await initialize()
+          if (params.get('action') === 'signup') {
+            const { default: api } = await import('../../lib/api.js')
+            await api.post('/auth/sync', { platform: 'ide' })
+          }
+          return returnToEditor(current, params)
+        }
         
         if (redirectParam || isCliRedirect || isIdeRedirect) setIsDesktopRedirect(true)
 
@@ -40,6 +50,7 @@ export default function AuthCallbackPage() {
         if (errorCode === 'otp_expired' || (errorDescription && (errorDescription.includes('expired') || errorDescription.includes('already used')))) {
           const { data: { session } } = await supabase.auth.getSession()
           if (session) {
+            if (await finishEditor(session)) { setStatus('success'); return }
             setStatus('success')
             await initialize()
             setTimeout(() => {
@@ -64,6 +75,7 @@ export default function AuthCallbackPage() {
           } catch (exchangeErr) {
             const { data: { session } } = await supabase.auth.getSession()
             if (session) {
+              if (await finishEditor(session)) { setStatus('success'); return }
               setStatus('success')
               await initialize()
               setTimeout(() => {
@@ -95,7 +107,9 @@ export default function AuthCallbackPage() {
             if (isCliRedirect && cliPort) {
               window.location.href = `http://127.0.0.1:${cliPort}/callback?token=${encodeURIComponent(token)}&refresh=${encodeURIComponent(refresh)}`
             } else if (isIdeRedirect) {
-              window.location.href = `codevaa://auth?token=${encodeURIComponent(token)}&refresh=${encodeURIComponent(refresh)}`
+              // Signup must sync the existing registry before the native API
+              // verifies the account; no separate editor account is created.
+              await finishEditor(session)
             } else {
               // Fallback to codeva:// deep link with token
               window.location.href = `codeva://auth?token=${encodeURIComponent(token)}&refresh=${encodeURIComponent(refresh)}`
@@ -148,6 +162,7 @@ export default function AuthCallbackPage() {
           await initialize()
           const currentSession = useAuthStore.getState().session
           if (currentSession) {
+            if (await finishEditor(currentSession)) { setStatus('success'); return }
             setStatus('success')
             setTimeout(() => navigate(next), 1500)
           } else {

@@ -1,0 +1,30 @@
+{
+  "id": "codeva-44",
+  "prompt": "Build a expense diary app for two sample users. Keep each owner's rows private. Case 44.",
+  "pack": "commerce",
+  "spec": {
+    "will_build": [
+      "Show owner expense diary"
+    ],
+    "must_never": [
+      "Expose secrets"
+    ],
+    "acceptance": [
+      "Show expense diary after login"
+    ]
+  },
+  "expected": {
+    "original": true,
+    "pending_blocked": true,
+    "can_build": true,
+    "builder_hidden": true,
+    "missing_judge_blocks": true,
+    "missing_replay_fails": true,
+    "material_supported": false,
+    "citation": false
+  },
+  "material": {
+    "text": "The stock ledger records inventory changes for expense diary. Revenue records money received from sales.",
+    "question": "quantum zebras"
+  }
+}

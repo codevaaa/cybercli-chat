@@ -33,6 +33,11 @@ export interface RatchetState {
   /** Skipped message keys keyed by message number */
   sendMessageKeys: Map<number, Uint8Array>
   messageNumber: number
+  recvMessageNumber: number
+  dhSendPrivKey: Uint8Array
+  dhSendPubKey: Uint8Array
+  dhRecvPubKey: Uint8Array
+  prevChainLength: number
 }
 
 export interface RatchetHeader {
@@ -60,6 +65,8 @@ export interface InitialMessage {
   signedPreKeyId: number
   /** Key ID of the one-time pre-key used (optional) */
   oneTimePreKeyId?: number
+  /** X25519 identity public key; Ed25519 signing key remains in identityKey. */
+  identityX25519Key?: Uint8Array
   /** The encrypted initial message payload (may be empty for handshake-only) */
   initialCiphertext?: Uint8Array
 }
@@ -68,6 +75,7 @@ export interface SenderKey {
   keyId: number
   /** 32-byte chain key */
   chainKey: Uint8Array
+  iteration: number
 }
 
 // ---------------------------------------------------------------------------
@@ -173,9 +181,11 @@ function hkdfDerive(
 export async function initiateSession(
   myIdentity: AnonymousIdentity,
   recipientBundle: KeyBundle,
+  recipientIdentityX25519Key?: Uint8Array,
+  suppliedEphemeralPrivate?: Uint8Array,
 ): Promise<{ sessionSecret: SessionSecret; initialMessage: InitialMessage }> {
   // Generate ephemeral X25519 key pair for Alice
-  const ephemeralPrivate = x25519.utils.randomSecretKey()
+  const ephemeralPrivate = suppliedEphemeralPrivate || x25519.utils.randomSecretKey()
   const ephemeralPublic = x25519.getPublicKey(ephemeralPrivate)
 
   // We need a compatible X25519 representation of Alice's identity key.
@@ -188,7 +198,7 @@ export async function initiateSession(
 
   // Recipient's keys (all X25519)
   // IK_B: the recipient bundle's identity key is Ed25519 — derive X25519 form
-  const ikB_x25519 = deriveX25519PublicFromEd25519Public(recipientBundle.identityKey)
+  const ikB_x25519 = recipientIdentityX25519Key || (recipientBundle.identityX25519Key?.some(Boolean) ? recipientBundle.identityX25519Key : undefined) || deriveX25519PublicFromEd25519Public(recipientBundle.identityKey)
   const spkB = recipientBundle.signedPreKey.publicKey
 
   // DH1 = DH(IK_A_x25519, SPK_B)
@@ -226,6 +236,7 @@ export async function initiateSession(
     ephemeralKey: ephemeralPublic,
     signedPreKeyId: recipientBundle.signedPreKey.keyId,
     oneTimePreKeyId,
+    identityX25519Key: ikA_x25519_pub,
   }
 
   return { sessionSecret, initialMessage }
@@ -255,7 +266,7 @@ export async function receiveSession(
   otkPrivate?: Uint8Array,
 ): Promise<SessionSecret> {
   const ikB_x25519_priv = deriveX25519FromEd25519(myIdentity.privateKey)
-  const ikA_x25519 = deriveX25519PublicFromEd25519Public(initialMessage.identityKey)
+  const ikA_x25519 = initialMessage.identityX25519Key || deriveX25519PublicFromEd25519Public(initialMessage.identityKey)
   const ekA = initialMessage.ephemeralKey
 
   // DH1 = DH(SPK_B, IK_A_x25519)
@@ -293,19 +304,32 @@ export async function receiveSession(
  * REQ-2.3
  */
 export function initRatchet(secret: SessionSecret): RatchetState {
-  // Derive root key and initial chain keys from the shared secret
-  const derived = hkdfDerive(secret.sharedSecret, null, RATCHET_ROOT_INFO, 96)
+  // The current public API does not carry a sender/receiver role. Derive one
+  // shared initial chain so two peers initialized from the same X3DH secret
+  // can perform the first message exchange. A role-aware DH ratchet can split
+  // this into directional chains once the transport carries ratchet roles.
+  const derived = hkdfDerive(secret.sharedSecret, null, RATCHET_ROOT_INFO, 64)
   const rootKey = derived.slice(0, 32)
   const sendChainKey = derived.slice(32, 64)
-  const recvChainKey = derived.slice(64, 96)
-
+  const recvChainKey = sendChainKey.slice()
+  const dhSendPrivKey = x25519.utils.randomSecretKey()
   return {
     rootKey,
     sendChainKey,
     recvChainKey,
     sendMessageKeys: new Map<number, Uint8Array>(),
     messageNumber: 0,
+    recvMessageNumber: 0,
+    dhSendPrivKey,
+    dhSendPubKey: x25519.getPublicKey(dhSendPrivKey),
+    dhRecvPubKey: new Uint8Array(32),
+    prevChainLength: 0,
   }
+}
+
+/** Return the X25519 public counterpart used for an Ed25519 identity seed. */
+export function identityX25519PubKey(ed25519Private: Uint8Array): Uint8Array {
+  return x25519.getPublicKey(deriveX25519FromEd25519(ed25519Private))
 }
 
 /**
@@ -380,6 +404,7 @@ export async function decryptMessage(
 
     // Only advance the chain key on successful decryption
     state.recvChainKey = nextChainKey
+    state.recvMessageNumber = (state.recvMessageNumber || 0) + 1
 
     return plaintext
   } catch {
@@ -402,7 +427,7 @@ export function generateSenderKey(): SenderKey {
   // keyId is a random 32-bit integer
   const keyIdBytes = globalThis.crypto.getRandomValues(new Uint8Array(4))
   const keyId = (keyIdBytes[0] << 24) | (keyIdBytes[1] << 16) | (keyIdBytes[2] << 8) | keyIdBytes[3]
-  return { keyId: keyId >>> 0, chainKey }
+  return { keyId: keyId >>> 0, chainKey, iteration: 0 }
 }
 
 /**
@@ -413,22 +438,28 @@ export function generateSenderKey(): SenderKey {
 function advanceSenderKey(senderKey: SenderKey): { messageKey: Uint8Array; nextSenderKey: SenderKey } {
   const messageKey = hkdfDerive(senderKey.chainKey, null, SENDER_KEY_INFO, 32)
   const nextChainKey = hkdfDerive(senderKey.chainKey, null, RATCHET_CHAIN_INFO, 32)
-  const nextSenderKey: SenderKey = { keyId: senderKey.keyId, chainKey: nextChainKey }
+  const nextSenderKey: SenderKey = { keyId: senderKey.keyId, chainKey: nextChainKey, iteration: (senderKey.iteration || 0) + 1 }
   return { messageKey, nextSenderKey }
 }
 
 /**
  * Encrypt a group message using the Sender Keys protocol.
  * The senderKey is ratcheted forward after each message (REQ-5.2, REQ-5.6).
- * Returns { ciphertext, updatedSenderKey }.
+ * Returns a framed ciphertext and advances the supplied sender key in place.
  */
 export async function encryptGroupMessage(
   senderKey: SenderKey,
   plaintext: Uint8Array,
-): Promise<{ ciphertext: Uint8Array; updatedSenderKey: SenderKey }> {
+): Promise<Uint8Array> {
   const { messageKey, nextSenderKey } = advanceSenderKey(senderKey)
   const ciphertext = await aesGcmEncrypt(messageKey, plaintext)
-  return { ciphertext, updatedSenderKey: nextSenderKey }
+  const out = new Uint8Array(8 + ciphertext.length)
+  new DataView(out.buffer).setUint32(0, senderKey.keyId)
+  new DataView(out.buffer).setUint32(4, senderKey.iteration || 0)
+  out.set(ciphertext, 8)
+  senderKey.chainKey = nextSenderKey.chainKey
+  senderKey.iteration = nextSenderKey.iteration
+  return out
 }
 
 /**
@@ -440,11 +471,16 @@ export async function decryptGroupMessage(
   ciphertext: Uint8Array,
 ): Promise<Uint8Array | DecryptionError> {
   try {
+    if (!(ciphertext instanceof Uint8Array) || ciphertext.length < 8) return { type: 'DECRYPTION_FAILED' }
+    const view = new DataView(ciphertext.buffer, ciphertext.byteOffset, ciphertext.byteLength)
+    if (view.getUint32(0) !== senderKey.keyId || view.getUint32(4) !== (senderKey.iteration || 0)) return { type: 'DECRYPTION_FAILED' }
     const { messageKey } = advanceSenderKey(senderKey)
-    const plaintext = await aesGcmDecrypt(messageKey, ciphertext)
+    const plaintext = await aesGcmDecrypt(messageKey, ciphertext.slice(8))
     if (plaintext === null) {
       return { type: 'DECRYPTION_FAILED' }
     }
+    senderKey.chainKey = advanceSenderKey(senderKey).nextSenderKey.chainKey
+    senderKey.iteration = (senderKey.iteration || 0) + 1
     return plaintext
   } catch {
     return { type: 'DECRYPTION_FAILED' }
@@ -498,7 +534,7 @@ export class CryptoEngine {
   async encryptGroupMessage(
     senderKey: SenderKey,
     plaintext: Uint8Array,
-  ): Promise<{ ciphertext: Uint8Array; updatedSenderKey: SenderKey }> {
+  ): Promise<Uint8Array> {
     return encryptGroupMessage(senderKey, plaintext)
   }
 

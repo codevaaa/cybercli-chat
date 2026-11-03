@@ -1,0 +1,53 @@
+# Codeva months 0–2 acceptance
+
+Historical Phase-1 baseline. The later authorized months 3–5 implementation intentionally adds the pinned Code-OSS clone; the Phase-1 no-clone assertion was scoped to months 0–2 and is superseded in Phase 2. Current regression results and remaining live gates are recorded in [phase-3-5-acceptance.md](phase-3-5-acceptance.md); this report's earlier unverified FAILs are not silently changed to PASS.
+
+Same-phase installer follow-up: Docker Desktop/WSL and the compiler are now installed, but Docker's engine reports no virtualization available. CLI installation alone does not change this baseline's live container FAILs.
+
+**NOT DONE — 16 PASS, 7 FAIL.** A FAIL includes an unverified integration gate; it is not converted to PASS by a mock, a model claim or unchanged source. No push/deployment was performed.
+
+PASS below means the named assertion was executed in the stated local scope. The control-loop tests use mocked Mongo/auth/providers/Docker; the Python tests use actual temporary SQLite and owned local HTTP; the browser test uses actual Chromium against fixed trusted fixture source. These are separate evidence scopes. They do not certify a production provider-generated project or a successful live Mongo/auth/Council session.
+
+## Required 23-line ledger
+
+| # | Acceptance | Result | Evidence and remaining boundary |
+| --- | --- | --- | --- |
+| 1 | prompt_original bytes after reload equal the first submit. | PASS | `backend/src/services/dossier/domain.test.js` compares UTF-8 buffers/hash after serialization, including CRLF, whitespace and emoji. The store rejects original replacement. HTTP create/read preserves the exact submitted text. Real Mongo process recovery is separately FAIL at 7. |
+| 2 | A contradictory spec cannot start a build. | PASS | Deterministic public/owner-only and must-never/build conflicts are tested in `domain.test.js`; accepted contradictory lines still fail `ready`. This does not claim exhaustive semantic contradiction detection. |
+| 3 | Build does not start before line acceptance. | PASS | Domain + HTTP tests reject pending lines; the UI disables build until an active build goal and acceptance line remain and all active lines are accepted/edited. No file write occurs before that gate. |
+| 4 | A failed test blocks the next task. | PASS | `backend/src/services/dossier/engine.test.js` runs a two-task scenario: first is failed, second stays queued, and the builder is called once. The controller derives failure from trusted exit status; no model pass flag is used. |
+| 5 | Judge fails a missing acceptance line without seeing builder text. | PASS | Missing/duplicate/unsupported per-line verdicts fail in engine tests. Judge payload excludes task diffs/self-report, and bounded current PNG evidence is passed through the gateway adapter. Provider judgments themselves are mocked here. |
+| 6 | Cheap-judge disagreement blocks done. | PASS | Disagreement/missing-line tests block live/last-green and completion requires two distinct actual model identities. Failed bound tasks receive judge feedback on retry. |
+| 7 | Killing the API process and reopening the project resumes the stored state. | FAIL | Persisted checkpoints, CAS leases and worker recreation are tested with doubles. The actual API kill/reopen against the existing Mongo database and Docker project has not run. JSON fallback is deliberately rejected for this worker. |
+| 8 | A listener answer does not cancel the running task. | PASS | Engine test leaves state `build`, records a source revision and continues the task. SSE disconnect does not stop work; UI listener/fix tests keep the progress connection. |
+| 9 | A fix line becomes a spec line and is judged. | PASS | Engine test appends ordered fix text, requires explicit acceptance, binds its ID to a task and includes it in both judge results. A fix arriving during work pauses review at the safe point. |
+| 10 | The stored click runs again after the fix. | FAIL | Orchestration test replays the identical stored click after a mocked green fix, and real Chromium independently executes/replays the same named button. A full provider-built Docker fix-to-replay run has not executed. |
+| 11 | Rollback restores code and database to last green. | FAIL | Actual temporary SQLite/source restore passes; API/controller tests restore generation/spec/task/judge state under a lease and restart the same container adapter. Coordinated real Docker preview/code/database restore has not executed. |
+| 12 | A second test run does not duplicate rows. | PASS | `backend/src/services/dossier/sandbox/runtime_test.py` runs trusted preview contract tests twice against actual SQLite: four rows remain four. Seed uses fixed fixture IDs and INSERT OR IGNORE. |
+| 13 | User B cannot read user A's data in the preview. | PASS | Actual local HTTP/SQLite login and row queries test user B with an owner-A query; it returns only B's rows. B's update/delete of A's row also returns 404. These are the owned runtime fixture tests, not a Docker deployment certificate. |
+| 14 | A pasted API key fails the task. | PASS | Secret prompts fail 422 before project/dossier persistence; generated source/UI scan uses the same gate. A tester-output secret blocks the task and is redacted before persistence or retry feedback. Synthetic sk-, Groq/HF and unquoted key/token assignment cases are rejected. This security-first adaptation is recorded in `gap.md`; a secret is never stored merely to show a failed task. There is no git export or generated .git write tool in this phase. |
+| 15 | Preview is not reachable without the project login. | PASS | Actual Express contract tests reject anonymous/foreign-owner access, invalid/expired/reused launch tokens and expired sessions. Outer preview is gated during fix/rollback. The local generated preview additionally tests wrong-password denial. Supabase's live login remains under 20. |
+| 16 | The container has no general outbound network. | FAIL | Controller tests assert network none, resource caps, no host bind/public ports and reject a mismatched existing container. Docker CLI is absent here: actual container traffic isolation was not tested. Browser route/CSP guards are not substituted for kernel network verification. |
+| 17 | Sample data exists on first preview. | PASS | Trusted local fixture seeds two users/four rows before HTTP starts. Real Chromium sees `sample-a row 1` and no B rows on the first authenticated screen; empty/error screens fail the controller. Actual Docker image boot remains unverified. |
+| 18 | Free-model text without a source is not shown as a final answer. | PASS | `backend/src/services/dossier/models.test.js` rejects disallowed free routes and drops all free-only final output. No partial provider text is streamed to the studio as an answer. Mid defaults/premium entitlement and two-attempt escalation are tested. Missing keys do not count as two mid attempts. |
+| 19 | Hindi and English labels both render on the spec and progress screens. | PASS | `frontend/src/pages/app/DossierStudio.test.tsx` renders all three spec columns and progress in React DOM and asserts both languages. Actual Vite production build succeeds. |
+| 20 | Existing Codeva chat, login, and provider failover still succeed with the same boot commands as docs/codeva-map.md. | FAIL | Existing auth/agent/IDE/gateway regression tests, frontend suite and build pass; start/dev scripts are preserved. A live login/chat/failover run with the existing configured services and account has not been verified. |
+| 21 | docs/editor-api.md matches the live routes, and the repo contains no vscode clone. | PASS | Complete request/response JSON is captured from mounted Express handlers, clearly labelled mocked dependencies, including SSE. Route paths/methods match `backend/src/routes/dossier.routes.js` and its `/api/v1/studio` mount. `editors/code-oss`, `ide/upstream/vscode`, and `editor-builder/vscode-oss` are absent; no clone was created. This is contract/source acceptance, not production deployment acceptance. |
+| 22 | Provider calls in this loop go through the existing router. A down provider fails over, and the event log records it. | FAIL | Actual gateway code is exercised with a mocked SDK: OpenRouter outage falls back to Mistral and emits provider/model/reason, including missing-key and large-context policy tests. Adapter/engine persist those events. A real paid-provider outage with the existing Mongo event store has not executed. |
+| 23 | Council Mode's existing entry point still answers a normal chat that is not a dossier project. | FAIL | Council engine/chat entry point were preserved; normal chat's non-audit gateway contract and automatic model choices have regression coverage. A live normal Council response through its existing authenticated entry point has not been obtained. |
+
+All source paths above resolve under `D:\gptulternative\gptulternative`. Boot/runtime prerequisites: [dossier-runtime.md](dossier-runtime.md). Request/response captures: [editor-api.md](editor-api.md), [dossier-api-fixtures.json](dossier-api-fixtures.json), [dossier-progress-fixture.txt](dossier-progress-fixture.txt). The [PNG evidence](evidence/dossier-preview-fixture.png) is real browser output from a trusted test fixture, not a product demo claimed as a generated success.
+
+## Verification recorded
+
+- Existing backend suite: 56 tests, including new dossier, existing auth/agent/IDE/download/tool/multimodal and provider regressions. External services are mocked.
+- Existing frontend suite: 239 tests, including nine studio DOM tests.
+- Trusted Python runtime: five actual local HTTP/SQLite tests.
+- Vite production build: passes; existing large-bundle/dynamic-import warnings remain. No performance-budget work is included.
+- Scoped backend coverage: 97.79% lines and 85.48% branches for the new dossier routes/services; scoped studio coverage: 86.73% lines, 82% statements. This is not a coverage claim for the entire legacy product.
+
+## Remaining integration gates
+
+The next verification needs the existing Mongo/Supabase test configuration and a suitable existing test account, approved mid provider configuration and Docker CLI/daemon with the pinned image on the sandbox host. It must exercise actual API kill/reopen, provider outage/event persistence, fix/click replay, coordinated rollback, container network isolation, normal chat/login and normal Council. No new account system, app, repo, product database or Code-OSS fork is needed.
+
+Until those seven FAIL lines pass, do not call months 0–2 complete, push this as accepted, or infer production behavior from fixture screenshots. Later locked features remain later; no Kali_Kal work was added.

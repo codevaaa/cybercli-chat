@@ -1,4 +1,6 @@
 import OpenAI from 'openai'
+import { APINEX_BASE_URL, APINEX_MODELS, apinexId, apinexPreferred } from './apinex.js'
+import { normalizeMultimodalContent, contentText, hasImageContent, toGeminiParts } from './multimodal.js'
 import { getPlan, pickModelForPlan, planAllowsModel, tierOf } from '../../config/plans.js'
 import { getKey, reportSuccess, reportFailure, hasKeys } from './keyPool.js'
 
@@ -79,6 +81,7 @@ const PROVIDER_KEYS = {
 }
 
 const BASE_URLS = {
+  apinex: APINEX_BASE_URL,
   openrouter: 'https://openrouter.ai/api/v1',
   groq: 'https://api.groq.com/openai/v1',
   mistral: 'https://api.mistral.ai/v1',
@@ -89,6 +92,13 @@ const BASE_URLS = {
 }
 
 const MODEL_MAP = {
+  ...Object.fromEntries(APINEX_MODELS.map(model => [apinexId(model), { provider: 'apinex', model, purpose: 'general' }])),
+  'brahma-v1': { provider: 'brahma', model: 'brahma-v1', purpose: 'coding' },
+  'brahma/v1': { provider: 'brahma', model: 'brahma-v1', purpose: 'coding' },
+  'dossier/builder': { provider: 'openrouter', model: 'openai/gpt-4o-mini', purpose: 'coding' },
+  'dossier/judge': { provider: 'openrouter', model: 'openai/gpt-4o-mini', purpose: 'reasoning' },
+  'dossier/judge-cheap': { provider: 'openrouter', model: 'google/gemini-2.5-flash', purpose: 'reasoning' },
+  'dossier/frontier': { provider: 'openrouter', model: 'anthropic/claude-sonnet-4', purpose: 'coding' },
   'openrouter/gpt-4o-mini': { provider: 'openrouter', model: 'openai/gpt-4o-mini', purpose: 'general' },
   'groq/llama-3.1-8b': { provider: 'groq', model: 'llama-3.1-8b-instant', purpose: 'speed' },
   // groq llama-3.1-70b decommissioned → redirect to 3.3-70b
@@ -107,7 +117,7 @@ const MODEL_MAP = {
   'openrouter/moonshotai/moonshot-v1-8k': { provider: 'openrouter', model: 'moonshotai/moonshot-v1-8k', purpose: 'general' },
   'openrouter/qwen-2.5-coder-32b-free': { provider: 'openrouter', model: 'qwen/qwen-2.5-coder-32b-instruct:free', purpose: 'coding' },
   'mistral/mistral-large-latest': { provider: 'mistral', model: 'mistral-large-latest', purpose: 'reasoning' },
-  
+
   // ══════════════════════════════════════════════════════════════════
   // Codeva Mythological Personas — LIVE-TESTED WORKING MODELS ONLY
   // Last verified: test_providers.js run — only confirmed-working providers
@@ -233,7 +243,7 @@ const MODEL_MAP = {
   'puter/perplexity/sonar-deep-research': { provider: 'opencode', model: 'deepseek-v4-flash', purpose: 'speed' },
   'puter/perplexity/sonar-reasoning-pro': { provider: 'opencode', model: 'deepseek-v4-flash', purpose: 'speed' },
   'puter/perplexity/sonar-pro': { provider: 'opencode', model: 'deepseek-v4-flash', purpose: 'speed' },
-  
+
   // HuggingFace models (10+ Powerful/Uncensored models)
   'huggingface/meta-llama/Llama-3.1-8B-Instruct':                     { provider: 'huggingface', model: 'meta-llama/Llama-3.1-8B-Instruct', purpose: 'general' },
   'huggingface/meta-llama/Llama-3.3-70B-Instruct':                    { provider: 'huggingface', model: 'meta-llama/Llama-3.3-70B-Instruct', purpose: 'reasoning' },
@@ -313,7 +323,7 @@ const OPENROUTER_FALLBACK_MAP = {
   'nvidia/llama-3.1-nemotron-70b': 'nvidia/llama-3.1-nemotron-70b-instruct',
   'gemini/gemini-2.5-flash': 'google/gemini-2.5-flash',
   'gemini/gemini-2.5-pro': 'google/gemini-2.5-pro',
-  
+
   // OpenCode Fallbacks
   'opencode/deepseek-v4-pro': 'deepseek/deepseek-chat',
   'opencode/deepseek-v4-flash': 'deepseek/deepseek-chat',
@@ -368,6 +378,10 @@ const KALI_FALLBACK_CHAIN = [
 ]
 
 const FALLBACK_CHAINS = {
+  'dossier/builder': ['mistral/codestral-latest', 'gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini'],
+  'dossier/judge': ['mistral/codestral-latest', 'gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini'],
+  'dossier/judge-cheap': ['mistral/codestral-latest', 'openrouter/gpt-4o-mini'],
+  'dossier/frontier': [],
   // ── Abhimanyu: groq-70b → HF llama → openrouter gemini → groq-8b
   'codeva/abhimanyu':    ['codeva-abhimanyu-fallback-1', 'codeva-abhimanyu-fallback-2', 'codeva-abhimanyu-fallback-3'],
   'codeva-abhimanyu-v1': ['codeva-abhimanyu-fallback-1', 'codeva-abhimanyu-fallback-2', 'codeva-abhimanyu-fallback-3'],
@@ -448,21 +462,36 @@ export function classifyTier(text = '') {
  * their plan allows. If they request a specific model their plan can't access,
  * we transparently downgrade to the strongest allowed tier.
  */
-export function resolveModelForPlan(requestedId, planName, lastUserText = '') {
+export function resolveModelForPlan(requestedId, planName, lastUserText = '', { preferApinex = true } = {}) {
+  if (requestedId === 'brahma/v1') requestedId = 'brahma-v1'
   const plan = getPlan(planName)
+  const candidates = Object.keys(MODEL_MAP).filter(id => !id.startsWith('apinex/') || preferApinex && hasKeys('apinex'))
   if (!requestedId || requestedId === 'auto') {
     const tier = classifyTier(lastUserText)
-    return pickModelForPlan(plan.id, tier, Object.keys(MODEL_MAP))
+    if (preferApinex && hasKeys('apinex')) return apinexPreferred(tier)
+    return pickModelForPlan(plan.id, tier, candidates)
   }
   if (MODEL_MAP[requestedId] && planAllowsModel(plan.id, requestedId)) {
     return requestedId
   }
   // Requested model not allowed for this plan → downgrade gracefully.
   const desiredTier = MODEL_MAP[requestedId] ? tierOf(requestedId) : 'balanced'
-  return pickModelForPlan(plan.id, desiredTier, Object.keys(MODEL_MAP))
+  return pickModelForPlan(plan.id, desiredTier, candidates)
 }
 
 function getClient(provider) {
+  if (provider === 'brahma') {
+    const key = process.env.BRAHMA_API_KEY
+    if (!key) return { client: null, key: null }
+    const baseURL = (process.env.BRAHMA_BASE_URL || 'http://127.0.0.1:8765/v1').replace(/\/+$/, '')
+    try {
+      const parsed = new URL(baseURL)
+      if (parsed.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(parsed.hostname)) return { client: null, key: null }
+    } catch {
+      return { client: null, key: null }
+    }
+    return { client: new OpenAI({ apiKey: key, baseURL, maxRetries: 0, timeout: 120000 }), key }
+  }
   const key = getKey(provider)
   if (!key) return { client: null, key: null }
 
@@ -476,8 +505,8 @@ function getClient(provider) {
     return { client: new OpenAI({ apiKey: key, baseURL: `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1` }), key }
   }
 
-  if (provider === 'openrouter' || provider === 'groq' || provider === 'mistral' || provider === 'opencode' || provider === 'apifreellm' || provider === 'cerebras' || provider === 'llm7') {
-    return { client: new OpenAI({ apiKey: key, baseURL: BASE_URLS[provider] }), key }
+  if (provider === 'apinex' || provider === 'openrouter' || provider === 'groq' || provider === 'mistral' || provider === 'opencode' || provider === 'apifreellm' || provider === 'cerebras' || provider === 'llm7') {
+    return { client: new OpenAI({ apiKey: key, baseURL: BASE_URLS[provider], ...(provider === 'apinex' ? { maxRetries: 0, timeout: 60000 } : {}) }), key }
   }
 
   if (provider === 'nvidia') {
@@ -501,6 +530,8 @@ function getRawKey(provider) {
  * are requested we prefer a tool-capable route (often OpenRouter).
  */
 export const TOOL_CAPABLE_PROVIDERS = new Set([
+  'brahma',
+  'apinex',
   'openrouter',
   'groq',
   'mistral',
@@ -517,7 +548,7 @@ export const TOOL_CAPABLE_PROVIDERS = new Set([
 export function sanitizeChatMessage(m) {
   const cleanMsg = { role: m.role }
   // Assistant tool-call turns may legally have null content.
-  if (m.content != null) cleanMsg.content = m.content
+  if (m.content != null) cleanMsg.content = normalizeMultimodalContent(m.content)
   else if (m.role === 'assistant' && m.tool_calls) cleanMsg.content = null
   else cleanMsg.content = ''
 
@@ -539,7 +570,7 @@ export function buildToolParams(tools, tool_choice, provider) {
 }
 
 function messageCharCount(m) {
-  let n = (typeof m.content === 'string' ? m.content : '').length
+  let n = contentText(m.content).length + (hasImageContent(m.content) ? 1024 : 0)
   if (m.tool_calls) {
     try { n += JSON.stringify(m.tool_calls).length } catch { /* ignore */ }
   }
@@ -553,13 +584,14 @@ function messageCharCount(m) {
  * the identity message. Removes all other conflicting system messages.
  * Preserves tool_calls / tool_call_id for agentic IDE/CLI round-trips.
  */
-function injectIdentity(messages, isKaliKal = false, isRavan = false) {
+function injectIdentity(messages, isKaliKal = false, isRavan = false, isBrahma = false) {
   let sysPrompt = CYBERCLI_SYSTEM_PROMPT
   if (isKaliKal) sysPrompt = UNCENSORED_KALIKAL_PROMPT
   if (isRavan) sysPrompt = RAVAN_SYSTEM_PROMPT
+  if (isBrahma) sysPrompt = 'You are Brahma V1, a local vision and coding model made by the CodeVaa team and fine-tuned from Qwen3-VL-8B-Instruct. The base checkpoint reports 9B parameters. Do not claim you were trained from scratch or that this local hardware supports 256K context. Be helpful, accurate, and transparent about local execution.'
 
-  const identityMsg = { 
-    role: 'system', 
+  const identityMsg = {
+    role: 'system',
     content: sysPrompt
   }
 
@@ -620,8 +652,13 @@ const EFFORT_MAX_TOKENS = {
   max: 32768
 }
 
+// Provider SDK bodies can contain credentials; log HTTP status only.
+const safeProviderStatus = error => Number.isInteger(error?.status) && error.status >= 100 && error.status <= 599 ? error.status : 500
+
 export const llmGateway = {
-  async *complete({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free', effort = 'low', thinking = false, isKaliKal = false, tools, tool_choice, max_tokens }) {
+  async *complete({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free', effort = 'low', thinking = false, isKaliKal = false, tools, tool_choice, max_tokens, auditRoutes = false, routePolicy, response_format, signal }) {
+    if (signal?.aborted) return
+    const dossierFormat = routePolicy && ['json_object', 'json_schema'].includes(response_format?.type) ? { response_format } : {}
     let activeModelId = modelId
     let workingMessages = [...messages]
     const hasTools = Array.isArray(tools) && tools.length > 0
@@ -638,14 +675,50 @@ export const llmGateway = {
     // Plan-gate + task-route the model selection. 'auto' classifies the task
     // and picks the best model the user's plan allows; explicit models that
     // exceed the plan are downgraded transparently.
-    const lastUserText = [...workingMessages].reverse().find((m) => m.role === 'user')?.content || ''
-    const resolvedId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText)
-    
+    const lastUserText = contentText([...workingMessages].reverse().find((m) => m.role === 'user')?.content || '')
+    const resolvedId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText, { preferApinex: !isKaliKal })
+
     // Notify the user if their chosen model was downgraded due to plan limits
     if (resolvedId !== activeModelId && activeModelId !== 'auto' && activeModelId !== 'council') {
       yield { type: 'info', content: `⚡ Routing to the best available model for your plan...` }
     }
     activeModelId = resolvedId
+
+    // Explicit local-only route: it exits before image/context routing and all
+    // provider failover. An unavailable local server returns an error only.
+    if (activeModelId === 'brahma-v1') {
+      const local = MODEL_MAP[activeModelId]
+      const { client } = getClient('brahma')
+      const localMessages = pruneContextWindow(injectIdentity(workingMessages, false, false, true), 24000)
+      if (!client) {
+        yield { type: 'error', content: 'Brahma V1 local API is not configured. Set BRAHMA_API_KEY and start the local server.' }
+        return
+      }
+      try {
+        if (auditRoutes) yield { type: 'route', phase: 'attempt', provider: 'brahma', model: local.model, reason: 'local_only' }
+        const stream = await client.chat.completions.create({
+          model: local.model, messages: localMessages, temperature, stream: true,
+          max_tokens: tokenLimit, ...buildToolParams(tools, tool_choice, 'brahma'),
+        }, { signal })
+        let outputStarted = false
+        for await (const chunk of stream) {
+          const choice = chunk.choices?.[0]
+          const delta = choice?.delta
+          if (delta?.content) { outputStarted = true; yield { type: 'token', content: delta.content } }
+          if (delta?.tool_calls?.length) { outputStarted = true; yield { type: 'tool_calls_delta', tool_calls: delta.tool_calls } }
+          if (choice?.finish_reason) yield { type: 'finish', finish_reason: choice.finish_reason }
+        }
+        if (!outputStarted) throw Object.assign(new Error('Local model returned an empty response'), { status: 502 })
+        if (auditRoutes) yield { type: 'route', phase: 'success', provider: 'brahma', model: local.model, reason: 'local_only' }
+        yield { type: 'done' }
+      } catch (error) {
+        if (signal?.aborted) return
+        console.error('Local Brahma request failed:', safeProviderStatus(error))
+        if (auditRoutes) yield { type: 'route', phase: 'failure', provider: 'brahma', model: local.model, reason: `local_status_${safeProviderStatus(error)}` }
+        yield { type: 'error', content: 'Brahma V1 local request failed. No cloud provider fallback was attempted.' }
+      }
+      return
+    }
 
     // Council Mode is handled by councilEngine.js — if it reaches here, fallback
     if (modelId === 'council') {
@@ -653,33 +726,33 @@ export const llmGateway = {
     }
 
     const totalChars = workingMessages.reduce((sum, m) => sum + messageCharCount(m), 0)
-    
+
     // Auto-route to Gemini when images are present (Gemini 2.5 Flash supports vision natively)
-    const hasImages = workingMessages.some(m => {
-      const content = typeof m.content === 'string' ? m.content : ''
-      return content.includes('data:image/') || content.includes('![') && content.includes('](data:image/')
-    })
-    if (hasImages && !activeModelId.startsWith('gemini/')) {
+    const hasImages = workingMessages.some(m => hasImageContent(m.content))
+    if (!routePolicy && hasImages && !activeModelId.startsWith('gemini/') && !activeModelId.startsWith('apinex/')) {
       activeModelId = 'gemini/gemini-2.5-flash'
       yield { type: 'info', content: '🖼️ Image detected — routing to Gemini Vision for analysis' }
     }
 
     // Auto-route extremely large contexts to Gemini if desired, though pruning handles most
     // (skip when tools are required — Gemini direct path does not forward tools)
-    if (!hasTools && totalChars > 35000 && !activeModelId.startsWith('gemini/') && activeModelId !== 'codeva-ravan-v1') {
+    if (!routePolicy && !hasTools && totalChars > 35000 && !activeModelId.startsWith('gemini/') && !activeModelId.startsWith('apinex/') && activeModelId !== 'codeva-ravan-v1') {
       activeModelId = 'gemini/gemini-2.5-flash'
     }
 
     let enriched = injectIdentity(workingMessages, isKaliKal, activeModelId === 'codeva-ravan-v1')
+    if (dossierFormat.response_format) enriched.splice(1, 0, { role: 'system', content: 'Structured response required. Return one valid JSON object only. Do not use Markdown, fences or commentary. Follow the supplied response schema and role contract.' })
     // Prune context to prevent provider token crashes (Groq fails hard > 8K tokens)
     enriched = pruneContextWindow(enriched, 24000)
 
-    const targetModel = MODEL_MAP[activeModelId] || (isKaliKal ? MODEL_MAP[KALI_FALLBACK_CHAIN[0]] : MODEL_MAP[FALLBACK_CHAIN[0]])
+    const targetModel = !isKaliKal && !routePolicy && /^codeva-(?!kali)/.test(activeModelId) && hasKeys('apinex')
+      ? MODEL_MAP[apinexPreferred(tierOf(activeModelId))]
+      : MODEL_MAP[activeModelId] || (isKaliKal ? MODEL_MAP[KALI_FALLBACK_CHAIN[0]] : MODEL_MAP[FALLBACK_CHAIN[0]])
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
     // Skip when tools are requested — Gemini direct path has no tools forwarding yet.
     let directGeminiFailed = false
-    if (!hasTools && targetModel.provider === 'gemini' && getRawKey('gemini')) {
+    if (!routePolicy && !hasTools && targetModel.provider === 'gemini' && getRawKey('gemini')) {
       try {
         const { streamCompletion } = await import('./gemini.js')
         const stream = streamCompletion({
@@ -693,7 +766,7 @@ export const llmGateway = {
         reportSuccess('gemini', getRawKey('gemini'))
         return
       } catch (err) {
-        console.error('Direct Gemini SDK stream completion failed, falling back to proxy:', err.message)
+        console.error('Direct Gemini SDK stream completion failed, falling back to proxy:', safeProviderStatus(err))
         reportFailure('gemini', getRawKey('gemini'), err.status || 403)
         directGeminiFailed = true
       }
@@ -703,7 +776,7 @@ export const llmGateway = {
     let activeModelName = targetModel.model
     let activeProvider = targetModel.provider
 
-    const needsOpenRouterFallback = 
+    const needsOpenRouterFallback =
       (hasTools && !TOOL_CAPABLE_PROVIDERS.has(activeProvider)) ||
       (activeProvider === 'gemini' && (hasTools || directGeminiFailed || !getRawKey('gemini'))) ||
       (!client && activeProvider !== 'openrouter')
@@ -718,27 +791,34 @@ export const llmGateway = {
       }
     }
 
-    if (!client) {
+    if (!client && !routePolicy) {
       yield { type: 'error', content: 'No API key configured for any provider' }
       return
     }
 
     const toolParams = buildToolParams(tools, tool_choice, activeProvider)
+    let primaryOutputStarted = false
 
     try {
+      if (routePolicy && !routePolicy(activeProvider, activeModelName)) throw Object.assign(new Error('Route excluded by dossier policy'), { routeExcluded: true })
+      if (!client) throw Object.assign(new Error('Provider key unavailable'), { status: 503, keyUnavailable: true })
+      if (auditRoutes) yield { type: 'route', phase: 'attempt', provider: activeProvider, model: activeModelName, reason: 'primary' }
       const stream = await client.chat.completions.create({
         model: activeModelName,
         messages: enriched,
         temperature,
         stream: true,
         max_tokens: tokenLimit,
+        ...dossierFormat,
         ...toolParams,
-      })
+      }, { signal })
+      yield { type: 'info', content: 'Connected to the selected Codeva model.', provider: activeProvider, model: activeModelName }
 
       for await (const chunk of stream) {
         const choice = chunk.choices?.[0]
         const delta = choice?.delta
         if (delta?.content) {
+          primaryOutputStarted = true
           yield { type: 'token', content: delta.content }
           // Smooth streaming: tiny delay prevents token flooding on fast providers (Groq/Cerebras)
           if (activeProvider === 'groq' || activeProvider === 'cerebras') {
@@ -746,6 +826,7 @@ export const llmGateway = {
           }
         }
         if (delta?.tool_calls?.length) {
+          primaryOutputStarted = true
           yield { type: 'tool_calls_delta', tool_calls: delta.tool_calls }
         }
         if (choice?.finish_reason) {
@@ -753,17 +834,31 @@ export const llmGateway = {
         }
       }
 
+      if (activeProvider === 'apinex' && !primaryOutputStarted) throw Object.assign(new Error('Provider returned an empty stream'), { status: 502 })
       reportSuccess(activeProvider, activeKey)
+      if (auditRoutes) yield { type: 'route', phase: 'success', provider: activeProvider, model: activeModelName, reason: 'primary' }
       yield { type: 'done' }
     } catch (error) {
-      console.error(`Provider ${activeProvider} failed:`, error.message)
-      reportFailure(activeProvider, activeKey, error.status || 500)
+      if (signal?.aborted) return
+      if (auditRoutes) yield { type: 'route', phase: 'failure', provider: activeProvider, model: activeModelName, reason: error.routeExcluded ? 'route_excluded' : error.keyUnavailable ? 'provider_key_unavailable' : `provider_status_${safeProviderStatus(error)}` }
+      if (!error.routeExcluded) {
+        console.error(`Provider ${activeProvider} failed:`, safeProviderStatus(error))
+        reportFailure(activeProvider, activeKey, error.status || 500)
+      }
+      // Already displayed tokens cannot be taken back. Never append a second
+      // provider's answer to a partially streamed APINEX response.
+      if (activeProvider === 'apinex' && primaryOutputStarted) {
+        yield { type: 'error', content: 'The response was interrupted. Please retry.' }
+        return
+      }
 
       if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini', 'llm7', 'cloudflare'].includes(targetModel.provider)) {
         try {
           const { client: fallbackClient, key: fallbackKey } = getClient('openrouter')
           if (fallbackClient) {
             const fallbackModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
+            if (routePolicy && !routePolicy('openrouter', fallbackModelName)) throw Object.assign(new Error('Route excluded by dossier policy'), { routeExcluded: true })
+            if (auditRoutes) yield { type: 'route', phase: 'attempt', provider: 'openrouter', model: fallbackModelName, reason: 'proxy_fallback' }
             yield { type: 'info', content: `Direct route failed. Switching to OpenRouter...` }
             const orToolParams = buildToolParams(tools, tool_choice, 'openrouter')
             const stream = await fallbackClient.chat.completions.create({
@@ -772,8 +867,10 @@ export const llmGateway = {
               temperature,
               stream: true,
               max_tokens: tokenLimit,
+              ...dossierFormat,
               ...orToolParams,
-            })
+            }, { signal })
+            yield { type: 'info', content: 'Connected to the backup Codeva model.', provider: 'openrouter', model: fallbackModelName }
             for await (const chunk of stream) {
               const choice = chunk.choices?.[0]
               const delta = choice?.delta
@@ -782,13 +879,16 @@ export const llmGateway = {
               if (choice?.finish_reason) yield { type: 'finish', finish_reason: choice.finish_reason }
             }
             reportSuccess('openrouter', fallbackKey)
+            if (auditRoutes) yield { type: 'route', phase: 'success', provider: 'openrouter', model: fallbackModelName, reason: 'proxy_fallback' }
             yield { type: 'done' }
             return
           }
         } catch (fallbackError) {
-          console.error(`Fallback to OpenRouter for ${activeModelId} failed:`, fallbackError.message)
+          if (signal?.aborted) return
+          if (auditRoutes) yield { type: 'route', phase: 'failure', provider: 'openrouter', model: OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model, reason: fallbackError.routeExcluded ? 'route_excluded' : `provider_status_${safeProviderStatus(fallbackError)}` }
+          if (!fallbackError.routeExcluded) console.error(`Fallback to OpenRouter for ${activeModelId} failed:`, safeProviderStatus(fallbackError))
           const { key: fallbackKey } = getClient('openrouter')
-          if (fallbackKey) {
+          if (fallbackKey && !fallbackError.routeExcluded) {
             reportFailure('openrouter', fallbackKey, fallbackError.status || 500)
           }
         }
@@ -797,7 +897,8 @@ export const llmGateway = {
       let activeFallbackChain = FALLBACK_CHAINS[activeModelId] || (totalChars > 25000
         ? ['gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini']
         : FALLBACK_CHAIN)
-        
+      if (targetModel.provider === 'apinex') activeFallbackChain = ['openrouter/gpt-4o-mini', ...APINEX_MODELS.slice(0, 3).map(apinexId), ...FALLBACK_CHAIN.filter(id => id !== 'openrouter/gpt-4o-mini')]
+
       if (isKaliKal && !FALLBACK_CHAINS[activeModelId]) {
         activeFallbackChain = KALI_FALLBACK_CHAIN
       }
@@ -807,9 +908,10 @@ export const llmGateway = {
         if (fallbackId === activeModelId) continue
         const fallback = MODEL_MAP[fallbackId]
         if (!fallback) continue
+        if (fallback.provider === activeProvider && fallback.model === activeModelName) continue
 
         // Direct SDK fallback for Gemini if possible (no tools)
-        if (!hasTools && fallback.provider === 'gemini' && getRawKey('gemini')) {
+        if (!routePolicy && !hasTools && fallback.provider === 'gemini' && getRawKey('gemini')) {
           try {
             yield { type: 'info', content: `Switching providers for best response...` }
             const { streamCompletion } = await import('./gemini.js')
@@ -824,7 +926,7 @@ export const llmGateway = {
             reportSuccess('gemini', getRawKey('gemini'))
             return
           } catch (geminiErr) {
-            console.error('Gemini fallback direct SDK failed:', geminiErr.message)
+            console.error('Gemini fallback direct SDK failed:', safeProviderStatus(geminiErr))
             reportFailure('gemini', getRawKey('gemini'), geminiErr.status || 403)
           }
         }
@@ -833,9 +935,9 @@ export const llmGateway = {
         let fbProvider = fallback.provider
         let fbModel = fallback.model
         let { client: fallbackClient, key: fallbackKey } = getClient(fbProvider)
-        if (hasTools && (!TOOL_CAPABLE_PROVIDERS.has(fbProvider) || !fallbackClient)) {
+        if (hasTools && (!TOOL_CAPABLE_PROVIDERS.has(fbProvider) || !fallbackClient) || routePolicy && (!fallbackClient || !routePolicy(fbProvider, fbModel))) {
           const or = getClient('openrouter')
-          if (or.client) {
+          if (or.client && (!routePolicy || routePolicy('openrouter', OPENROUTER_FALLBACK_MAP[fallbackId] || fallback.model))) {
             fallbackClient = or.client
             fallbackKey = or.key
             fbProvider = 'openrouter'
@@ -843,8 +945,11 @@ export const llmGateway = {
           }
         }
         if (!fallbackClient) continue
+        if (routePolicy && !routePolicy(fbProvider, fbModel)) continue
 
+        let fallbackOutputStarted = false
         try {
+          if (auditRoutes) yield { type: 'route', phase: 'attempt', provider: fbProvider, model: fbModel, reason: 'provider_failover' }
           yield { type: 'info', content: `Switching providers for best response...` }
           const fbToolParams = buildToolParams(tools, tool_choice, fbProvider)
 
@@ -854,16 +959,20 @@ export const llmGateway = {
             temperature,
             stream: true,
             max_tokens: tokenLimit,
+            ...dossierFormat,
             ...fbToolParams,
-          })
+          }, { signal })
+          yield { type: 'info', content: 'Connected to the backup Codeva model.', provider: fbProvider, model: fbModel }
 
           for await (const chunk of stream) {
             const choice = chunk.choices?.[0]
             const delta = choice?.delta
             if (delta?.content) {
+              fallbackOutputStarted = true
               yield { type: 'token', content: delta.content }
             }
             if (delta?.tool_calls?.length) {
+              fallbackOutputStarted = true
               yield { type: 'tool_calls_delta', tool_calls: delta.tool_calls }
             }
             if (choice?.finish_reason) {
@@ -871,19 +980,27 @@ export const llmGateway = {
             }
           }
 
+          if (fbProvider === 'apinex' && !fallbackOutputStarted) throw Object.assign(new Error('Provider returned an empty stream'), { status: 502 })
           reportSuccess(fbProvider, fallbackKey)
+          if (auditRoutes) yield { type: 'route', phase: 'success', provider: fbProvider, model: fbModel, reason: 'provider_failover' }
           yield { type: 'done' }
           return
         } catch (fallbackError) {
-          console.error(`Fallback ${fbProvider} failed:`, fallbackError.message)
+          if (signal?.aborted) return
+          if (auditRoutes) yield { type: 'route', phase: 'failure', provider: fbProvider, model: fbModel, reason: `provider_status_${safeProviderStatus(fallbackError)}` }
+          console.error(`Fallback ${fbProvider} failed:`, safeProviderStatus(fallbackError))
           reportFailure(fbProvider, fallbackKey, fallbackError.status || 500)
+          if (fbProvider === 'apinex' && fallbackOutputStarted) {
+            yield { type: 'error', content: 'The response was interrupted. Please retry.' }
+            return
+          }
         }
       }
 
       // EMERGENCY LAST RESORT — always try groq llama as final fallback
       try {
         const { client: emergencyClient, key: emergencyKey } = getClient('groq')
-        if (emergencyClient) {
+        if (emergencyClient && (!routePolicy || routePolicy('groq', 'llama-3.1-8b-instant'))) {
           yield { type: 'info', content: 'Switching to emergency backup...' }
           const emToolParams = buildToolParams(tools, tool_choice, 'groq')
           const emergencyStream = await emergencyClient.chat.completions.create({
@@ -892,8 +1009,10 @@ export const llmGateway = {
             temperature,
             stream: true,
             max_tokens: tokenLimit,
+            ...dossierFormat,
             ...emToolParams,
-          })
+          }, { signal })
+          yield { type: 'info', content: 'Connected to the emergency Codeva model.', provider: 'groq', model: 'llama-3.1-8b-instant' }
           for await (const chunk of emergencyStream) {
             const choice = chunk.choices?.[0]
             const delta = choice?.delta
@@ -906,13 +1025,35 @@ export const llmGateway = {
           return
         }
       } catch (emergencyErr) {
-        console.error('Emergency groq fallback failed:', emergencyErr.message)
+        if (signal?.aborted) return
+        console.error('Emergency groq fallback failed:', safeProviderStatus(emergencyErr))
       }
       yield { type: 'error', content: 'All providers are temporarily unavailable. Please try again in a moment.' }
     }
   },
 
   async completeNonStream({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free', effort = 'low', thinking = false, isKaliKal = false, tools, tool_choice, max_tokens }) {
+    const requested = resolveModelForPlan(modelId, plan, contentText([...messages].reverse().find(m => m.role === 'user')?.content || ''), { preferApinex: !isKaliKal })
+    // Share the streaming failover path so APINEX has the same OpenRouter and
+    // remaining-provider recovery in chat, Council and non-stream tool calls.
+    if (requested === 'brahma-v1' || !isKaliKal && (requested.startsWith('apinex/') || /^codeva-(?!kali)/.test(requested) && hasKeys('apinex'))) {
+      let content = '', finish_reason = 'stop', route = null
+      const calls = new Map()
+      for await (const chunk of this.complete({ messages, model: requested, temperature, plan, effort, thinking, tools, tool_choice, max_tokens, auditRoutes: true })) {
+        if (chunk.type === 'token') content += chunk.content
+        if (chunk.type === 'finish') finish_reason = chunk.finish_reason
+        if (chunk.type === 'route' && chunk.phase === 'success') route = chunk
+        if (chunk.type === 'error') return { error: chunk.content }
+        for (const delta of chunk.tool_calls || []) {
+          const current = calls.get(delta.index) || { id: '', type: 'function', function: { name: '', arguments: '' } }
+          if (delta.id) current.id = delta.id
+          current.function.name += delta.function?.name || ''
+          current.function.arguments += delta.function?.arguments || ''
+          calls.set(delta.index, current)
+        }
+      }
+      return { content, ...(calls.size ? { tool_calls: [...calls.values()] } : {}), finish_reason, model: route?.model, provider: route?.provider, tokens_in: Math.ceil(messages.reduce((n, m) => n + contentText(m.content).length, 0) / 4), tokens_out: Math.ceil((content.length + JSON.stringify([...calls.values()]).length) / 4), token_estimate: true }
+    }
     let activeModelId = modelId
     let workingMessages = [...messages]
     const hasTools = Array.isArray(tools) && tools.length > 0
@@ -926,10 +1067,11 @@ export const llmGateway = {
       })
     }
 
-    const lastUserText = [...workingMessages].reverse().find((m) => m.role === 'user')?.content || ''
-    activeModelId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText)
+    const lastUserText = contentText([...workingMessages].reverse().find((m) => m.role === 'user')?.content || '')
+    activeModelId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText, { preferApinex: !isKaliKal })
+    if (!hasTools && workingMessages.some(m => hasImageContent(m.content))) activeModelId = 'gemini/gemini-2.5-flash'
     const totalChars = workingMessages.reduce((sum, m) => sum + messageCharCount(m), 0)
-    
+
     if (!hasTools && totalChars > 35000 && !activeModelId.startsWith('gemini/') && activeModelId !== 'codeva-ravan-v1') {
       activeModelId = 'gemini/gemini-2.5-flash'
     }
@@ -960,7 +1102,7 @@ export const llmGateway = {
           .filter(m => m.role !== 'system')
           .map(m => ({
             role: m.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: m.content || '' }],
+            parts: toGeminiParts(m.content),
           }))
 
         const response = await genAI.models.generateContent({
@@ -982,7 +1124,7 @@ export const llmGateway = {
           finish_reason: 'stop',
         }
       } catch (err) {
-        console.error('Direct Gemini SDK non-stream completion failed, falling back to proxy:', err.message)
+        console.error('Direct Gemini SDK non-stream completion failed, falling back to proxy:', safeProviderStatus(err))
         reportFailure('gemini', getRawKey('gemini'), err.status || 403)
         directGeminiFailed = true
       }
@@ -992,7 +1134,7 @@ export const llmGateway = {
     let activeModelName = targetModel.model
     let activeProvider = targetModel.provider
 
-    const needsOpenRouterFallback = 
+    const needsOpenRouterFallback =
       (hasTools && !TOOL_CAPABLE_PROVIDERS.has(activeProvider)) ||
       (activeProvider === 'gemini' && (hasTools || directGeminiFailed || !getRawKey('gemini'))) ||
       (!client && activeProvider !== 'openrouter')
@@ -1036,7 +1178,7 @@ export const llmGateway = {
         tokens_out: response.usage?.completion_tokens || 0,
       }
     } catch (error) {
-      console.error(`Provider ${activeProvider} failed:`, error.message)
+      console.error(`Provider ${activeProvider} failed:`, safeProviderStatus(error))
       reportFailure(activeProvider, activeKey, error.status || 500)
 
       if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini', 'llm7', 'cloudflare'].includes(targetModel.provider)) {
@@ -1066,7 +1208,7 @@ export const llmGateway = {
             }
           }
         } catch (fallbackErr) {
-          console.error(`Non-stream fallback to OpenRouter failed:`, fallbackErr.message)
+          console.error(`Non-stream fallback to OpenRouter failed:`, safeProviderStatus(fallbackErr))
           const { key: fallbackKey } = getClient('openrouter')
           if (fallbackKey) {
             reportFailure('openrouter', fallbackKey, fallbackErr.status || 500)

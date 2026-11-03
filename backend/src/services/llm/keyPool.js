@@ -70,6 +70,7 @@ function ensurePool(provider) {
   if (pools[provider]) return
 
   const prefixMap = {
+    apinex: 'APINEX',
     groq: 'GROQ',
     gemini: 'GEMINI',
     openrouter: 'OPENROUTER',

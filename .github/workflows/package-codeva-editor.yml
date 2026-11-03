@@ -1,0 +1,96 @@
+name: Package pinned MrCodevaa
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish these installers in the existing repository's GitHub releases
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            target: windows
+            platform: win32
+          - os: macos-14
+            target: macos
+            platform: darwin
+          - os: ubuntu-22.04
+            target: linux
+            platform: linux
+    runs-on: ${{ matrix.os }}
+    env:
+      CODEVA_IDE_BUILD_NUMBER: ${{ github.run_id }}${{ github.run_attempt }}
+      WIN_CSC_LINK: ${{ matrix.platform == 'win32' && secrets.WIN_CSC_LINK || '' }}
+      WIN_CSC_KEY_PASSWORD: ${{ matrix.platform == 'win32' && secrets.WIN_CSC_KEY_PASSWORD || '' }}
+      CSC_LINK: ${{ matrix.platform == 'darwin' && secrets.APPLE_CSC_LINK || '' }}
+      CSC_KEY_PASSWORD: ${{ matrix.platform == 'darwin' && secrets.APPLE_CSC_KEY_PASSWORD || '' }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Linux native prerequisites
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential g++ libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev libgtk-3-0 libnss3 libgbm1 libasound2 libfuse2 fakeroot rpm
+      - name: Windows Spectre and ATL prerequisites
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $codevaVs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -version '[17.0,18.0)' -products '*' -property installationPath
+          $codevaSetup = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
+          $codevaInstall = Start-Process -FilePath $codevaSetup -ArgumentList @('modify', '--installPath', "`"$codevaVs`"", '--quiet', '--norestart', '--add', 'Microsoft.VisualStudio.Component.VC.ATL', '--add', 'Microsoft.VisualStudio.Component.VC.Runtimes.x86.x64.Spectre') -WindowStyle Hidden -Wait -PassThru
+          if ($codevaInstall.ExitCode -notin 0,3010) { throw 'VS 2022 native prerequisites failed' }
+      - name: Build the canonical installer
+        run: node scripts/package-ide.mjs ${{ matrix.target }}
+      - name: Install and test the actual Windows setup on the fresh runner
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          npm ci --prefix backend
+          node scripts/ide/verify-release-http.mjs
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ide/test-installed-windows.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: codeva-editor-${{ matrix.platform }}
+          path: |
+            artifacts/codeva-editor/MrCodevaa-*
+            artifacts/codeva-editor/release-${{ matrix.platform }}.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows' && always()
+        with:
+          name: mrcodevaa-native-windows-evidence
+          path: |
+            artifacts/codeva-editor/installed-smoke/*.png
+            artifacts/codeva-editor/installed-smoke/native.json
+            artifacts/codeva-editor/windows-install-smoke.json
+            artifacts/codeva-editor/http-smoke.json
+  publish:
+    if: inputs.publish
+    needs: package
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: codeva-editor-*
+          merge-multiple: true
+          path: artifacts/codeva-editor
+      - name: Publish the same files and manifests used by the API
+        run: gh release create "codeva-editor-${{ github.run_id }}${{ github.run_attempt }}" artifacts/codeva-editor/* --title 'MrCodevaa 1.139.0' --notes 'Pinned Codeva editor installers. Signing status and SHA256 are recorded in each release manifest.'

@@ -3,7 +3,9 @@ import mongoose from 'mongoose'
 import { z } from 'zod'
 import { requireAuth } from '../middleware/auth.js'
 import { llmGateway } from '../services/llm/gateway.js'
+import { streamLifetime } from '../services/llm/streamLifetime.js'
 import { getPersonaById } from '../services/agents/registry.js'
+import { assistantPreferenceInstructions } from '../services/chat/assistantPreferences.js'
 import Thread from '../models/Thread.js'
 import Message from '../models/Message.js'
 import { useFallbackMode } from '../utils/fallbackDb.js'
@@ -317,7 +319,8 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     deepResearchEnabled = false,
     effort = 'low',
     thinking = false,
-    agentId = null
+    agentId = null,
+    responsePreferences = null
   } = req.body
   
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -365,6 +368,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
 
+  let lifetime
   try {
     // 1. Save user's prompt to DB
     const lastUserMsg = messages.slice().reverse().find(m => m.role === 'user') || { content: '' }
@@ -390,6 +394,12 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
 
     // 2. Fetch UserSettings and construct system prompt additions
     let extraSystemContent = ""
+
+    // Editor preferences are closed enums; never accept arbitrary system text
+    // from an IDE client.
+    if (responsePreferences != null) {
+      extraSystemContent += assistantPreferenceInstructions(responsePreferences)
+    }
 
     // Inject the selected agent persona's trusted system prompt (server-side
     // registry only). Placed first so downstream user instructions still apply.
@@ -559,6 +569,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     }
 
     // 8. Call LLM Gateway
+    lifetime = streamLifetime(res)
     let generator
     const isKaliKal = (thread.mode === 'kalikal' || thread.mode === 'kali_kal')
     
@@ -566,24 +577,18 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
       const { runCouncilStream } = await import('../services/llm/councilEngine.js')
       generator = runCouncilStream(history)
     } else {
-      generator = await llmGateway.complete({ messages: history, model: model || thread.model_id, temperature, effort, thinking, isKaliKal })
+      generator = await llmGateway.complete({ messages: history, model: model || thread.model_id, temperature, effort, thinking, isKaliKal, signal: lifetime.signal })
     }
     
     let assistantReply = ''
     let chosenProvider = ''
+    let chosenModel = ''
     let isExecuting = false
 
-    // Heartbeat: send keepalive every 5s so client knows we're still processing
-    let firstTokenReceived = false
-    const heartbeatInterval = setInterval(() => {
-      if (!firstTokenReceived && !res.writableEnded) {
-        res.write(`data: ${JSON.stringify({ type: 'heartbeat', elapsed: Date.now() })}\n\n`)
-      }
-    }, 5000)
-
     for await (const chunk of generator) {
+      if (res.destroyed || res.writableEnded) return
       if (chunk.type === 'token') {
-        firstTokenReceived = true
+        lifetime.token()
         assistantReply += chunk.content
         res.write(`data: ${JSON.stringify({ type: 'token', content: chunk.content })}\n\n`)
       } else if (chunk.type === 'error') {
@@ -592,6 +597,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
         return
       } else if (chunk.type === 'info') {
         if (chunk.provider) chosenProvider = chunk.provider
+        if (chunk.model) chosenModel = chunk.model
         res.write(`data: ${JSON.stringify({ type: 'info', content: chunk.content })}\n\n`)
       } else if (chunk.type === 'council_responses') {
         // Forward council individual responses for visualization
@@ -604,7 +610,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
           user_id: req.user.id,
           role: 'assistant',
           content: assistantReply,
-          model: model || thread.model_id,
+          model: chosenModel || model || thread.model_id,
           provider: chosenProvider,
         })
         await assistantMsg.save()
@@ -656,15 +662,18 @@ Output format: ["question 1", "question 2", "question 3"]`
           // Suggestions are optional — don't block the response
         }
 
-        clearInterval(heartbeatInterval)
         res.write('data: [DONE]\n\n')
         res.end()
         return
       }
     }
   } catch (error) {
-    res.write(`data: ${JSON.stringify({ type: 'error', content: error.message })}\n\n`)
-    res.end()
+    if (!res.destroyed && !res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ type: 'error', content: 'Codeva could not complete this response. Please retry.' })}\n\n`)
+      res.end()
+    }
+  } finally {
+    lifetime?.dispose()
   }
 })
 

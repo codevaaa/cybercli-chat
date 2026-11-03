@@ -18,14 +18,14 @@ export default function ProjectsPage() {
     queryKey: ['projects'],
     queryFn: async () => {
       const { data } = await api.get('/projects')
-      return data?.projects || []
+      return Array.isArray(data) ? data : data?.projects || []
     }
   })
 
   const createMutation = useMutation({
     mutationFn: async (newProj) => {
       const { data } = await api.post('/projects', newProj)
-      return data.project
+      return data.project || data
     },
     onMutate: async (newProj) => {
       await queryClient.cancelQueries({ queryKey: ['projects'] })
@@ -107,6 +107,7 @@ export default function ProjectsPage() {
             <h1 className="text-3xl md:text-4xl font-serif font-medium tracking-tight text-foreground-primary">
               Projects
             </h1>
+            <Link to="/projects/studio/new" className="inline-block mt-3 text-accent">Build an app / ऐप बनाएं →</Link>
             <p className="text-sm text-foreground-secondary/80 mt-2 leading-relaxed max-w-lg">
               Organize your code, architecture discussions, and configurations within isolated cognitive environments.
             </p>
@@ -171,6 +172,7 @@ export default function ProjectsPage() {
                 </div>
 
                 <div className="space-y-3 pt-5 border-t border-border-subtle/50 text-[11px] font-medium text-foreground-secondary/70 tracking-wide uppercase">
+                  <Link to={`/projects/studio/${proj._id || proj.id}`} onClick={event => event.stopPropagation()} className="block text-accent">App studio / ऐप स्टूडियो →</Link>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5 bg-background-primary px-2 py-1 rounded border border-border-subtle">
                       <Command className="w-3 h-3 text-accent" />

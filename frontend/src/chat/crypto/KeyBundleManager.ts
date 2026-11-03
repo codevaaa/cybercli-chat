@@ -9,6 +9,7 @@
 
 import { x25519 } from '@noble/curves/ed25519.js'
 import { ed25519 } from '@noble/curves/ed25519.js'
+import { sha256 } from '@noble/hashes/sha2.js'
 import type { AnonymousIdentity } from '../identity/IdentityManager.js'
 
 // ---------------------------------------------------------------------------
@@ -32,6 +33,8 @@ export interface OneTimePreKey {
 export interface KeyBundle {
   /** Ed25519 identity public key (32 bytes) */
   identityKey: Uint8Array
+  /** X25519 identity public key used for DH; Ed25519 remains the signing identity. */
+  identityX25519Key?: Uint8Array
   signedPreKey: SignedPreKey
   oneTimePreKeys: Array<OneTimePreKey>
 }
@@ -112,6 +115,14 @@ export function verifyEd25519Signature(
   }
 }
 
+function identityX25519Private(ed25519Private: Uint8Array): Uint8Array {
+  const out = new Uint8Array(sha256(ed25519Private))
+  out[0] &= 248
+  out[31] &= 127
+  out[31] |= 64
+  return out
+}
+
 /**
  * Generate a Key Bundle for the given identity.
  *
@@ -130,6 +141,7 @@ export function generateBundle(
 ): { bundle: KeyBundle; localStore: LocalPreKeyStore } {
   // Generate signed pre-key
   const spkPair = generateX25519KeyPair()
+  const identityX25519Key = x25519.getPublicKey(identityX25519Private(identity.privateKey))
   const spkSignature = signWithEd25519(spkPair.publicKey, identity.privateKey)
 
   const signedPreKeyPair: PreKeyPair = {
@@ -151,6 +163,7 @@ export function generateBundle(
 
   const bundle: KeyBundle = {
     identityKey: identity.publicKey,
+    identityX25519Key,
     signedPreKey: {
       keyId: signedPreKeyPair.keyId,
       publicKey: signedPreKeyPair.publicKey,
@@ -302,14 +315,16 @@ export class KeyBundleManager {
     }
 
     // Build a partial bundle update — only new OTKs and identity key needed
-    const partialBundle: Pick<KeyBundle, 'identityKey' | 'oneTimePreKeys'> = {
-      identityKey: identity.publicKey,
+  const partialBundle: Pick<KeyBundle, 'identityKey' | 'identityX25519Key' | 'oneTimePreKeys'> = {
+    identityKey: identity.publicKey,
+    identityX25519Key: x25519.getPublicKey(identityX25519Private(identity.privateKey)),
       oneTimePreKeys: newOtkPairs.map(({ keyId, publicKey }) => ({ keyId, publicKey })),
     }
 
     if (this._wsSender) {
       await this._wsSender.send('anon_chat.key_bundle_pub', {
         identityKey: bytesToHex(partialBundle.identityKey),
+        identityX25519Key: bytesToHex(partialBundle.identityX25519Key!),
         oneTimePreKeys: partialBundle.oneTimePreKeys.map(({ keyId, publicKey }) => ({
           keyId,
           publicKey: bytesToHex(publicKey),
@@ -399,6 +414,7 @@ function hexToBytes(hex: string): Uint8Array {
 
 interface SerializedBundle {
   identityKey: string
+  identityX25519Key?: string
   signedPreKey: {
     keyId: number
     publicKey: string
@@ -410,6 +426,7 @@ interface SerializedBundle {
 export function serializeBundle(bundle: KeyBundle): SerializedBundle {
   return {
     identityKey: bytesToHex(bundle.identityKey),
+    ...(bundle.identityX25519Key ? { identityX25519Key: bytesToHex(bundle.identityX25519Key) } : {}),
     signedPreKey: {
       keyId: bundle.signedPreKey.keyId,
       publicKey: bytesToHex(bundle.signedPreKey.publicKey),
@@ -425,6 +442,7 @@ export function serializeBundle(bundle: KeyBundle): SerializedBundle {
 export function deserializeBundle(data: SerializedBundle): KeyBundle {
   return {
     identityKey: hexToBytes(data.identityKey),
+    identityX25519Key: data.identityX25519Key ? hexToBytes(data.identityX25519Key) : new Uint8Array(32),
     signedPreKey: {
       keyId: data.signedPreKey.keyId,
       publicKey: hexToBytes(data.signedPreKey.publicKey),

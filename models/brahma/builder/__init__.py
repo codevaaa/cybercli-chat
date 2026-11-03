@@ -1,0 +1,1 @@
+"""Isolated generated-project runner."""

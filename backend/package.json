@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test src/**/*.test.js",
+    "dossier:worker": "node src/services/dossier/worker.js",
+    "test": "node --experimental-test-module-mocks --test src/**/*.test.js",
     "test:chat": "node --experimental-strip-types --loader ./src/chat/loader.mjs --test src/chat/chatRelay.test.ts"
   },
   "dependencies": {
@@ -28,6 +29,9 @@
     "mongoose": "^8.9.0",
     "nodemailer": "^8.0.9",
     "openai": "^4.77.0",
+    "pdfjs-dist": "5.4.624",
+    "playwright": "1.63.0",
+    "pngjs": "7.0.0",
     "stripe": "^17.5.0",
     "winston": "^3.17.0",
     "ws": "^8.20.1",
@@ -40,6 +44,7 @@
   "devDependencies": {
     "fast-check": "^4.8.0",
     "ioredis-mock": "^8.13.1",
-    "mongodb-memory-server": "^11.2.0"
+    "mongodb-memory-server": "^11.2.0",
+    "supertest": "^7.2.2"
   }
 }

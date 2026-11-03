@@ -7,6 +7,7 @@ import { CodevaMark } from '../../components/ui/CodevaLogo'
 import { Tooltip } from '../../components/ui/Tooltip.jsx'
 import api from '../../lib/api.js'
 import { supabase } from '../../lib/supabase.js'
+import { editorAuthQuery, returnToEditor } from '../../lib/editorAuth.js'
 
 function getStrength(pw) {
   if (!pw) return { level: 0, label: '', color: '' }
@@ -51,6 +52,8 @@ export default function SignupPage() {
         window.location.href = `http://127.0.0.1:${port}/callback?token=${encodeURIComponent(session.access_token)}`
       } else if (redirect === 'desktop') {
         window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
+      } else if (redirect === 'ide') {
+        try { returnToEditor(session, searchParams) } catch (err) { setLocalError(err.message) }
       } else {
         navigate(redirect || '/chat')
       }
@@ -70,6 +73,8 @@ export default function SignupPage() {
         callbackQuery = `?action=signup&redirect=cli&port=${port}`
       } else if (redirect === 'desktop') {
         callbackQuery = `?action=signup&redirect=desktop`
+      } else if (redirect === 'ide') {
+        callbackQuery = `?action=signup&${editorAuthQuery(searchParams)}`
       }
 
       const redirectTo = `${window.location.origin}/auth/callback${callbackQuery}`
@@ -121,7 +126,9 @@ const DISPOSABLE_EMAIL_DOMAINS = [
       return
     }
 
-    const result = await signUpWithEmail(form.email, form.password, form.fullName)
+    let editorQuery = ''
+    try { editorQuery = editorAuthQuery(searchParams) } catch (err) { setLocalError(err.message); return }
+    const result = await signUpWithEmail(form.email, form.password, form.fullName, editorQuery)
     if (result.success) {
       const inviteCode = localStorage.getItem('pending_invite_code')
       if (inviteCode) {
@@ -139,6 +146,8 @@ const DISPOSABLE_EMAIL_DOMAINS = [
         navigate(`/auth/verify-email?redirect=cli&port=${port}`)
       } else if (redirect === 'desktop') {
         navigate('/auth/verify-email?redirect=desktop')
+      } else if (redirect === 'ide') {
+        navigate(`/auth/verify-email?${editorQuery}`)
       } else {
         navigate('/auth/verify-email')
       }
@@ -387,7 +396,7 @@ const DISPOSABLE_EMAIL_DOMAINS = [
         <div className="text-center mt-6">
           <p className="text-xs text-foreground-secondary/80">
             Already have an account?{' '}
-            <Link to="/auth/login" className="text-accent hover:underline font-semibold transition-all">
+            <Link to={`/auth/login${searchParams.get("redirect") === "ide" ? `?${searchParams.toString()}` : ""}`} className="text-accent hover:underline font-semibold transition-all">
               Sign in
             </Link>
           </p>

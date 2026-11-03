@@ -62,20 +62,6 @@ export default function MyComponent({ prop }) {
 
 State management: Zustand stores in `src/stores/`.
 
-## Agent Platform Architecture
-
-The agent platform (`agent-platform/`) consists of:
-- `src/orchestrator/` — Task decomposition and execution engine
-- `src/agents/` — AgentRegistry + AgentWorker (ReAct loop)
-- `src/memory/` — SharedMemory (per-session key-value store)
-- `src/tools/` — ToolExecutor (file, terminal, web, browser, memory)
-- `src/skills/` — SkillsLoader (reads .md skills files)
-- `src/llm/client.js` — Routes through backend /api/v1/agent/complete
-- `cli/` — Commander.js CLI
-- `ui/` — React Agent Manager UI
-
-WebSocket protocol: connect to `ws://localhost:4000/ws`, send `{ type: 'run', goal }`.
-
 ## Environment Variables
 
 Backend `.env` keys (never log or expose these):
@@ -94,4 +80,3 @@ Backend `.env` keys (never log or expose these):
 
 - Backend → Render.com (see `backend/render.yaml`)
 - Frontend → Vercel (auto-deploy from main branch)
-- Platform → Run locally or on any VPS: `node agent-platform/src/index.js`

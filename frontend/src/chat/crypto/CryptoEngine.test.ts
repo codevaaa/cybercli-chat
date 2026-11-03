@@ -547,18 +547,14 @@ describe('PBT — Property 6: E2EE Encryption Round-Trip', () => {
             // Property: round-trip restores original plaintext
             if (!bytesEqual(decrypted, plaintext)) return false
 
-            // Property: ciphertext differs from plaintext
-            // (ciphertext includes 12-byte IV so it's always structurally different,
-            //  but also verify the data isn't just the plaintext)
-            if (bytesEqual(ciphertext.slice(12, 12 + plaintext.length), plaintext) &&
-                ciphertext.length === 12 + plaintext.length + 16) {
-              // This would mean no actual encryption occurred — fail
-              // (GCM adds a 16-byte auth tag, so this check is: if the middle
-              //  bytes equal plaintext bytes AND length matches, it wasn't encrypted)
-              // Actually AES-GCM will always produce different bytes, so this check
-              // is belt-and-suspenders
-              return false
-            }
+            // A one-byte ciphertext can equal that plaintext byte by chance
+            // (1/256); byte inequality is not an encryption security property.
+            // Verify the complete IV/ciphertext/tag envelope and authentication.
+            if (ciphertext.length !== 12 + plaintext.length + 16 || bytesEqual(ciphertext, plaintext)) return false
+            const tampered = ciphertext.slice()
+            tampered[tampered.length - 1] ^= 1
+            const rejected = await decryptMessage(initRatchet(secret), header, tampered)
+            if (!('type' in rejected) || rejected.type !== 'DECRYPTION_FAILED') return false
 
             return true
           },

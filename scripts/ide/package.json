@@ -1,0 +1,10 @@
+{
+  "name": "codeva-ide-release-tools",
+  "private": true,
+  "version": "1.139.0",
+  "author": "Codeva",
+  "license": "MIT",
+  "type": "module",
+  "description": "Packaging tools for the existing pinned Code-OSS fork; not an application",
+  "devDependencies": { "electron-builder": "26.15.3" }
+}

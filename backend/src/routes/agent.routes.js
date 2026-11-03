@@ -4,6 +4,10 @@ import { llmGateway } from '../services/llm/gateway.js'
 import { PLANS } from '../config/plans.js'
 
 const router = Router()
+const authenticateAgent = (req, res, next) => {
+  const middleware = req.headers['x-cli-session'] ? authenticateCLI : requireAuth
+  Promise.resolve(middleware(req, res, next)).catch(next)
+}
 
 /**
  * POST /api/v1/agent/complete
@@ -20,31 +24,12 @@ const router = Router()
  *
  * Auth: either CLI session (x-cli-session) or JWT Bearer token.
  */
-router.post('/complete', async (req, res, next) => {
+router.post('/complete', authenticateAgent, async (req, res, next) => {
   try {
-    // Support both CLI session auth and JWT auth
-    let userId, plan
-    if (req.headers['x-cli-session']) {
-      // CLI session auth
-      await new Promise((resolve, reject) => authenticateCLI(req, res, (err) => err ? reject(err) : resolve()))
-      userId = req.session?.user_id
-      plan = 'free' // will be resolved below
-    } else if (req.headers.authorization) {
-      await new Promise((resolve, reject) => requireAuth(req, res, (err) => err ? reject(err) : resolve()))
-      userId = req.user?.id
-      plan = req.user?.plan || 'free'
-    } else {
-      return res.status(401).json({ error: 'Authentication required (Bearer token or x-cli-session)' })
-    }
-
-    if (!plan || plan === 'free') {
-      // Resolve real plan from user
-      plan = req.user?.plan || req.session?.plan || 'free'
-    }
-    void userId
+    const plan = req.user?.plan || 'free'
 
     const { messages, model, temperature = 0.4, tools, tool_choice, stream = false, system, max_tokens } = req.body
-    if (!messages || !Array.isArray(messages)) {
+    if (!Array.isArray(messages) || !messages.length || messages.some(m => !m || !['system', 'user', 'assistant', 'tool'].includes(m.role)) || (model != null && typeof model !== 'string')) {
       return res.status(400).json({ error: 'messages array is required' })
     }
 
@@ -64,12 +49,13 @@ router.post('/complete', async (req, res, next) => {
       'panchayat': 'council',
       'auto': 'auto',
     }
-    const resolvedModel = MODEL_NAME_MAP[model?.toLowerCase()] || model || 'auto'
+    const resolvedModel = MODEL_NAME_MAP[model?.toLowerCase().replace(/^codeva\//, '')] || model || 'auto'
 
     // Inject system message if provided (skip identity overwrite of custom system)
+    const agentMessages = messages.map(message => message.role === 'system' ? { ...message, _skip_inject: true } : message)
     const fullMessages = system
-      ? [{ role: 'system', content: system, _skip_inject: true }, ...messages]
-      : messages
+      ? [{ role: 'system', content: system, _skip_inject: true }, ...agentMessages]
+      : agentMessages
 
     if (stream) {
       res.setHeader('Content-Type', 'text/event-stream')
@@ -161,7 +147,7 @@ router.post('/complete', async (req, res, next) => {
  * GET /api/v1/agent/models
  * Returns available models for the user's plan with Codeva names.
  */
-router.get('/models', async (req, res) => {
+router.get('/models', authenticateAgent, async (req, res) => {
   const plan = req.user?.plan || 'free'
   const planConfig = PLANS[plan] || PLANS.free
 
@@ -180,7 +166,7 @@ router.get('/models', async (req, res) => {
     { id: 'codeva/panchayat', name: 'Panchayat (Council)', description: 'Multi-model consensus', tier: 'reasoning' },
   ]
 
-  // Filter by plan's allowed tiers, but return all models. 
+  // Filter by plan's allowed tiers, but return all models.
   // Mark models as 'locked: true' if the user doesn't have the tier.
   const allowed = new Set(planConfig.allowedTiers || ['fast', 'balanced'])
   const available = models.map(m => ({
@@ -196,26 +182,20 @@ router.get('/models', async (req, res) => {
  * Spawn multiple sub-agent tasks in parallel (like spawn_team in the CLI).
  * Each task gets its own completion call; results are returned together.
  */
-router.post('/sub-agents', async (req, res, next) => {
+router.post('/sub-agents', authenticateAgent, async (req, res, next) => {
   try {
-    // Auth (same as /complete)
-    if (req.headers.authorization) {
-      await new Promise((resolve, reject) => requireAuth(req, res, (err) => err ? reject(err) : resolve()))
-    } else {
-      return res.status(401).json({ error: 'Authentication required' })
-    }
-
     const plan = req.user?.plan || 'free'
     const planConfig = PLANS[plan] || PLANS.free
     const { tasks } = req.body
 
-    if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
+    if (!Array.isArray(tasks) || tasks.length === 0 || tasks.some(t => !t || typeof t.prompt !== 'string' || !t.prompt.trim())) {
       return res.status(400).json({ error: 'tasks array is required' })
     }
 
     // Limit concurrency by plan
     const maxParallel = planConfig.maxParallelAgents || 1
-    const limited = tasks.slice(0, maxParallel)
+    if (tasks.length > maxParallel) return res.status(400).json({ error: `Your plan allows at most ${maxParallel} parallel tasks`, maxParallel })
+    const limited = tasks
 
     const results = await Promise.allSettled(
       limited.map(async (task) => {
@@ -228,6 +208,7 @@ router.post('/sub-agents', async (req, res, next) => {
           temperature: task.temperature || 0.4,
           plan,
         })
+        if (result.error) throw new Error(result.error)
         return { task: task.name || task.prompt.slice(0, 50), content: result.content || result.text || '' }
       })
     )
@@ -241,92 +222,6 @@ router.post('/sub-agents', async (req, res, next) => {
     res.json({ results: output, plan, maxParallel })
   } catch (err) {
     next(err)
-  }
-})
-
-/**
- * POST /api/v1/agent/run
- * 
- * Agent Platform web UI endpoint. Accepts a goal/task, routes to LLM,
- * and streams the response as SSE. This allows the web-based Agent Platform
- * to work without requiring a local WebSocket server.
- */
-router.post('/run', requireAuth, async (req, res) => {
-  const { goal, model, sessionId } = req.body
-
-  if (!goal || typeof goal !== 'string') {
-    return res.status(400).json({ error: 'goal is required' })
-  }
-
-  // SSE headers
-  res.setHeader('Content-Type', 'text/event-stream')
-  res.setHeader('Cache-Control', 'no-cache')
-  res.setHeader('Connection', 'keep-alive')
-  res.flushHeaders?.()
-
-  const send = (data) => {
-    if (!res.writableEnded) {
-      res.write(`data: ${JSON.stringify(data)}\n\n`)
-    }
-  }
-
-  try {
-    send({ type: 'info', content: `🚀 Agent received task: "${goal.slice(0, 100)}"` })
-    send({ type: 'info', content: '🧠 Planning execution strategy...' })
-
-    // Build system prompt for agentic behavior
-    const systemPrompt = `You are CodeVaa Agent — an autonomous AI agent that decomposes complex goals into actionable steps and executes them. 
-
-Your capabilities:
-- Code generation and debugging
-- Research and analysis
-- File operations (conceptual)
-- Multi-step planning and execution
-
-For the given goal, think step by step:
-1. Analyze the goal
-2. Break it into sub-tasks
-3. Execute each sub-task
-4. Provide the complete result
-
-Be thorough, provide code when needed, and structure your response clearly with markdown.`
-
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: goal },
-    ]
-
-    const activeModel = model || 'codeva-ravan-v1'
-    const generator = await llmGateway.complete({
-      messages,
-      model: activeModel,
-      temperature: 0.7,
-      plan: req.user?.plan || 'free',
-      effort: 'high',
-    })
-
-    send({ type: 'info', content: `⚡ Executing with ${activeModel}...` })
-
-    let fullResponse = ''
-    for await (const chunk of generator) {
-      if (chunk.type === 'token') {
-        fullResponse += chunk.content
-        send({ type: 'token', content: chunk.content })
-      } else if (chunk.type === 'info') {
-        send({ type: 'info', content: chunk.content })
-      } else if (chunk.type === 'error') {
-        send({ type: 'error', content: chunk.content })
-        break
-      }
-    }
-
-    send({ type: 'info', content: '✅ Task completed successfully' })
-    res.write('data: [DONE]\n\n')
-    res.end()
-  } catch (err) {
-    send({ type: 'error', content: err.message })
-    res.write('data: [DONE]\n\n')
-    res.end()
   }
 })
 

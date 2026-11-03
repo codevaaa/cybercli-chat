@@ -22,6 +22,9 @@ const userSchema = new mongoose.Schema({
   // API & Billing
   credits: { type: Number, default: 1000 },
   totalUsedTokens: { type: Number, default: 0 },
+  // Approved by an existing administrator; never copied from editable JWT metadata.
+  teacher_enabled: { type: Boolean, default: false },
+  under18: { type: Boolean, default: false },
 
   // Moderation / abuse handling
   status: { type: String, enum: ['active', 'banned', 'suspended'], default: 'active', index: true },

@@ -1,0 +1,5 @@
+main { max-width: 1050px; margin: 40px auto; padding: 0 24px; }
+h1 { font: 32px/1.2 Georgia, serif; font-weight: 400; }
+p { color: var(--text-2); overflow-wrap: anywhere; }
+canvas { width: 100%; height: auto; margin-top: 24px; border: 1px solid var(--border); }
+a { text-decoration: none; }

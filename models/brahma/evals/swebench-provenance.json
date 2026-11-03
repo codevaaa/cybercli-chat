@@ -1,0 +1,12 @@
+{
+  "dataset": "princeton-nlp/SWE-bench_Verified",
+  "dataset_card": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified",
+  "purpose": "Small execution-based held-out evaluation only; never training data",
+  "status": "blocked_pending_dataset_and_repository_license_review",
+  "dataset_revision": null,
+  "selected_instance_candidate": "astropy__astropy-12907",
+  "source_repo": "https://github.com/astropy/astropy",
+  "source_commit": "d16bfe05a744909de4b27f5875fe0d4ed41ce607",
+  "dataset_license": "Not declared in the current Hugging Face dataset card",
+  "policy": "Do not download task text, patches, repositories, or test fixtures until the benchmark dataset license and source repository license are reviewed and pinned."
+}

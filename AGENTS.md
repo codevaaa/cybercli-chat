@@ -1,20 +1,18 @@
 # AGENTS.md — CodeVaa Agent Team Configuration
 
-> This file configures the autonomous agent team for this project.
-> Place it at your project root. CodeVaa reads it before every session.
+> Repository instructions for contributors and coding assistants.
 
 ## Project Context
 
-This is the **CodeVaa** full-stack AI platform — a multi-model AI chat and
-autonomous agent system. Built with:
+This is the **CodeVaa** full-stack AI platform — multi-model AI chat,
+browser assistance, desktop, and coding integrations. Built with:
 - **Backend**: Node.js + Express + MongoDB + Supabase
 - **Frontend**: React 19 + Vite + TailwindCSS + Zustand
-- **Agent Platform**: Custom Node.js orchestration engine
 - **Desktop**: Electron wrapper
 - **Mobile**: React Native (scaffold)
 
 The backend lives at `backend/`. The main frontend at `frontend/`.
-The agent platform at `agent-platform/`.
+The browser extension lives at `chrome-extension/`, and the main desktop app at `desktop/`.
 
 ## Agent Team Overrides
 

@@ -1,0 +1,72 @@
+services:
+  api:
+    profiles: [on-prem]
+    build: { context: ., dockerfile: backend/Dockerfile }
+    ports: ["127.0.0.1:3000:3000"]
+    environment: &codeva-env
+      PORT: "3000"
+      MONGODB_URI: mongodb://mongo:27017/codeva
+      REDIS_URL: redis://queue:6379
+      SUPABASE_URL: ${SUPABASE_URL:?Use the existing account auth endpoint}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?Use the existing account service credential}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      DOSSIER_PREVIEW_ORIGIN: ${DOSSIER_PREVIEW_ORIGIN:-http://127.0.0.1:3001}
+      DOSSIER_LOCAL_GATEWAY_URL: http://local-gateway:11434/v1/chat/completions
+      DOSSIER_LOCAL_MODEL: ${DOSSIER_LOCAL_MODEL:-qwen2.5-coder:7b}
+      DOSSIER_LOCAL_JUDGE_MODEL: ${DOSSIER_LOCAL_JUDGE_MODEL:-llama3.2:3b}
+      DOSSIER_LOCAL_VISION_MODEL: ${DOSSIER_LOCAL_VISION_MODEL:-}
+      DOSSIER_LOCAL_VISION_JUDGE_MODEL: ${DOSSIER_LOCAL_VISION_JUDGE_MODEL:-}
+      DOSSIER_WORKER_ENABLED: "false"
+    depends_on:
+      mongo: { condition: service_healthy }
+      queue: { condition: service_healthy }
+      local-gateway: { condition: service_started }
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock", "dossier-artifacts:/app/backend/data/dossier-artifacts"]
+  runtime:
+    profiles: [on-prem]
+    build: { context: ., dockerfile: backend/Dockerfile }
+    command: ["node", "src/services/dossier/worker.js"]
+    environment: *codeva-env
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock", "dossier-artifacts:/app/backend/data/dossier-artifacts"]
+    depends_on: [mongo, queue, local-gateway, sandbox]
+  preview-api:
+    profiles: [on-prem]
+    build: { context: ., dockerfile: backend/Dockerfile }
+    ports: ["127.0.0.1:3001:3000"]
+    environment: *codeva-env
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock", "dossier-artifacts:/app/backend/data/dossier-artifacts"]
+    depends_on: [mongo, queue]
+  mongo:
+    profiles: [on-prem]
+    image: mongo:8.0.14
+    volumes: ["mongo-data:/data/db"]
+    healthcheck: { test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"], interval: 5s, timeout: 3s, retries: 20 }
+  queue:
+    profiles: [on-prem]
+    image: redis:7.4.7-alpine
+    volumes: ["queue-data:/data"]
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 3s, retries: 20 }
+  local-gateway:
+    profiles: [on-prem]
+    image: ollama/ollama:0.35.0
+    volumes: ["local-models:/root/.ollama"]
+  sandbox:
+    profiles: [on-prem]
+    image: codeva-dossier-python:3.12.8-2
+    build: ./backend/src/services/dossier/sandbox
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    pids_limit: 64
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=32m"]
+    user: "0:0"
+    volumes: ["sandbox-reference:/workspace"]
+volumes:
+  mongo-data:
+  queue-data:
+  local-models:
+  dossier-artifacts:
+  sandbox-reference:

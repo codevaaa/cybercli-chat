@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { editorAuthQuery } from '../../lib/editorAuth.js'
 import { Mail, ArrowRight, Loader2, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../stores/authStore.js'
@@ -7,6 +8,7 @@ import { CodevaMark } from '../../components/ui/CodevaLogo'
 import { Tooltip } from '../../components/ui/Tooltip.jsx'
 
 export default function MagicLinkPage() {
+  const [searchParams] = useSearchParams()
   const { signInWithMagicLink, loading, error, clearError } = useAuthStore()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
@@ -15,7 +17,9 @@ export default function MagicLinkPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     clearError()
-    const result = await signInWithMagicLink(email)
+    let query
+    try { query = editorAuthQuery(searchParams) } catch (err) { useAuthStore.setState({ error: err.message }); return }
+    const result = await signInWithMagicLink(email, query)
     if (result.success) setSent(true)
   }
 
@@ -79,7 +83,7 @@ export default function MagicLinkPage() {
                     Use a different email
                   </button>
                   <Link
-                    to="/auth/login"
+                    to={`/auth/login${searchParams.get("redirect") === "ide" ? `?${searchParams.toString()}` : ""}`}
                     className="text-xs text-foreground-muted hover:text-foreground-secondary transition-colors font-medium"
                   >
                     Back to password sign in
@@ -161,7 +165,7 @@ export default function MagicLinkPage() {
         <div className="text-center mt-6">
           <p className="text-sm text-foreground-secondary">
             Prefer a password?{' '}
-            <Link to="/auth/login" className="text-accent hover:text-accent-dark font-semibold transition-colors">
+            <Link to={`/auth/login${searchParams.get("redirect") === "ide" ? `?${searchParams.toString()}` : ""}`} className="text-accent hover:text-accent-dark font-semibold transition-colors">
               Sign in with password
             </Link>
           </p>
@@ -170,4 +174,3 @@ export default function MagicLinkPage() {
     </div>
   )
 }
-

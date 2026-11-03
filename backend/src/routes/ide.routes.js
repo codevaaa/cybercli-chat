@@ -3,6 +3,9 @@ import { randomUUID } from 'crypto'
 import { authenticateCLI, requireAuth } from '../middleware/auth.js'
 import { llmGateway } from '../services/llm/gateway.js'
 import { pickModelForPlan } from '../config/plans.js'
+import { assistantPreferenceInstructions } from '../services/chat/assistantPreferences.js'
+import { streamLifetime } from '../services/llm/streamLifetime.js'
+import { getPersonaById } from '../services/agents/registry.js'
 import {
   buildEnhanceMessages,
   checkEnhanceQuota,
@@ -10,6 +13,10 @@ import {
 } from '../services/ide/promptEnhance.js'
 
 const router = Router()
+router.use((req, res, next) => {
+  const authenticate = req.headers['x-cli-session'] ? authenticateCLI : requireAuth
+  Promise.resolve(authenticate(req, res, next)).catch(next)
+})
 
 /** Friendly Codeva names → gateway model ids (same map as agent.routes). */
 const MODEL_NAME_MAP = {
@@ -35,22 +42,10 @@ const ideSessions = new Map()
  * Sets req.user.id and req.user.plan.
  */
 async function resolveIdeAuth(req, res) {
-  if (req.headers['x-cli-session']) {
-    await new Promise((resolve, reject) =>
-      authenticateCLI(req, res, (err) => (err ? reject(err) : resolve())),
-    )
-    return {
-      userId: req.user?.id || req.session?.user_id,
-      plan: req.user?.plan || req.session?.plan || 'free',
-    }
-  }
-  if (req.headers.authorization) {
-    await new Promise((resolve, reject) =>
-      requireAuth(req, res, (err) => (err ? reject(err) : resolve())),
-    )
+  if (req.user) {
     return {
       userId: req.user?.id,
-      plan: req.user?.plan || 'free',
+      plan: req.user.plan || 'free',
     }
   }
   const err = new Error('Authentication required (Bearer token or x-cli-session)')
@@ -100,24 +95,38 @@ router.post('/complete', async (req, res, next) => {
       tool_choice,
       stream = false,
       system,
+      responsePreferences,
+      agentId,
       max_tokens,
     } = req.body || {}
 
-    if (!messages || !Array.isArray(messages)) {
+    if (!Array.isArray(messages) || !messages.length || messages.some(m => !m || !['system', 'user', 'assistant', 'tool'].includes(m.role))) {
       return res.status(400).json({ error: 'messages array is required' })
     }
 
     const resolvedModel = resolveModel(model)
+    if (agentId != null && (typeof agentId !== 'string' || !getPersonaById(agentId))) {
+      return res.status(400).json({ error: 'Unknown agentId' })
+    }
+    const agentMessages = messages.map(message => message.role === 'system' ? { ...message, _skip_inject: true } : message)
     const fullMessages = system
-      ? [{ role: 'system', content: system, _skip_inject: true }, ...messages]
-      : messages
+      ? [{ role: 'system', content: system, _skip_inject: true }, ...agentMessages]
+      : agentMessages
+    if (agentId) {
+      const persona = getPersonaById(agentId)
+      fullMessages.push({ role: 'system', content: `[ACTIVE AGENT PERSONA: ${persona.name}]\n${persona.systemPrompt}`, _skip_inject: true })
+    }
+    if (responsePreferences != null) {
+      fullMessages.push({ role: 'system', content: assistantPreferenceInstructions(responsePreferences), _skip_inject: true })
+    }
 
     if (stream) {
       res.setHeader('Content-Type', 'text/event-stream')
       res.setHeader('Cache-Control', 'no-cache')
       res.setHeader('Connection', 'keep-alive')
       res.flushHeaders?.()
-
+      const lifetime = streamLifetime(res)
+      let done = false
       try {
         const generator = llmGateway.complete({
           messages: fullMessages,
@@ -127,10 +136,13 @@ router.post('/complete', async (req, res, next) => {
           tools,
           tool_choice,
           max_tokens,
+          signal: lifetime.signal,
         })
 
         for await (const chunk of generator) {
+          if (lifetime.signal.aborted || res.destroyed) break
           if (chunk.type === 'token') {
+            lifetime.token()
             res.write(`data: ${JSON.stringify({
               choices: [{ delta: { content: chunk.content }, index: 0 }],
             })}\n\n`)
@@ -146,15 +158,19 @@ router.post('/complete', async (req, res, next) => {
             res.write(`data: ${JSON.stringify({ info: chunk.content })}\n\n`)
           } else if (chunk.type === 'done') {
             res.write('data: [DONE]\n\n')
+            done = true
           } else if (chunk.type === 'error') {
             res.write(`data: ${JSON.stringify({ error: chunk.content })}\n\n`)
           }
         }
-        if (!res.writableEnded) res.write('data: [DONE]\n\n')
+        if (!done && !lifetime.signal.aborted && !res.writableEnded && !res.destroyed) res.write('data: [DONE]\n\n')
       } catch (err) {
-        res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`)
+        if (!lifetime.signal.aborted && !res.destroyed) res.write(`data: ${JSON.stringify({ error: 'Completion unavailable. Please try again.' })}\n\n`)
+      } finally {
+        lifetime.dispose()
       }
-      return res.end()
+      if (!res.destroyed) res.end()
+      return
     }
 
     const result = await llmGateway.completeNonStream({

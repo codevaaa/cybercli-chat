@@ -27,6 +27,18 @@ export const MODEL_TIERS = {
  * to 'balanced'. Keep in sync with gateway.js MODEL_MAP.
  */
 export const MODEL_TIER_MAP = {
+  'apinex/free/gpt-6-luna': 'balanced',
+  'apinex/free/glm-5.3-flash': 'balanced',
+  'apinex/free/deepseek-v4-pro-0813': 'balanced',
+  'apinex/free/minimax-m3.1': 'balanced',
+  'apinex/free/qwen-3.8-max': 'balanced',
+  'apinex/free/claude-opus-4.6': 'balanced',
+  'dossier/builder': 'balanced',
+  'dossier/judge': 'balanced',
+  'dossier/judge-cheap': 'balanced',
+  'dossier/frontier': 'premium',
+  'brahma-v1': 'balanced',
+  'brahma/v1': 'balanced',
   // fast
   'groq/llama-3.1-8b': 'fast',
   'cerebras/llama-3.1-8b': 'fast',
@@ -166,7 +178,8 @@ export function pickModelForPlan(planName, desiredTier = 'balanced', candidates 
   const effectiveIdx = Math.max(desiredIdx, planCeilingIdx) // higher index = weaker tier
   const effectiveTier = order[effectiveIdx] || 'balanced'
 
-  const pool = candidates || Object.keys(MODEL_TIER_MAP)
+  // Internal dossier aliases are explicit worker routes, never automatic chat defaults.
+  const pool = (candidates || Object.keys(MODEL_TIER_MAP)).filter(id => !id.startsWith('dossier/') && !id.startsWith('brahma'))
   // First choice: a model exactly at the effective tier the plan allows.
   const exact = pool.find((id) => tierOf(id) === effectiveTier && plan.allowedTiers.includes(tierOf(id)))
   if (exact) return exact

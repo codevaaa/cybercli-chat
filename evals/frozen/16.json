@@ -1,0 +1,25 @@
+{
+  "id": "codeva-16",
+  "prompt": "Build a invoice book app for two sample users. Keep each owner's rows private. Case 16.",
+  "pack": "general",
+  "spec": {
+    "will_build": [
+      "Everyone can see invoice book",
+      "Only I can see invoice book"
+    ],
+    "must_never": [
+      "Expose secrets"
+    ],
+    "acceptance": [
+      "Show invoice book after login"
+    ]
+  },
+  "expected": {
+    "original": true,
+    "pending_blocked": true,
+    "can_build": false,
+    "builder_hidden": true,
+    "missing_judge_blocks": true,
+    "missing_replay_fails": true
+  }
+}

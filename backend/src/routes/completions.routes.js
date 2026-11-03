@@ -1,62 +1,41 @@
 import { Router } from 'express'
+import rateLimit from 'express-rate-limit'
+import { grammarInput, grammarMessages, parseGrammar } from '../services/writing/grammar.js'
+import { streamLifetime } from '../services/llm/streamLifetime.js'
 import { requireAuth, optionalAuth } from '../middleware/auth.js'
 import { llmGateway } from '../services/llm/gateway.js'
 import { cacheKeyFor, getCached, setCached } from '../utils/responseCache.js'
 import { getPersonaById } from '../services/agents/registry.js'
+import { getPlan } from '../config/plans.js'
 
 const router = Router()
+const grammarLimiter = rateLimit({ windowMs: 60000, limit: 30, keyGenerator: req => req.user.id, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'Too many writing checks. Please wait a minute.' } })
 
-// ── Grammar check endpoint (cached, non-stream, fast) ──────────────────────────
-// Used by the Chrome extension. Same text → instant cached result.
-router.post('/grammar', optionalAuth, async (req, res) => {
-  const { text, language } = req.body
-  if (!text || typeof text !== 'string' || text.length < 2) {
-    return res.status(400).json({ error: 'text is required' })
-  }
-
-  const messages = [{
-    role: 'user',
-    content: `You are an expert multilingual proofreader supporting 20+ international languages (English, Spanish, French, German, Chinese, Japanese, Korean, Arabic, Russian, Portuguese, Italian, Dutch, Turkish, etc.) and 22+ Indian native languages (Hindi, Bengali, Telugu, Marathi, Tamil, Urdu, Gujarati, Kannada, Malayalam, Punjabi, Odia, Assamese, Sanskrit, etc.). Analyze the text carefully. Catch spelling errors, incomplete/gibberish words, grammar mistakes, punctuation, awkward phrasing, and clarity issues. Apply the grammar rules of the DETECTED language.
-
-Return ONLY a JSON object (no markdown):
-{"tone":"formal|casual|confident|friendly|neutral|aggressive","language":"detected language","issues":[{"original":"exact substring","suggestion":"correction","type":"grammar|spelling|punctuation|clarity","reason":"brief reason"}]}
-
-Rules:
-- Flag misspelled/incomplete/non-words (e.g. "cybrefa", "recieve", "teh").
-- "original" MUST be an exact substring in the text.
-- If perfect, return empty issues [].
-
-Text:
-"""${text.slice(0, 3000)}"""`
-  }]
-
+// Proofreading uses the same authenticated gateway and account plan as chat.
+router.post('/grammar', requireAuth, grammarLimiter, async (req, res) => {
+  let input
+  try { input = grammarInput(req.body) }
+  catch (error) { return res.status(400).json({ error: error.message }) }
   const model = 'groq/llama-3.1-8b'
-  const key = cacheKeyFor(messages, model)
-
-  // Serve from cache if available
+  const messages = grammarMessages(input)
+  const key = cacheKeyFor(messages, `${model}:${req.user.id}:${req.user.plan || 'free'}`)
   const cached = getCached(key)
-  if (cached) {
-    return res.json({ ...cached, cached: true })
-  }
-
+  if (cached) return res.json({ ...cached, cached: true })
   try {
-    const result = await llmGateway.completeNonStream({ messages, model, temperature: 0.2 })
-    let parsed = { tone: 'neutral', language: language || 'English', issues: [] }
-    try {
-      const match = (result.content || '').match(/\{[\s\S]*\}/)
-      if (match) parsed = JSON.parse(match[0])
-    } catch {}
+    const result = await llmGateway.completeNonStream({ messages, model, temperature: 0.1, plan: req.user.plan || 'free' })
+    if (result.error) throw new Error('Proofreading unavailable')
+    const parsed = parseGrammar(result.content, input.text)
     setCached(key, parsed)
     return res.json({ ...parsed, cached: false })
-  } catch (err) {
-    return res.status(500).json({ error: err.message, issues: [] })
+  } catch {
+    return res.status(502).json({ error: 'AI proofreading is temporarily unavailable. Please try again.' })
   }
 })
 
 router.post('/', optionalAuth, async (req, res) => {
   const { 
     messages, 
-    model, 
+    model: requestedModel,
     temperature = 0.7, 
     stream = true,
     webSearchEnabled = false,
@@ -68,9 +47,20 @@ router.post('/', optionalAuth, async (req, res) => {
     thinking = false,
     agentId = null
   } = req.body
+  // Public catalog friendly name uses the same Madhav route as the agent API.
+  const model = requestedModel === 'madhav' ? 'llm7/deepseek-v3.1:671b-terminus' : requestedModel
+  if (model != null && typeof model !== 'string') return res.status(400).json({ error: 'model must be a string' })
+  if (model === 'council' && !getPlan(req.user?.plan).features.council) {
+    return res.status(403).json({ error: 'Council requires a paid Codeva plan. Choose Automatic routing or upgrade your account.' })
+  }
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages array is required' })
+  }
+  if (messages.length > 64 || messages.some(message => !message || typeof message !== 'object' ||
+      !['system', 'developer', 'user', 'assistant', 'tool'].includes(message.role) ||
+      !(typeof message.content === 'string' || Array.isArray(message.content) || message.role === 'assistant' && message.tool_calls))) {
+    return res.status(400).json({ error: 'Provide up to 64 valid chat messages.' })
   }
 
   // Resolve the selected agent persona (if any) from the trusted server-side
@@ -94,6 +84,8 @@ router.post('/', optionalAuth, async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache')
     res.setHeader('Connection', 'keep-alive')
 
+    res.flushHeaders?.()
+    const lifetime = streamLifetime(res)
     try {
       let extraSystemContent = `You are Codeva, an advanced AI assistant created by Codeva.
 [CORE KNOWLEDGE]
@@ -186,24 +178,29 @@ After installation, they can run \`cybercli\` or \`cybercoder\` in their termina
         const { runCouncilStream } = await import('../services/llm/councilEngine.js')
         generator = runCouncilStream(history)
       } else {
-        generator = await llmGateway.complete({ messages: history, model: model || 'auto', temperature, effort, thinking })
+        generator = llmGateway.complete({ messages: history, model: model || 'auto', temperature, effort, thinking, plan: req.user?.plan || 'free', signal: lifetime.signal })
       }
 
       for await (const chunk of generator) {
+        if (lifetime.signal.aborted) break
         if (chunk.type === 'token') {
+          lifetime.token()
           res.write(`data: ${JSON.stringify({ type: 'token', content: chunk.content })}\n\n`)
         } else if (chunk.type === 'error') {
           res.write(`data: ${JSON.stringify({ type: 'error', content: chunk.content })}\n\n`)
         } else if (chunk.type === 'info') {
           res.write(`data: ${JSON.stringify({ type: 'info', content: chunk.content })}\n\n`)
         } else if (chunk.type === 'done') {
-          res.write('data: [DONE]\n\n')
+          break
         }
       }
-    } catch (error) {
-      res.write(`data: ${JSON.stringify({ type: 'error', content: error.message })}\n\n`)
+      if (!lifetime.signal.aborted) res.write('data: [DONE]\n\n')
+    } catch {
+      if (!lifetime.signal.aborted) res.write(`data: ${JSON.stringify({ type: 'error', content: 'Completion unavailable. Please try again.' })}\n\n`)
+    } finally {
+      lifetime.dispose()
+      res.end()
     }
-    res.end()
   } else {
     try {
       let finalMessages = messages
@@ -218,7 +215,7 @@ After installation, they can run \`cybercli\` or \`cybercoder\` in their termina
           },
         ]
       }
-      const result = await llmGateway.completeNonStream({ messages: finalMessages, model, temperature, effort, thinking })
+      const result = await llmGateway.completeNonStream({ messages: finalMessages, model, temperature, effort, thinking, plan: req.user?.plan || 'free' })
       res.json(result)
     } catch (error) {
       res.status(500).json({ error: error.message })
