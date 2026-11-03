@@ -25,6 +25,8 @@ test('editor refresh validates input, handles expired tokens and refuses banned/
   }
   account = { status: 'active' }; const response = await request(app).post('/refresh').send({ refresh_token: 'fixture-refresh-token' })
   assert.equal(response.status, 200); assert.equal(response.headers['cache-control'], 'no-store'); assert.equal(response.body.refresh_token, 'next-refresh')
+  // Real GoTrue sessions use opaque 12-character refresh credentials.
+  await request(app).post('/refresh').send({ refresh_token: 'aB12cd34EF56' }).expect(200)
   outage = true; assert.equal((await request(app).post('/refresh').send({ refresh_token: 'fixture-refresh-token' })).status, 503); outage = false
   delete process.env.SUPABASE_URL; assert.equal((await request(app).post('/refresh').send({ refresh_token: 'fixture-refresh-token' })).status, 503)
 })

@@ -50,6 +50,8 @@ test('grammar uses account plans, exact source positions and caches per account 
   const first = await request(app).post('/completions/grammar').set('Authorization', 'cache-one').send(body).expect(200)
   assert.equal(first.body.issues[0].start, 4); assert.equal(first.body.checkedLength, body.text.length)
   assert.equal(calls.at(-1).plan, 'pro'); assert.match(calls.at(-1).messages[0].content, /expert/)
+  assert.equal(calls.at(-1).model, 'auto'); assert.equal(calls.at(-1).task, 'writing')
+  assert.ok(calls.at(-1).messages.filter(m => m.role === 'system').every(m => m._skip_inject === true))
   const second = await request(app).post('/completions/grammar').set('Authorization', 'cache-one').send(body).expect(200)
   assert.equal(second.body.cached, true); assert.equal(calls.length, before + 1)
   await request(app).post('/completions/grammar').set('Authorization', 'cache-two').send(body).expect(200)

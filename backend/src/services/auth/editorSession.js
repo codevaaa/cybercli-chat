@@ -4,7 +4,9 @@ import User from '../../models/User.js'
 // client so a desktop session never replaces the API's shared auth client.
 export async function refreshEditorSession(req, res) {
   const token = req.body?.refresh_token
-  if (typeof token !== 'string' || token.length < 16 || token.length > 2048 || /\s/.test(token)) return res.status(400).json({ error: 'A valid account refresh session is required' })
+  // Supabase refresh credentials are opaque and can be 12 characters long.
+  // Do not impose the length of a JWT or our test fixtures on real sessions.
+  if (typeof token !== 'string' || token.length < 8 || token.length > 2048 || /\s/.test(token)) return res.status(400).json({ error: 'A valid account refresh session is required' })
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) return res.status(503).json({ error: 'Account authentication is unavailable' })
   try {
     const auth = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY, { auth: { autoRefreshToken: false, persistSession: false } })

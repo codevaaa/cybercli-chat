@@ -16,13 +16,13 @@ router.post('/grammar', requireAuth, grammarLimiter, async (req, res) => {
   let input
   try { input = grammarInput(req.body) }
   catch (error) { return res.status(400).json({ error: error.message }) }
-  const model = 'groq/llama-3.1-8b'
+  const model = 'auto'
   const messages = grammarMessages(input)
   const key = cacheKeyFor(messages, `${model}:${req.user.id}:${req.user.plan || 'free'}`)
   const cached = getCached(key)
   if (cached) return res.json({ ...cached, cached: true })
   try {
-    const result = await llmGateway.completeNonStream({ messages, model, temperature: 0.1, plan: req.user.plan || 'free' })
+    const result = await llmGateway.completeNonStream({ messages, model, task: 'writing', temperature: 0.1, plan: req.user.plan || 'free', signal: AbortSignal.timeout(90000) })
     if (result.error) throw new Error('Proofreading unavailable')
     const parsed = parseGrammar(result.content, input.text)
     const dictionary = new Set((input.dictionary || []).map(word => word.normalize('NFKC').toLocaleLowerCase()))
@@ -39,7 +39,7 @@ router.post('/rewrite', requireAuth, grammarLimiter, async (req, res) => {
   try { messages = rewriteMessages(req.body) }
   catch (error) { return res.status(400).json({ error: error.message }) }
   try {
-    const result = await llmGateway.completeNonStream({ messages, model: 'auto', temperature: 0.3, plan: req.user.plan || 'free' })
+    const result = await llmGateway.completeNonStream({ messages, model: 'auto', task: 'writing', temperature: 0.3, plan: req.user.plan || 'free', signal: AbortSignal.timeout(90000) })
     if (result.error || typeof result.content !== 'string' || !result.content.trim() || result.content.length > 16000) throw new Error('Invalid rewrite')
     res.json({ original: req.body.text, rewritten: result.content.trim(), mode: req.body.mode })
   } catch { res.status(502).json({ error: 'The writing editor is temporarily unavailable. Your draft has been kept. Please try again.' }) }

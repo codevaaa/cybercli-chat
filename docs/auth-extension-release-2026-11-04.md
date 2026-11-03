@@ -24,6 +24,7 @@ This release repairs the client/account lifecycle around that dependency and upg
 4. The website marks an account ready only after provisioning succeeds. Temporary failures preserve the Supabase session for retry; protected app access remains gated. Repeated initialization and logout/account-switch races are covered by tests.
 5. The extension handoff verifies the session against `/auth/me`. The connection page shows success only after an origin/source/request-id checked acknowledgement. Tokens are absent from that acknowledgement and connection-page URLs.
 6. Rate-limited `POST /auth/session/refresh` rotates both credentials through an isolated client. Extension refreshes coalesce, preserve newer logins/logout, and keep saved sessions during temporary outages. Invalid/revoked sessions are cleared.
+   The live provider returned 12-character opaque refresh tokens. The previous 16-character minimum rejected them; validation now accepts that real format while retaining size, whitespace and rate limits.
 7. Signup confirmation retains the entered email and extension destination. Verification resend and password recovery show actionable errors.
 
 ## Writing and visual changes
@@ -33,13 +34,13 @@ This release repairs the client/account lifecycle around that dependency and upg
 - Six authenticated rewrite actions: professional, friendly, shorter, expanded, confident and simplified. The user reviews the result before applying; stale results cannot overwrite a changed draft.
 - Undo for applied AI writing changes; correctness/clarity filters; measured word/sentence/character counts and reading time.
 - Personal dictionary with spelling-only suppression, audience/formality goals, American/British/detected spelling, and per-site pauses that stop automatic writing requests.
-- Grammar and rewrite share the existing account limit of 30 requests/minute/process and route through the server gateway. No provider keys ship in the browser package.
+- Grammar and rewrite share the existing account limit of 30 requests/minute/process and use the gateway's automatic routing and failover. Server-generated writing/dictionary instructions are retained through identity injection; internal flags are removed before provider requests. Writing requests have a bounded timeout. No provider keys ship in the browser package.
 
 ## Validation
 
 | Check | Result |
 | --- | --- |
-| Backend suite | 112 tests passed |
+| Backend suite | 114 tests passed |
 | Frontend suite | 274 tests passed across 19 files |
 | Extension unit/manifest/CSP suite | 24 tests passed |
 | Unpacked Chromium extension | 20 workflows passed, including handoff, dictionary, rewrite/undo, website pause, rich text, history, capture, themes and sign-out |
@@ -49,6 +50,15 @@ This release repairs the client/account lifecycle around that dependency and upg
 | New auth/writing helper coverage | Backend helpers 100% lines; frontend auth helpers/store 94.34% lines and 80.59% branches; extension session manager 95.35% lines |
 
 Browser tests mock external auth, mail, account and model responses. They do not send real verification emails, complete a person's Google consent, or certify live AI output. Real Google account consent and site-specific advanced editor integrations remain manual acceptance items.
+
+## Production acceptance and deferred provider access
+
+- The first release commit `de8941a` deployed successfully to Vercel. Its Windows/macOS/Linux GitHub builds passed. The live installation page links the verified 1.5.0 ZIP.
+- Live Google authorization reaches the Google sign-in screen without a browser runtime error. A person's Google consent was not completed.
+- Live backend `/auth/health` returns `200` with `ready: true`; unauthenticated rewrite is rejected with `401`, invalid refresh input with `400`, and extension CORS preflight succeeds.
+- A disposable confirmed test account completed real Supabase email sign-in, MongoDB provisioning, and website-to-extension acknowledgement. The test auth account and MongoDB registry record were removed afterward.
+- A live proofreading request returned `502`. The configured Groq credential was rejected; other locally configured provider probes returned authorization, quota/subscription or access failures. No successful live AI writing output is claimed. The owner explicitly chose to complete the code release and restore provider access later. Provider credentials/credits must be restored privately in backend environment and Render settings before repeating the authenticated writing acceptance check.
+- Regression tests now exercise the actual gateway, preserving trusted writing prompts through provider failover and returning errors for failed/aborted requests. Mocked success is kept separate from the production provider failure above.
 
 ## Installation and deployment
 

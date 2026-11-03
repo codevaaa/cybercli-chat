@@ -1032,14 +1032,14 @@ export const llmGateway = {
     }
   },
 
-  async completeNonStream({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free', effort = 'low', thinking = false, isKaliKal = false, tools, tool_choice, max_tokens }) {
+  async completeNonStream({ messages, model: modelId = 'auto', temperature = 0.7, plan = 'free', effort = 'low', thinking = false, isKaliKal = false, tools, tool_choice, max_tokens, task, signal }) {
     const requested = resolveModelForPlan(modelId, plan, contentText([...messages].reverse().find(m => m.role === 'user')?.content || ''), { preferApinex: !isKaliKal })
     // Share the streaming failover path so APINEX has the same OpenRouter and
     // remaining-provider recovery in chat, Council and non-stream tool calls.
-    if (requested === 'brahma-v1' || !isKaliKal && (requested.startsWith('apinex/') || /^codeva-(?!kali)/.test(requested) && hasKeys('apinex'))) {
+    if (task === 'writing' || requested === 'brahma-v1' || !isKaliKal && (requested.startsWith('apinex/') || /^codeva-(?!kali)/.test(requested) && hasKeys('apinex'))) {
       let content = '', finish_reason = 'stop', route = null
       const calls = new Map()
-      for await (const chunk of this.complete({ messages, model: requested, temperature, plan, effort, thinking, tools, tool_choice, max_tokens, auditRoutes: true })) {
+      for await (const chunk of this.complete({ messages, model: requested, temperature, plan, effort, thinking, isKaliKal, tools, tool_choice, max_tokens, auditRoutes: true, signal })) {
         if (chunk.type === 'token') content += chunk.content
         if (chunk.type === 'finish') finish_reason = chunk.finish_reason
         if (chunk.type === 'route' && chunk.phase === 'success') route = chunk
@@ -1052,6 +1052,7 @@ export const llmGateway = {
           calls.set(delta.index, current)
         }
       }
+      if (signal?.aborted) return { error: 'The writing request timed out or was cancelled. Please try again.' }
       return { content, ...(calls.size ? { tool_calls: [...calls.values()] } : {}), finish_reason, model: route?.model, provider: route?.provider, tokens_in: Math.ceil(messages.reduce((n, m) => n + contentText(m.content).length, 0) / 4), tokens_out: Math.ceil((content.length + JSON.stringify([...calls.values()]).length) / 4), token_estimate: true }
     }
     let activeModelId = modelId
