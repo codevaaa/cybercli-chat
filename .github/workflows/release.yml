@@ -71,15 +71,15 @@ jobs:
           $releaseDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
           
           $yml = @"
-version: $version
-files:
-  - url: $filename
-    sha512: $sha512b64
-    size: $size
-path: $filename
-sha512: $sha512b64
-releaseDate: '$releaseDate'
-"@
+          version: $version
+          files:
+            - url: $filename
+              sha512: $sha512b64
+              size: $size
+          path: $filename
+          sha512: $sha512b64
+          releaseDate: '$releaseDate'
+          "@
           
           $yml | Out-File -FilePath "release/latest.yml" -Encoding utf8NoBOM
           Write-Host "Generated latest.yml:"
