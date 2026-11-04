@@ -1,4 +1,4 @@
-# Extension feature verification — 1.5.0
+# Extension feature verification — 1.6.0
 
 This file describes source and test evidence, not a production deployment certificate.
 
@@ -15,6 +15,9 @@ This file describes source and test evidence, not a production deployment certif
 | On-page grammar | Implemented for standard fields | Chromium checks textarea corrections, stale-response protection and rich text formatting. |
 | Inline highlights | Implemented where CSS Highlight API exists | Uses document ranges without inserting an HTML overlay into the editor. |
 | System/light/dark appearance | Implemented | Chromium checks both system appearance and persistent settings at narrow width. |
+| Wide and compact workspace | Implemented | Account and writing layouts checked at 300, 400, 768 and 1200px; wide Writing separates draft and review. |
+| Expanded on-page review | Implemented | Chromium checks source/error states, ignore, filters, rewrite preview/apply/undo, keyboard dismissal and viewport bounds. Limited local checks never certify a sentence as correct. |
+| Additional server providers | Configuration ready | Radox and authenticated AntSeed gateway support automatic routing/failover; Logfare is explicit/manual only. Owner will add new credentials later; live inference on these integrations is not certified. |
 | Login/signup/sign-out | Implemented | Built React app + unpacked MV3 tests cover Google PKCE callback, provisioning, signup email verification/resend, outage recovery and extension ACK. Real account consent remains a manual acceptance item. |
 | Session refresh | Implemented | Unit tests check serialized token rotation, outages, revoked sessions, logout races and account switching. |
 | Original Codeva mark | Implemented | Native SVG source and matching 16–512px toolbar assets; no third-party logo dependency. |

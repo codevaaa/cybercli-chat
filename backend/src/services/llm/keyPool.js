@@ -83,6 +83,9 @@ function ensurePool(provider) {
     apifreellm: 'APIFREELLM',
     cloudflare: 'CLOUDFLARE',
     llm7: 'LLM7',
+    radox: 'RADOX',
+    logfare: 'LOGFARE',
+    antseed: 'ANTSEED',
   }
 
   const prefix = prefixMap[provider]

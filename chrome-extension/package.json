@@ -2,7 +2,7 @@
   "name": "codeva-browser-extension",
   "private": true,
   "type": "module",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "scripts": {
     "test": "node --test src/lib/*.test.js tests/*.test.js",
     "test:browser": "node tests/browser-smoke.mjs",

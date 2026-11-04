@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { browserProviders, browserProviderMap, browserProvider, automaticBrowserModels } from './browserProviders.js'
 import { APINEX_BASE_URL, APINEX_MODELS, apinexId, apinexPreferred } from './apinex.js'
 import { normalizeMultimodalContent, contentText, hasImageContent, toGeminiParts } from './multimodal.js'
 import { getPlan, pickModelForPlan, planAllowsModel, tierOf } from '../../config/plans.js'
@@ -92,6 +93,7 @@ const BASE_URLS = {
 }
 
 const MODEL_MAP = {
+  ...browserProviderMap(),
   ...Object.fromEntries(APINEX_MODELS.map(model => [apinexId(model), { provider: 'apinex', model, purpose: 'general' }])),
   'brahma-v1': { provider: 'brahma', model: 'brahma-v1', purpose: 'coding' },
   'brahma/v1': { provider: 'brahma', model: 'brahma-v1', purpose: 'coding' },
@@ -465,8 +467,14 @@ export function classifyTier(text = '') {
 export function resolveModelForPlan(requestedId, planName, lastUserText = '', { preferApinex = true } = {}) {
   if (requestedId === 'brahma/v1') requestedId = 'brahma-v1'
   const plan = getPlan(planName)
-  const candidates = Object.keys(MODEL_MAP).filter(id => !id.startsWith('apinex/') || preferApinex && hasKeys('apinex'))
+  const candidates = Object.keys(MODEL_MAP).filter(id => {
+    const external = browserProvider(id)
+    if (external) return external.configured && external.automatic
+    return !id.startsWith('apinex/') || preferApinex && hasKeys('apinex')
+  })
   if (!requestedId || requestedId === 'auto') {
+    const preferred = automaticBrowserModels()[0]
+    if (preferApinex && preferred) return preferred
     const tier = classifyTier(lastUserText)
     if (preferApinex && hasKeys('apinex')) return apinexPreferred(tier)
     return pickModelForPlan(plan.id, tier, candidates)
@@ -480,6 +488,11 @@ export function resolveModelForPlan(requestedId, planName, lastUserText = '', { 
 }
 
 function getClient(provider) {
+  const external = browserProviders().find(item => item.provider === provider)
+  if (external) {
+    const key = getKey(provider)
+    return external.configured && key ? { client: new OpenAI({ apiKey: key, baseURL: external.baseURL, maxRetries: 0, timeout: 60000 }), key } : { client: null, key: null }
+  }
   if (provider === 'brahma') {
     const key = process.env.BRAHMA_API_KEY
     if (!key) return { client: null, key: null }
@@ -530,6 +543,7 @@ function getRawKey(provider) {
  * are requested we prefer a tool-capable route (often OpenRouter).
  */
 export const TOOL_CAPABLE_PROVIDERS = new Set([
+  'radox', 'logfare', 'antseed',
   'brahma',
   'apinex',
   'openrouter',
@@ -660,6 +674,8 @@ export const llmGateway = {
     if (signal?.aborted) return
     const dossierFormat = routePolicy && ['json_object', 'json_schema'].includes(response_format?.type) ? { response_format } : {}
     let activeModelId = modelId
+    const selectedExternal = browserProvider(modelId)
+    if (selectedExternal && !selectedExternal.configured) { yield { type: 'error', content: `${selectedExternal.name} is not configured on the Codeva server.` }; return }
     let workingMessages = [...messages]
     const hasTools = Array.isArray(tools) && tools.length > 0
     const tokenLimit = max_tokens || EFFORT_MAX_TOKENS[effort] || 4096
@@ -834,7 +850,7 @@ export const llmGateway = {
         }
       }
 
-      if (activeProvider === 'apinex' && !primaryOutputStarted) throw Object.assign(new Error('Provider returned an empty stream'), { status: 502 })
+      if (['apinex', 'radox', 'logfare', 'antseed'].includes(activeProvider) && !primaryOutputStarted) throw Object.assign(new Error('Provider returned an empty stream'), { status: 502 })
       reportSuccess(activeProvider, activeKey)
       if (auditRoutes) yield { type: 'route', phase: 'success', provider: activeProvider, model: activeModelName, reason: 'primary' }
       yield { type: 'done' }
@@ -847,7 +863,7 @@ export const llmGateway = {
       }
       // Already displayed tokens cannot be taken back. Never append a second
       // provider's answer to a partially streamed APINEX response.
-      if (activeProvider === 'apinex' && primaryOutputStarted) {
+      if (primaryOutputStarted) {
         yield { type: 'error', content: 'The response was interrupted. Please retry.' }
         return
       }
@@ -898,6 +914,7 @@ export const llmGateway = {
         ? ['gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini']
         : FALLBACK_CHAIN)
       if (targetModel.provider === 'apinex') activeFallbackChain = ['openrouter/gpt-4o-mini', ...APINEX_MODELS.slice(0, 3).map(apinexId), ...FALLBACK_CHAIN.filter(id => id !== 'openrouter/gpt-4o-mini')]
+      if (!isKaliKal) activeFallbackChain = [...automaticBrowserModels(), ...activeFallbackChain]
 
       if (isKaliKal && !FALLBACK_CHAINS[activeModelId]) {
         activeFallbackChain = KALI_FALLBACK_CHAIN
@@ -980,7 +997,7 @@ export const llmGateway = {
             }
           }
 
-          if (fbProvider === 'apinex' && !fallbackOutputStarted) throw Object.assign(new Error('Provider returned an empty stream'), { status: 502 })
+          if (['apinex', 'radox', 'antseed'].includes(fbProvider) && !fallbackOutputStarted) throw Object.assign(new Error('Provider returned an empty stream'), { status: 502 })
           reportSuccess(fbProvider, fallbackKey)
           if (auditRoutes) yield { type: 'route', phase: 'success', provider: fbProvider, model: fbModel, reason: 'provider_failover' }
           yield { type: 'done' }
@@ -990,7 +1007,7 @@ export const llmGateway = {
           if (auditRoutes) yield { type: 'route', phase: 'failure', provider: fbProvider, model: fbModel, reason: `provider_status_${safeProviderStatus(fallbackError)}` }
           console.error(`Fallback ${fbProvider} failed:`, safeProviderStatus(fallbackError))
           reportFailure(fbProvider, fallbackKey, fallbackError.status || 500)
-          if (fbProvider === 'apinex' && fallbackOutputStarted) {
+          if (fallbackOutputStarted) {
             yield { type: 'error', content: 'The response was interrupted. Please retry.' }
             return
           }
@@ -1036,7 +1053,7 @@ export const llmGateway = {
     const requested = resolveModelForPlan(modelId, plan, contentText([...messages].reverse().find(m => m.role === 'user')?.content || ''), { preferApinex: !isKaliKal })
     // Share the streaming failover path so APINEX has the same OpenRouter and
     // remaining-provider recovery in chat, Council and non-stream tool calls.
-    if (task === 'writing' || requested === 'brahma-v1' || !isKaliKal && (requested.startsWith('apinex/') || /^codeva-(?!kali)/.test(requested) && hasKeys('apinex'))) {
+    if (task === 'writing' || browserProvider(requested) || requested === 'brahma-v1' || !isKaliKal && (requested.startsWith('apinex/') || /^codeva-(?!kali)/.test(requested) && hasKeys('apinex'))) {
       let content = '', finish_reason = 'stop', route = null
       const calls = new Map()
       for await (const chunk of this.complete({ messages, model: requested, temperature, plan, effort, thinking, isKaliKal, tools, tool_choice, max_tokens, auditRoutes: true, signal })) {

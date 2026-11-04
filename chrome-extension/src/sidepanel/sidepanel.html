@@ -28,12 +28,19 @@
     </nav>
     <div id="sp-status" class="sp-status" role="status" aria-live="polite">Connecting to your workspace…</div>
     <section id="sp-auth" class="sp-auth" hidden>
+      <div class="sp-auth-intro">
       <span class="sp-auth-logo" id="sp-auth-logo" aria-hidden="true"></span>
       <p class="eyebrow">One account. Every workspace.</p>
       <h1>A little help,<br />wherever you work.</h1>
       <p>Chat, understand a page, and refine your writing with your Codeva account.</p>
       <button id="sp-signin" class="primary">Sign in to Codeva <span aria-hidden="true">↗</span></button>
       <p class="fine-print">Already signed in? Open the website once to connect this extension.</p>
+      </div>
+      <aside class="sp-auth-guide" aria-label="Your browser workspace">
+        <h2>Keep your work in flow.</h2>
+        <ul><li><strong>Write with care</strong><span>Review corrections, rewrite a draft, and choose the changes you keep.</span></li><li><strong>Understand your page</strong><span>Bring page context into a conversation when you choose.</span></li><li><strong>Pick up again</strong><span>Find your browser’s saved chats and drafts in one place.</span></li></ul>
+        <p>Automatic writing follows your website and dictionary preferences.</p>
+      </aside>
     </section>
     <section id="sp-chat-view" class="sp-view" hidden>
       <div class="sp-context">
@@ -57,6 +64,7 @@
     </section>
     <section id="sp-write-view" class="sp-view writing-view" hidden>
       <div class="section-heading"><p class="eyebrow">Make every word count</p><h1>Your voice, refined.</h1><p>Check grammar and clarity, then review each change.</p></div>
+      <div class="writing-editor">
       <label for="sp-writing" class="field-label">Your draft</label>
       <textarea id="sp-writing" class="writing-input" rows="8" maxlength="6000" placeholder="Paste a draft, or bring in selected text from the page…"></textarea>
       <div class="writing-meta"><span id="sp-writing-count">0 words · 0 / 6,000 characters</span><button id="sp-import" class="text-btn">Use selection</button></div>
@@ -68,12 +76,16 @@
       </div></details>
       <div class="writing-actions"><button id="sp-check" class="primary">Check writing</button><button id="sp-copy-draft" class="secondary">Copy draft</button></div>
       <div class="rewrite-actions" aria-label="Rewrite draft"><button data-rewrite="formal">Professional</button><button data-rewrite="casual">Friendly</button><button data-rewrite="shorter">Shorter</button><button data-rewrite="longer">Expand</button><button data-rewrite="confident">Confident</button><button data-rewrite="simplify">Simplify</button></div>
-      <section id="sp-rewrite-review" class="rewrite-review" hidden><h2>Review your rewrite</h2><p>Your current draft changes only when you apply this version.</p><pre id="sp-rewrite-text"></pre><div class="writing-actions"><button id="sp-rewrite-apply" class="primary">Apply rewrite</button><button id="sp-rewrite-copy" class="secondary">Copy rewrite</button><button id="sp-rewrite-dismiss" class="text-btn">Dismiss</button></div></section>
       <button id="sp-undo-writing" class="text-btn" disabled>Undo last AI change</button>
+      </div>
+      <aside class="writing-feedback" aria-label="Writing review">
+      <h2 class="review-heading">Your writing review</h2>
+      <section id="sp-rewrite-review" class="rewrite-review" hidden><h2>Review your rewrite</h2><p>Your current draft changes only when you apply this version.</p><pre id="sp-rewrite-text"></pre><div class="writing-actions"><button id="sp-rewrite-apply" class="primary">Apply rewrite</button><button id="sp-rewrite-copy" class="secondary">Copy rewrite</button><button id="sp-rewrite-dismiss" class="text-btn">Dismiss</button></div></section>
       <div id="sp-writing-status" role="status" class="writing-status">Suggestions appear here. Your draft stays yours until you apply a change.</div>
       <div class="issue-filters" aria-label="Filter writing suggestions"><button data-issue-filter="all" aria-pressed="true">All</button><button data-issue-filter="correctness" aria-pressed="false">Correctness</button><button data-issue-filter="clarity" aria-pressed="false">Clarity</button></div>
       <button id="sp-apply-all" class="secondary" hidden>Apply all suggestions</button>
       <div id="sp-issues" class="sp-issues"></div>
+      </aside>
     </section>
     <section id="sp-history-view" class="sp-view history-view" hidden>
       <div class="section-heading"><p class="eyebrow">Pick up where you left off</p><h1>Your conversations.</h1><p>Saved in this browser, separately for each account.</p></div>

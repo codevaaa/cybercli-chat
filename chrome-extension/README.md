@@ -1,8 +1,10 @@
-# Codeva browser workspace — 1.5.0
+# Codeva browser workspace — 1.6.0
 
 A Manifest V3 Chrome extension connected to the same Codeva API as the web, desktop, and CyberCoder clients. Vanilla JavaScript, with no build step.
 
 ## Working core
+
+Version 1.6 adds wide/narrow layouts and an expanded on-page writing review. Local/no-match and provider-error states explicitly say full proofreading has not run. Popup controls include recheck, filters, ignore, dictionary, rewrite preview/apply and undo. Local English rules now catch common subject–verb agreement errors as well as spelling; they remain limited checks.
 
 - **Assistant:** streaming chat, stop, retry/regenerate, escaped Markdown, copy, account-scoped local conversations, draft recovery, search, delete with undo, and Markdown export.
 - **Page assistance:** explicitly attach the current webpage or use Summarize/Explain actions. The request includes the page title, source URL, and up to 15,000 characters of readable text. Text inside form controls is excluded from page extraction.
@@ -30,6 +32,8 @@ Shortcuts: Ctrl+Shift+S opens the panel; Ctrl+Shift+G checks the active writing 
 
 Production API: `https://cybercli-api.onrender.com/api/v1`.
 Website: `https://cybermindcli.info` (also supports the `www` origin).
+
+Radox, optional manual-only Logfare and an authenticated AntSeed gateway are supported by the server alongside APINEX. Keys/configuration are deferred by the owner. Logfare is excluded from automatic writing and fallback. See `docs/browser-workspace-1.6-2026-11-04.md` in the repository for exact environment settings and provider documentation.
 
 Deploy the matching backend and frontend with this package. New endpoints include public `/auth/health`, authenticated `/auth/sync`, rate-limited `/auth/session/refresh`, and authenticated `/completions/rewrite`. Authentication availability checks prevent navigation to an unavailable project. The existing Supabase project must be active and its redirect allowlist must include the website callback; code cannot restore a paused/deleted provider project.
 

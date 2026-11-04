@@ -37,8 +37,8 @@ export default function ChromeExtensionPage() {
               Chat beside your work, understand a page, and refine your writing with your existing Codeva account.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Tooltip content="Download Codeva 1.5.0 for an unpacked Chrome installation">
-                <a href="https://github.com/codevaaa/cybercli-chat/raw/refs/heads/main/artifacts/codeva-extension-1.5.0-2026-11-04.zip" className="px-7 py-3.5 bg-[#f5f4ef] text-[#1a1a18] rounded-xl font-bold transition-all hover:bg-white flex items-center gap-2">
+              <Tooltip content="Download Codeva 1.6.0 for an unpacked Chrome installation">
+                <a href="https://github.com/codevaaa/cybercli-chat/raw/refs/heads/main/artifacts/codeva-extension-1.6.0-2026-11-04.zip" className="px-7 py-3.5 bg-[#f5f4ef] text-[#1a1a18] rounded-xl font-bold transition-all hover:bg-white flex items-center gap-2">
                   <Download className="w-5 h-5" /> Download extension ZIP
                 </a>
               </Tooltip>

@@ -21,8 +21,10 @@ await worker.evaluate(async ({ token }) => {
   globalThis.grammarCalls = 0
   globalThis.fetch = async (url, options) => {
     if (url.endsWith('/auth/me')) return Response.json({ user: { id: 'browser-fixture' }, plan: 'pro' })
+    if (url.endsWith('/rewrite')) { const body = JSON.parse(options.body); return Response.json({ original: body.text, rewritten: 'This is the draft.', mode: body.mode }) }
     if (!url.endsWith('/grammar')) return new Response(JSON.stringify({ content: 'Polished selected text.' }), { headers: { 'Content-Type': 'application/json' } })
     globalThis.grammarCalls++
+    if (globalThis.proofreadingUnavailable) return Response.json({ error: 'Fixture service unavailable' }, { status: 502 })
     const text = JSON.parse(options?.body || '{}').text || ''
     if (text.includes('slow')) await new Promise(resolve => setTimeout(resolve, 1500))
     return new Response(JSON.stringify({ language: 'English', tone: 'neutral', issues: text.includes('teh') ? [{ original: 'teh', suggestion: 'the', type: 'spelling', start: text.indexOf('teh'), reason: 'Spelling' }] : [] }), { headers: { 'Content-Type': 'application/json' } })
@@ -55,6 +57,14 @@ try {
   const source = await context.newPage(); await source.goto('https://codeva-fixture.test/article')
   const panel = await context.newPage(); await panel.goto(`chrome-extension://${id}/src/sidepanel/sidepanel.html`)
   await panel.locator('#sp-auth:not([hidden])').waitFor()
+  for (const viewport of [{ width: 300, height: 560 }, { width: 400, height: 850 }, { width: 768, height: 900 }, { width: 1200, height: 900 }]) {
+    await panel.setViewportSize(viewport)
+    assert.ok(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+    const heading = await panel.locator('#sp-auth h1').boundingBox()
+    assert.ok(heading.x >= 0 && heading.x + heading.width <= viewport.width)
+  }
+  await panel.emulateMedia({ colorScheme: 'dark' }); await panel.screenshot({ path: path.join(screenshots, 'auth-wide-dark.png') })
+  await panel.emulateMedia({ colorScheme: 'light' }); await panel.setViewportSize({ width: 400, height: 850 })
   const opened = context.waitForEvent('page'); await panel.locator('#sp-signin').click()
   const website = await opened; await website.waitForURL(/https:\/\/(www\.)?cybermindcli\.info\//)
   // Extension-created tabs can begin navigating before Playwright attaches its
@@ -100,6 +110,10 @@ try {
   await panel.locator('#sp-check').click(); await panel.locator('[data-apply="0"]').waitFor()
   await panel.locator('#sp-write-view').evaluate(view => { view.scrollTop = 0 })
   await panel.screenshot({ path: path.join(screenshots, 'writing-dark.png') })
+  await panel.setViewportSize({ width: 1200, height: 900 })
+  const editor = await panel.locator('.writing-editor').boundingBox(), review = await panel.locator('.writing-feedback').boundingBox()
+  assert.ok(review.x > editor.x + editor.width)
+  await panel.screenshot({ path: path.join(screenshots, 'writing-wide-dark.png') })
   await panel.setViewportSize({ width: 300, height: 720 }); assert.ok(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
   await panel.setViewportSize({ width: 400, height: 850 })
   await panel.locator('[data-view="history"]').click(); await panel.locator('.history-open').first().click()
@@ -118,6 +132,26 @@ try {
   await source.locator('.cv-fab-issues').waitFor(); await source.locator('.cv-fab').click(); await source.locator('.cv-apply').first().click()
   assert.equal(await source.locator('#rich b').innerText(), 'the')
   assert.equal(await source.locator('#rich .cv-underline-overlay').count(), 0)
+  await worker.evaluate(() => { globalThis.proofreadingUnavailable = true })
+  await source.locator('#draft').fill('This are teh draft.'); await source.locator('.cv-fab').click()
+  await source.locator('.cv-card[data-state="unavailable"]').waitFor()
+  assert.ok((await source.locator('.cv-review-summary').innerText()).includes('has not passed a full check'))
+  assert.equal(await source.locator('.cv-check-big').count(), 0)
+  assert.equal(await source.locator('.cv-issue').count(), 2)
+  await source.locator('.cv-ignore').first().click(); assert.equal(await source.locator('.cv-issue').count(), 1)
+  await source.locator('.cv-filter[data-filter="clarity"]').click(); assert.equal(await source.locator('.cv-issue').count(), 0)
+  await source.locator('.cv-filter[data-filter="all"]').click()
+  await source.locator('.cv-request-rewrite').click(); await source.locator('.cv-popup-preview').waitFor()
+  assert.equal(await source.locator('#draft').inputValue(), 'This are teh draft.')
+  await source.locator('.cv-apply-rewrite').click(); assert.equal(await source.locator('#draft').inputValue(), 'This is the draft.')
+  await source.locator('.cv-undo').click(); assert.equal(await source.locator('#draft').inputValue(), 'This are teh draft.')
+  await source.locator('.cv-card[data-state="unavailable"]').waitFor()
+  await source.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
+  await source.screenshot({ path: path.join(screenshots, 'popup-review-dark.png'), animations: 'disabled' })
+  const bounds = await source.locator('.cv-card').boundingBox()
+  assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= 400 && bounds.y >= 0 && bounds.y + bounds.height <= 850)
+  await source.keyboard.press('Escape'); assert.equal(await source.locator('.cv-card').count(), 0)
+  await worker.evaluate(() => { globalThis.proofreadingUnavailable = false })
   const png = (await source.screenshot()).toString('base64'), captureId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
   await worker.evaluate(async ({ png, captureId }) => {
     await chrome.storage.session.set({ [`capture:${captureId}`]: { viewportWidth: 400, totalHeight: 850, segments: [{ y: 0, dataUrl: `data:image/png;base64,${png}` }], title: 'Capture fixture', url: 'https://codeva-fixture.test/article' } })
@@ -138,8 +172,14 @@ try {
   await options.screenshot({ path: path.join(screenshots, 'settings-dark.png'), fullPage: true })
   await options.locator('#sign-out').click(); await panel.locator('#sp-auth:not([hidden])').waitFor()
   assert.equal(await worker.evaluate(() => chrome.storage.local.get('authToken').then(r => r.authToken)), undefined)
+  await worker.evaluate(() => chrome.storage.local.set({ settings: { theme: 'dark', grammar: true, floatingIcon: true } }))
+  await source.waitForFunction(() => document.documentElement.dataset.codevaPaused === 'false')
+  await source.bringToFront(); await source.locator('#second').fill('We discusses a proposal.'); await source.locator('.cv-fab').click()
+  await source.locator('.cv-card[data-state="local"]').waitFor()
+  assert.ok((await source.locator('.cv-review-summary').innerText()).includes('Full proofreading has not run'))
+  assert.equal(await source.locator('.cv-check-big').count(), 0)
   assert.deepEqual(errors, [])
-  console.log(JSON.stringify({ passed: true, checks: ['real MV3 extension load', 'website session handoff', 'refresh credential capture', 'server catalog', 'page context', 'chat persistence', 'writing corrections', 'reviewed rewrite and undo', 'personal dictionary', 'website pause', 'system themes', '300px layout', 'history', 'queued actions', 'in-page grammar', 'stale responses', 'rich text preservation', 'capture preview and PNG', 'CSP-safe settings', 'sign out'], screenshots }))
+  console.log(JSON.stringify({ passed: true, checks: ['real MV3 extension load', 'website session handoff', 'refresh credential capture', 'server catalog', 'page context', 'chat persistence', 'writing corrections', 'reviewed rewrite and undo', 'personal dictionary', 'website pause', 'system themes', '300–1200px responsive layouts', 'honest local and outage states', 'popup ignore and filters', 'popup rewrite and undo', 'popup viewport bounds and Escape', 'history', 'queued actions', 'in-page grammar', 'stale responses', 'rich text preservation', 'capture preview and PNG', 'CSP-safe settings', 'sign out'], screenshots }))
 } finally {
   await context.close()
   const absoluteProfile = path.resolve(profile), absoluteTemp = path.resolve(tmpdir()) + path.sep

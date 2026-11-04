@@ -542,3 +542,45 @@
 .cv-fab-mark svg { width: 20px; height: 20px; }
 .cv-fab-core { background: #202b25; box-shadow: none; border: 1px solid var(--cv-accent); }
 .cv-fab-mark { color: #f0b094; }
+
+/* Writing review uses neutral limited/error states; green is reserved for an
+   AI check that actually completed. All controls remain inside the viewport. */
+.cv-card { width: 390px; max-width: calc(100vw - 24px); border-radius: 14px; text-align: left; font: 13px/1.45 'Segoe UI', system-ui, sans-serif; }
+.cv-card .cv-card-body { padding: 16px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
+.cv-card :is(h2,h3,p,pre) { font: inherit; text-align: left; color: var(--cv-text); }
+.cv-card h2 { margin: 10px 0 8px; font-size: 17px; font-weight: 600; line-height: 1.3; }
+.cv-card h3 { font-size: 14px; font-weight: 600; margin: 0 0 8px; }
+.cv-card p { margin: 0 0 10px; }
+.cv-card button, .cv-card select { font: inherit; cursor: pointer; min-height: 36px; border: 1px solid var(--cv-border); border-radius: 7px; padding: 7px 10px; color: var(--cv-text); background: var(--cv-bg-2); text-align: center; box-sizing: border-box; }
+.cv-card button:disabled { opacity: .5; cursor: default; }
+.cv-card button:hover:not(:disabled) { border-color: var(--cv-accent); }
+.cv-card :is(.cv-apply,.cv-apply-rewrite,.cv-recheck) { color: var(--cv-bg); background: var(--cv-accent); border-color: var(--cv-accent); }
+.cv-card .cv-card-head { padding: 10px 14px; background: var(--cv-bg-2); }
+.cv-card .cv-card-close { width: 36px; padding: 0; border: 0; background: transparent; }
+.cv-card .cv-card-foot { padding: 10px 12px; flex-wrap: wrap; font-size: 11px; }
+.cv-card .cv-pause-site { padding: 4px 6px; background: transparent; border: 0; color: var(--cv-accent); }
+.cv-review-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 4px 8px; color: var(--cv-muted); border: 1px solid var(--cv-border); border-radius: 6px; }
+.cv-card[data-state="complete"] .cv-review-badge { color: var(--cv-green); }
+.cv-card[data-state="unavailable"] .cv-review-badge { color: var(--cv-yellow); }
+.cv-review-summary > p, .cv-draft-count { color: var(--cv-muted); font-size: 12px; }
+.cv-popup-actions, .cv-issue-actions, .cv-popup-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.cv-popup-filters { border-top: 1px solid var(--cv-border); padding-top: 12px; margin-bottom: 12px; }
+.cv-card .cv-filter { flex: 1; background: transparent; font-size: 12px; }
+.cv-card .cv-filter[aria-pressed="true"] { color: var(--cv-accent); border-color: var(--cv-accent); }
+.cv-card .cv-issue { padding: 12px 0; border-bottom: 1px solid var(--cv-border); }
+.cv-card .cv-issue-reason { font-size: 12px; margin-top: 7px; }
+.cv-issue-top { justify-content: space-between; gap: 6px; }
+.cv-source { color: var(--cv-muted); font-size: 10px; }
+.cv-card .cv-logo-dot { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; color: #f0b094; background: #202b25; border-radius: 5px; }
+.cv-logo-dot svg { width: 18px; height: 18px; }
+.cv-card .cv-issue-tag { color: var(--cv-accent); background: var(--cv-bg-2); border: 1px solid var(--cv-border); }
+.cv-card .cv-rewrite-error { margin-top: 12px; color: var(--cv-red); font-size: 12px; }
+.cv-card .cv-issue-diff { flex-wrap: wrap; font-size: 14px; overflow-wrap: anywhere; }
+.cv-card .cv-issue-actions { justify-content: flex-end; }
+.cv-card .cv-dictionary, .cv-card .cv-ignore { background: transparent; font-size: 11px; }
+.cv-popup-rewrite { border-top: 1px solid var(--cv-border); margin-top: 16px; padding-top: 14px; display: flex; align-items: end; gap: 8px; }
+.cv-rewrite-label { display: grid; gap: 6px; flex: 1; min-width: 0; color: var(--cv-muted); font-size: 12px; }
+.cv-card select { width: 100%; min-width: 0; }
+.cv-popup-preview { margin-top: 14px; border: 1px solid var(--cv-accent); border-radius: 8px; padding: 12px; }
+.cv-popup-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 180px; overflow-y: auto; margin: 10px 0; }
+@media (max-width: 350px) { .cv-card .cv-card-body { padding: 12px; } .cv-popup-rewrite { align-items: stretch; flex-direction: column; } .cv-card .cv-card-foot { align-items: flex-start; } }

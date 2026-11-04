@@ -51,7 +51,7 @@ export function completionTextFromBody(body) {
 }
 
 export async function requestBackend({ endpoint, body }, token) {
-  const paths = new Set(['/completions', '/completions/grammar', '/agents'])
+  const paths = new Set(['/completions', '/completions/grammar', '/completions/rewrite', '/agents'])
   if (!paths.has(endpoint)) throw new Error('Unsupported API endpoint')
   if (endpoint !== '/agents' && !token) return { status: 401, body: JSON.stringify({ error: 'Please sign in' }), contentType: 'application/json' }
   const payload = endpoint === '/completions' ? { ...body, stream: false } : body

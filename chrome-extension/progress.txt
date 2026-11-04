@@ -1,0 +1,6 @@
+Browser workspace 1.6.0 — 2026-11-04
+Phase 1: responsive account, assistant, writing and history layouts implemented; 300–1200px browser checks added.
+Phase 2: popup hierarchy, scrolling, source labels, limited/checking/outage states and accessible controls implemented.
+Phase 3: local sentence rules, ignore/filter/recheck, rewrite preview/apply/undo and keyboard dismissal implemented; Chromium integration checks passed.
+Backend integration: Radox, optional Logfare and authenticated AntSeed gateway configured through server environment; existing APINEX retained.
+Pending external setup: owner will add provider credentials later. No new provider account, wallet or subscription created.

@@ -7,7 +7,7 @@ import '../lib/writing.js'
 
 const $ = id => document.getElementById(id)
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char])
-const { normalizeIssues, applyIssues, metrics, filterDictionary, dictionaryWords } = globalThis.CodevaWriting
+const { normalizeIssues, applyIssues, metrics, filterDictionary, dictionaryWords, localGrammar } = globalThis.CodevaWriting
 let workspace = { conversations: [], activeId: null }, storageKey = null, view = 'chat'
 let activeRequest = null, writingRequest = null, authGeneration = 0, claimingPrompt = false, deleted = null
 let issueFilter = 'all', rewriteCandidate = null, writingUndo = []
@@ -81,6 +81,7 @@ async function loadModels() {
       if (!model || model.localOnly || model.id === 'auto' || typeof model.id !== 'string') continue
       const option = document.createElement('option'); option.value = model.id
       option.textContent = `${model.name || model.id}${model.free === false ? ' · paid' : ''}`
+      option.title = model.description || ''; option.dataset.manualOnly = String(model.automatic === false)
       $('sp-model').appendChild(option)
     }
     if ([...$('sp-model').options].some(option => option.value === selectedModel)) $('sp-model').value = selectedModel
@@ -236,17 +237,17 @@ function resetWriting() {
   const text = $('sp-writing').value, measured = metrics(text)
   rewriteCandidate = null; $('sp-rewrite-review').hidden = true
   $('sp-undo-writing').disabled = !writingUndo.length || writingUndo.at(-1).after !== text
-  $('sp-writing-count').textContent = `${measured.words} words · ${text.length.toLocaleString()} / 6,000 characters`
-  $('sp-writing-metrics').textContent = `${measured.sentences} sentences · estimated reading time ${measured.readingSeconds} seconds`
+  $('sp-writing-count').textContent = `${measured.words} ${measured.words === 1 ? 'word' : 'words'} · ${text.length.toLocaleString()} / 6,000 characters`
+  $('sp-writing-metrics').textContent = `${measured.sentences} ${measured.sentences === 1 ? 'sentence' : 'sentences'} · estimated reading time ${measured.readingSeconds} seconds`
   $('sp-writing-status').textContent = 'Check your draft to see grammar, spelling, and clarity suggestions.'
 }
 function renderIssues() {
   $('sp-issues').innerHTML = writeIssues.map((issue, index) => {
     if (issueFilter === 'clarity' && issue.type !== 'clarity' || issueFilter === 'correctness' && issue.type === 'clarity') return ''
-    return `<article class="issue"><small>${esc(issue.type)}</small><p><del>${esc(issue.original)}</del> → <ins>${esc(issue.suggestion || '(delete)')}</ins></p><p>${esc(issue.reason)}</p><div class="issue-actions">${issue.type === 'spelling' ? `<button class="sp-mini-btn" data-learn="${index}">Add to dictionary</button>` : ''}<button class="sp-mini-btn" data-dismiss="${index}">Dismiss</button><button class="sp-mini-btn" data-apply="${index}">Apply change</button></div></article>`
+    return `<article class="issue"><small>${esc(issue.type)} · ${issue.source === 'local' ? 'Local rule' : 'AI suggestion'}</small><p><del>${esc(issue.original)}</del> → <ins>${esc(issue.suggestion || '(delete)')}</ins></p><p>${esc(issue.reason)}</p><div class="issue-actions">${issue.type === 'spelling' ? `<button class="sp-mini-btn" data-learn="${index}">Add to dictionary</button>` : ''}<button class="sp-mini-btn" data-dismiss="${index}">Dismiss</button><button class="sp-mini-btn" data-apply="${index}">Apply change</button></div></article>`
   }).join('')
   $('sp-apply-all').hidden = !writeIssues.length
-  $('sp-apply-all').textContent = `Apply all ${writeIssues.length} suggestions`
+  $('sp-apply-all').textContent = writeIssues.length === 1 ? 'Apply suggestion' : `Apply all ${writeIssues.length} suggestions`
   $('sp-issues').querySelectorAll('[data-dismiss]').forEach(button => button.onclick = () => { writeIssues.splice(Number(button.dataset.dismiss), 1); renderIssues() })
   $('sp-issues').querySelectorAll('[data-apply]').forEach(button => button.onclick = () => applyWriting([writeIssues[Number(button.dataset.apply)]]))
   $('sp-issues').querySelectorAll('[data-learn]').forEach(button => button.onclick = async () => {
@@ -307,10 +308,16 @@ async function checkWriting() {
     const result = await apiJSON('/completions/grammar', { method: 'POST', body: { text, goals: writingGoals, dictionary: settings.dictionary || [] }, signal: controller.signal })
     if (controller.signal.aborted || key !== storageKey || $('sp-writing').value !== text) return
     if (!Array.isArray(result.issues)) throw new Error('The server returned an invalid proofreading response. Please try again.')
-    writeSnapshot = text; writeIssues = filterDictionary(normalizeIssues(text, result.issues), settings.dictionary || [])
-    $('sp-writing-status').textContent = `${writeIssues.length ? `${writeIssues.length} suggestion${writeIssues.length === 1 ? '' : 's'}` : 'No issues found in this check'} · ${result.language || 'Language detected'} · ${result.tone || 'neutral'} tone`
+    writeSnapshot = text; writeIssues = filterDictionary(normalizeIssues(text, [...result.issues.map(issue => ({ ...issue, source: 'ai' })), ...localGrammar(text, settings.dictionary || [])]), settings.dictionary || [])
+    $('sp-writing-status').textContent = `${writeIssues.length ? `${writeIssues.length} suggestion${writeIssues.length === 1 ? '' : 's'}` : 'No suggestions from this AI check'} · ${result.language || 'Language detected'} · ${result.tone || 'neutral'} tone`
     renderIssues()
-  } catch (error) { if (!controller.signal.aborted) $('sp-writing-status').textContent = error.message }
+  } catch (error) {
+    if (!controller.signal.aborted && key === storageKey && $('sp-writing').value === text) {
+      const { settings = {} } = await chrome.storage.local.get('settings')
+      writeSnapshot = text; writeIssues = localGrammar(text, settings.dictionary || []); renderIssues()
+      $('sp-writing-status').textContent = `${error.message} Only limited local English rules ran. Full proofreading has not completed.`
+    }
+  }
   finally { if (writingRequest === controller) { writingRequest = null; setWritingBusy(false) } }
 }
 function renderHistory() {
@@ -350,7 +357,10 @@ async function init() {
   $('sp-send').onclick = send
   $('sp-input').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); if (!busy()) send() } }
   $('sp-input').oninput = () => { $('sp-input').style.height = 'auto'; $('sp-input').style.height = Math.min($('sp-input').scrollHeight, 144) + 'px'; draftChanged() }
-  $('sp-model').onchange = () => chrome.storage.local.set({ selectedModel: $('sp-model').value })
+  $('sp-model').onchange = () => {
+    chrome.storage.local.set({ selectedModel: $('sp-model').value })
+    $('sp-model-status').textContent = $('sp-model').selectedOptions[0]?.dataset.manualOnly === 'true' ? 'Optional provider · logs traffic for research' : 'Models from your Codeva server'
+  }
   $('sp-new').onclick = () => { if (busy() || !storageKey) return; const chat = newConversation(); workspace.conversations.unshift(chat); workspace.activeId = chat.id; $('sp-input').value = ''; showView('chat'); renderChat(); persist(); $('sp-input').focus() }
   document.querySelectorAll('[data-view]').forEach(button => button.onclick = () => showView(button.dataset.view))
   $('sp-use-page').onchange = () => refreshPage().catch(error => { $('sp-use-page').checked = false; $('sp-page-label').textContent = error.message })

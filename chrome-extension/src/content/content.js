@@ -14,7 +14,7 @@
   if (window.__codevaInjected) return
   window.__codevaInjected = true
 
-  const { normalizeIssues, filterDictionary, isSitePaused, dictionaryWords } = globalThis.CodevaWriting
+  const { normalizeIssues, filterDictionary, isSitePaused, dictionaryWords, assessment, metrics, issueKey } = globalThis.CodevaWriting
 
   // Active agent persona (from the curated /agents registry). Only the validated
   // agentId is ever sent to the backend; the system prompt lives server-side.
@@ -28,33 +28,7 @@
   //  LOCAL GRAMMAR ENGINE (Layer 1 — instant, <5ms, no network)
   //  Inlined here because content scripts can't import ES modules.
   // ═══════════════════════════════════════════════════════════════════════════
-  const CV_MISSPELLINGS = {
-    teh:'the',recieve:'receive',seperate:'separate',occured:'occurred',untill:'until',wich:'which',
-    becuase:'because',definately:'definitely',accomodate:'accommodate',acheive:'achieve',beleive:'believe',
-    calender:'calendar',collegue:'colleague',concious:'conscious',embarass:'embarrass',enviroment:'environment',
-    existance:'existence',foriegn:'foreign',goverment:'government',grammer:'grammar',gaurd:'guard',harrass:'harass',
-    independant:'independent',liason:'liaison',maintainance:'maintenance',neccessary:'necessary',noticable:'noticeable',
-    occassion:'occasion',persistant:'persistent',privelege:'privilege',publically:'publicly',reccomend:'recommend',
-    refered:'referred',relevent:'relevant',succesful:'successful',tommorow:'tomorrow',truely:'truly',
-    unfortunatly:'unfortunately',wierd:'weird',writen:'written',alot:'a lot',thier:'their',youre:"you're",
-    wont:"won't",cant:"can't",dont:"don't",isnt:"isn't",didnt:"didn't",wouldnt:"wouldn't",couldnt:"couldn't",
-    shouldnt:"shouldn't",hasnt:"hasn't",havent:"haven't",wasnt:"wasn't",werent:"weren't",arent:"aren't",
-    doesnt:"doesn't",wanna:'want to',gonna:'going to',gotta:'got to',cuz:'because',tho:'though',thru:'through',
-    ur:'your',pls:'please',plz:'please',thx:'thanks',ppl:'people',bcz:'because',bcoz:'because',
-  }
-  const CV_WORDS = new Set(['the','be','to','of','and','a','in','that','have','it','for','not','on','with','he','as','you','do','at','this','but','his','by','from','they','we','say','her','she','or','an','will','my','one','all','would','there','their','what','so','up','out','if','about','who','get','which','go','me','when','make','can','like','time','no','just','him','know','take','people','into','year','your','good','some','could','them','see','other','than','then','now','look','only','come','its','over','think','also','back','after','use','two','how','our','work','first','well','way','even','new','want','because','any','these','give','day','most','us','is','was','are','been','has','had','were','said','did','made','find','here','thing','many','hello','hi','hey','thanks','thank','please','yes','okay','cool','nice','great','sure','maybe','search','cyber','security','code','coding','number','name','email','password','login','submit','cancel'])
-
-  window.__cvLocalGrammar = function(text) {
-    const issues = []
-    for (const match of text.matchAll(/\b[a-zA-Z']+\b/g)) {
-      const word = match[0], correction = CV_MISSPELLINGS[word.toLowerCase()]
-      if (correction) issues.push({ original: word, suggestion: word[0] === word[0].toUpperCase() ? correction[0].toUpperCase() + correction.slice(1) : correction,
-        start: match.index, type: 'spelling', reason: 'Common misspelling' })
-    }
-    for (const match of text.matchAll(/\b(\w+)\s+\1\b/gi)) issues.push({ original: match[0], suggestion: match[1], start: match.index, type: 'grammar', reason: 'Repeated word' })
-    for (const match of text.matchAll(/\bi\b(?!['’])/g)) issues.push({ original: 'i', suggestion: 'I', start: match.index, type: 'grammar', reason: 'Capitalize the pronoun “I”' })
-    return filterDictionary(normalizeIssues(text, issues), settings.dictionary || [])
-  }
+  window.__cvLocalGrammar = text => globalThis.CodevaWriting.localGrammar(text, settings.dictionary || [])
 
   window.__cvLocalTone = function(text) {
     const l = text.toLowerCase()
@@ -78,7 +52,7 @@
   })
   chrome.storage.onChanged.addListener((changes) => {
     if (changes.settings) {
-      settings = { ...settings, ...changes.settings.newValue }
+      settings = { grammar: true, toolbar: true, floatingIcon: true, ...(changes.settings.newValue || {}) }
       document.documentElement.dataset.codevaTheme = settings.theme || 'system'
       document.documentElement.dataset.codevaPaused = String(isSitePaused(location.hostname, settings.disabledSites))
       grammarSequence++; lastCheckedText = ''; currentIssues = filterDictionary(currentIssues, settings.dictionary || []); closeCard(); removeInlineUnderlines()
@@ -87,7 +61,11 @@
       if (!settings.inlineUnderlines) removeInlineUnderlines()
       positionFab()
     }
-    if (changes.authToken) authToken = changes.authToken.newValue
+    if (changes.authToken) {
+      authToken = changes.authToken.newValue
+      grammarSequence++; grammarCache.clear(); lastCheckedText = ''; checkedSnapshot = ''; currentIssues = []
+      checkStatus = 'local'; ignoredIssues.clear(); writingUndo = null; rewritePreview = null; popupRewriteError = ''; closeCard(); setFabState('idle')
+    }
   })
 
   // ── Auth capture on cybermindcli.info ───────────────────────────────────────
@@ -265,6 +243,7 @@
   let checkedSnapshot = ''
   let grammarSequence = 0
   let checkStatus = 'local'
+  let ignoredIssues = new Set(), issueFilter = 'all', writingUndo = null, rewritePreview = null, popupRewriteBusy = false, popupRewriteError = '', popupRewriteMode = 'formal'
   let currentIssues = []
   let currentTone = 'neutral'
   let currentLanguage = 'English'
@@ -294,7 +273,7 @@
   function onFieldFocus(e) {
     const el = e.target
     if (!isEditable(el) || !settings.floatingIcon) return
-    if (activeField !== el) { grammarSequence++; lastCheckedText = ''; checkedSnapshot = ''; currentIssues = []; closeCard() }
+    if (activeField !== el) { grammarSequence++; ignoredIssues.clear(); writingUndo = null; rewritePreview = null; lastCheckedText = ''; checkedSnapshot = ''; currentIssues = []; closeCard() }
     activeField = el
     setFabState('idle')
     positionFab()
@@ -303,7 +282,8 @@
   function onFieldInput(e) {
     const el = e.target
     if (el !== activeField || !settings.grammar) return
-    grammarSequence++; currentIssues = []; checkedSnapshot = ''; checkStatus = 'local'; removeInlineUnderlines(); closeCard()
+    grammarSequence++; ignoredIssues.clear(); rewritePreview = null; popupRewriteError = ''; currentIssues = []; checkedSnapshot = ''; checkStatus = 'local';
+    if (writingUndo && getText(el) !== writingUndo.after) writingUndo = null; removeInlineUnderlines(); closeCard()
     positionFab()
     clearTimeout(debounceTimer)
 
@@ -314,7 +294,8 @@
     const delay = endsWithSentence ? 300 : DEBOUNCE_MS
 
     // Instant local check happens with no delay for immediate feedback
-    const quickLocal = window.__cvLocalGrammar ? window.__cvLocalGrammar(text.trim()) : []
+    const quickLocal = window.__cvLocalGrammar(text)
+    currentIssues = quickLocal; checkedSnapshot = text
     if (quickLocal.length > 0) {
       setFabState('issues', quickLocal.length)
     } else {
@@ -326,24 +307,25 @@
 
   // Simple in-memory cache: text hash → result (avoids re-checking identical text)
   const grammarCache = new Map()
-  async function runGrammarCheck(el) {
+  async function runGrammarCheck(el, force = false) {
     if (el !== activeField || !settings.grammar || !isEditable(el)) return
     const text = getText(el)
     if (text.trim().length < 3 || text.length > 6000) { setFabState('idle'); return }
-    if (text === lastCheckedText) return
+    if (text === lastCheckedText && !force) return
     lastCheckedText = text
     const sequence = ++grammarSequence
     const fresh = () => sequence === grammarSequence && el === activeField && getText(el) === text && settings.grammar
     const local = window.__cvLocalGrammar(text)
     checkedSnapshot = text; currentIssues = local; checkStatus = 'local'
     currentTone = window.__cvLocalTone(text); currentLanguage = /[\u0900-\u097F]/.test(text) ? 'Hindi' : 'English'
-    setFabState(local.length ? 'issues' : 'checking', local.length)
+    checkStatus = authToken ? 'checking' : 'local'
+    setFabState(local.length ? 'issues' : authToken ? 'checking' : 'idle', local.length); if (card) openGrammarCard()
     try {
       const goals = await getWritingGoals() || {}
       if (!fresh()) return
       const key = JSON.stringify([text, goals, settings.dictionary || []])
       const cached = grammarCache.get(key)
-      if (cached) { currentIssues = cached.issues; currentTone = cached.tone; currentLanguage = cached.language; checkStatus = 'complete' }
+      if (cached) { currentIssues = cached.issues.filter(issue => !ignoredIssues.has(issueKey(issue))); currentTone = cached.tone; currentLanguage = cached.language; checkStatus = 'complete' }
       else {
         const { authToken: token } = await chrome.storage.local.get('authToken'); authToken = token
         if (!fresh()) return
@@ -355,7 +337,7 @@
           const result = await response.json()
           if (!fresh()) return
           if (!Array.isArray(result.issues)) throw new Error('Invalid proofreading result')
-          currentIssues = filterDictionary(normalizeIssues(text, [...result.issues, ...local]), settings.dictionary || [])
+          currentIssues = filterDictionary(normalizeIssues(text, [...result.issues.map(issue => ({ ...issue, source: 'ai' })), ...local]), settings.dictionary || [])
           currentTone = ['formal','casual','confident','friendly','neutral','aggressive'].includes(result.tone) ? result.tone : 'neutral'
           currentLanguage = typeof result.language === 'string' ? result.language.slice(0, 50) : 'Unknown'
           checkStatus = 'complete'
@@ -368,7 +350,8 @@
       currentIssues = local; checkStatus = 'unavailable'; lastCheckedText = ''
     }
     if (!fresh()) return
-    setFabState(currentIssues.length ? 'issues' : checkStatus === 'complete' ? 'clean' : 'idle', currentIssues.length)
+    currentIssues = currentIssues.filter(issue => !ignoredIssues.has(issueKey(issue)))
+    setFabState(currentIssues.length ? 'issues' : checkStatus === 'complete' && !ignoredIssues.size ? 'clean' : 'idle', currentIssues.length)
     if (card) openGrammarCard()
   }
 
@@ -404,37 +387,18 @@
     card.className = 'cv-card'
     // Card uses position:fixed (viewport coords) — set after measuring below.
 
-    if (currentIssues[0]?.auth) {
-      card.innerHTML = authCardHTML()
-    } else if (fabState === 'checking') {
-      card.innerHTML = cardShell('Checking…', `<div class="cv-card-empty">Analyzing your text…</div>`)
-    } else if (currentIssues.length === 0) {
-      card.innerHTML = cardShell('Codeva', `
-        <div class="cv-card-clean">
-          <div class="cv-check-big">✓</div>
-          <div>${checkStatus === 'complete' ? 'No issues found in this check.' : checkStatus === 'unavailable' ? 'AI check unavailable. Only basic local spelling was checked.' : 'Basic local check only. Sign in for AI proofreading.'}</div>
-          <div class="cv-tone-row">
-            <span class="cv-tone-chip cv-tone-${currentTone}">${currentTone}</span>
-            <span class="cv-lang-chip">${esc(currentLanguage)}</span>
-          </div>
-        </div>`)
-    } else {
-      const toneBar = `<p class="cv-check-scope">${checkStatus === 'complete' ? 'AI proofreading' : 'Basic local suggestions · AI check unavailable'}</p><div class="cv-tone-row"><span class="cv-tone-chip cv-tone-${currentTone}">Tone: ${currentTone}</span><span class="cv-lang-chip">${esc(currentLanguage)}</span></div>`
-      const items = currentIssues.map((iss, i) => `
-        <div class="cv-issue" data-i="${i}">
-          <div class="cv-issue-top">
-            <span class="cv-issue-tag cv-tag-${iss.type}">${iss.type}</span>
-            <span class="cv-issue-reason">${esc(iss.reason || '')}</span>
-          </div>
-          <div class="cv-issue-diff">
-            <span class="cv-old">${esc(iss.original)}</span>
-            <span class="cv-arrow">→</span>
-            <span class="cv-new">${esc(iss.suggestion)}</span>
-          </div>
-          <button class="cv-apply" data-i="${i}">Apply</button>${iss.type === 'spelling' ? `<button class="cv-dictionary" data-i="${i}">Add to dictionary</button>` : ''}
-        </div>`).join('')
-      card.innerHTML = cardShell(`${currentIssues.length} suggestion${currentIssues.length > 1 ? 's' : ''}`, toneBar + items, true)
-    }
+    const text = activeField ? getText(activeField) : ''
+    const info = assessment(checkedSnapshot === text ? checkStatus : 'local', currentIssues, text)
+    if (ignoredIssues.size && !currentIssues.length) { info.state = 'reviewed'; info.title = 'Suggestions dismissed'; info.detail = 'You chose to ignore suggestions. Dismissal does not confirm that the text is correct.' }
+    const measured = metrics(text)
+    card.dataset.state = info.state
+    card.setAttribute('role', 'region'); card.setAttribute('aria-label', 'Codeva writing review')
+    const visible = currentIssues.map((issue, index) => ({ issue, index })).filter(({ issue }) => issueFilter === 'all' || (issueFilter === 'clarity') === (issue.type === 'clarity'))
+    const filters = ['all', 'correctness', 'clarity'].map(filter => `<button type="button" class="cv-filter" data-filter="${filter}" aria-pressed="${issueFilter === filter}">${filter[0].toUpperCase() + filter.slice(1)}</button>`).join('')
+    const items = visible.map(({ issue: iss, index: i }) => `<article class="cv-issue" data-i="${i}"><div class="cv-issue-top"><span class="cv-issue-tag cv-tag-${iss.type}">${iss.type}</span><span class="cv-source">${iss.source === 'local' ? 'Local rule' : 'AI suggestion'}</span></div><p class="cv-issue-reason">${esc(iss.reason)}</p><div class="cv-issue-diff"><span class="cv-old">${esc(iss.original)}</span><span class="cv-arrow">→</span><span class="cv-new">${esc(iss.suggestion || '(delete)')}</span></div><div class="cv-issue-actions"><button type="button" class="cv-ignore" data-i="${i}">Ignore</button>${iss.type === 'spelling' ? `<button type="button" class="cv-dictionary" data-i="${i}">Add word</button>` : ''}<button type="button" class="cv-apply" data-i="${i}">Apply change</button></div></article>`).join('')
+    const canUndo = writingUndo?.field === activeField && writingUndo.after === text
+    const preview = rewritePreview?.field === activeField && rewritePreview.original === text ? `<section class="cv-popup-preview"><h3>Review the rewrite</h3><p>Your draft changes when you apply this version.</p><pre>${esc(rewritePreview.rewritten)}</pre><div class="cv-popup-actions"><button type="button" class="cv-apply-rewrite">Apply rewrite</button><button type="button" class="cv-dismiss-rewrite">Dismiss</button></div></section>` : ''
+    card.innerHTML = cardShell('Writing review', `<div class="cv-review-summary" role="status"><span class="cv-review-badge">${info.state === 'complete' ? 'AI check complete' : info.state === 'checking' ? 'Checking' : 'Limited check'}</span><h2>${esc(info.title)}</h2><p>${esc(info.detail)}</p><span class="cv-draft-count">${measured.words} ${measured.words === 1 ? 'word' : 'words'} · ${measured.sentences} ${measured.sentences === 1 ? 'sentence' : 'sentences'}</span></div><div class="cv-popup-actions"><button type="button" class="cv-recheck" ${info.state === 'checking' || text.length > 6000 || text.trim().length < 3 ? 'disabled' : ''}>${authToken ? 'Check again with AI' : 'Sign in for AI'}</button><button type="button" class="cv-undo" ${canUndo ? '' : 'disabled'}>Undo change</button></div><div class="cv-popup-filters">${filters}</div>${items || (currentIssues.length ? '<p class="cv-check-scope">No suggestions in this category.</p>' : '')}<div class="cv-popup-rewrite"><label class="cv-rewrite-label">Rewrite style<select class="cv-popup-mode"><option value="formal">Professional</option><option value="casual">Friendly</option><option value="shorter">Shorter</option><option value="longer">Expand</option><option value="confident">Confident</option><option value="simplify">Simplify</option></select></label><button type="button" class="cv-request-rewrite" ${popupRewriteBusy || text.length > 6000 || text.trim().length < 2 ? 'disabled' : ''}>${popupRewriteBusy ? 'Preparing…' : 'Preview rewrite'}</button></div>${preview}${popupRewriteError ? `<p class="cv-rewrite-error" role="alert">${esc(popupRewriteError)}</p>` : ''}`, currentIssues.length > 0)
 
     // Fixed positioning (relative to viewport, not document) — robust on all pages
     card.style.position = 'fixed'
@@ -470,6 +434,33 @@
     card.style.left = `${left}px`
     card.style.top = `${top}px`
 
+    card.querySelectorAll('[data-filter]').forEach(button => button.onclick = () => { issueFilter = button.dataset.filter; openGrammarCard() })
+    card.querySelector('.cv-popup-mode').value = popupRewriteMode
+    card.querySelector('.cv-popup-mode').onchange = event => { popupRewriteMode = event.target.value }
+    card.querySelectorAll('.cv-ignore').forEach(button => button.onclick = () => {
+      const issue = currentIssues[Number(button.dataset.i)]; if (!issue) return
+      ignoredIssues.add(issueKey(issue)); currentIssues = currentIssues.filter(item => item !== issue)
+      setFabState(currentIssues.length ? 'issues' : 'idle', currentIssues.length); openGrammarCard()
+    })
+    card.querySelector('.cv-recheck').onclick = () => {
+      if (!authToken) { chrome.runtime.sendMessage({ type: 'OPEN_AUTH' }); return }
+      clearTimeout(debounceTimer); lastCheckedText = ''; runGrammarCheck(activeField, true)
+    }
+    card.querySelector('.cv-undo').onclick = () => {
+      const previous = writingUndo
+      if (!previous || previous.field !== activeField || getText(activeField) !== previous.after) return
+      writingUndo = null; replaceFieldRange(activeField, 0, previous.after.length, previous.before)
+      clearTimeout(debounceTimer); runGrammarCheck(activeField, true); openGrammarCard()
+    }
+    card.querySelector('.cv-request-rewrite').onclick = () => requestPopupRewrite(card.querySelector('.cv-popup-mode').value)
+    card.querySelector('.cv-dismiss-rewrite')?.addEventListener('click', () => { rewritePreview = null; openGrammarCard() })
+    card.querySelector('.cv-apply-rewrite')?.addEventListener('click', () => {
+      const candidate = rewritePreview
+      if (!candidate || candidate.field !== activeField || getText(activeField) !== candidate.original) return
+      const field = activeField; replaceFieldRange(field, 0, candidate.original.length, candidate.rewritten)
+      writingUndo = { field, before: candidate.original, after: candidate.rewritten }; rewritePreview = null
+      clearTimeout(debounceTimer); runGrammarCheck(field, true); openGrammarCard()
+    })
     card.querySelector('.cv-card-close')?.addEventListener('click', closeCard)
     card.querySelector('.cv-signin')?.addEventListener('click', () => {
       chrome.runtime.sendMessage({ type: 'OPEN_AUTH' })
@@ -494,11 +485,29 @@
     })
   }
 
+  async function requestPopupRewrite(mode) {
+    if (!authToken) { chrome.runtime.sendMessage({ type: 'OPEN_AUTH' }); return }
+    const field = activeField, original = getText(field), token = authToken
+    if (popupRewriteBusy || original.length > 6000 || original.trim().length < 2) return
+    popupRewriteBusy = true; rewritePreview = null; popupRewriteError = ''; popupRewriteMode = mode; openGrammarCard()
+    try {
+      const goals = await getWritingGoals() || {}
+      const response = await apiRequest('/completions/rewrite', { text: original, mode, goals, dictionary: settings.dictionary || [] })
+      if (!response.ok) throw new Error('AI rewriting is unavailable. Your draft has been kept.')
+      const result = await response.json()
+      if (field !== activeField || getText(field) !== original || token !== authToken) return
+      if (result.original !== original || typeof result.rewritten !== 'string' || !result.rewritten.trim() || result.rewritten.length > 16000) throw new Error('The rewrite could not be verified. Your draft has been kept.')
+      rewritePreview = { field, original, rewritten: result.rewritten }
+    } catch (error) { if (field === activeField && getText(field) === original && token === authToken) popupRewriteError = error.message || 'The rewrite failed. Your draft has been kept.' }
+    finally { popupRewriteBusy = false; if (card) openGrammarCard() }
+  }
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && card) closeCard() })
+
   function cardShell(title, body, showFixAll) {
     return `
       <div class="cv-card-head">
         <div class="cv-card-brand">
-          <span class="cv-logo-dot"></span>
+          <span class="cv-logo-dot" aria-hidden="true">${fab.querySelector('.cv-fab-mark').innerHTML}</span>
           <span>${title}</span>
         </div>
         <div class="cv-card-head-actions">
@@ -513,7 +522,7 @@
   function authCardHTML() {
     return `
       <div class="cv-card-head">
-        <div class="cv-card-brand"><span class="cv-logo-dot"></span><span>Codeva</span></div>
+        <div class="cv-card-brand"><span class="cv-logo-dot" aria-hidden="true">${fab.querySelector('.cv-fab-mark').innerHTML}</span><span>Codeva</span></div>
         <button class="cv-card-close">✕</button>
       </div>
       <div class="cv-card-body">
@@ -529,15 +538,19 @@
     if (!issue || !activeField || getText(activeField) !== checkedSnapshot) { closeCard(); lastCheckedText = ''; return }
     const field = activeField
     removeInlineUnderlines()
+    const before = getText(field)
     replaceFieldRange(field, issue.start, issue.end, issue.suggestion)
+    writingUndo = { field, before, after: getText(field) }
     lastCheckedText = ''; currentIssues = []; closeCard()
     clearTimeout(debounceTimer); debounceTimer = setTimeout(() => runGrammarCheck(field), 300)
   }
   function applyAllFixes() {
     if (!activeField || getText(activeField) !== checkedSnapshot) { closeCard(); return }
     const field = activeField, issues = [...currentIssues].sort((a, b) => b.start - a.start)
+    const before = getText(field)
     removeInlineUnderlines()
     for (const issue of issues) replaceFieldRange(field, issue.start, issue.end, issue.suggestion)
+    writingUndo = { field, before, after: getText(field) }
     currentIssues = []; lastCheckedText = ''; closeCard(); setFabState('idle')
     clearTimeout(debounceTimer); debounceTimer = setTimeout(() => runGrammarCheck(field), 300)
   }
@@ -647,7 +660,7 @@
 
     resultCard.innerHTML = `
       <div class="cv-result-head">
-        <span class="cv-result-title"><span class="cv-logo-dot"></span> ${title}</span>
+        <span class="cv-result-title"><span class="cv-logo-dot" aria-hidden="true">${fab.querySelector('.cv-fab-mark').innerHTML}</span> ${title}</span>
         <button class="cv-result-close">✕</button>
       </div>
       ${inner}
@@ -1281,7 +1294,7 @@ Transcript:
       const pdfBar = document.createElement('div')
       pdfBar.className = 'cv-pdf-bar'
       pdfBar.innerHTML = `
-        <span class="cv-pdf-brand"><span class="cv-logo-dot"></span> Codeva</span>
+        <span class="cv-pdf-brand"><span class="cv-logo-dot" aria-hidden="true">${fab.querySelector('.cv-fab-mark').innerHTML}</span> Codeva</span>
         <button class="cv-pdf-action" data-act="summarize">📋 Summarize PDF</button>
         <button class="cv-pdf-action" data-act="keypoints">🔑 Key Points</button>
         <button class="cv-pdf-action" data-act="ask">❓ Ask about PDF</button>`
