@@ -17,7 +17,7 @@
 	const accountHead = el('div', undefined, accountCard); accountHead.className = 'account-head';
 	const accountText = el('div', undefined, accountHead); el('strong', 'Codeva account', accountText);
 	const planBadge = el('span', 'Signed out', accountHead); planBadge.className = 'badge';
-	const accountSummary = el('p', 'Sign in with your existing Codeva account to use chat and projects.', accountCard); accountSummary.className = 'muted';
+	const accountSummary = el('p', 'Sign in with your existing Codeva account to use chat and projects.', accountCard); accountSummary.className = 'account-summary';
 	const accountActions = el('div', undefined, accountCard); accountActions.className = 'actions';
 	const signInButton = button('Sign in to Codeva', () => send('signIn'), accountActions);
 	const signOutButton = button('Sign out', () => send('signOut'), accountActions, true); signOutButton.hidden = true;
@@ -32,10 +32,11 @@
 	const toggleSettings = () => { settingsPanel.hidden = !settingsPanel.hidden; };
 	button('Preferences', toggleSettings, accountActions, true);
 	button('Editor settings', () => send('openSettings'), settingsPanel, true);
-	const openProjects = button('Your projects', () => send('projects')); openProjects.className = 'secondary';
 	const openChat = button('Open chat', () => send('openChat'), accountActions, true);
-	const open = el('section'); el('h2', 'Open a project', open);
-	const id = input('Project ID', open); button('Open project', () => send('open', {}, { id: id.value }), open);
+	button('Your projects', () => send('projects'), accountActions, true);
+	const open = el('section'); open.className = 'project-card'; el('h2', 'Open a project', open);
+	const projectOpenRow = el('div', undefined, open); projectOpenRow.className = 'project-open-row';
+	const id = input('Project ID', projectOpenRow); button('Open project', () => send('open', {}, { id: id.value }), projectOpenRow);
 	const create = el('details', undefined, app); el('summary', 'Create a project', create);
 	const name = input('Project name', create), prompt = input('Original request', create, true);
 	const pack = el('select', undefined, create); pack.setAttribute('aria-label', 'Project template');
@@ -48,6 +49,8 @@
 	const showAccount = (profile, expired = false) => {
 		signInButton.hidden = Boolean(profile); signOutButton.hidden = !profile;
 		planBadge.textContent = profile?.plan || (expired ? 'Session expired' : 'Signed out');
+		planBadge.dataset.state = profile ? 'signed-in' : expired ? 'expired' : 'signed-out';
+		accountCard.dataset.authState = planBadge.dataset.state;
 		accountSummary.textContent = profile?.email || (expired ? 'Your Codeva session expired. Sign in again to continue.' : 'Sign in with your existing Codeva account to use chat and projects.');
 	};
 	const renderPersonas = () => {

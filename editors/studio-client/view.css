@@ -1,36 +1,168 @@
-:root{color-scheme:light dark}
-*{box-sizing:border-box}
-body{margin:0;padding:12px;font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);line-height:1.5;color:var(--vscode-foreground);background:var(--vscode-sideBar-background)}
-button,input,textarea,select{font:inherit;color:var(--vscode-input-foreground);background:var(--vscode-input-background);border:1px solid var(--vscode-input-border,transparent);border-radius:6px;padding:7px 9px;max-width:100%}
-button{cursor:pointer;color:var(--vscode-button-foreground);background:var(--vscode-button-background);border-color:transparent;font-weight:600}
-button:hover{background:var(--vscode-button-hoverBackground)}
-button.secondary{color:var(--vscode-foreground);background:var(--vscode-button-secondaryBackground);border-color:var(--vscode-widget-border)}
-button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:1px}
-input,textarea,select{width:100%;margin:4px 0}
-textarea{min-height:72px;resize:vertical}
-section{margin:14px 0;padding:12px;border:1px solid var(--vscode-widget-border);border-radius:8px;background:var(--vscode-editor-background)}
-h1{font-size:16px;margin:0}
-h2{font-size:13px;margin:14px 0 7px}
-h3{font-size:12px;margin:10px 0 4px}
-.brand{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.brand-mark{width:28px;height:28px;color:#C4622D}
-.muted,small{color:var(--vscode-descriptionForeground)}
-.account-card{padding:12px;border:1px solid var(--vscode-widget-border);border-radius:9px;background:var(--vscode-editor-background)}
-.account-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.badge{font-size:10px;border-radius:999px;padding:2px 8px;background:var(--vscode-badge-background);color:var(--vscode-badge-foreground)}
-.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.actions button{flex:1 1 110px;white-space:nowrap}
-.account-actions button{min-height:32px}
-section:empty,[role=alert]:empty{display:none}
-.account-card h2{margin-top:0}
-.settings-panel{border-color:var(--vscode-focusBorder)}
-.settings-panel[hidden]{display:none}
-details{margin-top:12px}
-summary{cursor:pointer;font-weight:600}
-pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:7px 0}
-label{display:block;margin-top:8px;font-weight:600}
-.field-hint{font-size:11px;color:var(--vscode-descriptionForeground)}
-.event{border-left:2px solid var(--vscode-focusBorder);padding-left:8px;margin:7px 0;color:var(--vscode-descriptionForeground)}
-[role=alert]{color:var(--vscode-errorForeground);min-height:1em}
-#app>section{margin-top:12px}
-#app>section button{margin:3px 2px 3px 0}
+:root {
+	color-scheme: light dark;
+	--studio-space-1: 4px;
+	--studio-space-2: 8px;
+	--studio-space-3: 12px;
+	--studio-space-4: 16px;
+	--studio-radius-card: 12px;
+	--studio-radius-control: 8px;
+	--studio-accent: var(--vscode-focusBorder);
+	--studio-surface: var(--vscode-editor-background);
+	--studio-border: var(--vscode-widget-border);
+}
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	padding: var(--studio-space-3);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	line-height: 1.5;
+	color: var(--vscode-foreground);
+	background: var(--vscode-sideBar-background);
+	overflow-x: hidden;
+}
+
+#app {
+	display: grid;
+	gap: var(--studio-space-3);
+	width: min(100%, 520px);
+	min-width: 0;
+	margin: 0 auto;
+}
+
+button, input, textarea, select {
+	max-width: 100%;
+	font: inherit;
+	color: var(--vscode-input-foreground);
+	background: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border, var(--studio-border));
+	border-radius: var(--studio-radius-control);
+}
+
+button {
+	min-height: 36px;
+	padding: 7px 11px;
+	color: var(--vscode-button-foreground);
+	background: var(--vscode-button-background);
+	border-color: transparent;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+button:hover { background: var(--vscode-button-hoverBackground); }
+button:active { transform: translateY(1px); }
+
+button.secondary {
+	color: var(--vscode-foreground);
+	background: var(--vscode-button-secondaryBackground);
+	border-color: var(--studio-border);
+}
+
+button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
+
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible {
+	outline: 2px solid var(--studio-accent);
+	outline-offset: 2px;
+}
+
+button[hidden], [hidden] { display: none !important; }
+
+input, textarea, select {
+	width: 100%;
+	min-width: 0;
+	min-height: 38px;
+	padding: 8px 10px;
+}
+
+input::placeholder, textarea::placeholder { color: var(--vscode-input-placeholderForeground); }
+textarea { min-height: 96px; resize: vertical; }
+
+section {
+	min-width: 0;
+	margin: 0;
+	padding: var(--studio-space-3);
+	border: 1px solid var(--studio-border);
+	border-radius: var(--studio-radius-card);
+	background: var(--studio-surface);
+}
+
+h1, h2, h3, p { overflow-wrap: anywhere; }
+h1 { margin: 0; font-size: 16px; line-height: 1.25; font-weight: 650; }
+h2 { margin: 0 0 var(--studio-space-2); font-size: 13px; line-height: 1.35; font-weight: 650; }
+h3 { margin: var(--studio-space-3) 0 var(--studio-space-1); font-size: 12px; line-height: 1.35; font-weight: 650; }
+p { margin: var(--studio-space-2) 0 0; }
+
+.brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	padding: 2px 2px var(--studio-space-3);
+	border-bottom: 1px solid var(--studio-border);
+}
+
+.brand-mark { flex: 0 0 34px; width: 34px; height: 34px; color: var(--studio-accent); }
+.brand .muted { margin-top: 2px; font-size: 11px; }
+.muted, small { color: var(--vscode-descriptionForeground); }
+
+.account-card {
+	padding: 14px;
+	border-color: color-mix(in srgb, var(--studio-accent) 32%, var(--studio-border));
+	background: linear-gradient(145deg, color-mix(in srgb, var(--studio-accent) 10%, var(--studio-surface)), var(--studio-surface) 70%);
+}
+
+.account-head { display: flex; justify-content: space-between; align-items: center; gap: var(--studio-space-2); }
+.account-summary { max-width: 38ch; margin: var(--studio-space-2) 0 0; color: var(--vscode-descriptionForeground); }
+.badge { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 9px; border-radius: 999px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+.actions {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--studio-space-2);
+	margin-top: var(--studio-space-3);
+}
+
+.actions button { min-width: 0; white-space: normal; }
+.actions button:not(.secondary):not([hidden]) { grid-column: 1 / -1; min-height: 40px; }
+.account-actions button { min-height: 36px; }
+
+.account-card h2 { margin-top: 0; }
+.settings-panel { border-color: var(--studio-accent); }
+.settings-panel[hidden] { display: none; }
+.settings-panel label { display: block; margin-top: var(--studio-space-3); font-weight: 600; }
+.settings-panel label select { margin-top: var(--studio-space-1); }
+.field-hint { margin-top: var(--studio-space-2); font-size: 11px; }
+
+.project-card h2 { margin-bottom: var(--studio-space-2); }
+.project-open-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--studio-space-2); align-items: center; }
+.project-open-row input { margin: 0; }
+.project-open-row button { min-height: 38px; }
+
+details { min-width: 0; padding: 0 var(--studio-space-1); }
+summary { cursor: pointer; font-weight: 650; }
+details[open] summary { margin-bottom: var(--studio-space-2); }
+details input, details textarea, details select { margin-top: var(--studio-space-1); }
+
+pre { max-width: 100%; margin: var(--studio-space-2) 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+label { display: block; margin-top: var(--studio-space-2); font-weight: 600; }
+label textarea, label input, label select { margin-top: var(--studio-space-1); }
+.event { margin: var(--studio-space-2) 0; padding-left: 10px; border-left: 2px solid var(--studio-accent); color: var(--vscode-descriptionForeground); }
+[role="alert"] { min-height: 1em; color: var(--vscode-errorForeground); }
+section:empty, [role="alert"]:empty { display: none; }
+#app > section button { margin: 3px 2px 3px 0; }
+
+@media (max-width: 340px) {
+	body { padding: var(--studio-space-2); }
+	.account-card { padding: 11px; }
+	.actions { grid-template-columns: minmax(0, 1fr); }
+	.actions button:not(.secondary):not([hidden]) { grid-column: auto; }
+	.project-open-row { grid-template-columns: minmax(0, 1fr); }
+	.project-open-row button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

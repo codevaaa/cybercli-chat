@@ -29,7 +29,11 @@ npm run compile
 .\scripts\code.bat
 ```
 
-The pinned source requires Node major 24 and Windows C++/ATL/Spectre/SDK prerequisites. They are installed on this host; real compilation/package commands succeeded. Native execution remains a separate check.
+The pinned source requires Node major 24 and Windows C++/ATL/Spectre/SDK prerequisites. They are installed on this host; the full workbench compile succeeded with zero TypeScript errors. The source dev workbench was launched and visually checked at wide and constrained pane widths; packaged-installer validation remains separate.
+
+## Interface design
+
+The editor uses the shared workbench theme for light/dark surfaces, Codeva terracotta actions, and keyboard focus. Welcome layout changes are applied by `phase3-workbench.mjs`; account and project sidebar styling lives in `studio-client/view.css`. See [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) for layout breakpoints and theme tokens. These presentation layers continue to use the existing native commands and Codeva APIs.
 
 ## Account and backend
 
