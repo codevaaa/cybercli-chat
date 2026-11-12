@@ -1,0 +1,114 @@
+{
+  "name": "codic-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Codic coding workbench for macOS, Windows, and Linux",
+  "type": "module",
+  "main": "./dist/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build && tsc --noEmit -p tsconfig.json",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win --x64",
+    "dist:mac": "npm run build && electron-builder --mac --universal",
+    "dist:linux": "npm run build && electron-builder --linux --x64"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "electron": "^45.3.1",
+    "electron-builder": "^26.0.12",
+    "electron-vite": "^5.0.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "minimatch": "^11.0.8"
+  },
+  "build": {
+    "appId": "com.codeva.codic",
+    "productName": "Codic",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*"
+    ],
+    "publish": null,
+    "mac": {
+      "identity": null,
+      "sign": false,
+      "notarize": false,
+      "icon": "build/icon.icns",
+      "protocols": [{ "name": "Codic sign-in", "schemes": ["codic"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": false,
+      "protocols": [{ "name": "Codic sign-in", "schemes": ["codic"] }]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Codic"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "protocols": [{ "name": "Codic sign-in", "schemes": ["codic"] }],
+      "desktop": { "entry": { "MimeType": "x-scheme-handler/codic" } },
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Development",
+      "synopsis": "AI coding workbench"
+    }
+  }
+}

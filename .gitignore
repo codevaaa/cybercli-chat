@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 package-lock.json
+!codic/desktop/package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -75,6 +76,9 @@ editors/code-oss/
 editors/VSCode-*/
 artifacts/codeva-editor/
 scripts/ide/node_modules/
+
+# Codic installer artifacts are published separately after release checks.
+/codic/desktop/release/
 
 
 # Temp/output files
