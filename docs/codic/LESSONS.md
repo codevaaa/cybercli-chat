@@ -14,6 +14,8 @@
 - Recompute installer checksums after every packaging run. A stale `.sha256` file can look authoritative while describing an earlier binary; compare the hash against the exact installer that will be uploaded.
 - Do not claim a visual pass when desktop automation cannot attach to the packaged app window. Record build/typecheck evidence separately from screenshot or interaction evidence.
 - At 130% zoom, viewport breakpoints alone do not protect the composer when adjacent panels reduce its width. Use a container query on the composer itself and start with the optional project panel closed.
+- Desktop zoom changes the CSS viewport; use width containers at the app shell and main content too, so the navigation, review panel, and composer adapt even when the outer window remains large.
+- Do not request Electron's `latest.yml` feed until the public release catalog confirms an available installer and a valid SHA-512 checksum. Preview releases intentionally leave that feed unpublished.
 - For fixed popovers, position from the trigger’s actual rectangle, clamp both axes, and cap the popover’s own height to the estimate used for positioning. Otherwise a tall menu can extend past its trigger even when its top coordinate appears clamped.
 - Mouse-wheel model navigation should stop at the first and last available option; wrapping belongs to deliberate keyboard cycling, not a scroll gesture.
 - A first project screen should keep the same prompt workspace as a selected-project screen. The Choose project action should preserve the draft while opening folder selection, and send should not imply a task started before a workspace exists.

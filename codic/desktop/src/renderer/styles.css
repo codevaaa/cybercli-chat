@@ -1189,3 +1189,103 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Reflow from the actual content width. Electron zoom changes the CSS viewport,
+   so viewport-only breakpoints miss narrow layouts when panels are open. */
+.app-shell, .app-layout, .main-content { min-width: 0; min-height: 0; }
+.app-layout { container-type: inline-size; container-name: codic-shell; }
+.main-content { container-type: inline-size; container-name: codic-main; }
+.main-toolbar, .breadcrumbs, .toolbar-right { min-width: 0; }
+.breadcrumbs { overflow: hidden; }
+html, body, #root { min-width: 0; }
+
+@media (min-width: 1600px) {
+  .welcome-composer-wrap, .composer-wrap { width: min(1180px, calc(100% - 64px)); }
+  .message-list { width: min(880px, calc(100% - 64px)); }
+}
+
+@media (min-width: 2200px) {
+  .welcome-composer-wrap, .composer-wrap { width: min(1320px, calc(100% - 80px)); }
+  .message-list { width: min(980px, calc(100% - 80px)); }
+}
+
+@container codic-shell (max-width: 1180px) {
+  .nav-rail { width: 60px; flex-basis: 60px; padding-right: 7px; padding-left: 7px; }
+  .sidebar { width: 210px; flex-basis: 210px; }
+  .app-layout.sidebar-hidden .sidebar { margin-left: -210px; }
+  .titlebar-brand { width: 150px; }
+}
+
+@container codic-shell (max-width: 900px) {
+  .sidebar { width: 58px; flex-basis: 58px; padding-right: 6px; padding-left: 6px; }
+  .app-layout.sidebar-hidden .sidebar { margin-left: -58px; }
+  .workspace-switcher { justify-content: center; padding-right: 3px; padding-left: 3px; }
+  .workspace-switcher-copy, .workspace-switcher > svg, .side-action span, .side-action kbd,
+  .sidebar-section-label span, .project-row span:nth-child(2), .project-empty span,
+  .thread-row span:nth-child(2), .empty-thread-note, .sidebar-footer .connection-line,
+  .account-copy, .account-card > svg { display: none; }
+  .side-action, .project-row, .project-empty, .thread-row, .account-card { justify-content: center; padding-right: 0; padding-left: 0; }
+  .sidebar-section-label { justify-content: center; margin-left: 0; }
+  .project-dot { display: none; }
+  .titlebar-brand { width: 94px; }
+}
+
+@container codic-shell (max-width: 660px) {
+  .nav-rail { width: 50px; flex-basis: 50px; padding-right: 4px; padding-left: 4px; }
+  .nav-rail-brand, .nav-rail-item { width: 40px; height: 40px; }
+  .sidebar, .app-layout.sidebar-hidden .sidebar { position: fixed; z-index: 11; top: 78px; bottom: 0; left: 50px; width: min(290px, calc(100vw - 66px)); height: calc(100dvh - 78px); flex: 0 0 auto; margin-left: 0; padding: 12px 8px 10px; transform: translateX(calc(-100% - 12px)); visibility: hidden; opacity: 0; pointer-events: none; box-shadow: var(--shadow); }
+  .app-layout:not(.sidebar-hidden) .sidebar { display: flex; width: min(290px, calc(100vw - 66px)); flex-basis: auto; transform: translateX(0); visibility: visible; opacity: 1; pointer-events: auto; }
+  .app-layout:not(.sidebar-hidden) .workspace-switcher-copy, .app-layout:not(.sidebar-hidden) .workspace-switcher > svg,
+  .app-layout:not(.sidebar-hidden) .side-action span, .app-layout:not(.sidebar-hidden) .side-action kbd,
+  .app-layout:not(.sidebar-hidden) .sidebar-section-label span, .app-layout:not(.sidebar-hidden) .project-row span:nth-child(2),
+  .app-layout:not(.sidebar-hidden) .project-empty span, .app-layout:not(.sidebar-hidden) .thread-row span:nth-child(2),
+  .app-layout:not(.sidebar-hidden) .empty-thread-note, .app-layout:not(.sidebar-hidden) .sidebar-footer .connection-line,
+  .app-layout:not(.sidebar-hidden) .account-copy, .app-layout:not(.sidebar-hidden) .account-card > svg { display: initial; }
+  .app-layout:not(.sidebar-hidden) .workspace-switcher-copy, .app-layout:not(.sidebar-hidden) .sidebar-footer .connection-line,
+  .app-layout:not(.sidebar-hidden) .account-copy { display: flex; }
+  .app-layout:not(.sidebar-hidden) .side-action, .app-layout:not(.sidebar-hidden) .project-row,
+  .app-layout:not(.sidebar-hidden) .project-empty, .app-layout:not(.sidebar-hidden) .thread-row,
+  .app-layout:not(.sidebar-hidden) .account-card { justify-content: flex-start; padding-right: 8px; padding-left: 8px; }
+  .app-layout:not(.sidebar-hidden) .sidebar-section-label { justify-content: space-between; }
+  .app-layout:not(.sidebar-hidden) .project-dot { display: block; }
+  .titlebar-brand { width: auto; min-width: 76px; }
+  .titlebar-version, .titlebar-drag, .window-divider, .window-control:not(.window-close) { display: none; }
+  .titlebar-actions { margin-left: auto; }
+}
+
+@container codic-main (max-width: 1120px) {
+  .workspace-content:not(.panel-collapsed) { grid-template-columns: minmax(0, 1fr); }
+  .workspace-content:not(.panel-collapsed) .detail-panel { position: fixed; z-index: 12; top: 90px; right: 0; bottom: 0; width: min(320px, calc(100vw - 64px)); border-top: 1px solid var(--border); box-shadow: var(--shadow); }
+  .workspace-content.panel-collapsed .detail-panel { display: none; }
+}
+
+@container codic-main (max-width: 760px) {
+  .main-toolbar { padding-right: 10px; padding-left: 10px; }
+  .toolbar-chip { max-width: 138px; }
+  .toolbar-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .message-list, .composer-wrap, .welcome-composer-wrap { width: calc(100% - 24px); }
+  .message-list { gap: 18px; padding-top: 18px; }
+  .composer { padding: 10px; border-radius: 16px; }
+  .composer textarea { min-height: 54px; }
+  .composer-controls { align-items: flex-end; flex-wrap: wrap; gap: 4px; }
+  .composer-left, .composer-right-controls { width: 100%; min-width: 0; flex: 1 1 100%; }
+  .composer-left { flex-wrap: wrap; }
+  .composer-right-controls { justify-content: flex-end; flex-wrap: wrap; gap: 2px; }
+  .composer-right-controls .model-picker-trigger { max-width: min(190px, 38cqw); }
+  .approval-picker-trigger, .effort-picker-trigger { max-width: min(200px, 38cqw); }
+  .composer-hint { display: none; }
+}
+
+@container codic-main (max-width: 440px) {
+  .main-toolbar { min-height: 42px; height: auto; flex-basis: 42px; }
+  .breadcrumbs { font-size: 11px; }
+  .breadcrumbs .temporary-chat-badge { display: none; }
+  .toolbar-right { gap: 3px; }
+  .toolbar-chip { max-width: 44px; justify-content: center; padding: 0 7px; }
+  .toolbar-chip span, .toolbar-chip > svg:last-child { display: none; }
+  .toolbar-icon { width: 34px; }
+  .composer-project-selector, .project-picker-trigger { max-width: calc(100% - 12px); min-height: 38px; padding-right: 9px; padding-left: 9px; font-size: 11px; }
+  .composer-right-controls .model-picker-trigger { max-width: 34cqw; }
+  .approval-picker-trigger, .effort-picker-trigger { max-width: 32cqw; padding-right: 4px; padding-left: 4px; font-size: 10px; }
+  .send-button { width: 34px; height: 34px; flex-basis: 34px; }
+}

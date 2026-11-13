@@ -374,6 +374,11 @@ const FALLBACK_CHAIN = [
   'gemini/gemini-2.5-flash',
 ]
 
+// Keep a distinct Cloudflare model after the usual public-provider fallbacks.
+// It gives automatic Codeva requests another configured route when OpenRouter
+// and Groq are rate-limited, while still honoring per-route restrictions.
+const CLOUDFLARE_RECOVERY_MODELS = ['cloudflare/@cf/qwen/qwq-32b']
+
 const KALI_FALLBACK_CHAIN = [
   'groq/llama-3.3-70b',
   'groq/llama-3.1-8b',
@@ -807,11 +812,6 @@ export const llmGateway = {
       }
     }
 
-    if (!client && !routePolicy) {
-      yield { type: 'error', content: 'No API key configured for any provider' }
-      return
-    }
-
     const toolParams = buildToolParams(tools, tool_choice, activeProvider)
     let primaryOutputStarted = false
 
@@ -918,6 +918,13 @@ export const llmGateway = {
 
       if (isKaliKal && !FALLBACK_CHAINS[activeModelId]) {
         activeFallbackChain = KALI_FALLBACK_CHAIN
+      }
+
+      // Workers AI does not accept image inputs in this chat route. For text
+      // requests, offer one separate Workers AI model after the configured
+      // chain so Cloudflare remains usable as a recovery provider too.
+      if (!hasImages) {
+        activeFallbackChain = [...new Set([...activeFallbackChain, ...CLOUDFLARE_RECOVERY_MODELS])]
       }
 
       // Try fallback chain

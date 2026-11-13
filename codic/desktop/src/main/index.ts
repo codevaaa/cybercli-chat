@@ -10,6 +10,7 @@ import { CodicLocalStore } from './local-store.js'
 import { findCodicAuthCallback, parseCodicAuthCallback } from '../shared/authHandoff.js'
 import { listThreadSummaries, loadThreadHistory } from './history.js'
 import { toCodicApiPlatform } from './device-platform.js'
+import { fetchCodicUpdateFeedReadiness } from './updateFeed.js'
 import { readWorkspaceDiff, runWorkspaceCommand } from './workspace-tools.js'
 import { SecretScanner } from '../../../../cybercoder/packages/codic-runtime/src/shared-bridge.js'
 import type { CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicRuntimeEventEnvelope, CodicUpdateCheck, EditAction } from '../shared/contracts.js'
@@ -40,6 +41,7 @@ const UPDATE_RETRY_DELAYS_MS = [30_000, 60_000, 120_000]
 let updateRetryAttempt = 0
 let updateRetryTimer: NodeJS.Timeout | null = null
 let updateRetryScheduledIn: number | null = null
+let updateCheckInFlight = false
 
 let codicUpdateState: CodicUpdateCheck = {
   currentVersion: app.getVersion(), latestVersion: null, available: false, downloadPath: '/downloads/codic',
@@ -65,7 +67,7 @@ const isUnpublishedUpdateError = (error: unknown) => {
   if (!error || typeof error !== 'object') return false
   const candidate = error as { statusCode?: unknown; code?: unknown; message?: unknown }
   if (candidate.statusCode === 404) return true
-  return /(?:HTTP\s*(?:error\s*)?|status(?:\s+code)?\s*[:=]?\s*)404\b/i.test(String(candidate.message || candidate.code || ''))
+  return /\b404\b/.test(`${String(candidate.message || '')} ${String(candidate.code || '')}`)
 }
 
 const isTransientUpdateError = (error: unknown) => {
@@ -160,8 +162,19 @@ const checkForCodicUpdates = async (isRetry = false) => {
   if (!app.isPackaged) return emitUpdateState({
     phase: 'unsupported', available: false, latestVersion: null, message: 'Package Codic for Windows to check its release update feed.',
   })
-  if (codicUpdateState.phase === 'checking' || codicUpdateState.phase === 'downloading') return codicUpdateState
+  if (updateCheckInFlight || codicUpdateState.phase === 'downloading') return codicUpdateState
+  updateCheckInFlight = true
+  emitUpdateState({ phase: 'checking', available: false, message: 'Checking the Codeva release catalog…' })
   try {
+    const readiness = await fetchCodicUpdateFeedReadiness(`${apiBase}/downloads/codic`)
+    if (!readiness.ready) {
+      clearUpdateRetry(true)
+      return emitUpdateState({
+        phase: 'not-available', available: false, latestVersion: readiness.version || app.getVersion(),
+        percent: null, transferredBytes: null, totalBytes: null, bytesPerSecond: null,
+        message: 'No checksum-verified Codic update has been published yet.',
+      })
+    }
     const result = await autoUpdater.checkForUpdates()
     if (!result && (codicUpdateState.phase as CodicUpdateCheck['phase']) === 'checking') {
       return emitUpdateState({ phase: 'not-available', available: false, message: `Codic ${app.getVersion()} is up to date.` })
@@ -169,6 +182,8 @@ const checkForCodicUpdates = async (isRetry = false) => {
     return codicUpdateState
   } catch (error) {
     return handleUpdateError(error)
+  } finally {
+    updateCheckInFlight = false
   }
 }
 
