@@ -9,7 +9,8 @@ import ProjectPicker from './ProjectPicker'
 import { getInitialAppZoom, placeComposerPopover } from './appPreferences'
 import { getWorkspaceRestoreIntent } from './workspaceRestore'
 
-type View = 'assistant' | 'review' | 'terminal' | 'activity'
+type View = 'assistant' | 'review' | 'activity'
+type NavigableView = View | 'terminal'
 type SettingsSection = 'general' | 'profile' | 'appearance' | 'models' | 'permissions' | 'shortcuts' | 'updates' | 'troubleshooting' | 'about'
 type Message = { id: string; role: 'user' | 'assistant'; content: string; runId?: string }
 type Activity = { id: string; title: string; detail: string; status: 'done' | 'running' | 'waiting' | 'error' }
@@ -18,7 +19,7 @@ type NavigationEntry = { threadId: string | null; conversationId: string; view: 
 type ShortcutActions = {
   navigateBack: () => Promise<void>
   navigateForward: () => Promise<void>
-  navigateView: (view: View) => void
+  navigateView: (view: NavigableView) => void
   openWorkspace: () => Promise<void>
   openTaskSearch: () => void
   startNewTask: (temporary?: boolean) => void
@@ -136,6 +137,8 @@ const Icon = ({ name, size = 17 }: { name: string; size?: number }) => {
 const timeLabel = () => new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date())
 const localDateTimeInput = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
 const defaultScheduleDateTime = () => localDateTimeInput(new Date(Date.now() + 60 * 60_000))
+const bottomPanelMinHeight = 180
+const getBottomPanelMaxHeight = () => Math.max(bottomPanelMinHeight, Math.floor(window.innerHeight * (window.innerWidth <= 640 ? 0.46 : 0.68)))
 
 export default function App() {
   const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null)
@@ -219,6 +222,12 @@ export default function App() {
   const [effortMenuPosition, setEffortMenuPosition] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null)
   const [appVersion, setAppVersion] = useState('0.1.7')
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false)
+  const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(() => window.localStorage.getItem('codic-bottom-panel-open') === '1')
+  const [hasOpenedBottomPanel, setHasOpenedBottomPanel] = useState(() => window.localStorage.getItem('codic-bottom-panel-open') === '1')
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(() => {
+    const storedHeight = Number(window.localStorage.getItem('codic-bottom-panel-height'))
+    return Math.min(Number.isFinite(storedHeight) && storedHeight >= bottomPanelMinHeight ? storedHeight : 300, getBottomPanelMaxHeight())
+  })
   const [conversationId, setConversationId] = useState<string>(() => crypto.randomUUID())
   const [navigationRevision, setNavigationRevision] = useState(0)
   const registeredDeviceRef = useRef(false)
@@ -234,6 +243,8 @@ export default function App() {
   const approvalTriggerRef = useRef<HTMLButtonElement>(null)
   const effortMenuRef = useRef<HTMLDivElement>(null)
   const effortTriggerRef = useRef<HTMLButtonElement>(null)
+  const bottomPanelResizeRef = useRef<{ startY: number; startHeight: number } | null>(null)
+  const terminalOpenAfterWorkspaceRef = useRef(false)
   const shortcutActionsRef = useRef<ShortcutActions>({
     navigateBack: async () => undefined,
     navigateForward: async () => undefined,
@@ -337,7 +348,11 @@ export default function App() {
     pushNavigation({ threadId: null, conversationId: nextId, view: 'assistant', temporary })
   }
 
-  const navigateView = (nextView: View) => {
+  const navigateView = (nextView: NavigableView) => {
+    if (nextView === 'terminal') {
+      void openTerminal()
+      return
+    }
     if (nextView !== view) pushNavigation({ threadId: isTemporaryChat ? null : conversationId, conversationId, view: nextView, temporary: isTemporaryChat, ...(isTemporaryChat ? { messages } : {}) })
     setView(nextView)
   }
@@ -535,7 +550,7 @@ export default function App() {
     }
   }
 
-  const openThreadInView = async (thread: ThreadSummary, nextView: View) => {
+  const openThreadInView = async (thread: ThreadSummary, nextView: NavigableView) => {
     setThreadActionMenuId(null)
     if (thread.id !== conversationId) await openThread(thread.id)
     navigateView(nextView)
@@ -545,6 +560,16 @@ export default function App() {
     document.documentElement.dataset.theme = theme
     if (theme === 'system') delete document.documentElement.dataset.theme
   }, [theme])
+
+  useEffect(() => {
+    window.localStorage.setItem('codic-bottom-panel-height', String(bottomPanelHeight))
+  }, [bottomPanelHeight])
+
+  useEffect(() => {
+    const keepPanelInViewport = () => setBottomPanelHeight((height) => Math.max(bottomPanelMinHeight, Math.min(getBottomPanelMaxHeight(), height)))
+    window.addEventListener('resize', keepPanelInViewport)
+    return () => window.removeEventListener('resize', keepPanelInViewport)
+  }, [])
 
   useEffect(() => {
     void window.codic.app.getVersion().then(setAppVersion).catch(() => undefined)
@@ -713,7 +738,7 @@ export default function App() {
       }
       if (event.key.toLowerCase() === 'j') {
         event.preventDefault()
-        setIsRightPanelOpen((open) => !open)
+        toggleBottomPanel()
         return
       }
       if (event.key.toLowerCase() === 'f') {
@@ -723,8 +748,7 @@ export default function App() {
       }
       if (event.key === '`' || event.code === 'Backquote') {
         event.preventDefault()
-        setIsRightPanelOpen(true)
-        shortcutActionsRef.current.navigateView('terminal')
+        void openTerminal()
         return
       }
       if (event.key === '[') {
@@ -794,7 +818,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [isStreaming, currentThreadSummary, view, isTemporaryChat, messages])
+  }, [isStreaming, currentThreadSummary, view, isTemporaryChat, messages, isBottomPanelOpen])
 
   useEffect(() => {
     if (!profileMenuOpen) return
@@ -1118,13 +1142,51 @@ export default function App() {
     resetNavigation({ threadId: null, conversationId: nextId, view: 'assistant' })
   }
 
+  const setBottomPanelVisible = (open: boolean) => {
+    setIsBottomPanelOpen(open)
+    window.localStorage.setItem('codic-bottom-panel-open', open ? '1' : '0')
+    if (open) setHasOpenedBottomPanel(true)
+  }
+
+  const finishOpeningTerminal = () => {
+    terminalOpenAfterWorkspaceRef.current = false
+    setView('assistant')
+    setIsRightPanelOpen(false)
+    setBottomPanelVisible(true)
+  }
+
   const openWorkspace = async () => {
+    let opened = false
     try {
       const selected = await window.codic.workspace.choose()
-      if (selected) await activateProject(selected)
+      if (selected) {
+        await activateProject(selected)
+        opened = true
+        if (terminalOpenAfterWorkspaceRef.current) finishOpeningTerminal()
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not open that project folder.')
+    } finally {
+      if (!opened) terminalOpenAfterWorkspaceRef.current = false
     }
+  }
+
+  const openTerminal = async () => {
+    if (workspaceRef.current) {
+      finishOpeningTerminal()
+      return
+    }
+    terminalOpenAfterWorkspaceRef.current = true
+    await openWorkspace()
+  }
+
+  const toggleBottomPanel = () => {
+    if (isBottomPanelOpen) setBottomPanelVisible(false)
+    else void openTerminal()
+  }
+
+  const resizeBottomPanel = (height: number) => {
+    setBottomPanelHeight(Math.max(bottomPanelMinHeight, Math.min(getBottomPanelMaxHeight(), height)))
   }
 
   const createProject = async () => {
@@ -1535,7 +1597,7 @@ export default function App() {
   }
 
   const cycleSidebarView = (direction: -1 | 1) => {
-    const entries: View[] = ['assistant', 'activity', 'review', 'terminal']
+    const entries: View[] = ['assistant', 'activity', 'review']
     const index = entries.indexOf(view)
     const next = entries[(index + direction + entries.length) % entries.length]
     setIsRightPanelOpen(next !== 'assistant')
@@ -1543,7 +1605,7 @@ export default function App() {
   }
 
   const cyclePanelTab = (direction: -1 | 1) => {
-    const entries: View[] = ['review', 'terminal', 'activity']
+    const entries: View[] = ['review', 'activity']
     const index = entries.indexOf(view)
     const next = entries[(Math.max(index, -1) + direction + entries.length) % entries.length]
     lastPanelViewRef.current = next
@@ -1762,9 +1824,9 @@ export default function App() {
               </>}
               {name === 'View' && <>
                 <button role="menuitem" onClick={() => { setActiveAppMenu(null); setIsSidebarHidden((hidden) => !hidden) }}><Icon name="panel" size={15} />{isSidebarHidden ? 'Show sidebar' : 'Hide sidebar'}<kbd>Ctrl+Shift+S</kbd></button>
-                <button role="menuitem" onClick={() => { setActiveAppMenu(null); setIsRightPanelOpen((open) => !open) }}><Icon name="panel" size={15} />Toggle bottom panel<kbd>Ctrl+J</kbd></button>
+                <button role="menuitem" onClick={() => { setActiveAppMenu(null); toggleBottomPanel() }}><Icon name="panel" size={15} />Toggle bottom panel<kbd>Ctrl+J</kbd></button>
                 <button role="menuitemcheckbox" aria-checked={isPinnedSummaryVisible} onClick={() => { setActiveAppMenu(null); setIsPinnedSummaryVisible((visible) => !visible) }}><Icon name="pin" size={15} />Toggle pinned summary</button>
-                <button role="menuitem" onClick={() => { setActiveAppMenu(null); setIsRightPanelOpen(true); navigateView('terminal') }}><Icon name="terminal" size={15} />Open terminal<kbd>Ctrl+`</kbd></button>
+                <button role="menuitem" onClick={() => { setActiveAppMenu(null); void openTerminal() }}><Icon name="terminal" size={15} />Open terminal<kbd>Ctrl+`</kbd></button>
                 <button role="menuitem" onClick={() => { setActiveAppMenu(null); toggleNavigationPanel() }}>{isNavigationHidden ? 'Show navigation panel' : 'Toggle navigation panel'}<kbd>Ctrl+Shift+E</kbd></button>
                 <button role="menuitem" onClick={() => { setActiveAppMenu(null); switchChatAndTabs() }}>Switch between chat and tabs<kbd>Alt+Ctrl+B</kbd></button>
                 <div className="task-menu-divider" />
@@ -1838,7 +1900,7 @@ export default function App() {
             <button className={`nav-rail-item${!isSidebarHidden ? ' active' : ''}`} onClick={() => setIsSidebarHidden((hidden) => !hidden)} aria-label="Projects and tasks" title="Projects and tasks" aria-pressed={!isSidebarHidden}><Icon name="folder" size={20} /></button>
             <button className={`nav-rail-item${view === 'activity' ? ' active' : ''}`} onClick={() => { setIsRightPanelOpen(true); navigateView('activity') }} aria-label="Task history" title="Task history"><Icon name="history" size={20} /></button>
             <button className={`nav-rail-item${view === 'review' ? ' active' : ''}`} onClick={() => { if (!workspace) { void openWorkspace(); return } setIsRightPanelOpen(true); navigateView('review') }} aria-label="Code review" title="Code review"><Icon name="branch" size={20} /></button>
-            <button className={`nav-rail-item${view === 'terminal' ? ' active' : ''}`} onClick={() => { if (!workspace) { void openWorkspace(); return } setIsRightPanelOpen(true); navigateView('terminal') }} aria-label="Terminal" title="Terminal"><Icon name="terminal" size={20} /></button>
+            <button className={`nav-rail-item${isBottomPanelOpen ? ' active' : ''}`} onClick={toggleBottomPanel} aria-label={isBottomPanelOpen ? 'Close terminal panel' : 'Open terminal panel'} title="Terminal" aria-pressed={isBottomPanelOpen}><Icon name="terminal" size={20} /></button>
           </div>
           <div className="nav-rail-divider" />
           <div className="nav-rail-more-anchor" ref={railMoreRef}>
@@ -1917,7 +1979,7 @@ export default function App() {
 
         <main className="main-content">
           <div className="main-toolbar">
-            <div className="breadcrumbs"><span className="breadcrumb-muted">{workspace ? workspace.name : 'Codic'}</span><span className="breadcrumb-separator">/</span><strong>{view === 'assistant' ? 'Assistant' : view === 'review' ? 'Review' : view === 'terminal' ? 'Terminal' : 'Activity'}</strong>{isTemporaryChat && <span className="temporary-chat-badge">Temporary · not saved</span>}</div>
+            <div className="breadcrumbs"><span className="breadcrumb-muted">{workspace ? workspace.name : 'Codic'}</span><span className="breadcrumb-separator">/</span><strong>{view === 'assistant' ? 'Assistant' : view === 'review' ? 'Review' : 'Activity'}</strong>{isTemporaryChat && <span className="temporary-chat-badge">Temporary · not saved</span>}</div>
             <div className="toolbar-right">
               <button className="toolbar-chip" onClick={() => setIsRightPanelOpen((open) => !open)}><Icon name="branch" size={15} /><span>Workspace</span><Icon name="chevron" size={14} /></button>
               <button className="icon-button toolbar-icon" onClick={openWorkspace} title="Open folder" aria-label="Open folder"><Icon name="folder" size={16} /></button>
@@ -2029,17 +2091,67 @@ export default function App() {
               {isRightPanelOpen && <aside className="detail-panel">
                 <div className="detail-panel-heading"><div><span className="eyebrow">PROJECT</span><h2>{workspace.name}</h2></div><button className="icon-button compact panel-hide" onClick={() => setIsRightPanelOpen(false)} aria-label="Hide project panel"><Icon name="close" size={15} /></button></div>
                 <div className="panel-tabs" role="tablist" aria-label="Project views">
-                  {(['review', 'terminal', 'activity'] as View[]).map((item) => <button key={item} className={view === item ? 'active' : ''} onClick={() => navigateView(item)} role="tab" aria-selected={view === item}>{item === 'review' ? 'Review' : item === 'terminal' ? 'Terminal' : 'Activity'}{item === 'activity' && activities.length > 0 && <span className="tab-count">{activities.length}</span>}</button>)}
+                  {(['review', 'activity'] as View[]).map((item) => <button key={item} className={view === item ? 'active' : ''} onClick={() => navigateView(item)} role="tab" aria-selected={view === item}>{item === 'review' ? 'Review' : 'Activity'}{item === 'activity' && activities.length > 0 && <span className="tab-count">{activities.length}</span>}</button>)}
                 </div>
                 <div className="panel-content">
                   {view === 'review' && <DiffReviewPanel workspace={workspace} taskId={lastTaskId} taskRunning={isStreaming} refreshToken={checkpointRevision} />}
-                  <div className="panel-section" hidden={view !== 'terminal'}><TerminalPanel workspace={workspace} /></div>
                   {view === 'activity' && <div className="activity-list">{activities.length ? activities.map((activity) => <div key={activity.id} className={`activity-item activity-${activity.status}`}><span className="activity-icon">{activity.status === 'done' ? <Icon name="check" size={14} /> : activity.status === 'error' ? <Icon name="warning" size={14} /> : activity.status === 'waiting' ? <Icon name="lock" size={14} /> : <span className="activity-spinner" />}</span><div><strong>{activity.title}</strong><p>{activity.detail}</p></div></div>) : <div className="panel-empty"><div className="panel-empty-icon"><Icon name="activity" size={19} /></div><strong>No task activity yet</strong><p>Start a task to see progress and reviewable actions.</p></div>}</div>}
                 </div>
                 <div className="panel-bottom"><div className="panel-bottom-row"><span className="panel-bottom-label">WORKSPACE</span><span className="panel-bottom-value"><span className="tiny-dot" />Local</span></div><div className="panel-bottom-row"><span className="panel-bottom-label">ACCOUNT</span><span className="panel-bottom-value">{hasSession ? accountPlan : isLocalPreview ? 'Local preview' : 'Not connected'}</span></div>{limits && <><div className="panel-bottom-row"><span className="panel-bottom-label">REQUESTS / HOUR</span><span className="panel-bottom-value">{limits.requestsPerHour.toLocaleString()}</span></div><div className="panel-bottom-row"><span className="panel-bottom-label">MONTHLY TOKENS</span><span className="panel-bottom-value">{limits.monthlyTokens.remaining === null ? 'Unlimited' : `${Math.max(0, limits.monthlyTokens.remaining).toLocaleString()} left`}</span></div></>}</div>
               </aside>}
             </div>
           )}
+
+          {workspace && hasOpenedBottomPanel && <section className="bottom-panel" hidden={!isBottomPanelOpen} style={{ height: bottomPanelHeight }} aria-label="Bottom panel">
+            <div
+              className="bottom-panel-resize"
+              role="separator"
+              aria-label="Resize terminal panel"
+              aria-orientation="horizontal"
+              aria-valuemin={bottomPanelMinHeight}
+              aria-valuemax={getBottomPanelMaxHeight()}
+              aria-valuenow={bottomPanelHeight}
+              aria-valuetext={`${bottomPanelHeight} pixels`}
+              tabIndex={0}
+              onPointerDown={(event) => {
+                event.preventDefault()
+                event.currentTarget.setPointerCapture(event.pointerId)
+                bottomPanelResizeRef.current = { startY: event.clientY, startHeight: bottomPanelHeight }
+              }}
+              onPointerMove={(event) => {
+                const drag = bottomPanelResizeRef.current
+                if (drag) resizeBottomPanel(drag.startHeight + drag.startY - event.clientY)
+              }}
+              onPointerUp={(event) => {
+                bottomPanelResizeRef.current = null
+                if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+              }}
+              onPointerCancel={() => { bottomPanelResizeRef.current = null }}
+              onKeyDown={(event) => {
+                const step = event.shiftKey ? 72 : 24
+                if (event.key === 'ArrowUp' || event.key === 'PageUp') {
+                  event.preventDefault()
+                  resizeBottomPanel(bottomPanelHeight + (event.key === 'PageUp' ? 72 : step))
+                } else if (event.key === 'ArrowDown' || event.key === 'PageDown') {
+                  event.preventDefault()
+                  resizeBottomPanel(bottomPanelHeight - (event.key === 'PageDown' ? 72 : step))
+                } else if (event.key === 'Home') {
+                  event.preventDefault()
+                  resizeBottomPanel(bottomPanelMinHeight)
+                } else if (event.key === 'End') {
+                  event.preventDefault()
+                  resizeBottomPanel(getBottomPanelMaxHeight())
+                }
+              }}
+            >
+              <span className="bottom-panel-resize-grip" aria-hidden="true" />
+            </div>
+            <header className="bottom-panel-heading">
+              <div className="bottom-panel-heading-label"><Icon name="terminal" size={15} /><strong>Terminal</strong><span className="bottom-panel-project">{workspace.name}</span></div>
+              <button className="icon-button compact" onClick={() => setBottomPanelVisible(false)} aria-label="Close terminal panel" title="Close terminal panel"><Icon name="close" size={15} /></button>
+            </header>
+            <div className="bottom-panel-content"><TerminalPanel workspace={workspace} /></div>
+          </section>}
         </main>
       </div>
 
