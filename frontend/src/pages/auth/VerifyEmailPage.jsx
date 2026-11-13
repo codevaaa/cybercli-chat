@@ -14,6 +14,7 @@ export default function VerifyEmailPage() {
   const location = useLocation()
   const accountEmail = useAuthStore(state => state.user?.email)
   const email = location.state?.email || accountEmail
+  const isEditorSignIn = params.get('redirect') === 'ide'
   const [resent, setResent] = useState(false)
   const [resending, setResending] = useState(false)
   const [error, setError] = useState('')
@@ -70,7 +71,9 @@ export default function VerifyEmailPage() {
             </div>
 
             <p className="text-sm text-foreground-secondary leading-relaxed">
-              Click the link inside the verification email to activate your account and start using Codeva.
+              {isEditorSignIn
+                ? 'Verify your email on this device. Keep MrCodevaa open; after verification, the editor will finish signing you in.'
+                : 'Click the link inside the verification email to activate your account and start using Codeva.'}
             </p>
 
             {/* Instructions list */}

@@ -55,6 +55,8 @@ export default function SignupPage() {
         window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}`
       } else if (redirect === 'ide') {
         try { returnToEditor(session, searchParams) } catch (err) { setLocalError(err.message) }
+      } else if (redirect === 'codic') {
+        navigate(authPagePath('callback', searchParams), { replace: true })
       } else {
         navigate(authDestination(searchParams))
       }

@@ -1,7 +1,13 @@
 'use strict';
 const { test } = require('node:test'), assert = require('node:assert/strict');
-const { browserSignIn } = require('./auth.cjs');
+const { accountSettingsUrl, browserSignIn } = require('./auth.cjs');
 const token = 'fixture.payload.signature';
+test('account management opens the existing protected Codeva settings route over HTTPS', () => {
+  assert.equal(accountSettingsUrl('https://cybermindcli.info/auth/login?redirect=ide'), 'https://cybermindcli.info/settings/account');
+  assert.equal(accountSettingsUrl('http://localhost:5173'), 'http://localhost:5173/settings/account');
+  assert.throws(() => accountSettingsUrl('http://example.test'), /secure website URL/);
+  assert.throws(() => accountSettingsUrl('https://user:pass@cybermindcli.info'), /secure website URL/);
+});
 test('existing-domain browser sign-in verifies the account, binds state and uses a body-only one-shot callback', async () => {
   const checks = [];
   const flow = await browserSignIn({ webUrl: 'https://cybermindcli.info', apiBaseUrl: 'https://cybercli-api.onrender.com/api/v1', fetcher: async (url, options) => { checks.push({ url, options }); return Response.json({ exists: true, banned: false }); } });
@@ -17,6 +23,15 @@ test('existing-domain browser sign-in verifies the account, binds state and uses
     assert.deepEqual(await flow.session, { access_token: token, refresh_token: 'fixture-refresh' });
     assert.equal(checks[0].url, 'https://cybercli-api.onrender.com/api/v1/auth/check-user'); assert.equal(checks[0].options.headers.Authorization, `Bearer ${token}`);
     await assert.rejects(post(url.searchParams.get('state'), url.origin));
+  } finally { flow.cancel(); }
+});
+test('production www redirect remains a trusted first-party editor callback origin', async () => {
+  const flow = await browserSignIn({ webUrl: 'https://cybermindcli.info', apiBaseUrl: 'https://cybercli-api.onrender.com/api/v1', fetcher: async () => Response.json({ exists: true, banned: false }) });
+  try {
+    const url = new URL(flow.url), endpoint = `http://127.0.0.1:${url.searchParams.get('port')}/callback`;
+    const response = await fetch(endpoint, { method: 'POST', headers: { Origin: 'https://www.cybermindcli.info', 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ state: url.searchParams.get('state'), access_token: token }) });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await flow.session, { access_token: token, refresh_token: '' });
   } finally { flow.cancel(); }
 });
 test('banned or unregistered accounts are never accepted; cancellation and timeout close the listener', async () => {

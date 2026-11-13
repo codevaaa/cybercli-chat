@@ -78,6 +78,14 @@ test('native participant persists backend sessions, invokes actual dossier actio
   const terminalChat=commands.findLast(value=>value[0]==='workbench.action.chat.open');
   assert.match(terminalChat[1].query,/Build failed: missing package/);
   assert.equal(terminalChat[1].isPartialQuery,true);
+  await registeredCommands.get('codeva.startPlan')();
+  const planDraft=commands.findLast(value=>value[0]==='workbench.action.chat.open');
+  assert.deepEqual(planDraft[1],{query:'/plan ',isPartialQuery:true,mode:'agent'});
+  await registeredCommands.get('codeva.startBuild')();
+  const buildDraft=commands.findLast(value=>value[0]==='workbench.action.chat.open');
+  assert.deepEqual(buildDraft[1],{query:'/build',isPartialQuery:true,mode:'agent'});
+  controller.projectId=null;
+  await assert.rejects(registeredCommands.get('codeva.startBuild')(),/accept its specification/);
   vscode.window.activeTerminal.selection='sk-'+'x'.repeat(32);
   await assert.rejects(registeredCommands.get('codeva.askAboutTerminal')(),/credential/);
 });

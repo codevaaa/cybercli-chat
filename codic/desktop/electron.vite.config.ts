@@ -19,6 +19,7 @@ export default defineConfig({
     },
     define: {
       'process.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || ''),
+      __CODIC_LOCAL_PREVIEW_ENABLED__: JSON.stringify(env.VITE_CODIC_ALLOW_LOCAL_PREVIEW === 'true'),
     },
     plugins: [externalizeDepsPlugin()],
     build: {

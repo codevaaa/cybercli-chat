@@ -1,0 +1,84 @@
+Codic implementation progress — 2026-11-12
+
+UI alignment pass — 2026-11-13
+- Set new profiles to 130% application zoom while retaining a valid saved zoom preference.
+- Tightened the Codic navigation rail and project/task pane proportions for the enlarged default. The right project panel now starts closed so the conversation has the width shown in the reference layout.
+- Replaced the no-project promotional hero with a prompt-first empty workspace: centered Codic heading, a Choose project control, a prompt box, permission selector, model picker, reasoning effort, and send action. Enter or Send opens folder selection and keeps the draft available for the project.
+- Added container-based wrapping to the composer so its controls respond to the actual conversation width, including when the project panel is open or the window is zoomed.
+- Added composer-level action approval and reasoning effort menus. Both stay within the visible window, open above the composer when there is room, support keyboard navigation and dismissal, and persist selections through existing settings. Full access remains visibly unavailable.
+- Refined the model menu to match the compact Codic styling, keep its search field, clamp to narrow viewports, and use the mouse wheel to move through long lists without wrapping from the last model to the first.
+- Added tests for 130% first-run zoom, compact popup placement, tiny viewports, and reaching/selecting the 120th pretend model with the mouse wheel.
+- Visually checked the dev renderer in a 1480×944 window at the default 130% zoom. The project sidebar, closed right panel, two-row composer, and approval menu were visible and fitted the window. A signed-in model catalog was unavailable for a live menu screenshot.
+
+Completed in this pass
+- Added project-scoped task actions: rename, pin, fork, side chat, archive/restore, copy/export, and open in a separate window.
+- Added local profile task totals, approximate/recorded token usage, longest run, and a 12-week activity grid.
+- Added local one-time, daily, and weekly scheduled tasks with persistent SQLite records, pause/resume/delete, due-time claiming, and a dedicated task window.
+- Scheduled runs require Codic to be open, a saved project folder to exist, and a current Codeva session. They use normal per-action approval with “Ask for approval.”
+- Updated the event bridge to keep runtime events scoped to their task ID, including approval prompts in separate windows.
+- Changed permission labels to “Ask for approval” and “Approve for me”; unrestricted “Full access” is visibly unavailable in preview.
+- Fixed the sidebar toggle on desktop and added a dismissible navigation drawer on narrow windows. Added task-name search for recent and archived tasks.
+- Wired File, Edit, View, and Help commands to native editing, project selection, task navigation, terminal, zoom, full screen, account, website, update, and settings actions.
+- Added a first-launch account connection screen that hands off to Codeva website sign-in/signup through a one-use PKCE ticket; local project browsing remains available without an account.
+- Added a release check in Settings and a troubleshooting page with live Codeva model-gateway and service-status actions.
+- Reworked the left side into a persistent Codic navigation rail and a separate, collapsible project/task pane. The rail routes to Assistant, Projects, Task history, Code review, Terminal, account, and the More menu.
+- Grouped local projects with their task history and added a cross-project Recents list that opens each task in its owning project.
+- Added a short slide transition to the project/task pane and its narrow-screen drawer.
+- Reworked the File, Edit, View, and Help menus to follow the supplied Codex workflow references, with responsive menu sizing, separators, keyboard hints, and actions connected to existing project, task, navigation, browser, terminal, account, and diagnostics operations.
+- Added the View navigation and bottom-panel toggles, pinned task summary, zoom controls, task search, browser navigation submenu, native edit actions, a local-only task manager, and local performance trace export.
+- Added Windows x64 automatic update checks at startup, SHA-512-backed background download progress, an explicit restart/install action, and update settings/announcement UI. macOS/Linux remain manual because the preview installers are unsigned.
+- Added a backend generic `latest.yml` manifest endpoint and exact-filename HTTPS installer redirect; added a website Codic download page that shows and copies the release SHA-256 and pending state.
+- Updated the app README and architecture status to describe what is implemented and what remains.
+- Added persistent interactive terminal tabs using xterm and the MIT-licensed Homebridge node-pty prebuild package. Shells start in the selected project, use an environment allowlist, resize with the panel, and are capped at five live sessions per window.
+- Replaced direct desktop email/password and Google forms with a single Codeva website handoff. The desktop build requires the public Supabase URL and anonymous key for the handoff button to be enabled.
+- Tightened responsive application menu sizing and documented the Windows packaging limitation/solution: use the committed platform prebuilds and set `npmRebuild` to false so packaging does not require local Spectre C++ libraries.
+
+Verification
+- Desktop TypeScript typecheck passed after implementation.
+- Desktop Vitest: 5 files / 16 tests passed.
+- Production Electron/Vite build passed, and the unsigned Windows x64 NSIS installer rebuilt after these changes.
+- The packaged app opened to the clean first-run workspace and Codeva account handoff dialog. It directs users to the website for Google/email login, signup, verification, and reset; sign-in was disabled because this build has no public Supabase URL/key.
+- Windows installer: `codic/desktop/release/Codic Setup 0.1.0.exe` (126,987,311 bytes), SHA-256 `819e455f6104ae0e30954bd81f877493c150abd560e3e19364a2eebc45a4eadd`; electron-builder generated matching `latest.yml` SHA-512 and size. The installer is local preview output only and has not been uploaded or published.
+- Desktop build/typecheck passed; desktop tests passed (5 files / 16 tests); backend suite passed (128 tests), including updater manifest and allowlisted artifact route coverage. `git diff --check` passed.
+- The packaged first-run screen was visually checked in the prior pass. The 2026-11-13 screenshot check used the development renderer, not a newly rebuilt installer.
+- Latest Codic desktop check: production Electron/Vite build and TypeScript passed; Vitest passed 7 files / 21 tests; `git diff --check` passed. A repository-root `corepack pnpm self-check` could not run because this repository has no root `package.json` or `self-check` script.
+- Live sign-in and model execution remain unverified because this build has no Supabase public URL/key configured and the Supabase project was previously reported as DNS-unavailable.
+
+Release blockers
+- Revoke the previously exposed GitHub classic token before any push.
+- Upload the installer to HTTPS storage and set Render/R2 release metadata, including SHA-256, SHA-512, size, version, and URL, before claiming the public Windows download or updater feed is live.
+- Restore/configure Supabase and a working model provider before claiming live account and coding requests work end to end.
+
+2026-11-13 — Codic 0.1.1 window lifecycle and account gate
+- Fixed the Electron close crash by retaining each app window’s WebContents reference before the BrowserWindow is destroyed; added destroyed-window checks to show/load paths and safe focus behavior when the primary window has closed.
+- File → New Window now restores an empty project state instead of silently opening the first saved folder. Thread windows continue to use their explicit project/thread route. Added route-intent self-checks for blank, project, and thread windows.
+- Removed the “Continue in local mode” bypass. Signed-out users see only the dark full-screen Codeva sign-in view. The main process now rejects unauthenticated project, history, browser, terminal, review, schedule, checkpoint, diagnostics, and agent IPC calls. Sign-out cancels runs, closes terminal sessions, and clears open-window project state.
+- Full Codic desktop self-check passed: 8 test files / 25 tests. Production Electron/Vite build and TypeScript typecheck passed.
+- Built unsigned local Windows x64 installer `codic/desktop/release/Codic Setup 0.1.1.exe` (126,995,667 bytes), SHA-256 `4edbc021e660e24101bd0b11a1e7fc93702e24320168df215759df100925a402`; verified its SHA-512 and size against `latest.yml`. The checksum step now selects the current package version so prior installer artifacts can stay in `release/`.
+- Packaged app smoke check: signed-out launch displays only sign-in, and closing the packaged app produced no JavaScript error. No visual new-window interaction was possible while signed out; its route behavior is covered by tests.
+- Release limitation: the desktop build has no Supabase public URL/key, so sign-in stays disabled. Repository config still points at the host previously reported as `DNS_PROBE_FINISHED_NXDOMAIN`; live Google auth and account access remain blocked until the restored project’s config is supplied. Installer remains local preview only and was not published.
+
+2026-11-13 — Codic 0.1.2 local preview and brand pass
+- Replaced the hard-to-see arc/pencil renderer mark with a thicker, original Codic C-and-signal mark. It has a brief entrance transition, a raised enamel look, and disables motion when the system requests reduced motion.
+- Redrew the Windows/macOS/Linux application icon to match the C-and-signal mark, so the taskbar and installed app no longer show the old cursor-like glyph.
+- Added a `Continue locally` option only when a private build explicitly sets `VITE_CODIC_ALLOW_LOCAL_PREVIEW=true`. The shipped/default configuration stays false, and local preview access is granted only for the running app process and cleared on sign-out/exit.
+- Local preview can open local projects and use local workspace tooling for UI validation. It does not create a fake Codeva identity or token; model discovery, account sync, and AI prompts continue to require a real account session.
+- New Window retains its `new=1` route and enters a blank project state after local-preview startup. Existing saved projects are listed for selection without restoring the previously open folder.
+
+2026-11-13 — Codic 0.1.4 composer, permissions, and authenticated build
+- Added a searchable composer project picker for the empty and active composer, with saved-project navigation, Open folder, and New project actions.
+- Set the model popover to a compact 336 px default while preserving search, viewport clamping, mouse-wheel navigation, keyboard selection, and long-catalog self-checks.
+- Wired Full access through its UI setting, desktop IPC, and local runtime: shell commands can use the network; file tools can operate outside the selected project; external edits remain checkpointed. The setting is persisted and remains an explicit user choice.
+- Fixed Windows PowerShell execution so commands run as scripts rather than being emitted as literal text.
+- The previously stale Supabase hostname now resolves and Auth health returns HTTP 200 with the existing public anon key. The Codeva production API `/health` returned HTTP 200 and `/api/v1/auth/health` returned `ready: true`.
+- Configured the ignored local Codic `.env` with the existing public Supabase URL/anon key, production API base, and local preview disabled. Bumped the desktop to 0.1.4 and built an auth-gated Windows x64 installer outside the workspace. No secret values were added to tracked files.
+- Production `/api/v1/codic/models` returns HTTP 404, confirming the deployed backend has not received the Codic routes from this checkout. Google login handoff, authenticated device registration, model/quota calls, and live provider streaming remain unverified until those routes deploy and an account-backed smoke test runs.
+- Verification: desktop build/typecheck passed; desktop tests 9 files / 29 tests passed; CyberCoder full self-check passed; backend full suite passed 129 tests; installer latest.yml SHA-512 and size matched the generated installer. The installer remains private and unpublished.
+2026-11-13 — Codic 0.1.5 sign-in return and window chrome
+- Hardened the Windows/macOS protocol callback parser: it accepts only the `codic://auth/callback` URL with one 43-character opaque ticket and strips any extra callback parameters. Incoming callbacks now go to one live primary window, which is restored and focused, instead of racing across every open task window.
+- Kept the browser-based Codeva login and PKCE exchange. The website callback now offers an explicit “Open Codic” retry if the browser blocks automatic custom-protocol navigation, and gives a clear message when the deployed API has no Codic handoff route.
+- Added minimize, maximize/restore, and close controls to the signed-out landing screen. The frameless titlebar reports its maximize state through trusted window-scoped IPC, and the login controls remain visible at narrow window sizes.
+- Windows BrowserWindow now uses the packaged Codic C-and-signal icon from `resources/icon.ico`, with a source-asset fallback for development. The Windows AppUserModelID remains aligned with the installer ID.
+- Full desktop self-check passed: 10 files / 32 tests. Auth flow tests passed: 1 file / 7 tests. Codic backend route tests passed: 10 tests. Electron/Vite production build and TypeScript typecheck passed; `git diff --check` passed.
+- Live API verification: `/health` and `/api/v1/auth/health` return HTTP 200, but `/api/v1/codic/models` and `/api/v1/codic/auth-handoffs/redeem` return HTTP 404. The current production backend therefore cannot complete the Codic login handoff or serve Codic models. Desktop/web code is ready, but live login cannot be claimed until these backend routes are deployed and retested.
+- Built a new unsigned Windows x64 preview installer at `D:\codic-auth-release-0.1.5\Codic Setup 0.1.5.exe` (127,009,819 bytes), SHA-256 `c041674c979673499e8c94b737e238764470dedc03fca767d524ec3bce2156d4`. Verified `latest.yml` SHA-512 and size, and confirmed the packaged Windows icon is byte-for-byte the Codic C-and-signal source icon. It remains unpublished until production handoff/model routes are deployed and verified. Do not use the classic GitHub token previously pasted in chat; revoke it before pushing.

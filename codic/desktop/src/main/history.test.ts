@@ -54,4 +54,36 @@ describe('local thread history', () => {
       rmSync(directory, { recursive: true, force: true })
     }
   })
+
+  it('loads a fork with its parent context and keeps new task history on the fork', () => {
+    const directory = mkdtempSync(path.join(tmpdir(), 'codic-history-fork-'))
+    const store = CodicLocalStore.open(path.join(directory, 'codic.sqlite'))
+    try {
+      const project = store.addProject({ id: randomUUID(), path: directory, name: 'Fork project' })
+      const parent = store.createThread({ id: randomUUID(), projectId: project.id, title: 'Parent task' })
+      const parentTaskId = randomUUID()
+      store.createTask({ id: parentTaskId, threadId: parent.id, model: 'auto', prompt: 'Build the first version' })
+      store.appendTaskEvent({ id: randomUUID(), taskId: parentTaskId, type: 'agent_event', payload: { type: 'agent_event', event: { type: 'text', text: 'The first version is ready.' } } })
+      store.finishTask(parentTaskId, 'completed')
+
+      const fork = store.createThread({ id: randomUUID(), projectId: project.id, title: 'Fork: Parent task', parentThreadId: parent.id })
+      const forkTaskId = randomUUID()
+      store.createTask({ id: forkTaskId, threadId: fork.id, model: 'auto', prompt: 'Try another approach' })
+      store.appendTaskEvent({ id: randomUUID(), taskId: forkTaskId, type: 'agent_event', payload: { type: 'agent_event', event: { type: 'text', text: 'The alternate approach is ready.' } } })
+      store.finishTask(forkTaskId, 'completed')
+
+      const restored = loadThreadHistory(store, project.id, fork.id)
+      expect(restored.thread.id).toBe(fork.id)
+      expect(restored.messages.map((message) => message.content)).toEqual([
+        'Build the first version',
+        'The first version is ready.',
+        'Try another approach',
+        'The alternate approach is ready.',
+      ])
+      expect(restored.lastTaskId).toBe(forkTaskId)
+    } finally {
+      store.close()
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
 })

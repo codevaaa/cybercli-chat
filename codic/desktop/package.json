@@ -1,7 +1,8 @@
 {
   "name": "codic-desktop",
-  "version": "0.1.0",
+  "version": "0.1.6",
   "private": true,
+  "author": "Codeva",
   "description": "Codic coding workbench for macOS, Windows, and Linux",
   "type": "module",
   "main": "./dist/main/index.js",
@@ -11,13 +12,18 @@
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
+    "icons": "python scripts/generate-icons.py",
     "dist": "npm run build && electron-builder",
-    "dist:win": "npm run build && electron-builder --win --x64",
+    "dist:win": "npm run build && electron-builder --win --x64 && node scripts/write-windows-checksum.mjs",
     "dist:mac": "npm run build && electron-builder --mac --universal",
     "dist:linux": "npm run build && electron-builder --linux --x64"
   },
   "dependencies": {
+    "@homebridge/node-pty-prebuilt-multiarch": "0.15.0",
     "@supabase/supabase-js": "^2.57.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "electron-updater": "^6.8.11",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -29,6 +35,7 @@
     "electron": "^45.3.1",
     "electron-builder": "^26.0.12",
     "electron-vite": "^5.0.0",
+    "jsdom": "^31.0.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vitest": "^5.1.0"
@@ -40,19 +47,38 @@
     "appId": "com.codeva.codic",
     "productName": "Codic",
     "asar": true,
+    "npmRebuild": false,
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*"
     ],
-    "publish": null,
+    "extraResources": [
+      {
+        "from": "assets/brand/codic-icon.ico",
+        "to": "icon.ico"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://cybercli-api.onrender.com/api/v1/downloads/codic/updates"
+      }
+    ],
     "mac": {
       "identity": null,
       "sign": false,
       "notarize": false,
-      "icon": "build/icon.icns",
-      "protocols": [{ "name": "Codic sign-in", "schemes": ["codic"] }],
+      "icon": "assets/brand/codic-icon.icns",
+      "protocols": [
+        {
+          "name": "Codic sign-in",
+          "schemes": [
+            "codic"
+          ]
+        }
+      ],
       "target": [
         {
           "target": "dmg",
@@ -69,7 +95,7 @@
       ]
     },
     "win": {
-      "icon": "build/icon.ico",
+      "icon": "assets/brand/codic-icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -78,8 +104,15 @@
           ]
         }
       ],
-      "signAndEditExecutable": false,
-      "protocols": [{ "name": "Codic sign-in", "schemes": ["codic"] }]
+      "signExecutable": false,
+      "protocols": [
+        {
+          "name": "Codic sign-in",
+          "schemes": [
+            "codic"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -90,9 +123,20 @@
       "shortcutName": "Codic"
     },
     "linux": {
-      "icon": "build/icon.png",
-      "protocols": [{ "name": "Codic sign-in", "schemes": ["codic"] }],
-      "desktop": { "entry": { "MimeType": "x-scheme-handler/codic" } },
+      "icon": "assets/brand/codic-icon.png",
+      "protocols": [
+        {
+          "name": "Codic sign-in",
+          "schemes": [
+            "codic"
+          ]
+        }
+      ],
+      "desktop": {
+        "entry": {
+          "MimeType": "x-scheme-handler/codic"
+        }
+      },
       "target": [
         {
           "target": "AppImage",
@@ -110,5 +154,8 @@
       "category": "Development",
       "synopsis": "AI coding workbench"
     }
+  },
+  "allowScripts": {
+    "@homebridge/node-pty-prebuilt-multiarch@0.15.0": true
   }
 }

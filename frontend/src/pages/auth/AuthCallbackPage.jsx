@@ -5,15 +5,17 @@ import { Loader2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import { CodevaMark } from '../../components/ui/CodevaLogo'
-import { authDestination, authFlowQuery, authPagePath, authErrorMessage, resolveAuthSession } from '../../lib/authFlow.js'
+import { authDestination, authFlowQuery, authPagePath, authErrorMessage, resolveAuthSession, codicAuthCallbackUrl } from '../../lib/authFlow.js'
 import { returnToEditor } from '../../lib/editorAuth.js'
+import { authApiBase } from '../../lib/authSession.js'
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate()
   const { initialize } = useAuthStore()
   const [status, setStatus] = useState('processing')
   const [errorMessage, setErrorMessage] = useState('')
-  const [isDesktopRedirect, setIsDesktopRedirect] = useState(false)
+  const [redirectTarget, setRedirectTarget] = useState('web')
+  const [codicReturnUrl, setCodicReturnUrl] = useState('')
   const returnToLogin = () => {
     try { navigate(authPagePath('login', window.location.search)) } catch { navigate('/auth/login') }
   }
@@ -33,8 +35,30 @@ export default function AuthCallbackPage() {
         // Remove credentials and single-use codes from browser history.
         window.history.replaceState(null, '', `/auth/callback?${authFlowQuery(params)}`)
         const target = params.get('redirect')
-        setIsDesktopRedirect(['ide', 'cli', 'desktop'].includes(target))
-        if (target === 'ide') returnToEditor(session, params)
+        setRedirectTarget(target || 'web')
+        if (target === 'ide') {
+          if (!returnToEditor(session, params)) throw new Error('Start sign-in again from the MrCodevaa editor.')
+        }
+        else if (target === 'codic') {
+          if (!session.refresh_token) throw new Error('Your sign-in session is missing its secure refresh token. Sign in to Codeva again.')
+          const response = await fetch(`${authApiBase()}/codic/auth-handoffs`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ challenge: params.get('challenge'), refreshToken: session.refresh_token }),
+            credentials: 'omit',
+            cache: 'no-store',
+          })
+          const body = await response.json().catch(() => ({}))
+          if (!response.ok || typeof body.ticket !== 'string') {
+            const message = response.status === 404
+              ? 'Your Codeva account is signed in, but this server does not have the Codic sign-in handoff enabled yet. Please try again after the Codeva service update.'
+              : body.error || 'Could not prepare a secure Codic sign-in. Please try again.'
+            throw new Error(message)
+          }
+          const callbackUrl = codicAuthCallbackUrl(body.ticket)
+          setCodicReturnUrl(callbackUrl)
+          window.location.assign(callbackUrl)
+        }
         else if (target === 'cli') window.location.href = `http://127.0.0.1:${params.get('port')}/callback?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token || '')}`
         else if (target === 'desktop') window.location.href = `codeva://auth?token=${encodeURIComponent(session.access_token)}&refresh=${encodeURIComponent(session.refresh_token || '')}`
         else {
@@ -86,8 +110,17 @@ export default function AuthCallbackPage() {
               </div>
               <p className="text-foreground-primary font-medium">Session secured successfully!</p>
               <p className="text-xs text-foreground-muted mt-2">
-                {isDesktopRedirect ? 'Opening Codeva Desktop...' : 'Redirecting you to the console...'}
+                {redirectTarget === 'ide' ? 'Returning to MrCodevaa. You can close this tab after the editor confirms sign-in.' : redirectTarget === 'codic' ? 'Returning to Codic securely. If Codic did not open, use the button below.' : redirectTarget === 'desktop' ? 'Opening Codeva Desktop...' : redirectTarget === 'cli' ? 'Returning to the CLI...' : 'Redirecting you to Codeva...'}
               </p>
+              {redirectTarget === 'codic' && codicReturnUrl && (
+                <button
+                  type="button"
+                  onClick={() => window.location.assign(codicReturnUrl)}
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                >
+                  Open Codic
+                </button>
+              )}
             </div>
           )}
 

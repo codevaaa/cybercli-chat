@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
   Download, Monitor, Apple, ShieldCheck,
   Terminal, Chrome, Code2, ChevronDown, ChevronUp,
-  ArrowUpRight, Smartphone
+  ArrowUpRight
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Tooltip } from '@components/ui/Tooltip'
@@ -12,8 +12,7 @@ import SEOHead from '@components/seo/SEOHead'
 import { API_BASE } from '@lib/api'
 import EditorDownloads from './EditorDownloads'
 
-/* Downloads — matched to claude.ai/downloads (warm palette, Desktop + Mobile +
- * extensions). Real download endpoints (R2 CDN with GitHub fallback server-side). */
+/* Codeva desktop and developer-tool downloads. */
 
 const BG = '#1a1a18'
 const CARD = '#211f1c'
@@ -89,22 +88,6 @@ function DownloadCard({ os, primary }) {
   )
 }
 
-function MobileRow({ label, store, href }) {
-  return (
-    <div className="flex items-center justify-between py-3.5 px-4 rounded-xl border" style={{ borderColor: BORDER, backgroundColor: CARD }}>
-      <div className="flex items-center gap-3">
-        <Smartphone className="w-4 h-4" style={{ color: ACCENT }} />
-        <span className="text-sm" style={{ color: CREAM }}>{label}</span>
-      </div>
-      <Tooltip content={`Get Codeva on the ${store}`}>
-        <a href={href} target="_blank" rel="noopener noreferrer" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors hover:bg-white/5" style={{ borderColor: BORDER, color: CREAM }}>
-          {store}
-        </a>
-      </Tooltip>
-    </div>
-  )
-}
-
 function ExtensionCard({ title, desc, icon: Icon, href, label, to }) {
   const inner = (
     <>
@@ -175,11 +158,18 @@ export default function DownloadsPage() {
             </h1>
           </ScrollReveal>
           <ScrollReveal delay={0.1}>
-            <p className="text-[17px] text-gray-400 max-w-xl mx-auto leading-relaxed">Get the Codeva desktop app for your computer, or grab it on mobile.</p>
+            <p className="text-[17px] text-gray-400 max-w-xl mx-auto leading-relaxed">Get the Codeva desktop app or bring Codeva into your editor and browser.</p>
           </ScrollReveal>
         </div>
 
         <EditorDownloads />
+
+        <Section title="Codic coding workspace" subtitle="A separate desktop app for working with local repositories and Codeva models.">
+          <Link to="/codic" className="group grid gap-5 rounded-2xl border p-6 transition-colors hover:bg-white/[0.035] sm:grid-cols-[1fr_auto] sm:items-center" style={{ backgroundColor: CARD, borderColor: BORDER, color: CREAM }}>
+            <div><div className="mb-2 flex items-center gap-2 text-sm font-semibold"><Terminal className="h-4 w-4" style={{ color: ACCENT }} />Codic <span className="rounded-full border border-[#d98565]/30 bg-[#d98565]/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-[#e7a185]">Coming soon</span></div><p className="max-w-2xl text-sm leading-6 text-gray-400">Explore the product preview, current capabilities, and the workflows still being built. Codic is not available to download yet.</p></div>
+            <span className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors group-hover:bg-[#d98565] group-hover:text-[#191a17]" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: CREAM }}>Explore Codic<ArrowUpRight className="h-4 w-4" /></span>
+          </Link>
+        </Section>
 
         <Section title="Desktop" subtitle="All of Codeva, in one app. Works with your files and apps to get things done.">
           <div className="grid md:grid-cols-3 gap-5">
@@ -190,13 +180,6 @@ export default function DownloadsPage() {
           <div className="mt-6 flex items-center gap-2 text-[12px]" style={{ color: '#707070' }}>
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Editor signing status is shown with each published release above.</span>
-          </div>
-        </Section>
-
-        <Section title="Mobile" subtitle="Chat hands-free and kick off tasks on the go.">
-          <div className="grid sm:grid-cols-2 gap-4 max-w-2xl">
-            <MobileRow label="iOS" store="App Store" href="https://apps.apple.com/app/codeva" />
-            <MobileRow label="Android" store="Google Play" href="https://play.google.com/store/apps/details?id=com.codeva.app" />
           </div>
         </Section>
 

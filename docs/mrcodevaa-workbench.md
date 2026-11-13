@@ -10,7 +10,7 @@ The native Welcome, Chat, Sessions, Markdown rendering, context attachments, mod
 | --- | --- |
 | Welcome Start/Recent/Open/Clone | Native workbench, with Codeva sign-in and chat actions added. |
 | Open MrCodevaa Projects | `codeva.openAgents` lists owned `/studio/projects`; no vendor Agents window or second runtime. |
-| Codeva Account in the title bar | Opens the sidebar account card. Sign-in opens the existing website; sign-out clears SecretStorage. |
+| Codeva Account in the title bar | Opens the sidebar account card. Sign-in/create-account uses the existing website and a state-bound one-use loopback POST; sign-out clears SecretStorage. Manage account opens the existing protected website account settings. |
 | MrCodevaa Preferences in the title bar | Opens the sidebar preferences. Editor settings still opens the native configuration editor. Navigation stays in the activity bar; account/preferences move to the title bar. |
 | Normal native chat | `/chat` and `/chat/:id/messages`; Mongo remains authoritative for history. Response formatting uses native Markdown rendering. |
 | Response style, language, persona | Closed preference enums in `backend/src/services/chat/assistantPreferences.js`; curated server personas from `/agents`. No arbitrary client-authored system instructions. |
@@ -27,9 +27,13 @@ The native model adapter forwards structured tools to `/ide/complete`; it does n
 
 `editors/studio-client/auth.cjs` creates a one-use loopback callback and random state. The editor opens `https://cybermindcli.info/auth/login?redirect=ide&port=...&state=...`. Account credentials never appear in this URL. Existing login, Google OAuth, signup, verification and magic-link callback pages preserve the state through `frontend/src/lib/editorAuth.js`.
 
-After the existing website authenticates the account, it posts the access/refresh session in a hidden form body to the waiting loopback listener. The listener validates the exact website Origin, state, body bounds and existing `/auth/check-user` account before saving anything. `session.cjs` keeps the bundle in OS-backed SecretStorage. Expiration uses the rate-limited `/auth/ide-refresh` route and an isolated Supabase client; sign-out/account-switch races cannot restore a stale refreshed session.
+After the existing website authenticates the account, it posts the access/refresh session in a hidden form body to the waiting loopback listener. The listener validates the configured website Origin (plus the apex/`www` pair for `cybermindcli.info`, whose production redirect canonicalizes to `www`), state, body bounds and existing `/auth/check-user` account before saving anything. `session.cjs` keeps the bundle in OS-backed SecretStorage. Expiration uses the rate-limited `/auth/ide-refresh` route and an isolated Supabase client; sign-out/account-switch races cannot restore a stale refreshed session.
 
 The changed website callback and refresh route require deployment to their existing hosts before this new installed-editor login works against production. No production deployment or real production-account login is certified by local tests. There is no manual JWT-paste login in the new client.
+
+## First launch
+
+The native Welcome page includes a MrCodevaa walkthrough with working actions: connect or create a Codeva account, open a `/plan` draft, review the saved specification, then prepare `/build` only after the user accepts the specification. The sign-in step completes only after the editor confirms an account session. Chat and project commands call the existing `codeva.codeva-studio` extension and `/studio/projects` API. The extension sidebar also links to the protected Codeva Account settings page. The bundled upstream Copilot manifest and status entry are disabled in the MrCodevaa build so GitHub Cloud Agent errors, the Copilot setup card, status label and BYOK prompt cannot masquerade as Codeva account or model features. The Agent Host marks BYOK unavailable in this product; Codeva's server-backed model remains the supported path.
 
 ## Validation boundaries
 

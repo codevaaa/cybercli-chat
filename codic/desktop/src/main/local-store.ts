@@ -2,7 +2,7 @@ import { chmodSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 
-const CURRENT_SCHEMA_VERSION = 2
+const CURRENT_SCHEMA_VERSION = 4
 
 export type LocalTaskState = 'running' | 'completed' | 'cancelled' | 'failed' | 'interrupted'
 
@@ -20,6 +20,18 @@ export interface LocalThread {
   title: string
   createdAt: string
   updatedAt: string
+  pinned: boolean
+  archived: boolean
+  parentThreadId: string | null
+}
+
+export interface LocalProfileStats {
+  taskCount: number
+  completedRuns: number
+  totalTokens: number
+  tokensEstimated: boolean
+  longestTaskSeconds: number
+  activity: Array<{ date: string; count: number }>
 }
 
 export interface LocalTask {
@@ -52,11 +64,29 @@ export interface LocalReviewComment {
   createdAt: string
 }
 
+export type ScheduleRecurrence = 'once' | 'daily' | 'weekly'
+export interface LocalScheduledTask {
+  id: string
+  projectId: string
+  sourceThreadId: string | null
+  title: string
+  prompt: string
+  model: string
+  reasoningEffort: 'low' | 'medium' | 'high'
+  recurrence: ScheduleRecurrence
+  nextRunAt: string
+  enabled: boolean
+  lastRunAt: string | null
+  createdAt: string
+}
+export interface DueScheduledTask extends LocalScheduledTask { workspacePath: string }
+
 type ProjectRow = { id: string; path: string; name: string; created_at: string; updated_at: string }
-type ThreadRow = { id: string; project_id: string; title: string; created_at: string; updated_at: string }
+type ThreadRow = { id: string; project_id: string; title: string; created_at: string; updated_at: string; pinned: number; archived: number; parent_thread_id: string | null }
 type TaskRow = { id: string; thread_id: string; model: string; prompt: string; state: LocalTaskState; started_at: string; finished_at: string | null; error: string | null }
 type EventRow = { id: string; task_id: string; seq: number; type: string; payload_json: string; created_at: string }
 type ReviewCommentRow = { id: string; project_id: string; file_path: string; line_number: number; side: 'old' | 'new'; body: string; created_at: string }
+type ScheduledTaskRow = { id: string; project_id: string; source_thread_id: string | null; title: string; prompt: string; model: string; reasoning_effort: 'low' | 'medium' | 'high'; recurrence: ScheduleRecurrence; next_run_at: string; enabled: number; last_run_at: string | null; created_at: string }
 
 /** Versioned on-device metadata store. Project files and account credentials are never copied into SQLite. */
 export class CodicLocalStore {
@@ -102,17 +132,95 @@ export class CodicLocalStore {
     return rows.map(mapProject)
   }
 
-  createThread(thread: { id: string; projectId: string; title: string }): LocalThread {
-    this.database.prepare('INSERT INTO threads (id, project_id, title) VALUES (?, ?, ?)')
-      .run(thread.id, thread.projectId, thread.title.trim().slice(0, 240) || 'New task')
+  createThread(thread: { id: string; projectId: string; title: string; parentThreadId?: string | null }): LocalThread {
+    this.database.prepare('INSERT INTO threads (id, project_id, title, parent_thread_id) VALUES (?, ?, ?, ?)')
+      .run(thread.id, thread.projectId, thread.title.trim().slice(0, 240) || 'New task', thread.parentThreadId ?? null)
     const row = this.database.prepare('SELECT * FROM threads WHERE id = ?').get(thread.id) as ThreadRow | undefined
     if (!row) throw new Error('The local task thread could not be saved.')
     return mapThread(row)
   }
 
-  listThreads(projectId: string): LocalThread[] {
-    const rows = this.database.prepare('SELECT * FROM threads WHERE project_id = ? ORDER BY updated_at DESC, rowid DESC').all(projectId) as ThreadRow[]
+  listThreads(projectId: string, includeArchived = false): LocalThread[] {
+    const rows = this.database.prepare(`
+      SELECT * FROM threads WHERE project_id = ? AND (? = 1 OR archived = 0)
+      ORDER BY pinned DESC, updated_at DESC, rowid DESC
+    `).all(projectId, includeArchived ? 1 : 0) as ThreadRow[]
     return rows.map(mapThread)
+  }
+
+  getThread(projectId: string, threadId: string): LocalThread | null {
+    const row = this.database.prepare('SELECT * FROM threads WHERE project_id = ? AND id = ?').get(projectId, threadId) as ThreadRow | undefined
+    return row ? mapThread(row) : null
+  }
+
+  renameThread(projectId: string, threadId: string, title: string): LocalThread {
+    const cleanedTitle = title.trim().slice(0, 160)
+    if (!cleanedTitle) throw new Error('A task title cannot be empty.')
+    const result = this.database.prepare("UPDATE threads SET title = ?, updated_at = datetime('now') WHERE project_id = ? AND id = ?")
+      .run(cleanedTitle, projectId, threadId)
+    if (!result.changes) throw new Error('This task does not belong to the selected project.')
+    return this.getThread(projectId, threadId)!
+  }
+
+  setThreadPinned(projectId: string, threadId: string, pinned: boolean): LocalThread {
+    const result = this.database.prepare("UPDATE threads SET pinned = ?, updated_at = datetime('now') WHERE project_id = ? AND id = ?")
+      .run(pinned ? 1 : 0, projectId, threadId)
+    if (!result.changes) throw new Error('This task does not belong to the selected project.')
+    return this.getThread(projectId, threadId)!
+  }
+
+  setThreadArchived(projectId: string, threadId: string, archived: boolean): LocalThread {
+    const result = this.database.prepare("UPDATE threads SET archived = ?, updated_at = datetime('now') WHERE project_id = ? AND id = ?")
+      .run(archived ? 1 : 0, projectId, threadId)
+    if (!result.changes) throw new Error('This task does not belong to the selected project.')
+    return this.getThread(projectId, threadId)!
+  }
+
+  getProfileStats(): LocalProfileStats {
+    const rows = this.database.prepare('SELECT state, started_at, finished_at FROM tasks ORDER BY started_at DESC').all() as Array<Pick<TaskRow, 'state' | 'started_at' | 'finished_at'>>
+    const activityByDate = new Map<string, number>()
+    let longestTaskSeconds = 0
+    for (const task of rows) {
+      const date = task.started_at.slice(0, 10)
+      activityByDate.set(date, (activityByDate.get(date) || 0) + 1)
+      if (task.finished_at) {
+        const startTime = Date.parse(`${task.started_at.replace(' ', 'T')}Z`)
+        const endTime = Date.parse(`${task.finished_at.replace(' ', 'T')}Z`)
+        if (Number.isFinite(startTime) && Number.isFinite(endTime)) longestTaskSeconds = Math.max(longestTaskSeconds, Math.floor((endTime - startTime) / 1000))
+      }
+    }
+
+    const usageRows = this.database.prepare("SELECT payload_json FROM task_events WHERE type = 'agent_event'").all() as Array<{ payload_json: string }>
+    let totalTokens = 0
+    let tokensEstimated = false
+    for (const row of usageRows) {
+      try {
+        const payload = JSON.parse(row.payload_json) as { event?: { type?: string; inputTokens?: number; outputTokens?: number; estimated?: boolean } }
+        const usage = payload.event
+        if (usage?.type !== 'usage') continue
+        totalTokens += Math.max(0, Number(usage.inputTokens) || 0) + Math.max(0, Number(usage.outputTokens) || 0)
+        tokensEstimated ||= usage.estimated === true
+      } catch {
+        // A malformed historical event must not prevent the profile from opening.
+      }
+    }
+
+    const today = new Date()
+    const activity: Array<{ date: string; count: number }> = []
+    for (let offset = 83; offset >= 0; offset -= 1) {
+      const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset)
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+      activity.push({ date: key, count: activityByDate.get(key) || 0 })
+    }
+
+    return {
+      taskCount: rows.length,
+      completedRuns: rows.filter((task) => task.state === 'completed').length,
+      totalTokens,
+      tokensEstimated,
+      longestTaskSeconds,
+      activity,
+    }
   }
 
   createTask(task: { id: string; threadId: string; model: string; prompt: string }): LocalTask {
@@ -157,6 +265,87 @@ export class CodicLocalStore {
   listReviewComments(projectId: string): LocalReviewComment[] {
     const rows = this.database.prepare('SELECT * FROM review_comments WHERE project_id = ? ORDER BY created_at DESC').all(projectId) as ReviewCommentRow[]
     return rows.map(mapReviewComment)
+  }
+
+  createScheduledTask(task: Omit<LocalScheduledTask, 'enabled' | 'lastRunAt' | 'createdAt'>): LocalScheduledTask {
+    const title = task.title.trim().slice(0, 160)
+    const prompt = task.prompt.trim()
+    const nextRun = new Date(task.nextRunAt)
+    if (!title || !prompt || prompt.length > 20_000 || !Number.isFinite(nextRun.getTime())) throw new Error('Enter a title, prompt, and valid run time for this scheduled task.')
+    if (!['once', 'daily', 'weekly'].includes(task.recurrence)) throw new Error('Choose a valid schedule frequency.')
+    if (!['low', 'medium', 'high'].includes(task.reasoningEffort)) throw new Error('Choose a valid reasoning level.')
+    if (task.sourceThreadId) {
+      const source = this.database.prepare('SELECT id FROM threads WHERE id = ? AND project_id = ?').get(task.sourceThreadId, task.projectId)
+      if (!source) throw new Error('The source task does not belong to this project.')
+    }
+    this.database.prepare(`
+      INSERT INTO scheduled_tasks (id, project_id, source_thread_id, title, prompt, model, reasoning_effort, recurrence, next_run_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(task.id, task.projectId, task.sourceThreadId, title, prompt, task.model.slice(0, 160), task.reasoningEffort, task.recurrence, nextRun.toISOString())
+    return this.getScheduledTask(task.projectId, task.id)!
+  }
+
+  listScheduledTasks(projectId: string): LocalScheduledTask[] {
+    const rows = this.database.prepare('SELECT * FROM scheduled_tasks WHERE project_id = ? ORDER BY enabled DESC, next_run_at ASC, created_at DESC').all(projectId) as ScheduledTaskRow[]
+    return rows.map(mapScheduledTask)
+  }
+
+  getScheduledTask(projectId: string, taskId: string): LocalScheduledTask | null {
+    const row = this.database.prepare('SELECT * FROM scheduled_tasks WHERE project_id = ? AND id = ?').get(projectId, taskId) as ScheduledTaskRow | undefined
+    return row ? mapScheduledTask(row) : null
+  }
+
+  listDueScheduledTasks(now = new Date()): DueScheduledTask[] {
+    const rows = this.database.prepare(`
+      SELECT scheduled_tasks.*, projects.path AS workspace_path
+      FROM scheduled_tasks JOIN projects ON projects.id = scheduled_tasks.project_id
+      WHERE scheduled_tasks.enabled = 1 AND scheduled_tasks.next_run_at <= ?
+      ORDER BY scheduled_tasks.next_run_at ASC
+    `).all(now.toISOString()) as Array<ScheduledTaskRow & { workspace_path: string }>
+    return rows.map((row) => ({ ...mapScheduledTask(row), workspacePath: row.workspace_path }))
+  }
+
+  claimScheduledTask(projectId: string, taskId: string, now = new Date()): LocalScheduledTask | null {
+    const row = this.database.prepare('SELECT * FROM scheduled_tasks WHERE project_id = ? AND id = ? AND enabled = 1 AND next_run_at <= ?').get(projectId, taskId, now.toISOString()) as ScheduledTaskRow | undefined
+    if (!row) return null
+    let nextRunAt: string | null = null
+    if (row.recurrence !== 'once') {
+      const candidate = new Date(row.next_run_at)
+      const increment = row.recurrence === 'daily' ? 1 : 7
+      let advances = 0
+      do {
+        candidate.setDate(candidate.getDate() + increment)
+        advances += 1
+      } while (candidate.getTime() <= now.getTime() && advances < 10_000)
+      if (candidate.getTime() <= now.getTime()) throw new Error('The recurring task schedule is too far behind to safely catch up.')
+      nextRunAt = candidate.toISOString()
+    }
+    this.database.exec('BEGIN IMMEDIATE')
+    try {
+      const result = this.database.prepare(`
+        UPDATE scheduled_tasks SET enabled = ?, next_run_at = COALESCE(?, next_run_at), last_run_at = ?
+        WHERE project_id = ? AND id = ? AND enabled = 1 AND next_run_at <= ?
+      `).run(nextRunAt ? 1 : 0, nextRunAt, now.toISOString(), projectId, taskId, now.toISOString())
+      this.database.exec('COMMIT')
+      return result.changes ? this.getScheduledTask(projectId, taskId) : null
+    } catch (error) {
+      this.database.exec('ROLLBACK')
+      throw error
+    }
+  }
+
+  setScheduledTaskEnabled(projectId: string, taskId: string, enabled: boolean): LocalScheduledTask {
+    const schedule = this.getScheduledTask(projectId, taskId)
+    if (!schedule) throw new Error('This scheduled task does not belong to the selected project.')
+    if (enabled && schedule.recurrence === 'once' && schedule.lastRunAt) throw new Error('This one-time task has already run. Create a new schedule to run it again.')
+    const result = this.database.prepare('UPDATE scheduled_tasks SET enabled = ? WHERE project_id = ? AND id = ?').run(enabled ? 1 : 0, projectId, taskId)
+    if (!result.changes) throw new Error('This scheduled task does not belong to the selected project.')
+    return this.getScheduledTask(projectId, taskId)!
+  }
+
+  deleteScheduledTask(projectId: string, taskId: string): void {
+    const result = this.database.prepare('DELETE FROM scheduled_tasks WHERE project_id = ? AND id = ?').run(projectId, taskId)
+    if (!result.changes) throw new Error('This scheduled task does not belong to the selected project.')
   }
 
   listTasks(threadId: string): LocalTask[] {
@@ -231,6 +420,39 @@ export class CodicLocalStore {
         COMMIT;
       `)
     }
+    if (version < 3) {
+      this.database.exec(`
+        BEGIN IMMEDIATE;
+        ALTER TABLE threads ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0 CHECK(pinned IN (0, 1));
+        ALTER TABLE threads ADD COLUMN archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0, 1));
+        ALTER TABLE threads ADD COLUMN parent_thread_id TEXT REFERENCES threads(id) ON DELETE SET NULL;
+        CREATE INDEX threads_project_pinned_updated ON threads(project_id, pinned DESC, archived, updated_at DESC);
+        PRAGMA user_version = 3;
+        COMMIT;
+      `)
+    }
+    if (version < 4) {
+      this.database.exec(`
+        BEGIN IMMEDIATE;
+        CREATE TABLE scheduled_tasks (
+          id TEXT PRIMARY KEY NOT NULL,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          source_thread_id TEXT REFERENCES threads(id) ON DELETE SET NULL,
+          title TEXT NOT NULL CHECK(length(title) BETWEEN 1 AND 160),
+          prompt TEXT NOT NULL CHECK(length(prompt) BETWEEN 1 AND 20000),
+          model TEXT NOT NULL,
+          reasoning_effort TEXT NOT NULL CHECK(reasoning_effort IN ('low', 'medium', 'high')),
+          recurrence TEXT NOT NULL CHECK(recurrence IN ('once', 'daily', 'weekly')),
+          next_run_at TEXT NOT NULL,
+          enabled INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0, 1)),
+          last_run_at TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        ) STRICT;
+        CREATE INDEX scheduled_tasks_due ON scheduled_tasks(enabled, next_run_at);
+        PRAGMA user_version = 4;
+        COMMIT;
+      `)
+    }
   }
 }
 
@@ -239,7 +461,16 @@ function mapProject(row: ProjectRow): LocalProject {
 }
 
 function mapThread(row: ThreadRow): LocalThread {
-  return { id: row.id, projectId: row.project_id, title: row.title, createdAt: row.created_at, updatedAt: row.updated_at }
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    title: row.title,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    pinned: row.pinned === 1,
+    archived: row.archived === 1,
+    parentThreadId: row.parent_thread_id,
+  }
 }
 
 function mapTask(row: TaskRow): LocalTask {
@@ -274,6 +505,23 @@ function mapReviewComment(row: ReviewCommentRow): LocalReviewComment {
     lineNumber: row.line_number,
     side: row.side,
     body: row.body,
+    createdAt: row.created_at,
+  }
+}
+
+function mapScheduledTask(row: ScheduledTaskRow): LocalScheduledTask {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    sourceThreadId: row.source_thread_id,
+    title: row.title,
+    prompt: row.prompt,
+    model: row.model,
+    reasoningEffort: row.reasoning_effort,
+    recurrence: row.recurrence,
+    nextRunAt: row.next_run_at,
+    enabled: row.enabled === 1,
+    lastRunAt: row.last_run_at,
     createdAt: row.created_at,
   }
 }

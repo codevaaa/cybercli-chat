@@ -31,6 +31,7 @@
 	el('p', 'Persona instructions come from Codeva’s curated library. Response controls apply to new answers.', settingsPanel).className = 'field-hint';
 	const toggleSettings = () => { settingsPanel.hidden = !settingsPanel.hidden; };
 	button('Preferences', toggleSettings, accountActions, true);
+	button('Manage account', () => send('manageAccount'), accountActions, true);
 	button('Editor settings', () => send('openSettings'), settingsPanel, true);
 	const openChat = button('Open chat', () => send('openChat'), accountActions, true);
 	button('Your projects', () => send('projects'), accountActions, true);

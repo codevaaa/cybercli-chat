@@ -46,6 +46,8 @@ const about = fs.readFileSync(path.join(checkout, 'src/vs/platform/dialogs/elect
 assert.ok(about.includes("productService.applicationName === 'mrcodevaa'"), 'About must omit upstream Copilot runtime metadata in MrCodevaa')
 const walkthrough = fs.readFileSync(path.join(checkout, 'src/vs/workbench/contrib/chat/browser/agentSessions/agentSessionsBanner.ts'), 'utf8')
 assert.ok(walkthrough.includes('Open Codeva Projects'), 'The Agents walkthrough must use the Codeva project flow')
+const chatStatus = fs.readFileSync(path.join(checkout, 'src/vs/workbench/contrib/chat/browser/chatStatus/chatStatusEntry.ts'), 'utf8')
+assert.ok(chatStatus.includes("product.applicationName === 'mrcodevaa'"), 'The Copilot entitlement status entry must not appear in Codeva')
 const languageModels = fs.readFileSync(path.join(checkout, 'src/vs/workbench/api/common/extHostLanguageModels.ts'), 'utf8')
 assert.ok(languageModels.includes("extension.identifier.value.toLowerCase() === 'codeva.codeva-studio'"), 'Native Codeva chat must resolve its API-backed default model')
 const chatInput = fs.readFileSync(path.join(checkout, 'src/vs/workbench/contrib/chat/browser/widget/input/chatInputPart.ts'), 'utf8')

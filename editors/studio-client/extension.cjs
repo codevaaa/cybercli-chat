@@ -11,7 +11,7 @@ const path = require('node:path');
 const { StudioClient, apiUrl } = require('./client.cjs');
 const { launchPreview } = require('./preview.cjs');
 const { registerWorkbench } = require('./workbench.cjs');
-const { browserSignIn } = require('./auth.cjs');
+const { browserSignIn, accountSettingsUrl } = require('./auth.cjs');
 const { ChatClient, registerChat } = require('./chat.cjs');
 const { accountSession } = require('./session.cjs');
 const { chatPreferences } = require('./features.cjs');
@@ -110,6 +110,10 @@ function activate(context) {
 	context.subscriptions.push(vscode.commands.registerCommand('codeva.signOut', async () => { controller.signIn?.cancel(); disposeStream(); await account.clear(); controller.profile = null; await vscode.commands.executeCommand('setContext', 'codeva.signedIn', false); send({ type: 'signedOut' }); }));
 	context.subscriptions.push(vscode.commands.registerCommand('codeva.openSettings', () => focusView('focusSettings')));
 	context.subscriptions.push(vscode.commands.registerCommand('codeva.openAccount', () => focusView('focusAccount')));
+	context.subscriptions.push(vscode.commands.registerCommand('codeva.manageAccount', async () => {
+		const url = accountSettingsUrl(settings().get('webUrl'));
+		if (!await vscode.env.openExternal(vscode.Uri.parse(url))) { throw new Error('Could not open Codeva account settings.'); }
+	}));
 	void syncAccount().catch(error => send({ type: 'accountError', text: error.message }));
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => { if (event.affectsConfiguration('codeva')) { void connect(); } }));
 	context.subscriptions.push(vscode.window.registerWebviewViewProvider('codeva.dossier', {
@@ -136,6 +140,7 @@ function activate(context) {
 					}
 					if (message.action === 'openSettings') { await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:codeva.codeva-studio'); return; }
 					if (message.action === 'openChat') { await vscode.commands.executeCommand('codeva.openChat'); return; }
+					if (message.action === 'manageAccount') { await vscode.commands.executeCommand('codeva.manageAccount'); return; }
 					if (message.action === 'preferences') {
 						const target = vscode.ConfigurationTarget.Global;
 						await settings().update('chat.responseStyle', message.body.style, target);

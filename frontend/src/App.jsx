@@ -43,6 +43,7 @@ import ClaudeCodePage from '@pages/public/ClaudeCodePage'
 import SystemStatusPage from '@pages/public/SystemStatusPage'
 import DownloadsPage from '@pages/public/DownloadsPage'
 import DownloadWindowsPage from '@pages/public/DownloadWindowsPage'
+import DownloadCodicPage from '@pages/public/DownloadCodicPage'
 import DownloadMacPage from '@pages/public/DownloadMacPage'
 import DownloadLinuxPage from '@pages/public/DownloadLinuxPage'
 import CouncilModePage from '@pages/public/CouncilModePage'
@@ -86,7 +87,7 @@ import PlaygroundPage from '@pages/app/PlaygroundPage'
 
 const PUBLIC_PATHS = [
   '/', '/features', '/models', '/pricing', '/contact', '/about',
-  '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy',
+  '/careers', '/affiliate', '/blog', '/docs', '/privacy-policy', '/codic', '/downloads/codic',
   '/terms-of-service', '/cookie-policy', '/acceptable-use', '/gdpr',
   '/changelog', '/api-reference', '/developers', '/status', '/downloads',
   '/product', '/login', '/subscribe', '/council-mode',
@@ -225,6 +226,8 @@ function App() {
           <Route path="/product" element={<PublicLayout><ClaudeCodePage /></PublicLayout>} />
           <Route path="/status" element={<PublicLayout><SystemStatusPage /></PublicLayout>} />
           <Route path="/downloads" element={<PublicLayout><DownloadsPage /></PublicLayout>} />
+          <Route path="/codic" element={<PublicLayout><DownloadCodicPage /></PublicLayout>} />
+          <Route path="/downloads/codic" element={<Navigate to="/codic" replace />} />
           <Route path="/downloads/windows" element={<PublicLayout><DownloadWindowsPage /></PublicLayout>} />
           <Route path="/downloads/mac" element={<PublicLayout><DownloadMacPage /></PublicLayout>} />
           <Route path="/downloads/linux" element={<PublicLayout><DownloadLinuxPage /></PublicLayout>} />

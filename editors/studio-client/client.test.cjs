@@ -37,6 +37,9 @@ test('sidebar DOM shows Codeva account and chat preferences with exact project p
 	assert.equal(dom.window.document.querySelector('.settings-panel').hidden, false);
 	send({ type: 'focusAccount' });
 	assert.equal(dom.window.document.activeElement.textContent, 'Sign in to Codeva');
+	const manageAccount = [...dom.window.document.querySelectorAll('button')].find(button => button.textContent === 'Manage account');
+	assert.ok(manageAccount, 'The first-run account panel must expose account management');
+	manageAccount.click(); assert.equal(sent.at(-1).action, 'manageAccount');
 	send({ type: 'account', value: { email: 'builder@example.test', plan: 'pro' } });
 	assert.match(dom.window.document.body.textContent, /builder@example\.test/);
 	assert.equal([...dom.window.document.querySelectorAll('button')].find(b => b.textContent === 'Sign out').hidden, false);

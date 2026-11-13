@@ -12,6 +12,12 @@ export function authFlowQuery(input) {
   if (target === 'ide') {
     for (const [key, value] of new URLSearchParams(editorAuthQuery(params))) result.set(key, value)
   } else if (target === 'desktop') result.set('redirect', 'desktop')
+  else if (target === 'codic') {
+    const challenge = params.get('challenge') || ''
+    if (!/^[A-Za-z0-9_-]{43}$/.test(challenge)) throw new Error('Start sign-in again from Codic. Its secure handoff is invalid or expired.')
+    result.set('redirect', 'codic')
+    result.set('challenge', challenge)
+  }
   else if (target === 'cli') {
     const port = params.get('port') || ''
     if (!/^\d{4,5}$/.test(port) || Number(port) < 1024 || Number(port) > 65535) throw new Error('Start sign-in again from the CLI. Its callback port is invalid.')
@@ -28,6 +34,13 @@ export function authCallbackUrl(origin, params, action = 'login') {
   const query = authFlowQuery(params)
   query.set('action', action === 'signup' ? 'signup' : 'login')
   return `${origin}/auth/callback?${query}`
+}
+
+export function codicAuthCallbackUrl(ticket) {
+  if (typeof ticket !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(ticket)) {
+    throw new Error('The Codic sign-in handoff is invalid. Start sign-in again from Codic.')
+  }
+  return `codic://auth/callback?ticket=${encodeURIComponent(ticket)}`
 }
 
 export function authPagePath(page, params) {

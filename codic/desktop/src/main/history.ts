@@ -6,6 +6,9 @@ export interface ThreadSummary {
   updatedAt: string
   lastTaskId: string | null
   lastTaskState: LocalTask['state'] | null
+  pinned: boolean
+  archived: boolean
+  parentThreadId: string | null
 }
 
 export interface ThreadMessage {
@@ -21,8 +24,8 @@ export interface ThreadHistory {
   truncated: boolean
 }
 
-export function listThreadSummaries(store: CodicLocalStore, projectId: string, limit = 100): ThreadSummary[] {
-  return store.listThreads(projectId).slice(0, limit).map((thread) => {
+export function listThreadSummaries(store: CodicLocalStore, projectId: string, limit = 100, includeArchived = false): ThreadSummary[] {
+  return store.listThreads(projectId, includeArchived).slice(0, limit).map((thread) => {
     const latest = store.listTasks(thread.id)[0] ?? null
     return {
       id: thread.id,
@@ -30,30 +33,47 @@ export function listThreadSummaries(store: CodicLocalStore, projectId: string, l
       updatedAt: thread.updatedAt,
       lastTaskId: latest?.id ?? null,
       lastTaskState: latest?.state ?? null,
+      pinned: thread.pinned,
+      archived: thread.archived,
+      parentThreadId: thread.parentThreadId,
     }
   })
 }
 
 export function loadThreadHistory(store: CodicLocalStore, projectId: string, threadId: string): ThreadHistory {
-  const thread = store.listThreads(projectId).find((item) => item.id === threadId)
+  const thread = store.getThread(projectId, threadId)
   if (!thread) throw new Error('This task does not belong to the selected project.')
 
-  const tasks = store.listTasks(thread.id).reverse()
-  const messages: ThreadMessage[] = []
-  for (const task of tasks) {
-    messages.push({ id: `${task.id}:user`, role: 'user', content: task.prompt })
-    let assistant = ''
-    for (const storedEvent of store.listTaskEvents(task.id)) {
-      const payload = asRecord(storedEvent.payload)
-      if (payload.type !== 'agent_event') continue
-      const event = asRecord(payload.event)
-      if (event.type === 'text' && typeof event.text === 'string') assistant += event.text
-    }
-    if (assistant) messages.push({ id: `${task.id}:assistant`, role: 'assistant', content: assistant })
+  const ancestry = [thread]
+  let parentId = thread.parentThreadId
+  const seen = new Set([thread.id])
+  while (parentId && ancestry.length < 8 && !seen.has(parentId)) {
+    const parent = store.getThread(projectId, parentId)
+    if (!parent) break
+    ancestry.unshift(parent)
+    seen.add(parent.id)
+    parentId = parent.parentThreadId
   }
 
-  const lastTask = tasks.at(-1) ?? null
-  return boundHistory(thread, messages, lastTask?.id ?? null)
+  const messages: ThreadMessage[] = []
+  let lastTaskId: string | null = null
+  for (const ancestor of ancestry) {
+    const tasks = store.listTasks(ancestor.id).reverse()
+    if (ancestor.id === thread.id) lastTaskId = tasks.at(-1)?.id ?? null
+    for (const task of tasks) {
+      messages.push({ id: `${task.id}:user`, role: 'user', content: task.prompt })
+      let assistant = ''
+      for (const storedEvent of store.listTaskEvents(task.id)) {
+        const payload = asRecord(storedEvent.payload)
+        if (payload.type !== 'agent_event') continue
+        const event = asRecord(payload.event)
+        if (event.type === 'text' && typeof event.text === 'string') assistant += event.text
+      }
+      if (assistant) messages.push({ id: `${task.id}:assistant`, role: 'assistant', content: assistant })
+    }
+  }
+
+  return boundHistory(thread, messages, lastTaskId)
 }
 
 function boundHistory(thread: LocalThread, messages: ThreadMessage[], lastTaskId: string | null): ThreadHistory {

@@ -37,6 +37,9 @@ export default function LoginPage() {
       } else if (redirect === 'ide') {
         editorReturn(session)
         return
+      } else if (redirect === 'codic') {
+        navigate(authPagePath('callback', searchParams), { replace: true })
+        return
       } else {
         navigate(authDestination(searchParams))
         return

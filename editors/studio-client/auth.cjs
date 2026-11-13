@@ -3,8 +3,19 @@ const http = require('node:http');
 const { randomBytes, timingSafeEqual } = require('node:crypto');
 const { apiUrl } = require('./client.cjs');
 const jwt = value => typeof value === 'string' && value.length < 12000 && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value);
+function accountSettingsUrl(webUrl) {
+  const web = new URL(webUrl);
+  if (web.username || web.password || (web.protocol !== 'https:' && !(web.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(web.hostname)))) throw new Error('Codeva account management requires a secure website URL.');
+  web.pathname = '/settings/account'; web.search = ''; web.hash = '';
+  return web.href;
+}
 async function browserSignIn({ webUrl, apiBaseUrl, fetcher = fetch, timeoutMs = 300000 }) {
   const website = new URL(apiUrl(webUrl)), api = apiUrl(apiBaseUrl);
+  const allowedOrigins = new Set([website.origin]);
+  // The production site redirects the apex domain to www. Permit that exact
+  // first-party alias so the loopback callback still works after navigation.
+  if (website.hostname === 'cybermindcli.info') allowedOrigins.add('https://www.cybermindcli.info');
+  if (website.hostname === 'www.cybermindcli.info') allowedOrigins.add('https://cybermindcli.info');
   const state = randomBytes(32).toString('base64url');
   let resolve, reject, timer, finished = false, processing = false;
   const session = new Promise((yes, no) => { resolve = yes; reject = no; });
@@ -19,7 +30,7 @@ async function browserSignIn({ webUrl, apiBaseUrl, fetcher = fetch, timeoutMs = 
   const server = http.createServer(async (req, res) => {
     const respond = (status, message) => { res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "default-src 'none'" }); res.end(message); };
     if (finished || processing) return respond(409, 'Sign-in request already used.');
-    if (req.method !== 'POST' || req.url !== '/callback' || req.headers.origin !== website.origin || !/^application\/x-www-form-urlencoded(?:;|$)/i.test(req.headers['content-type'] || '')) return respond(400, 'Invalid editor sign-in request.');
+    if (req.method !== 'POST' || req.url !== '/callback' || !allowedOrigins.has(req.headers.origin) || !/^application\/x-www-form-urlencoded(?:;|$)/i.test(req.headers['content-type'] || '')) return respond(400, 'Invalid editor sign-in request.');
     try {
       const pieces = []; let size = 0;
       for await (const piece of req) { size += piece.length; if (size > 20000) return respond(413, 'Sign-in request is too large.'); pieces.push(piece); }
@@ -44,4 +55,4 @@ async function browserSignIn({ webUrl, apiBaseUrl, fetcher = fetch, timeoutMs = 
   timer = setTimeout(() => complete(new Error('Editor sign-in timed out. Please try again.')), timeoutMs);
   return { url: url.href, session, cancel: () => complete(new Error('Editor sign-in cancelled.')) };
 }
-module.exports = { browserSignIn };
+module.exports = { accountSettingsUrl, browserSignIn };

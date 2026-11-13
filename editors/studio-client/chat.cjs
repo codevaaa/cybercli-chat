@@ -53,6 +53,12 @@ async function referenceContext(vscode, references = []) {
 function registerChat(vscode, context, { client, chatClient, controller, openProject, refresh, getPreferences = () => ({}) }) {
   const command = (id, handler) => context.subscriptions.push(vscode.commands.registerCommand(id, handler));
   command('codeva.openChat', () => vscode.commands.executeCommand('workbench.action.chat.open'));
+  const openChatDraft = query => vscode.commands.executeCommand('workbench.action.chat.open', { query, isPartialQuery: true, mode: 'agent' });
+  command('codeva.startPlan', () => openChatDraft('/plan '));
+  command('codeva.startBuild', async () => {
+    if (!controller.projectId) { throw new Error('Open a project and accept its specification before starting a build.'); }
+    return openChatDraft('/build');
+  });
   command('codeva.askAboutTerminal', async () => {
     const prompt = terminalSelectionPrompt(vscode.window.activeTerminal?.selection);
     await vscode.commands.executeCommand('workbench.action.chat.open', { query: prompt, isPartialQuery: true, mode: 'ask' });

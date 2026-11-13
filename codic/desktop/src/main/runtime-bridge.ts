@@ -7,6 +7,8 @@ export interface StartTaskRequest {
   workspacePath: string
   prompt: string
   model: string
+  reasoningEffort?: 'low' | 'medium' | 'high'
+  approvalPolicy?: 'ask' | 'safe-reads' | 'full-access'
   conversationId?: string
   messages?: Array<{ role: 'user' | 'assistant'; content: string }>
   taskId?: string
@@ -38,6 +40,12 @@ export class CodicRuntimeBridge {
 
   constructor(private readonly options: RuntimeBridgeOptions) {}
 
+  hasActiveTask(workspacePath: string): boolean {
+    let canonicalPath: string
+    try { canonicalPath = this.resolveWorkspace(workspacePath) } catch { return false }
+    return [...this.tasks.values()].some((task) => !task.finished && task.workspacePath === canonicalPath)
+  }
+
   startTask(request: StartTaskRequest): { taskId: string } {
     const prompt = request.prompt.trim()
     if (!prompt) throw new Error('Write a prompt before starting a task.')
@@ -53,6 +61,8 @@ export class CodicRuntimeBridge {
       apiBaseUrl: this.options.apiBaseUrl,
       getAccessToken: this.options.getAccessToken,
       model: request.model || 'auto',
+      reasoningEffort: request.reasoningEffort ?? 'medium',
+      approvalPolicy: request.approvalPolicy ?? 'ask',
       checkpointSessionId: taskId,
       onEvent: (event: CodicRuntimeEvent) => {
         if (event.type === 'run_started') record.runId = event.runId

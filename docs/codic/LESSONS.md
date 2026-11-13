@@ -1,0 +1,27 @@
+# Codic interface and runtime lessons
+
+- A menu item should map to a real local or server operation. Public sharing stays labeled as unavailable until a server-backed permission and revocation flow exists; transcript export is a local substitute, not a share link.
+- Profile counters must come from saved local run events and identify estimates. They must not resemble account-wide metrics unless the backend actually supplies account-wide data.
+- Local schedules need durable records and an atomic due claim. Repeating a task should advance past missed intervals once rather than launching a burst of catch-up runs.
+- Scheduled work must retain the same workspace boundary and approval rules as an interactive task. In this preview it runs only while Codic is open and always asks before risky actions.
+- Task IDs belong on runtime events. Window ownership alone is not enough to resolve approvals or completion correctly when tasks open in separate windows.
+- “Approve for me” must describe the exact allowlist. Unrestricted computer/network access is not exposed as an active option while the runtime cannot safely enforce that policy.
+- Keep visual similarity at the workflow level. Use original Codic iconography, typography, and accent treatment rather than copying another app’s assets or private implementation.
+- A sidebar toggle must change the desktop flex layout too; on phone widths it should open a real drawer with a clear dismissal target.
+- A first-run account screen should reuse one auth flow for sign-in, signup, and password recovery, while clearly keeping local project use available when account services are unavailable.
+- Menu commands should be limited to operations that already have an IPC or renderer action. Advertised shortcuts and menu labels must match the actual command path.
+- Keep auto-update claims platform-specific: this unsigned Windows preview uses the HTTPS generic feed and SHA-512 verification, while macOS/Linux use the website installer. A built `latest.yml` is not a live release; the backend must be configured to serve the same version, filename, size, checksums, and reachable HTTPS artifact.
+- Recompute installer checksums after every packaging run. A stale `.sha256` file can look authoritative while describing an earlier binary; compare the hash against the exact installer that will be uploaded.
+- Do not claim a visual pass when desktop automation cannot attach to the packaged app window. Record build/typecheck evidence separately from screenshot or interaction evidence.
+- At 130% zoom, viewport breakpoints alone do not protect the composer when adjacent panels reduce its width. Use a container query on the composer itself and start with the optional project panel closed.
+- For fixed popovers, position from the trigger’s actual rectangle, clamp both axes, and cap the popover’s own height to the estimate used for positioning. Otherwise a tall menu can extend past its trigger even when its top coordinate appears clamped.
+- Mouse-wheel model navigation should stop at the first and last available option; wrapping belongs to deliberate keyboard cycling, not a scroll gesture.
+- A first project screen should keep the same prompt workspace as a selected-project screen. The Choose project action should preserve the draft while opening folder selection, and send should not imply a task started before a workspace exists.
+- Make the Codic mark legible without SVG stroke scaling: a thick original CSS mark can use a one-time entrance animation, with reduced-motion support and an app icon that shares the same silhouette.
+- A local preview switch must be build-flagged off by default, granted explicitly at runtime, cleared on sign-out/app exit, and must never synthesize an account token or unlock server model requests.
+- New Window must carry an explicit blank-window route. Listing saved projects is fine, but the new renderer must not select one unless its URL names a project.
+### 2026-11-13 — Browser-to-desktop sign-in and Windows chrome
+- Custom URL callbacks must be tested at both ends. A successful website session is not proof that the desktop callback route exists on the production API.
+- Never broadcast a one-use auth callback to every open renderer. Deliver it to one primary window and make the browser page provide a user-click retry when external-protocol navigation is blocked.
+- A frameless-window auth gate hides the normal app titlebar. Put minimize/maximize/close controls in the gate itself and expose maximize state through a sender-validated IPC event.
+- For Windows branding, align the installer executable icon, BrowserWindow `icon`, and AppUserModelID. If an installed taskbar pin still uses an old cached icon, users need the updated installer/shortcut before that cached shell entry changes.

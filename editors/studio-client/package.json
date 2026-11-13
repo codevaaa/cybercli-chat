@@ -24,6 +24,9 @@
         "command": "codeva.signOut",
         "title": "%signOut%"
       },
+      { "command": "codeva.manageAccount", "title": "MrCodevaa: Manage Codeva Account" },
+      { "command": "codeva.startPlan", "title": "MrCodevaa: Start a Project Plan" },
+      { "command": "codeva.startBuild", "title": "MrCodevaa: Build an Accepted Project" },
       { "command": "codeva.inlineEdit", "title": "MrCodevaa: Edit Selection" },
       { "command": "codeva.reviewChanges", "title": "MrCodevaa: Review Agent Changes" },
       { "command": "codeva.acceptChanges", "title": "MrCodevaa: Accept Diff", "icon": "$(check)" },

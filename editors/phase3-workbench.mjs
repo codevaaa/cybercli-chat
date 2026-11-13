@@ -22,8 +22,69 @@ patch('src/vs/workbench/browser/parts/editor/media/editorgroupview.css', text =>
 for (const variant of ['light', 'dark', 'hcLight', 'hcDark']) fs.copyFileSync(path.join(root, 'brand/prism-m.svg'), path.join(checkout, `src/vs/workbench/browser/parts/editor/media/letterpress-${variant}.svg`))
 // Keep native Start/Recent/walkthrough and Chat/Sessions components.
 for (const file of ['src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.contribution.ts', 'src/vs/workbench/contrib/chat/browser/chat.shared.contribution.ts', 'src/vs/workbench/contrib/chat/browser/widget/input/chatInputPart.ts']) fs.writeFileSync(path.join(checkout, file), original(file))
-patch('src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts', text => text.replace("$('h1.product-name.caption', {}, this.productService.nameLong),", `$('img.mrcodevaa-welcome-mark', { src: 'data:image/svg+xml;base64,${fs.readFileSync(path.join(root, 'brand/prism-m.svg')).toString('base64')}', alt: 'Prism M' }),\n\t\t\t$('h1.product-name.caption', {}, this.productService.nameLong),`).replace('"Editing evolved"', '"Tell MrCodevaa what to build."'))
-patch('src/vs/workbench/contrib/welcomeGettingStarted/common/gettingStartedContent.ts', text => text.replace('export const startEntries: GettingStartedStartEntryContent = [', `export const startEntries: GettingStartedStartEntryContent = [\n\t{ id: 'mrcodevaa.chat', title: 'Open MrCodevaa Chat...', description: 'Chat with Codeva and build reviewed projects', icon: Codicon.commentDiscussion, content: { type: 'startEntry', command: 'command:codeva.openChat' } },\n\t{ id: 'mrcodevaa.signIn', title: 'Sign in to Codeva...', description: 'Use your existing cybermindcli.info account', icon: Codicon.account, content: { type: 'startEntry', command: 'command:codeva.signIn' } },`).replaceAll('Get started with VS Code', 'Get started with MrCodevaa').replaceAll('Setup VS Code', 'Setup MrCodevaa').replaceAll("VS Code's key features", "MrCodevaa's editor features").replace(/^\s*createCopilotSetupStep\([^\n]+\),\r?\n/gm, '').replace(/const CopilotStepTitle =[\s\S]*?\n}\n\n(?=export const walkthroughs)/, ''))
+// MrCodevaa uses the Codeva account/model path. Do not activate or advertise the
+// upstream GitHub Copilot extension inside its development workbench.
+patch('extensions/copilot/package.json', text => {
+	const manifest = parse(text)
+	manifest.activationEvents = []
+	manifest.contributes = {}
+	return JSON.stringify(manifest, null, '\t') + '\n'
+})
+patch('src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts', text => text.replace("$('h1.product-name.caption', {}, this.productService.nameLong),", `$('img.mrcodevaa-welcome-mark', { src: 'data:image/svg+xml;base64,${fs.readFileSync(path.join(root, 'brand/prism-m.svg')).toString('base64')}', alt: 'Prism M' }),\n\t\t\t$('h1.product-name.caption', {}, this.productService.nameLong),`).replace('"Editing evolved"', '"Sign in, plan, review, then build with Codeva."'))
+patch('src/vs/workbench/contrib/welcomeGettingStarted/common/gettingStartedContent.ts', text => {
+	const updated = text
+		.replace('export const startEntries: GettingStartedStartEntryContent = [', `export const startEntries: GettingStartedStartEntryContent = [\n\t{ id: 'mrcodevaa.chat', title: 'Open MrCodevaa Chat...', description: 'Chat with Codeva and build reviewed projects', icon: Codicon.commentDiscussion, content: { type: 'startEntry', command: 'command:codeva.openChat' } },\n\t{ id: 'mrcodevaa.signIn', title: 'Sign in to Codeva...', description: 'Sign in or create an account, then return here to plan and build a project.', icon: Codicon.account, content: { type: 'startEntry', command: 'command:codeva.signIn' } },`)
+		.replaceAll('Get started with VS Code', 'Get started with MrCodevaa')
+		.replaceAll('Setup VS Code', 'Setup MrCodevaa')
+		.replaceAll("VS Code's key features", "MrCodevaa's editor features")
+		.replace(/^\s*createCopilotSetupStep\([^\n]+\),\r?\n/gm, '')
+		.replace(/const CopilotStepTitle =[\s\S]*?\n}\n\n(?=export const walkthroughs)/, '')
+	const marker = 'export const walkthroughs: GettingStartedWalkthroughContent = ['
+	if (!updated.includes(marker)) throw new Error('Pinned Welcome walkthrough declaration changed')
+	return updated.replace(marker, `${marker}
+	{
+		id: 'codevaFirstProject',
+		title: localize('codeva.firstProject.title', 'Build your first Codeva project'),
+		description: localize('codeva.firstProject.description', 'Sign in, plan, review, and build with a clear approval step.'),
+		isFeatured: true,
+		icon: setupIcon,
+		when: '!isWeb',
+		walkthroughPageTitle: localize('codeva.firstProject.pageTitle', 'Your first Codeva project'),
+		content: {
+			type: 'steps',
+			steps: [
+				{
+					id: 'codevaFirstSignIn',
+					title: localize('codeva.firstProject.signIn.title', '1. Connect your Codeva account'),
+					description: localize('codeva.firstProject.signIn.description', 'Sign in or create an account on the Codeva website. MrCodevaa returns here when the account is ready.\\n{0}', Button(localize('codeva.firstProject.signIn.action', 'Sign in or create an account'), 'command:codeva.signIn')),
+					completionEvents: ['onContext:codeva.signedIn'],
+					media: { type: 'markdown', path: 'empty' }
+				},
+				{
+					id: 'codevaFirstPlan',
+					title: localize('codeva.firstProject.plan.title', '2. Describe what you want to build'),
+					description: localize('codeva.firstProject.plan.description', 'Write a project prompt. MrCodevaa creates a saved project and specification for you to review before any build runs.\\n{0}', Button(localize('codeva.firstProject.plan.action', 'Start a project plan'), 'command:codeva.startPlan')),
+					completionEvents: ['onCommand:codeva.startPlan'],
+					media: { type: 'markdown', path: 'empty' }
+				},
+				{
+					id: 'codevaFirstReview',
+					title: localize('codeva.firstProject.review.title', '3. Review and accept the specification'),
+					description: localize('codeva.firstProject.review.description', 'Open the saved project, check its requirements and acceptance checks, then approve or edit them.\\n{0}', Button(localize('codeva.firstProject.review.action', 'Open Codeva projects'), 'command:codeva.openAgents')),
+					completionEvents: ['onCommand:codeva.openAgents'],
+					media: { type: 'markdown', path: 'empty' }
+				},
+				{
+					id: 'codevaFirstBuild',
+					title: localize('codeva.firstProject.build.title', '4. Start the accepted build'),
+					description: localize('codeva.firstProject.build.description', 'After you accept the specification, review build progress and proposed changes in the project panel.\\n{0}', Button(localize('codeva.firstProject.build.action', 'Prepare /build in chat'), 'command:codeva.startBuild')),
+					completionEvents: ['onCommand:codeva.startBuild'],
+					media: { type: 'markdown', path: 'empty' }
+				}
+			]
+		}
+	},`)
+})
 patch('src/vs/workbench/contrib/welcomeGettingStarted/browser/media/gettingStarted.css', text => text + `
 /* MrCodevaa welcome: clear hierarchy and responsive, theme-aware action cards. */
 .monaco-workbench .part.editor > .content .gettingStartedContainer {
@@ -205,6 +266,8 @@ patch('src/vs/workbench/contrib/welcomeGettingStarted/browser/media/gettingStart
 	.monaco-workbench .part.editor > .content .gettingStartedContainer *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
 `)
+// The status item is backed by upstream Copilot entitlements, not Codeva.
+patch('src/vs/workbench/contrib/chat/browser/chatStatus/chatStatusEntry.ts', text => text.replace('super();', "super();\n\t\tif (product.applicationName === 'mrcodevaa') { return; }"))
 patch('src/vs/workbench/contrib/chat/browser/chatParticipant.contribution.ts', text => text.replaceAll('"Chat"', '"MrCodevaa"').replace('"&&Chat"', '"&&MrCodevaa"'))
 patch('src/vs/workbench/api/common/extHostTypeConverters.ts', text => text.replace('toolReferences: ChatLanguageModelToolReferences.to(revive(mode.toolReferences)),', 'toolReferences: mode.toolReferences ? ChatLanguageModelToolReferences.to(revive(mode.toolReferences)) : [],'))
 fs.copyFileSync(path.join(root, 'brand/prism-m.svg'), path.join(checkout, 'src/vs/sessions/browser/media/sessions-icon.svg'))
@@ -253,6 +316,9 @@ patch('src/vs/workbench/contrib/terminalContrib/inlineHint/browser/terminal.init
   .replace('\t\tif (!aiFeaturesHidden) {', "\t\tif (!aiFeaturesHidden && product.applicationName === 'mrcodevaa') {\n\t\t\tconst hint = localize('mrcodevaaTerminalHint', 'Select terminal output, then [[ask MrCodevaa]].');\n\t\t\thintElement.appendChild(renderFormattedText(hint, { actionHandler: { disposables: this._toDispose, callback: () => { void this._commandService.executeCommand('codeva.askAboutTerminal'); } } }));\n\t\t\tariaLabelParts.push('Select terminal output, then ask MrCodevaa.');\n\t\t} else if (!aiFeaturesHidden) {"))
 // Keep their upstream source; do not start account checks for unused providers.
 patch('src/vs/platform/agentHost/node/agentHostMain.ts', text => text
+	.replace('let byokLmBridgeRegistry: ByokLmBridgeRegistry;', 'let byokLmBridgeRegistry: ByokLmBridgeRegistry | undefined;')
+	.replace('byokLmBridgeRegistry = new ByokLmBridgeRegistry();', "if (productService.applicationName !== 'mrcodevaa') { byokLmBridgeRegistry = new ByokLmBridgeRegistry(); }")
+	.replace("byok: { kind: 'renderer', bridgeRegistry: byokLmBridgeRegistry },", "byok: byokLmBridgeRegistry ? { kind: 'renderer', bridgeRegistry: byokLmBridgeRegistry } : { kind: 'unavailable' },")
   .replace('providerService.registerProvider(instantiationService.createInstance(CopilotAgent));', "if (product.applicationName !== 'mrcodevaa') { providerService.registerProvider(instantiationService.createInstance(CopilotAgent)); }")
   .replace('if (isAgentEnabled(process.env[AgentHostClaudeAgentEnabledEnvVar]', "if (product.applicationName !== 'mrcodevaa' && isAgentEnabled(process.env[AgentHostClaudeAgentEnabledEnvVar]")
   .replace('if (!environmentService.isBuilt || agentSdkDownloader.isAvailable(CodexSdkPackage)) {', "if (product.applicationName !== 'mrcodevaa' && (!environmentService.isBuilt || agentSdkDownloader.isAvailable(CodexSdkPackage))) {"))

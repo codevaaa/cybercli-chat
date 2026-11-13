@@ -7,7 +7,7 @@
 
 Codic borrows a familiar coding-agent workflow—projects, task threads, activity, approvals, diffs, and terminals—while using original Codeva branding and implementation. Codex research is limited to public feature descriptions and any future authorized REA observations. No Codex source, artwork, credentials, or private service behavior is copied. Codic does not claim that its preview has complete Codex feature parity.
 
-The desktop renderer is a local React application. It uses a narrow typed preload bridge to reach the Electron main process. The main process owns filesystem access, SQLite, OAuth opening/callbacks, encrypted credentials, Git, terminal processes, and the Codeva API connection. The CyberCoder runtime and selected tool/provider contracts are reused as local libraries. REA is an engineering-time aid only and is not shipped with Codic.
+The desktop renderer is a local React application. It uses a narrow typed preload bridge to reach the Electron main process. The main process owns filesystem access, SQLite, website sign-in handoffs, encrypted credentials, Git, terminal processes, and the Codeva API connection. The CyberCoder runtime and selected tool/provider contracts are reused as local libraries. REA is an engineering-time aid only and is not shipped with Codic.
 
 ## Runtime and data flow
 
@@ -25,11 +25,11 @@ Codeva backend /api/v1/codic
 ```
 
 - The renderer never receives the Supabase access token through the app bridge as an API parameter. Supabase session persistence uses a custom storage adapter backed by Electron `safeStorage`.
-- Google OAuth opens the system browser and returns through the `codic://auth/callback` deep link. The Supabase redirect allowlist and Google provider configuration must be set for the deployed Supabase project.
+- Sign-in starts on the Codeva website, where Google, email login, signup, verification, and password reset already live. Codic creates a PKCE verifier in the main process, stores it with Electron `safeStorage`, and opens the website with only the derived challenge. After website auth, the backend creates a two-minute, one-use ticket with an AES-256-GCM encrypted session. The desktop redeems it with its verifier and receives tokens over HTTPS; tokens never appear in the deep-link URL. The backend uses `CODEVA_CODIC_HANDOFF_KEY` when configured, or derives a domain-separated key from the existing Supabase service secret.
 - Device records are scoped to the authenticated account and can be revoked. Model lists include account plan availability and usage limits. The SSE turn endpoint validates model and tool declarations and normalizes text, tool calls, usage, errors, and completion.
 - The Codeva gateway receives conversation context, declared tool schemas, and tool results required for the next model step. The selected repository itself stays local; file contents enter a request only when a local tool reads them for the model.
 - SQLite stores project paths, thread/task metadata, redacted prompts/events, and line comments. Repository content and credentials are not copied into this database. Schema migrations use SQLite `user_version`; running tasks are marked interrupted when the app restarts.
-- Local model-requested shell commands require an explicit allow/deny decision. File tools resolve inside the selected project and check symlink boundaries. A user-entered terminal command is a separate, direct action in a fresh project-rooted shell with a small environment allowlist, time limit, and output cap.
+- Local model-requested shell commands require an explicit allow/deny decision. File tools resolve inside the selected project and check symlink boundaries. User-entered terminal commands run in persistent PTY sessions rooted at the selected project, with a small environment allowlist and a per-window limit of five live sessions. The user directly controls interactive shell input; model-requested shell actions remain on the approval path.
 - Git diff reads the selected repository root only, disables external diff/text conversion, and previews bounded untracked text files. Restore points are explicit and require user confirmation in the UI.
 
 ## Implemented preview surface
@@ -37,54 +37,64 @@ Codeva backend /api/v1/codic
 | Area | Current implementation | Remaining work |
 |---|---|---|
 | Desktop shell | Local React/Electron; sandboxed renderer; context isolation; CSP; guarded navigation, external links, and IPC senders; responsive panes; system/light/dark theme. | Cross-platform packaged runtime checks and keyboard/accessibility pass. |
-| Authentication | Email/password, account creation, Google OAuth, verification/reset entry points, secure session persistence, refresh via Supabase client, backend account sync, device registration/revocation. | Live Supabase DNS/configuration and Google callback flow must be verified against restored credentials. Recovery callback experience can be refined after that live project is reachable. |
+| Authentication | Codeva website login/signup handoff, one-use PKCE ticket, encrypted backend session payload, secure local session persistence/refresh, backend account sync, device registration/revocation. Signed-out renderers remain on a blocking sign-in page; project, browser, terminal, history, review, schedule, checkpoint, and agent IPC calls require a stored session. Sign-out cancels runs, kills terminals, and clears all open windows. The private 0.1.5 Windows build now includes the local public Supabase URL and anon key. | Verify Google, email verification, reset, and the desktop PKCE handoff end to end. A dedicated `CODEVA_CODIC_HANDOFF_KEY` is recommended; the backend can derive a domain-separated key from its existing Supabase service secret when absent. The production API still returns 404 for the Codic routes, so they must be deployed before live desktop auth can finish. |
 | Account/model service | Backend device endpoints, plan-aware model catalog, monthly/request limits, SSE gateway turn streaming, cancellation on disconnect, sanitized errors and provider failures. | Live provider credentials and cold-start behavior. Add service-side concurrency/abuse limits as usage grows. |
-| Local agent | Reuses CyberCoder agent loop and provider/tool contracts; explicit selected workspace; local file tools; per-shell approval; cancellation; event stream; restore checkpoints. | Resuming an interrupted run, network permissions, out-of-project approval flow, Git push approval, durable approvals, and parallel run isolation. |
-| Projects and history | Multiple saved project paths; local thread list; reopens the latest project and thread; rebuilds bounded conversations from redacted task events; cross-project history checks. | Search, rename/delete, richer thread organization, and active task resumption. |
+| Local agent | Reuses CyberCoder agent loop and provider/tool contracts; explicit selected workspace; local file tools; persisted Ask/Approve for me/Full access policies; per-shell and out-of-project approval; cancellation; event stream; restore checkpoints. | Resuming an interrupted run, durable approvals, and parallel run isolation. |
+| Projects and history | Multiple saved project paths; searchable composer project picker; local thread list; restores the primary window’s saved project/thread; a blank new window never inherits a project; task windows restore only their requested project/thread; rebuilds bounded conversations from redacted task events; cross-project history checks; rename, pin, fork/side-chat, archive/restore, copy/export, and local profile activity. | Delete and active task resumption. |
 | Review | Git diff and bounded untracked text previews; per-line local comments; restore point listing and restore. | Stage/unstage, inline editing, comment navigation, file status coverage, rename/binary handling, and real worktree changes. |
-| Terminal | Multiple command history tabs in memory; user-entered bounded commands in a fresh shell. Windows PowerShell uses a UTF-16LE encoded command and suppresses startup progress noise. | Persistent PTY processes, shell selection, resize/interactive programs, and task linkage. |
-| Distribution | electron-builder configuration and original icon assets for unsigned Windows x64 NSIS, macOS universal DMG/ZIP, and Linux x64 AppImage/DEB. Windows installer builds and the unpacked app launch, project picker, terminal, and Git review panels have been smoke-checked locally. | Native macOS/Linux builds, fresh installer/upgrade/recovery checks, website download route, published checksum manifest, update notice, and publishing. |
+| Terminal | Persistent interactive PTY tabs rooted in the selected project; xterm input, scrollback, resize, close handling, and a small shell environment allowlist. Uses the MIT-licensed Homebridge prebuilt node-pty package to avoid requiring native compilation during packaging. | Shell selection, task linkage, and packaged verification on macOS/Linux. |
+| Distribution | electron-builder configuration and original icon assets for unsigned Windows x64 NSIS, macOS universal DMG/ZIP, and Linux x64 AppImage/DEB. Codic website page is a product preview with no installer CTA. Backend installer and updater endpoints return unavailable unless `CODEVA_CODIC_PUBLIC_RELEASE=true` is explicitly set with checksums and an HTTPS artifact. | Fresh install/upgrade/recovery checks; native macOS/Linux builds; public HTTPS artifact upload; Render/R2 release configuration; and live update-feed verification. |
+| Scheduled work | Local one-time/daily/weekly schedules stored in versioned SQLite, due-time claims, pause/resume/delete controls, per-project scope, separate task windows, and normal per-action approvals. Prompt/title data is redacted before persistence. | Runs only while Codic is open; no OS background service, cloud scheduler, missed-run history UI, or remote steering. |
 | Codex/REA research | Public-source feature ledger and authorized REA investigation workflow in `rea-evidence.md`. | Local target could not be analyzed: Ghidra and IDA are not configured, Hopper does not support this host; no user-visible Codex runtime flow was captured. REA evidence IDs remain `TBD`. |
 
 ## Backend API contract
 
-All routes are mounted below `/api/v1/codic` and require Codeva authentication:
+All routes are mounted below `/api/v1/codic`:
 
 - `POST /devices`: idempotently register a device/platform/build; never return device credentials.
 - `DELETE /devices/:id`: revoke only the requesting account’s device.
 - `GET /models`: return available/locked models, plan, request limit, and monthly token limit/use/reset.
 - `POST /turns`: stream normalized SSE events. The local agent executes requested tools and sends their results as subsequent conversation messages.
+- `POST /auth-handoffs`: authenticated website session exchange for a short-lived, one-use desktop ticket; session payload is encrypted at rest.
+- `POST /auth-handoffs/redeem`: public ticket redemption requiring the desktop PKCE verifier; replayed/expired tickets fail.
 
 Error payloads use stable public error codes and sanitized messages. Gateway/provider secrets stay in backend configuration; client input cannot select arbitrary internal model IDs, tools, or gateway providers.
 
 ## Delivery phases
 
-1. **Preview foundation:** separate desktop shell; Codeva account and model service; local storage and project selection; agent tool loop, approvals, checkpoints, cancellation, diffs, comments, and terminal command runner. This is the current implementation phase.
-2. **Local parity workflows:** real Git worktrees, parallel agents, in-run steering and resume, diff editing/restoration, persistent PTYs, skills/MCP, PR review, and browser preview. Add acceptance tests for filesystem boundaries, permission decisions, cancellation, and restart.
-3. **Remote and automation:** paired-device monitoring/steering, SSH, computer interaction, and scheduled local automations. Keep repositories local by default; local work requires the desktop device online. Hosted execution is not included in the credits-only plan.
-4. **Public beta:** build and smoke-test each supported installer on its native OS; publish via the website download route and object storage with HTTPS/checksums; show unsigned installer warnings and manual update notices; verify first install, upgrade, and recovery. Label the release preview/beta while free Render hosting can sleep.
+1. **Preview foundation:** separate desktop shell; Codeva account and model service; local storage and project selection; agent tool loop, approvals, checkpoints, cancellation, diffs, comments, persistent PTYs, and secure browser window. This is the current implementation phase.
+2. **Local parity workflows:** real Git worktrees, parallel agents, in-run steering and resume, diff editing/restoration, terminal task linkage, skills/MCP, PR review, and embedded browser preview. Add acceptance tests for filesystem boundaries, permission decisions, cancellation, and restart.
+3. **Remote and extended automation:** paired-device monitoring/steering, SSH, computer interaction, missed-run management, and an optional OS background scheduler. Keep repositories local by default; local work requires the desktop device online. Hosted execution is not included in the credits-only plan.
+4. **Public beta:** build and smoke-test each supported installer on its native OS; publish via the website download route and object storage with HTTPS/checksums; show unsigned installer warnings; verify first install, upgrade, update, and recovery. Windows preview builds use the SHA-512-backed generic updater; unsigned macOS/Linux builds remain manual. Label the release preview/beta while free Render hosting can sleep.
 
 ## Verification record
 
 Latest local checks in this workspace:
 
 - Desktop TypeScript typecheck passed.
-- Desktop Vitest suite passed: 5 files / 13 tests.
-- Desktop production Electron/Vite build and unsigned Windows x64 NSIS packaging passed. The sandboxed preload is emitted as CommonJS because Electron executes sandboxed preload scripts as CommonJS; the packaged window now renders and exposes the typed bridge correctly.
+- Desktop Vitest suite passed: 5 files / 16 tests, including recurring schedule claims and thread organization.
+- Latest Electron/Vite build and unsigned Windows x64 NSIS packaging passed with the bundled Homebridge PTY prebuilds and native rebuild disabled. The local installer is `codic/desktop/release/Codic Setup 0.1.0.exe` (126,987,311 bytes), SHA-256 `819e455f6104ae0e30954bd81f877493c150abd560e3e19364a2eebc45a4eadd`; `latest.yml` contains SHA-512 `Jl1muJfwngnrSHGqvY6NhN5e0Gtaiw7y7XI5WqQjdxnlN92zkB9LPaGhlwwAUVZ2mSSnx12+Rci9OBH5luXiQg==` and the matching size. The packaged `app-update.yml` points to the Codeva update feed. The sandboxed preload is emitted as CommonJS because Electron executes sandboxed preload scripts as CommonJS.
 - Windows packaged-app smoke check opened the repository, ran `Get-Location | Select-Object -ExpandProperty Path` from the selected workspace and showed the expected path with exit code 0, and loaded the Git review panel.
-- Desktop terminal regression test checks that a Windows command executes and returns the workspace path rather than echoing the command string.
+- Desktop terminal regression test checks bounded one-shot command execution. The interactive PTY prebuild was manually smoke-checked with PowerShell input/output and clean exit on Windows; native macOS/Linux PTY behavior remains unverified.
 - CyberCoder `@cybermind/codic-runtime` and `@cybermind/core` TypeScript checks passed.
 - CyberCoder Codeva provider tests passed: 3 tests.
-- Backend Codic route tests passed: 8 tests with mocked account, usage, and provider modules.
+- Backend Codic route tests passed: 10 tests with mocked account, usage, and provider modules, including encrypted one-use auth handoff.
+- Frontend auth-flow and Codic Coming Soon tests passed: 7 tests. Frontend production build and Codic desktop Electron/Vite build plus TypeScript check passed.
 - Full desktop dependency audit (`npm audit`) reported zero vulnerabilities after pinning the packaging toolchain’s `minimatch` dependency to patched `11.0.8`; Windows NSIS packaging passed with that override.
-- No live sign-in, provider generation, Windows installer install/upgrade, macOS/Linux build, R2 upload, or public release has been verified. The currently reported Supabase hostname returns `DNS_PROBE_FINISHED_NXDOMAIN`, and no provider credentials were restored.
+- The packaged Windows build opened into a clean first-run workspace and showed the Codeva website handoff flow. The sign-in button is disabled because this smoke build has no `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY`; live Google sign-in and provider generation remain unverified. Windows installer install/upgrade, macOS/Linux builds, R2 upload, and public release have not been verified.
+- The current Codic release flag defaults off. The website shows Coming Soon; the public installer and updater routes return unavailable until a release owner explicitly enables them. The compact menus are build-checked but were not freshly screenshot-verified in this run.
+- 2026-11-13 follow-up: Codic 0.1.4 now has searchable project switching in both composer states, a 336 px viewport-clamped searchable model picker, and persisted Full access wired through renderer → IPC → runtime. PowerShell command execution in the local runtime was corrected. Desktop tests passed (9 files / 29 tests), CyberCoder self-check passed, backend suite passed (129 tests), and Electron/Vite build/typecheck passed.
+- Live checks: Supabase Auth health via the configured public client returned HTTP 200; Codeva production `/health` returned HTTP 200; production `/api/v1/auth/health` returned `ready: true`. Production `/api/v1/codic/models` returned HTTP 404, so Codic's backend routes are not yet deployed. Google callback and user-authenticated model streaming remain unverified.
+- Built a private, auth-gated unsigned Windows x64 0.1.4 installer outside the repository at `D:\codic-auth-release-0.1.4\Codic Setup 0.1.4.exe` (127,009,329 bytes; SHA-256 `6ad33dd0b799b4a4fa9bfcf65e9ff78f42b2817037f0e478803105798f2d72a1`). `latest.yml` SHA-512 and size match. It has not been uploaded or published.
+- 2026-11-13 follow-up: signed-in website callbacks now construct a validated one-use Codic protocol link, display an “Open Codic” retry if the browser blocks automatic app launch, and explain when the deployed backend handoff route is unavailable. Incoming callbacks are sent only to one primary window; the signed-out Codic page has minimize/maximize/restore/close controls, and Windows BrowserWindows use the packaged Codic icon. Full Codic tests passed (10 files / 32 tests), frontend tests passed (20 files / 277 tests), backend tests passed (129 tests), and Electron/Vite build/typecheck passed. Live production checks still return 404 for both Codic model and handoff routes.
+- Built a private, auth-gated unsigned Windows x64 0.1.5 installer outside the repository at `D:\codic-auth-release-0.1.5\Codic Setup 0.1.5.exe` (127,009,819 bytes; SHA-256 `c041674c979673499e8c94b737e238764470dedc03fca767d524ec3bce2156d4`). `latest.yml` SHA-512 and size match; the packaged icon hash matches the generated Codic C-and-signal icon. It has not been uploaded or published.
 
 ## Required private deployment configuration
 
 Use local ignored `.env` files and the deployment secret stores. Never paste keys into chat or source control.
 
 - Desktop build: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`; optional `CODEVA_API_BASE_URL`.
-- Backend: existing Supabase service configuration and model gateway/provider credentials.
+- Backend: existing Supabase service configuration and model gateway/provider credentials. Optionally set `CODEVA_CODIC_HANDOFF_KEY` to a private, canonical base64 encoding of 32 random bytes; otherwise the handoff key is derived from the private Supabase service secret.
 - Production backend: configure these in Render. The frontend website and download page are separate and still need Codic release assets and a public version/checksum manifest.
 
 The previously shared GitHub classic token was exposed in conversation. Revoke it in GitHub before any push; do not use that token. A replacement should be held in protected GitHub secrets or a private local credential store.

@@ -2,10 +2,12 @@ import { test, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import express from 'express'
 import request from 'supertest'
+import { createHash, randomBytes } from 'node:crypto'
 
 const providerCalls = []
 const usageCalls = []
 const deviceRows = new Map()
+const handoffRows = new Map()
 let plan = 'pro'
 let quota = { monthly_token_limit: 500_000, tokens_used_this_month: 0, resets_at: null }
 let providerMode = 'success'
@@ -55,6 +57,29 @@ mock.module('../models/CodicDevice.js', {
       row.revoked_at = new Date()
       return { matchedCount: 1 }
     },
+  },
+})
+mock.module('../models/CodicAuthHandoff.js', {
+  defaultExport: {
+    create: async value => {
+      const row = { ...value, _id: randomBytes(12).toString('hex') }
+      handoffRows.set(row.ticket_hash, row)
+      return row
+    },
+    findOne: filter => ({
+      lean: async () => {
+        const row = handoffRows.get(filter.ticket_hash)
+        return row && row.expires_at > filter.expires_at.$gt ? row : null
+      },
+    }),
+    findOneAndDelete: filter => ({
+      lean: async () => {
+        const row = handoffRows.get(filter.ticket_hash)
+        if (!row || row._id !== filter._id || row.challenge !== filter.challenge || row.expires_at <= filter.expires_at.$gt) return null
+        handoffRows.delete(filter.ticket_hash)
+        return row
+      },
+    }),
   },
 })
 mock.module('../services/llm/gateway.js', {
@@ -107,6 +132,31 @@ const validTurn = {
   messages: [{ role: 'user', content: 'Inspect this project.' }],
   tools: [{ type: 'function', function: { name: 'read_file', parameters: { type: 'object', properties: {} } } }],
 }
+
+test('Codic auth handoff encrypts website sessions and redeems each ticket once with its PKCE verifier', async () => {
+  const previousKey = process.env.CODEVA_CODIC_HANDOFF_KEY
+  process.env.CODEVA_CODIC_HANDOFF_KEY = Buffer.alloc(32, 7).toString('base64')
+  try {
+    const verifier = randomBytes(32).toString('base64url')
+    const challenge = createHash('sha256').update(verifier).digest('base64url')
+    const refreshToken = 'refresh-token-fixture-long-enough'
+    const issued = await authorized(request(app).post('/codic/auth-handoffs').send({ challenge, refreshToken })).expect(201)
+    assert.match(issued.body.ticket, /^[A-Za-z0-9_-]{43}$/)
+    const stored = [...handoffRows.values()].at(-1)
+    assert.ok(stored.encrypted_session)
+    assert.equal(stored.encrypted_session.includes('codic-test'), false)
+    assert.equal(stored.encrypted_session.includes(refreshToken), false)
+    await request(app).post('/codic/auth-handoffs/redeem').send({ ticket: issued.body.ticket, verifier: randomBytes(32).toString('base64url') }).expect(400)
+    const redeemed = await request(app).post('/codic/auth-handoffs/redeem').send({ ticket: issued.body.ticket, verifier }).expect(200)
+    assert.deepEqual(redeemed.body.session, { access_token: 'codic-test', refresh_token: refreshToken })
+    assert.equal(redeemed.headers['cache-control'], 'no-store')
+    await request(app).post('/codic/auth-handoffs/redeem').send({ ticket: issued.body.ticket, verifier }).expect(410)
+    await request(app).post('/codic/auth-handoffs').send({ challenge, refreshToken }).expect(401)
+  } finally {
+    if (previousKey === undefined) delete process.env.CODEVA_CODIC_HANDOFF_KEY
+    else process.env.CODEVA_CODIC_HANDOFF_KEY = previousKey
+  }
+})
 
 test('Codic model catalog is authenticated and marks plan-locked models', async () => {
   await request(app).get('/codic/models').expect(401)
@@ -166,6 +216,13 @@ test('Codic SSE normalizes text and assembled tool calls and labels estimated us
   assert.equal(providerCalls.at(-1).messages[0]._skip_inject, true)
   assert.equal(providerCalls.at(-1).tools[0].function.name, 'read_file')
   assert.equal(usageCalls.at(-1)[1], 'openrouter')
+})
+
+test('Codic forwards a validated reasoning effort to the model gateway', async () => {
+  const response = await authorized(request(app).post('/codic/turns').send({ ...validTurn, effort: 'high' })).expect(200)
+  assert.equal(providerCalls.at(-1).effort, 'high')
+  const invalid = await authorized(request(app).post('/codic/turns').send({ ...validTurn, effort: 'maximum' })).expect(400)
+  assert.match(invalid.body.error, /low.*medium.*high/)
 })
 
 test('Codic forwards provider usage when the gateway supplies exact counts', async () => {

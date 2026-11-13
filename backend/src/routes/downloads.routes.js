@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { Readable } from 'node:stream'
 import { r2FileExists, getR2PublicUrl, isR2Available } from '../services/downloads/r2Service.js'
 import { editorArtifact, editorCatalog } from '../services/downloads/editorRelease.js'
+import { codicWindowsArtifact } from '../services/downloads/codicRelease.js'
 
 const router = Router()
 
@@ -39,6 +40,58 @@ router.get('/editor/:filename', async (req, res, next) => {
     if (artifact.remoteUrl) return res.redirect(302, artifact.remoteUrl)
     res.download(artifact.file, artifact.filename, error => { if (error) next(error) })
   } catch (error) { next(error) }
+})
+
+// Codic public preview release. Only advertise a Windows installer when its
+// immutable SHA-256 is configured and the HTTPS asset can be reached.
+router.get('/codic', async (_req, res, next) => {
+  try {
+    const release = await codicWindowsArtifact()
+    res.setHeader('Cache-Control', 'no-store')
+    res.json({ windows: release ? { ...release, available: true, url: '/api/v1/downloads/codic/windows' } : { platform: 'windows', available: false, signed: false } })
+  } catch (error) { next(error) }
+})
+router.get('/codic/windows', async (_req, res, next) => {
+  try {
+    const release = await codicWindowsArtifact()
+    if (!release) return res.status(404).json({ error: 'The Codic Windows preview installer has not been published.' })
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Checksum-SHA256', release.sha256)
+    return res.redirect(302, release.url)
+  } catch (error) { return next(error) }
+})
+
+// Generic electron-updater metadata. The manifest only advertises an installer
+// when the same HTTPS release has an electron-builder SHA-512 checksum.
+router.get('/codic/updates/latest.yml', async (_req, res, next) => {
+  try {
+    const release = await codicWindowsArtifact()
+    if (!release?.sha512) return res.status(404).type('text/plain').send('Codic update feed is not configured.')
+    const quote = value => `'${String(value).replace(/'/g, "''")}'`
+    const manifest = [
+      `version: ${release.version}`,
+      'files:',
+      `  - url: ${quote(release.filename)}`,
+      `    sha512: ${quote(release.sha512)}`,
+      ...(release.size ? [`    size: ${release.size}`] : []),
+      `path: ${quote(release.filename)}`,
+      `sha512: ${quote(release.sha512)}`,
+      `releaseDate: ${quote(process.env.CODEVA_CODIC_WINDOWS_RELEASE_DATE || new Date().toISOString())}`,
+      '',
+    ].join('\n')
+    res.setHeader('Cache-Control', 'no-store')
+    res.type('text/yaml').send(manifest)
+  } catch (error) { next(error) }
+})
+router.get('/codic/updates/:filename', async (req, res, next) => {
+  try {
+    const release = await codicWindowsArtifact()
+    if (!release?.sha512 || req.params.filename !== release.filename) return res.status(404).json({ error: 'The Codic update artifact was not found.' })
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    return res.redirect(302, release.url)
+  } catch (error) { return next(error) }
 })
 
 /**

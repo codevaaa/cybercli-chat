@@ -58,4 +58,63 @@ it('marks active tasks as interrupted after restart', () => {
     rmSync(directory, { recursive: true, force: true })
   }
 })
+
+it('persists thread organization, archive state, parent links, and local profile totals', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'codic-store-threads-'))
+  const databasePath = path.join(directory, 'codic.sqlite')
+  try {
+    const store = CodicLocalStore.open(databasePath)
+    const project = store.addProject({ id: randomUUID(), path: directory, name: 'Organization project' })
+    const parent = store.createThread({ id: randomUUID(), projectId: project.id, title: 'Initial title' })
+    const task = store.createTask({ id: randomUUID(), threadId: parent.id, model: 'auto', prompt: 'First task' })
+    store.appendTaskEvent({ id: randomUUID(), taskId: task.id, type: 'agent_event', payload: { type: 'agent_event', event: { type: 'usage', inputTokens: 12, outputTokens: 8, estimated: true } } })
+    store.finishTask(task.id, 'completed')
+
+    const renamed = store.renameThread(project.id, parent.id, 'Renamed task')
+    expect(renamed.title).toBe('Renamed task')
+    expect(store.setThreadPinned(project.id, parent.id, true).pinned).toBe(true)
+    const child = store.createThread({ id: randomUUID(), projectId: project.id, title: 'Fork: Renamed task', parentThreadId: parent.id })
+    expect(child.parentThreadId).toBe(parent.id)
+    expect(store.setThreadArchived(project.id, parent.id, true).archived).toBe(true)
+    expect(store.listThreads(project.id).map((thread) => thread.id)).toEqual([child.id])
+    expect(store.listThreads(project.id, true).map((thread) => thread.id)).toContain(parent.id)
+
+    expect(store.getProfileStats()).toMatchObject({ taskCount: 1, completedRuns: 1, totalTokens: 20, tokensEstimated: true })
+    store.close()
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+it('persists schedules and claims each due occurrence once', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'codic-store-schedules-'))
+  const databasePath = path.join(directory, 'codic.sqlite')
+  try {
+    const store = CodicLocalStore.open(databasePath)
+    const project = store.addProject({ id: randomUUID(), path: directory, name: 'Scheduled project' })
+    const source = store.createThread({ id: randomUUID(), projectId: project.id, title: 'Source task' })
+    const due = new Date(Date.now() - 60_000)
+    const schedule = store.createScheduledTask({
+      id: randomUUID(), projectId: project.id, sourceThreadId: source.id, title: 'Daily review',
+      prompt: 'Review changed files', model: 'auto', reasoningEffort: 'medium', recurrence: 'daily', nextRunAt: due.toISOString(),
+    })
+    expect(store.listScheduledTasks(project.id)).toMatchObject([{ id: schedule.id, enabled: true, recurrence: 'daily' }])
+    const claimed = store.claimScheduledTask(project.id, schedule.id, new Date())
+    expect(claimed?.lastRunAt).toBeTruthy()
+    expect(claimed && Date.parse(claimed.nextRunAt)).toBeGreaterThan(Date.now())
+    expect(store.claimScheduledTask(project.id, schedule.id, new Date())).toBeNull()
+    expect(store.listDueScheduledTasks()).toEqual([])
+
+    const once = store.createScheduledTask({
+      id: randomUUID(), projectId: project.id, sourceThreadId: null, title: 'One time',
+      prompt: 'Summarize the project', model: 'auto', reasoningEffort: 'low', recurrence: 'once', nextRunAt: due.toISOString(),
+    })
+    expect(store.claimScheduledTask(project.id, once.id, new Date())?.enabled).toBe(false)
+    expect(store.claimScheduledTask(project.id, once.id, new Date())).toBeNull()
+    expect(() => store.setScheduledTaskEnabled(project.id, once.id, true)).toThrow(/already run/i)
+    store.close()
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
 })
