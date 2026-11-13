@@ -79,6 +79,9 @@ const modelAliases = {
 }
 
 const turnSchema = z.object({
+  // Existing Codic 0.1.x clients send this hint. This endpoint always streams
+  // SSE, so accept it for compatibility while keeping strict validation.
+  stream: z.boolean().optional(),
   model: z.string().trim().min(1).max(160).optional().default('auto'),
   effort: z.enum(['low', 'medium', 'high']).optional().default('low'),
   messages: z.array(messageSchema).min(1).max(64),
