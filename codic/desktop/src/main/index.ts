@@ -284,6 +284,11 @@ const assertSignedInSender = (event: Electron.IpcMainInvokeEvent | Electron.IpcM
   requireAccessToken()
 }
 
+const isTaskWindowOwner = (event: Electron.IpcMainInvokeEvent, taskId: string) => {
+  const owner = taskWindowOwners.get(taskId)
+  return Boolean(owner && !owner.isDestroyed() && owner.webContents === event.sender)
+}
+
 const requestJson = async <T>(pathName: string, method: 'GET' | 'POST' | 'DELETE', body?: unknown): Promise<T> => {
   const token = requireAccessToken()
   const response = await fetch(`${apiBase}/${pathName}`, {
@@ -968,6 +973,10 @@ if (!protocolLock) {
       }
       const reasoningEffort = value.reasoningEffort === 'medium' || value.reasoningEffort === 'high' ? value.reasoningEffort : 'low'
       const approvalPolicy = value.approvalPolicy === 'full-access' ? 'full-access' : value.approvalPolicy === 'safe-reads' ? 'safe-reads' : 'ask'
+      const subagentsEnabled = value.subagentsEnabled !== false
+      const maxParallelSubagents = Number.isInteger(value.maxParallelSubagents)
+        ? Math.max(1, Math.min(3, Number(value.maxParallelSubagents)))
+        : 3
       let messages: Array<{ role: 'user' | 'assistant'; content: string }> | undefined
       if (value.messages !== undefined) {
         if (!Array.isArray(value.messages) || value.messages.length > 80) throw new Error('This conversation is too long to send in one task.')
@@ -1017,6 +1026,8 @@ if (!protocolLock) {
         model: value.model,
           reasoningEffort,
           approvalPolicy,
+        subagentsEnabled,
+        maxParallelSubagents,
         conversationId: threadId,
         ...(messages ? { messages } : {}),
         taskId,
@@ -1030,13 +1041,24 @@ if (!protocolLock) {
     })
     ipcMain.handle('codic:cancel-task', (event, taskId: unknown) => {
       assertSignedInSender(event)
-      if (typeof taskId === 'string') runtimeBridge?.cancelTask(taskId)
+      if (typeof taskId !== 'string' || !isTaskWindowOwner(event, taskId)) return false
+      runtimeBridge?.cancelTask(taskId)
+      return true
+    })
+    ipcMain.handle('codic:cancel-subagent', (event, request: unknown) => {
+      assertSignedInSender(event)
+      if (!request || typeof request !== 'object') return false
+      const value = request as Record<string, unknown>
+      if (typeof value.taskId !== 'string' || typeof value.agentId !== 'string') return false
+      if (!isTaskWindowOwner(event, value.taskId)) return false
+      return runtimeBridge?.cancelSubagent(value.taskId, value.agentId) ?? false
     })
     ipcMain.handle('codic:resolve-approval', (event, request: unknown) => {
       assertSignedInSender(event)
       if (!request || typeof request !== 'object') return false
       const value = request as Record<string, unknown>
       if (typeof value.taskId !== 'string' || typeof value.approvalId !== 'string' || (value.decision !== 'allow' && value.decision !== 'deny')) return false
+      if (!isTaskWindowOwner(event, value.taskId)) return false
       return runtimeBridge?.resolveApproval({ taskId: value.taskId, approvalId: value.approvalId, decision: value.decision }) ?? false
     })
     ipcMain.handle('codic:workspace-diff', async (event, workspacePath: unknown) => {

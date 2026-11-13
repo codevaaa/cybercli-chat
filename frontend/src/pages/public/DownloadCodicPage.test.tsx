@@ -24,6 +24,8 @@ it('shows a detailed Codic preview without offering a public installer', async (
   expect(host.textContent).toContain('Coming soon')
   expect(host.textContent).toContain('A coding workspace built around your project.')
   expect(host.textContent).toContain('Coordinate sub-agents')
+  expect(host.textContent).toContain('parallel read-only helpers')
+  expect(host.textContent).toContain('Isolated write-capable agents')
   expect(host.textContent).toContain('Your project stays on your machine.')
   expect(host.textContent).toContain('No installer is available yet.')
   expect([...host.querySelectorAll('a')].some(link => /downloads\/codic\/windows|\.exe/i.test(link.href))).toBe(false)

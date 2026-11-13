@@ -11,9 +11,9 @@ import { getWorkspaceRestoreIntent } from './workspaceRestore'
 
 type View = 'assistant' | 'review' | 'activity'
 type NavigableView = View | 'terminal'
-type SettingsSection = 'general' | 'profile' | 'appearance' | 'models' | 'permissions' | 'shortcuts' | 'updates' | 'troubleshooting' | 'about'
+type SettingsSection = 'general' | 'profile' | 'appearance' | 'models' | 'agents' | 'permissions' | 'shortcuts' | 'updates' | 'troubleshooting' | 'about'
 type Message = { id: string; role: 'user' | 'assistant'; content: string; runId?: string }
-type Activity = { id: string; title: string; detail: string; status: 'done' | 'running' | 'waiting' | 'error' }
+type Activity = { id: string; title: string; detail: string; status: 'done' | 'running' | 'waiting' | 'error' | 'cancelled'; kind?: 'subagent'; model?: string; toolCalls?: number; inputTokens?: number; outputTokens?: number }
 type ApprovalRequest = Extract<CodicRuntimeEvent, { type: 'approval_required' }> & { taskId: string }
 type NavigationEntry = { threadId: string | null; conversationId: string; view: View; temporary?: boolean; messages?: Message[] }
 type ShortcutActions = {
@@ -64,6 +64,7 @@ const settingsSections: Array<{ id: SettingsSection; label: string; icon: string
   { id: 'profile', label: 'Profile and account', icon: 'user' },
   { id: 'appearance', label: 'Appearance', icon: 'sun' },
   { id: 'models', label: 'Models', icon: 'spark' },
+  { id: 'agents', label: 'Agent teams', icon: 'branch' },
   { id: 'permissions', label: 'Permissions', icon: 'lock' },
   { id: 'shortcuts', label: 'Keyboard shortcuts', icon: 'keyboard' },
   { id: 'updates', label: 'Updates', icon: 'refresh' },
@@ -215,6 +216,8 @@ export default function App() {
   const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system')
   const [reasoningEffort, setReasoningEffort] = useState<'low' | 'medium' | 'high'>('medium')
   const [approvalPolicy, setApprovalPolicy] = useState<'ask' | 'safe-reads' | 'full-access'>('ask')
+  const [subagentsEnabled, setSubagentsEnabled] = useState(true)
+  const [maxParallelSubagents, setMaxParallelSubagents] = useState(3)
   const [appZoom, setAppZoom] = useState(() => getInitialAppZoom(window.localStorage.getItem('codic-zoom')))
   const [approvalMenuOpen, setApprovalMenuOpen] = useState(false)
   const [approvalMenuPosition, setApprovalMenuPosition] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null)
@@ -579,6 +582,10 @@ export default function App() {
     if (storedEffort === 'low' || storedEffort === 'medium' || storedEffort === 'high') setReasoningEffort(storedEffort)
     const storedApproval = window.localStorage.getItem('codic-approval-policy')
     if (storedApproval === 'ask' || storedApproval === 'safe-reads' || storedApproval === 'full-access') setApprovalPolicy(storedApproval)
+    const storedSubagents = window.localStorage.getItem('codic-subagents-enabled')
+    if (storedSubagents === '0') setSubagentsEnabled(false)
+    const storedParallel = Number(window.localStorage.getItem('codic-subagents-max-parallel'))
+    if (Number.isInteger(storedParallel) && storedParallel >= 1 && storedParallel <= 3) setMaxParallelSubagents(storedParallel)
     const onEvent = window.codic.runtime.onEvent((event, taskId) => handleAgentEvent(event, taskId))
     const onAuthCallback = window.codic.auth.onCallback((url) => { void finishOAuth(url) })
     const onSignedOut = window.codic.auth.onSignedOut(() => {
@@ -1310,9 +1317,11 @@ export default function App() {
     if (event.type === 'subagent_progress') {
       const skillLabel = event.skill === 'code-review' ? 'Code review' : event.skill === 'research' ? 'Research' : 'Planning'
       const detail = event.status === 'running'
-        ? 'Reading the selected project in parallel.'
+        ? `Reading the selected project with ${event.model}.`
         : event.status === 'error'
           ? event.error || 'The specialist could not finish.'
+          : event.status === 'cancelled'
+            ? 'Stopped by you.'
           : (event.summary || 'Analysis complete.').slice(0, 1_200)
       setActivities((current) => {
         const existing = current.some((activity) => activity.id === event.agentId)
@@ -1321,6 +1330,11 @@ export default function App() {
           title: `${event.label} · ${skillLabel}`,
           detail,
           status: event.status === 'running' ? 'running' : event.status,
+          kind: 'subagent',
+          model: event.model,
+          ...(event.toolCalls !== undefined ? { toolCalls: event.toolCalls } : {}),
+          ...(event.inputTokens !== undefined ? { inputTokens: event.inputTokens } : {}),
+          ...(event.outputTokens !== undefined ? { outputTokens: event.outputTokens } : {}),
         }
         return existing
           ? current.map((activity) => activity.id === event.agentId ? next : activity)
@@ -1358,13 +1372,14 @@ export default function App() {
       } else if (coreEvent.type === 'context') {
         setActivities((current) => [...current, { id: crypto.randomUUID(), title: 'Context organized', detail: coreEvent.note, status: 'done' }])
       } else if (coreEvent.type === 'subagent_progress') {
-        const status = coreEvent.status === 'completed' ? 'done' : coreEvent.status === 'failed' ? 'error' : 'running'
+        const status = coreEvent.status === 'completed' ? 'done' : coreEvent.status === 'failed' ? 'error' : coreEvent.status === 'cancelled' ? 'cancelled' : 'running'
         setActivities((current) => {
           const next: Activity = {
             id: coreEvent.agentId,
             title: `Helper agent · ${coreEvent.skill}`,
             detail: coreEvent.message || `Agent ${coreEvent.status}.`,
             status,
+            kind: 'subagent',
           }
           return current.some((activity) => activity.id === coreEvent.agentId)
             ? current.map((activity) => activity.id === coreEvent.agentId ? next : activity)
@@ -1449,6 +1464,8 @@ export default function App() {
         model: modelId,
         reasoningEffort,
         approvalPolicy,
+        subagentsEnabled,
+        maxParallelSubagents,
         temporary: isTemporaryChat,
         conversationId,
         messages: nextMessages.map(({ role, content }) => ({ role, content })),
@@ -1675,6 +1692,27 @@ export default function App() {
   const setPreferredApprovalPolicy = (next: 'ask' | 'safe-reads' | 'full-access') => {
     setApprovalPolicy(next)
     window.localStorage.setItem('codic-approval-policy', next)
+  }
+
+  const setSubagentDelegation = (enabled: boolean) => {
+    setSubagentsEnabled(enabled)
+    window.localStorage.setItem('codic-subagents-enabled', enabled ? '1' : '0')
+  }
+
+  const setSubagentLimit = (limit: number) => {
+    const next = Math.max(1, Math.min(3, Math.round(limit)))
+    setMaxParallelSubagents(next)
+    window.localStorage.setItem('codic-subagents-max-parallel', String(next))
+  }
+
+  const cancelSubagent = async (agentId: string) => {
+    if (!activeTaskId) return
+    try {
+      const cancelled = await window.codic.runtime.cancelSubagent(activeTaskId, agentId)
+      if (!cancelled) setError('That helper agent has already finished.')
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not stop the helper agent.')
+    }
   }
 
   const openThreadMenuAt = (threadId: string, left: number, top: number) => {
@@ -2095,7 +2133,19 @@ export default function App() {
                 </div>
                 <div className="panel-content">
                   {view === 'review' && <DiffReviewPanel workspace={workspace} taskId={lastTaskId} taskRunning={isStreaming} refreshToken={checkpointRevision} />}
-                  {view === 'activity' && <div className="activity-list">{activities.length ? activities.map((activity) => <div key={activity.id} className={`activity-item activity-${activity.status}`}><span className="activity-icon">{activity.status === 'done' ? <Icon name="check" size={14} /> : activity.status === 'error' ? <Icon name="warning" size={14} /> : activity.status === 'waiting' ? <Icon name="lock" size={14} /> : <span className="activity-spinner" />}</span><div><strong>{activity.title}</strong><p>{activity.detail}</p></div></div>) : <div className="panel-empty"><div className="panel-empty-icon"><Icon name="activity" size={19} /></div><strong>No task activity yet</strong><p>Start a task to see progress and reviewable actions.</p></div>}</div>}
+                  {view === 'activity' && <div className="activity-list">{activities.length ? activities.map((activity) => <div key={activity.id} className={`activity-item activity-${activity.status}`}>
+                    <span className="activity-icon">{activity.status === 'done' ? <Icon name="check" size={14} /> : activity.status === 'error' ? <Icon name="warning" size={14} /> : activity.status === 'cancelled' ? <Icon name="pause" size={14} /> : activity.status === 'waiting' ? <Icon name="lock" size={14} /> : <span className="activity-spinner" />}</span>
+                    <div className="activity-content">
+                      <div className="activity-title-line"><strong>{activity.title}</strong>{activity.kind === 'subagent' && <span className="activity-agent-badge">Helper</span>}</div>
+                      <p>{activity.detail}</p>
+                      {activity.kind === 'subagent' && <div className="activity-agent-meta">
+                        {activity.model && <span title="Model">{models.find((model) => model.id === activity.model)?.name || activity.model}</span>}
+                        {activity.toolCalls !== undefined && <span>{activity.toolCalls} {activity.toolCalls === 1 ? 'tool call' : 'tool calls'}</span>}
+                        {(activity.inputTokens !== undefined || activity.outputTokens !== undefined) && <span>{(activity.inputTokens || 0).toLocaleString()} in · {(activity.outputTokens || 0).toLocaleString()} out</span>}
+                      </div>}
+                      {activity.kind === 'subagent' && activity.status === 'running' && <button className="activity-stop-agent" type="button" onClick={() => void cancelSubagent(activity.id)} disabled={!activeTaskId}><Icon name="pause" size={12} />Stop helper</button>}
+                    </div>
+                  </div>) : <div className="panel-empty"><div className="panel-empty-icon"><Icon name="activity" size={19} /></div><strong>No task activity yet</strong><p>Start a task to see progress and reviewable actions.</p></div>}</div>}
                 </div>
                 <div className="panel-bottom"><div className="panel-bottom-row"><span className="panel-bottom-label">WORKSPACE</span><span className="panel-bottom-value"><span className="tiny-dot" />Local</span></div><div className="panel-bottom-row"><span className="panel-bottom-label">ACCOUNT</span><span className="panel-bottom-value">{hasSession ? accountPlan : isLocalPreview ? 'Local preview' : 'Not connected'}</span></div>{limits && <><div className="panel-bottom-row"><span className="panel-bottom-label">REQUESTS / HOUR</span><span className="panel-bottom-value">{limits.requestsPerHour.toLocaleString()}</span></div><div className="panel-bottom-row"><span className="panel-bottom-label">MONTHLY TOKENS</span><span className="panel-bottom-value">{limits.monthlyTokens.remaining === null ? 'Unlimited' : `${Math.max(0, limits.monthlyTokens.remaining).toLocaleString()} left`}</span></div></>}</div>
               </aside>}
@@ -2272,6 +2322,20 @@ export default function App() {
                 <div className="settings-card"><div><strong>Default model</strong><p>Choose a Codeva model for the next coding task.</p></div><ModelPicker className="settings-model-picker" label="Default model" models={models} value={modelId} onChange={setPreferredModel} disabled={!hasSession} /></div>
                 {!hasSession && <p className="settings-inline-note">Connect your Codeva account to load available models.</p>}
                 <div className="settings-card settings-card-stack"><div><strong>Reasoning effort</strong><p>Higher effort gives the model a larger response budget. It does not expose private chain-of-thought.</p></div><div className="effort-selector" role="group" aria-label="Reasoning effort">{(['low', 'medium', 'high'] as const).map((effort, index) => <button key={effort} className={reasoningEffort === effort ? 'active' : ''} onClick={() => setPreferredEffort(effort)}><span className="effort-bars" aria-hidden="true">{[1, 2, 3].map((bar) => <i key={bar} className={bar <= index + 1 ? 'lit' : ''} />)}</span><strong>{effort[0].toUpperCase() + effort.slice(1)}</strong></button>)}</div><div className={`reasoning-pulse reasoning-${reasoningEffort}`} aria-label={`${reasoningEffort} reasoning effort`}><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div><p className="settings-inline-note">{reasoningEffort === 'low' ? 'A focused response budget for quick questions and small edits.' : reasoningEffort === 'medium' ? 'A balanced response budget for everyday coding tasks.' : 'A larger response budget for complex, multi-step work.'}</p></div>
+              </div>}
+              {settingsSection === 'agents' && <div className="settings-page">
+                <div className="settings-card agent-team-toggle-card">
+                  <div><strong>Helper agent delegation</strong><p>Let Codic ask focused research, planning, and code-review helpers to inspect this project in parallel.</p></div>
+                  <button className={`preference-switch${subagentsEnabled ? ' active' : ''}`} type="button" role="switch" aria-checked={subagentsEnabled} aria-label="Enable helper agent delegation" onClick={() => setSubagentDelegation(!subagentsEnabled)}><span /></button>
+                </div>
+                <div className="settings-card settings-card-stack">
+                  <div><strong>Maximum parallel helpers</strong><p>Each helper uses your selected model and reasoning effort. Requests count toward your Codeva plan usage.</p></div>
+                  <div className="agent-capacity-options" role="group" aria-label="Maximum parallel helpers">
+                    {[1, 2, 3].map((limit) => <button key={limit} type="button" className={maxParallelSubagents === limit ? 'selected' : ''} aria-pressed={maxParallelSubagents === limit} disabled={!subagentsEnabled} onClick={() => setSubagentLimit(limit)}><strong>{limit}</strong><span>{limit === 1 ? 'Helper' : 'Helpers'}</span></button>)}
+                  </div>
+                  <p className="settings-inline-note">Helpers can read and search files inside the selected project. They cannot write files, run commands, access the network, or push changes. Writable parallel work depends on isolated Git worktrees and is still in development.</p>
+                </div>
+                <div className="settings-security-note"><Icon name="lock" size={15} /><span>Codic coordinates helpers locally. Their prompts and required project context use the normal authenticated Codeva model gateway; the server does not execute tools or receive a repository upload.</span></div>
               </div>}
               {settingsSection === 'permissions' && <div className="settings-page">
                 <div className="settings-card settings-card-stack"><div><strong>Action approvals</strong><p>Choose how Codic handles shell commands, network actions, and file access outside the selected project.</p></div>

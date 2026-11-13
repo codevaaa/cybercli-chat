@@ -9,6 +9,8 @@ export interface StartTaskRequest {
   model: string
   reasoningEffort?: 'low' | 'medium' | 'high'
   approvalPolicy?: 'ask' | 'safe-reads' | 'full-access'
+  subagentsEnabled?: boolean
+  maxParallelSubagents?: number
   conversationId?: string
   messages?: Array<{ role: 'user' | 'assistant'; content: string }>
   taskId?: string
@@ -63,6 +65,8 @@ export class CodicRuntimeBridge {
       model: request.model || 'auto',
       reasoningEffort: request.reasoningEffort ?? 'medium',
       approvalPolicy: request.approvalPolicy ?? 'ask',
+      subagentsEnabled: request.subagentsEnabled !== false,
+      maxParallelSubagents: request.maxParallelSubagents,
       checkpointSessionId: taskId,
       onEvent: (event: CodicRuntimeEvent) => {
         if (event.type === 'run_started') record.runId = event.runId
@@ -85,6 +89,11 @@ export class CodicRuntimeBridge {
 
   cancelTask(taskId: string): void {
     this.tasks.get(taskId)?.runtime.cancel()
+  }
+
+  cancelSubagent(taskId: string, agentId: string): boolean {
+    if (!/^[0-9a-f-]{36}-subagent-\d+-[0-9a-f]{8}$/i.test(agentId)) return false
+    return this.tasks.get(taskId)?.runtime.cancelSubagent(agentId) ?? false
   }
 
   resolveApproval(request: ResolveApprovalRequest): boolean {

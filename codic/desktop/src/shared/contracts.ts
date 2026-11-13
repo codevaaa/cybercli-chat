@@ -91,13 +91,13 @@ export type RuntimeCoreEvent =
   | { type: 'usage'; inputTokens: number; outputTokens: number; estimated?: boolean }
   | { type: 'iteration'; index: number; max: number }
   | { type: 'context'; note: string; tokens: number }
-  | { type: 'subagent_progress'; agentId: string; skill: string; status: 'started' | 'working' | 'completed' | 'failed'; message?: string }
+  | { type: 'subagent_progress'; agentId: string; skill: string; status: 'started' | 'working' | 'completed' | 'failed' | 'cancelled'; message?: string }
   | { type: 'done'; reason: 'end_turn' | 'max_iterations' | 'error'; error?: string }
 
 export type CodicRuntimeEvent =
   | { type: 'run_started'; runId: string }
   | { type: 'agent_event'; runId: string; event: RuntimeCoreEvent }
-  | { type: 'subagent_progress'; runId: string; agentId: string; label: string; skill: 'research' | 'plan' | 'code-review'; status: 'running' | 'done' | 'error'; summary?: string; durationMs?: number; error?: string }
+  | { type: 'subagent_progress'; runId: string; agentId: string; label: string; skill: 'research' | 'plan' | 'code-review'; status: 'running' | 'done' | 'error' | 'cancelled'; model: string; summary?: string; durationMs?: number; toolCalls?: number; inputTokens?: number; outputTokens?: number; error?: string }
   | { type: 'approval_required'; runId: string; approvalId: string; toolName: string; input: Record<string, unknown>; summary: string; unsandboxed: boolean }
   | { type: 'tool_blocked'; runId: string; toolName: string; reason: string }
   | { type: 'checkpoint_created'; runId: string; checkpoint: CodicCheckpointSummary }
@@ -219,11 +219,14 @@ export interface CodicBridge {
       model: string
       reasoningEffort: 'low' | 'medium' | 'high'
       approvalPolicy: 'ask' | 'safe-reads' | 'full-access'
+      subagentsEnabled: boolean
+      maxParallelSubagents: number
       temporary?: boolean
       conversationId?: string
       messages?: Array<{ role: 'user' | 'assistant'; content: string }>
     }): Promise<{ taskId: string }>
     cancelTask(taskId: string): void
+    cancelSubagent(taskId: string, agentId: string): Promise<boolean>
     resolveApproval(request: { taskId: string; approvalId: string; decision: 'allow' | 'deny' }): Promise<boolean>
     getCheckpoints(taskId: string): Promise<CodicCheckpointSummary[]>
     restoreCheckpoint(request: { taskId: string; seq: number }): Promise<{ restored: number; deleted: number }>

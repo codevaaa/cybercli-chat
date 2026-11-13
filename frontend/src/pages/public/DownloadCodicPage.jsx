@@ -6,7 +6,7 @@ const features = [
   { icon: FileCode2, title: 'Work in your project', status: 'In preview', copy: 'Open a local folder, ask questions about its files, and review project-scoped edits.' },
   { icon: ShieldCheck, title: 'Review before changes land', status: 'In preview', copy: 'See proposed workspace changes and approve actions before the local agent runs them.' },
   { icon: Terminal, title: 'Run project commands', status: 'In preview', copy: 'Run commands in the selected project folder with an isolated environment and visible output.' },
-  { icon: Layers3, title: 'Coordinate sub-agents', status: 'In development', copy: 'Plan parallel workers, isolate them in Git worktrees, and review each result before integration.' },
+  { icon: Layers3, title: 'Coordinate sub-agents', status: 'Preview', copy: 'Delegate bounded research, planning, and code review to parallel read-only helpers that inherit your selected model.' },
   { icon: GitBranch, title: 'Worktree isolation', status: 'In development', copy: 'Give parallel coding tasks their own branches and directories, with clear ownership of every change.' },
   { icon: Globe2, title: 'Browse alongside code', status: 'In preview', copy: 'Open a secure browser window while you research a project. Deeper browser-agent workflows are in development.' },
 ]
@@ -103,7 +103,7 @@ export default function DownloadCodicPage() {
         </section>
 
         <section className="rounded-2xl border border-[#d99575]/20 bg-gradient-to-br from-[#d99575]/[0.11] to-[#20211e] p-6 sm:p-9">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="mb-2 text-[10px] font-semibold uppercase tracking-[.2em] text-[#e2a184]">Codic · Coming soon</p><h2 className="font-serif text-3xl font-normal tracking-[-.03em]">A local-first workspace for your next build.</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-[#aaa99f]">We’re finishing first-run sign-in, workspace controls, terminal workflows, and isolated agent tasks before opening Codic to users.</p></div><Link to="/downloads" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/[0.12] px-4 text-sm text-[#f0eee8] hover:bg-white/[0.05]">See available apps <ArrowRight size={15} /></Link></div>
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="mb-2 text-[10px] font-semibold uppercase tracking-[.2em] text-[#e2a184]">Codic · Coming soon</p><h2 className="font-serif text-3xl font-normal tracking-[-.03em]">A local-first workspace for your next build.</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-[#aaa99f]">The preview includes bounded, read-only research, planning, and review helpers. Isolated write-capable agents and the remaining release workflows are still in development.</p></div><Link to="/downloads" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/[0.12] px-4 text-sm text-[#f0eee8] hover:bg-white/[0.05]">See available apps <ArrowRight size={15} /></Link></div>
         </section>
       </div>
     </main>

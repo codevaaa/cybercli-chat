@@ -103,6 +103,7 @@ const bridge: CodicBridge = {
   runtime: {
     startTask: (request) => ipcRenderer.invoke('codic:start-task', request) as Promise<{ taskId: string }>,
     cancelTask: (taskId) => { void ipcRenderer.invoke('codic:cancel-task', taskId) },
+    cancelSubagent: (taskId, agentId) => ipcRenderer.invoke('codic:cancel-subagent', { taskId, agentId }) as Promise<boolean>,
     resolveApproval: (request) => ipcRenderer.invoke('codic:resolve-approval', request) as Promise<boolean>,
     getCheckpoints: (taskId) => ipcRenderer.invoke('codic:get-checkpoints', taskId) as Promise<CodicCheckpointSummary[]>,
     restoreCheckpoint: (request) => ipcRenderer.invoke('codic:restore-checkpoint', request) as Promise<{ restored: number; deleted: number }>,
