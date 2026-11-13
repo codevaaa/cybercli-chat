@@ -36,6 +36,10 @@ let browserWindow: BrowserWindow | null = null
 let performanceTraceRunning = false
 let localPreviewAccessGranted = false
 const ephemeralTaskIds = new Set<string>()
+const UPDATE_RETRY_DELAYS_MS = [30_000, 60_000, 120_000]
+let updateRetryAttempt = 0
+let updateRetryTimer: NodeJS.Timeout | null = null
+let updateRetryScheduledIn: number | null = null
 
 let codicUpdateState: CodicUpdateCheck = {
   currentVersion: app.getVersion(), latestVersion: null, available: false, downloadPath: '/downloads/codic',
@@ -48,6 +52,63 @@ const emitUpdateState = (update: Partial<CodicUpdateCheck>) => {
     if (!window.isDestroyed()) window.webContents.send('codic:update-state', codicUpdateState)
   }
   return codicUpdateState
+}
+
+const clearUpdateRetry = (resetAttempts = false) => {
+  if (updateRetryTimer) clearTimeout(updateRetryTimer)
+  updateRetryTimer = null
+  updateRetryScheduledIn = null
+  if (resetAttempts) updateRetryAttempt = 0
+}
+
+const isUnpublishedUpdateError = (error: unknown) => {
+  if (!error || typeof error !== 'object') return false
+  const candidate = error as { statusCode?: unknown; code?: unknown; message?: unknown }
+  if (candidate.statusCode === 404) return true
+  return /(?:HTTP\s*(?:error\s*)?|status(?:\s+code)?\s*[:=]?\s*)404\b/i.test(String(candidate.message || candidate.code || ''))
+}
+
+const isTransientUpdateError = (error: unknown) => {
+  if (!error || typeof error !== 'object') return false
+  const candidate = error as { statusCode?: unknown; code?: unknown; message?: unknown }
+  if ([408, 425, 429, 500, 502, 503, 504].includes(Number(candidate.statusCode))) return true
+  const details = `${String(candidate.code || '')} ${String(candidate.message || '')}`
+  return /(?:ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ERR_NETWORK|ERR_INTERNET_DISCONNECTED|ERR_CONNECTION_TIMED_OUT|socket hang up|fetch failed|timed?\s*out|temporarily unavailable)/i.test(details)
+}
+
+const scheduleUpdateRetry = (error: unknown) => {
+  if (!isTransientUpdateError(error)) return null
+  if (updateRetryTimer) return updateRetryScheduledIn
+  const delay = UPDATE_RETRY_DELAYS_MS[updateRetryAttempt]
+  if (delay === undefined) return null
+  updateRetryAttempt += 1
+  updateRetryScheduledIn = delay
+  updateRetryTimer = setTimeout(() => {
+    updateRetryTimer = null
+    updateRetryScheduledIn = null
+    void checkForCodicUpdates(true)
+  }, delay)
+  updateRetryTimer.unref()
+  return delay
+}
+
+const handleUpdateError = (error: unknown) => {
+  if (isUnpublishedUpdateError(error)) {
+    clearUpdateRetry(true)
+    return emitUpdateState({
+      phase: 'not-available', available: false, latestVersion: app.getVersion(), percent: null,
+      transferredBytes: null, totalBytes: null, bytesPerSecond: null,
+      message: 'No update has been published for this Codic build yet.',
+    })
+  }
+  const message = String(error instanceof Error ? error.message : 'The release service is unavailable.').slice(0, 180)
+  const retryIn = scheduleUpdateRetry(error)
+  return emitUpdateState({
+    phase: 'error', available: false, percent: null, transferredBytes: null, totalBytes: null, bytesPerSecond: null,
+    message: retryIn
+      ? `Update check failed. Codic will retry in ${Math.round(retryIn / 1000)} seconds. (${message})`
+      : `Could not check for updates: ${message}${isTransientUpdateError(error) ? ' Retry from Settings when you are ready.' : ''}`,
+  })
 }
 
 const configureAutoUpdater = () => {
@@ -63,14 +124,20 @@ const configureAutoUpdater = () => {
     phase: 'checking', available: false, latestVersion: null, percent: null, transferredBytes: null, totalBytes: null,
     bytesPerSecond: null, message: 'Checking the Codeva release service…',
   }))
-  autoUpdater.on('update-available', (info) => emitUpdateState({
-    phase: 'available', available: true, latestVersion: info.version, percent: 0, transferredBytes: 0, totalBytes: null,
-    bytesPerSecond: 0, message: `Codic ${info.version} is available. Downloading in the background…`,
-  }))
-  autoUpdater.on('update-not-available', (info) => emitUpdateState({
-    phase: 'not-available', available: false, latestVersion: info.version, percent: null, transferredBytes: null, totalBytes: null,
-    bytesPerSecond: null, message: `Codic ${app.getVersion()} is up to date.`,
-  }))
+  autoUpdater.on('update-available', (info) => {
+    clearUpdateRetry(true)
+    emitUpdateState({
+      phase: 'available', available: true, latestVersion: info.version, percent: 0, transferredBytes: 0, totalBytes: null,
+      bytesPerSecond: 0, message: `Codic ${info.version} is available. Downloading in the background…`,
+    })
+  })
+  autoUpdater.on('update-not-available', (info) => {
+    clearUpdateRetry(true)
+    emitUpdateState({
+      phase: 'not-available', available: false, latestVersion: info.version, percent: null, transferredBytes: null, totalBytes: null,
+      bytesPerSecond: null, message: `Codic ${app.getVersion()} is up to date.`,
+    })
+  })
   autoUpdater.on('download-progress', (progress) => emitUpdateState({
     phase: 'downloading', available: true, percent: Math.max(0, Math.min(100, progress.percent)),
     transferredBytes: progress.transferred, totalBytes: progress.total, bytesPerSecond: progress.bytesPerSecond,
@@ -81,13 +148,11 @@ const configureAutoUpdater = () => {
     transferredBytes: codicUpdateState.totalBytes, bytesPerSecond: 0,
     message: `Codic ${info.version} is downloaded and ready to install.`,
   }))
-  autoUpdater.on('error', (error) => emitUpdateState({
-    phase: 'error', available: false, percent: null, transferredBytes: null, totalBytes: null, bytesPerSecond: null,
-    message: `Update failed: ${String(error.message || 'The release service could not complete the update.').slice(0, 220)}`,
-  }))
+  autoUpdater.on('error', handleUpdateError)
 }
 
-const checkForCodicUpdates = async () => {
+const checkForCodicUpdates = async (isRetry = false) => {
+  if (!isRetry) clearUpdateRetry(true)
   if (process.platform !== 'win32') return emitUpdateState({
     phase: 'unsupported', available: false, latestVersion: null, percent: null, transferredBytes: null, totalBytes: null,
     bytesPerSecond: null, message: 'Automatic updates are available for Windows preview builds. Download the latest installer for this platform.',
@@ -103,10 +168,7 @@ const checkForCodicUpdates = async () => {
     }
     return codicUpdateState
   } catch (error) {
-    return emitUpdateState({
-      phase: 'error', available: false, percent: null, transferredBytes: null, totalBytes: null, bytesPerSecond: null,
-      message: `Could not check for updates: ${String(error instanceof Error ? error.message : 'The release service is unavailable.').slice(0, 220)}`,
-    })
+    return handleUpdateError(error)
   }
 }
 
@@ -1209,6 +1271,7 @@ if (!protocolLock) {
   })
 
   app.on('before-quit', () => {
+    clearUpdateRetry()
     if (schedulePollTimer) clearInterval(schedulePollTimer)
     schedulePollTimer = null
     runtimeBridge?.cancelAll()

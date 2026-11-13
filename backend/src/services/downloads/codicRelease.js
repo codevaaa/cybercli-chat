@@ -1,6 +1,6 @@
 import { getR2PublicUrl, isR2Available, r2FileExists } from './r2Service.js'
 
-const DEFAULT_FILENAME = 'Codic Setup 0.1.0.exe'
+const DEFAULT_FILENAME = 'Codic Setup 0.1.7.exe'
 
 function releaseFilename() {
   const filename = process.env.CODEVA_CODIC_WINDOWS_FILENAME || DEFAULT_FILENAME
@@ -23,7 +23,7 @@ export async function codicWindowsArtifact() {
   const sha256 = process.env.CODEVA_CODIC_WINDOWS_SHA256?.toLowerCase() || ''
   const sha512 = process.env.CODEVA_CODIC_WINDOWS_SHA512?.trim() || ''
   const size = Number(process.env.CODEVA_CODIC_WINDOWS_SIZE || 0)
-  const version = process.env.CODEVA_CODIC_WINDOWS_VERSION || '0.1.0'
+  const version = process.env.CODEVA_CODIC_WINDOWS_VERSION || '0.1.7'
   if (!/^[a-f0-9]{64}$/.test(sha256) || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) return null
   const sha512Valid = /^[A-Za-z0-9+/]{86}==$/.test(sha512) && Buffer.from(sha512, 'base64').length === 64
 

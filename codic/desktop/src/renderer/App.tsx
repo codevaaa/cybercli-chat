@@ -223,7 +223,7 @@ export default function App() {
   const [approvalMenuPosition, setApprovalMenuPosition] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null)
   const [effortMenuOpen, setEffortMenuOpen] = useState(false)
   const [effortMenuPosition, setEffortMenuPosition] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null)
-  const [appVersion, setAppVersion] = useState('0.1.3')
+  const [appVersion, setAppVersion] = useState('0.1.7')
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false)
   const [conversationId, setConversationId] = useState<string>(() => crypto.randomUUID())
   const [navigationRevision, setNavigationRevision] = useState(0)
@@ -257,6 +257,12 @@ export default function App() {
 
   useEffect(() => {
     let active = true
+    void window.codic.app.getVersion().then((version) => { if (active) setAppVersion(version) }).catch(() => undefined)
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
     void window.codic.window.getState().then((state) => { if (active) setIsWindowMaximized(state.maximized) }).catch(() => undefined)
     const unsubscribe = window.codic.window.onStateChange((state) => setIsWindowMaximized(state.maximized))
     return () => { active = false; unsubscribe() }
@@ -269,6 +275,7 @@ export default function App() {
       setUpdateCheck(state)
       setUpdateCheckBusy(state.phase === 'checking' || state.phase === 'downloading')
       if (state.phase === 'available' || state.phase === 'downloaded') setUpdateNoticeDismissed(false)
+      if (state.phase === 'error') setHistoryNotice(state.message)
     })
     return () => { active = false; unsubscribe() }
   }, [])
@@ -2187,7 +2194,7 @@ export default function App() {
               {settingsSection === 'updates' && <div className="settings-page">
                 <div className="settings-card"><div><strong>Codic preview</strong><p>Current installed version.</p></div><span className="settings-value">{appVersion}</span></div>
                 <div className="settings-card settings-card-stack"><div><strong>Automatic updates</strong><p>Windows x64 builds check on launch and download updates in the background. Codic asks before restarting to install. Unsigned macOS and Linux preview builds use manual installers.</p></div><span className="settings-inline-note" role="status">{updateCheck?.message || 'Codic checks for a newer release when it starts.'}</span>{updateCheck?.phase === 'downloading' && <div className="update-download-progress"><progress max="100" value={updateCheck.percent || 0} aria-label="Codic update download progress" /><span>{Math.round(updateCheck?.percent || 0)}%</span></div>}<div className="settings-action-row"><button className="secondary-button" onClick={() => void checkForUpdates()} disabled={updateCheckBusy}>{updateCheckBusy ? updateCheck?.phase === 'downloading' ? 'Downloading…' : 'Checking…' : 'Check for updates'}</button>{updateCheck?.phase === 'downloaded' && <button className="primary-button" onClick={() => void installCodicUpdate()}>Restart and install<Icon name="arrow" size={14} /></button>}{updateCheck?.phase === 'unsupported' && <button className="primary-button" onClick={() => void openWebsite('/downloads/codic')}>Open downloads<Icon name="arrow" size={14} /></button>}</div></div>
-                <div className="settings-card settings-card-stack"><div><strong>What’s new in this preview</strong><p>Searchable project switching, model and reasoning controls, explicit shell approvals, optional full computer access, local task history, diff review, and terminal panels.</p></div><span className="settings-value">Codic {appVersion}</span></div>
+                <div className="settings-card settings-card-stack"><div><strong>What’s new in this preview</strong><p>Searchable project switching, model and reasoning controls, explicit shell approvals, optional full computer access, local task history, diff review, terminal panels, and Windows update checks with retry and checksum verification.</p></div><span className="settings-value">Codic {appVersion}</span></div>
                 <div className="settings-card"><div><strong>Manual installer downloads</strong><p>Get the latest Codic release for your operating system.</p></div><button className="secondary-button" onClick={() => void openWebsite('/downloads/codic')}>Open downloads</button></div>
               </div>}
               {settingsSection === 'troubleshooting' && <div className="settings-page">
