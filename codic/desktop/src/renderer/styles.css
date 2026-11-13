@@ -989,6 +989,53 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .permission-option-full .permission-option-icon { color: var(--accent-strong); }
 .permission-option.permission-option-full.selected { border-color: var(--accent-border); background: var(--accent-soft); }
 
+/* Keep the empty composer as the primary action, matching the Codex conversation flow. */
+.welcome-chat-empty { justify-content: center; padding: 24px 0; }
+.welcome-composer-wrap, .composer-wrap { width: min(1050px, calc(100% - 48px)); }
+.welcome-composer-wrap { padding: 0; }
+.welcome-composer-wrap > .composer-project-selector { width: 100%; justify-content: flex-start; margin: 0 0 -1px; padding: 0 22px; border-radius: 20px 20px 0 0; }
+.conversation-column-empty .empty-conversation-space { min-height: 0; flex: 1 1 auto; }
+.conversation-column-empty .composer-wrap { margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
+.composer { padding: 14px 16px 11px; border-radius: 22px; box-shadow: none; }
+.composer textarea { min-height: 62px; padding: 3px 2px 8px; font-size: 15px; line-height: 1.55; }
+.composer-controls { min-height: 39px; gap: 12px; }
+.composer-left, .composer-right { gap: 9px; }
+.composer-tool { min-width: 38px; height: 36px; justify-content: center; gap: 7px; padding: 0 8px; border-radius: 9px; }
+.composer-tool span { font-size: 13px; }
+.composer-add-context { width: 38px; padding: 0; color: var(--text-secondary); }
+.composer-controls .model-picker-trigger { height: 36px; max-width: 245px; padding: 0 10px; border-radius: 9px; font-size: 13px; }
+.approval-picker-trigger, .effort-picker-trigger { height: 36px; gap: 7px; padding: 0 9px; border-radius: 9px; font-size: 13px; }
+.send-button { width: 38px; height: 38px; flex-basis: 38px; border-radius: 11px; }
+.composer-hint { font-size: 11px; }
+.privacy-caption { margin-top: 10px; font-size: 11px; }
+.project-picker-trigger, .composer-project-selector { min-height: 45px; gap: 9px; padding: 0 14px; border-radius: 16px 16px 0 0; font-size: 13px; }
+.composer-project-selector-active { margin-left: 13px; margin-bottom: -1px; }
+.composer-project-selector-active + .composer { border-top-left-radius: 22px; }
+.welcome-composer-wrap .composer { border-radius: 22px; }
+.project-picker-local { margin-left: 7px; padding-left: 10px; }
+
+@media (max-width: 760px) {
+  .welcome-chat-empty { padding: 16px 0; }
+  .welcome-composer-wrap, .composer-wrap { width: calc(100% - 24px); }
+  .welcome-composer-wrap > .composer-project-selector { padding: 0 14px; border-radius: 16px 16px 0 0; }
+  .composer { padding: 12px 12px 9px; border-radius: 18px; }
+  .composer textarea { min-height: 58px; font-size: 14px; }
+  .composer-project-selector-active + .composer { border-top-left-radius: 18px; }
+  .project-picker-trigger, .composer-project-selector { min-height: 40px; border-radius: 13px 13px 0 0; font-size: 12px; }
+  .conversation-column-empty .composer-wrap { width: calc(100% - 24px); }
+}
+
+@media (max-width: 520px) {
+  .composer-controls { align-items: flex-start; flex-direction: column; }
+  .composer-left, .composer-right-controls { width: 100%; }
+  .composer-right-controls { justify-content: space-between; gap: 2px; }
+  .composer-right-controls .model-picker-trigger { max-width: min(170px, 42vw); }
+  .approval-picker-trigger, .effort-picker-trigger { max-width: 42vw; padding: 0 5px; font-size: 11px; }
+  .approval-picker-trigger > span, .effort-picker-trigger > span:not(.effort-status) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .composer-hint { display: none; }
+  .welcome-composer-wrap, .conversation-column-empty .composer-wrap { width: calc(100% - 20px); }
+}
+
 @media (max-width: 930px) {
   .nav-rail { width: 56px; flex-basis: 56px; padding-right: 5px; padding-left: 5px; }
   .sidebar { width: 280px; flex-basis: 280px; padding-right: 9px; padding-left: 9px; }

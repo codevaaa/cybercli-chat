@@ -58,12 +58,6 @@ const supabase: SupabaseClient | null = hasSupabaseConfig
     })
   : null
 
-const starterPrompts = [
-  { label: 'Understand this project', prompt: 'Give me a concise overview of this project and how to run it.' },
-  { label: 'Find a bug', prompt: 'Look for a likely bug in this project and explain the evidence before changing anything.' },
-  { label: 'Plan a feature', prompt: 'Help me plan a useful next feature for this project. Start with a short plan.' },
-]
-
 const settingsSections: Array<{ id: SettingsSection; label: string; icon: string }> = [
   { id: 'general', label: 'General', icon: 'settings' },
   { id: 'profile', label: 'Profile and account', icon: 'user' },
@@ -1935,14 +1929,13 @@ export default function App() {
 
           {!workspace ? (
             <section className="welcome-screen welcome-chat-empty">
-              <div className="welcome-chat-heading"><div className="project-welcome-icon"><Logo /></div><h1>What should we build?</h1><p>Choose a project and ask Codic to explain, plan, or make a change.</p></div>
               <div className="composer-wrap welcome-composer-wrap">
                 <ProjectPicker className="composer-project-selector" projects={projects} onSelect={(project) => void openSavedProject(project.path)} onOpenFolder={() => void openWorkspace()} onNewProject={() => void createProject()} />
                 <div className="composer">
-                  <textarea ref={composerRef} value={composer} onChange={(event) => setComposer(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (composer.trim()) void openWorkspace() } }} placeholder="Ask Codic to understand or build something…" rows={2} aria-label="Message Codic" />
+                  <textarea ref={composerRef} value={composer} onChange={(event) => setComposer(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (composer.trim()) void openWorkspace() } }} placeholder="Ask Codic to explain, plan, or build something…" rows={2} aria-label="Message Codic" />
                   <div className="composer-controls">
                     <div className="composer-left">
-                      <button className="composer-tool" onClick={() => void openWorkspace()} title="Open a project folder"><Icon name="plus" size={17} /><span>Project</span></button>
+                      <button className="composer-tool composer-add-context" onClick={() => void openWorkspace()} title="Choose a project folder" aria-label="Choose a project folder"><Icon name="plus" size={19} /></button>
                       <div className="approval-picker-anchor">
                         <button ref={approvalTriggerRef} className={`approval-picker-trigger${approvalPolicy === 'safe-reads' ? ' approval-picker-safe' : approvalPolicy === 'full-access' ? ' approval-picker-full' : ''}`} onClick={() => { setEffortMenuOpen(false); setApprovalMenuPosition(null); setApprovalMenuOpen((open) => !open) }} aria-label="Action approval mode" aria-haspopup="menu" aria-expanded={approvalMenuOpen}><Icon name={approvalPolicy === 'ask' ? 'lock' : approvalPolicy === 'full-access' ? 'warning' : 'checkCircle'} size={14} /><span>{approvalPolicy === 'ask' ? 'Ask for approval' : approvalPolicy === 'safe-reads' ? 'Approve for me' : 'Full access'}</span><Icon name="chevron" size={13} /></button>
                         {approvalMenuOpen && approvalMenuPosition ? createPortal(<div ref={approvalMenuRef} className="approval-picker-popover" role="menu" tabIndex={-1} onKeyDown={navigateMenuFocus} aria-label="Action approval mode" style={approvalMenuPosition}>
@@ -1954,7 +1947,6 @@ export default function App() {
                       </div>
                     </div>
                     <div className="composer-right composer-right-controls">
-                      <span className="composer-hint">Choose a project before sending</span>
                       <ModelPicker models={models} value={modelId} onChange={setPreferredModel} disabled={!hasSession} />
                       <div className="effort-picker-anchor">
                         <button ref={effortTriggerRef} className="effort-picker-trigger" onClick={() => { setApprovalMenuOpen(false); setEffortMenuPosition(null); setEffortMenuOpen((open) => !open) }} aria-label="Reasoning effort" aria-haspopup="menu" aria-expanded={effortMenuOpen}><span className={`effort-status effort-${reasoningEffort}`} /><span>{reasoningEffort[0]!.toUpperCase() + reasoningEffort.slice(1)} effort</span><Icon name="chevron" size={13} /></button>
@@ -1963,7 +1955,7 @@ export default function App() {
                           {(['low', 'medium', 'high'] as const).map((effort) => <button key={effort} role="menuitemradio" aria-checked={reasoningEffort === effort} className={`effort-picker-option${reasoningEffort === effort ? ' selected' : ''}`} onClick={() => { setPreferredEffort(effort); setEffortMenuOpen(false) }}><span className={`effort-status effort-${effort}`} /><span><strong>{effort[0]!.toUpperCase() + effort.slice(1)}</strong><small>{effort === 'low' ? 'Focused budget for quick questions.' : effort === 'medium' ? 'Balanced for everyday coding work.' : 'Larger budget for complex tasks.'}</small></span>{reasoningEffort === effort && <Icon name="check" size={15} />}</button>)}
                         </div>, document.body) : null}
                       </div>
-                      <button className="send-button" onClick={() => void openWorkspace()} disabled={!composer.trim()} aria-label="Choose a project to send this prompt"><Icon name="send" size={16} /></button>
+                      <button className="send-button" onClick={() => void openWorkspace()} disabled={!composer.trim()} aria-label="Choose a project to send this prompt"><Icon name="send" size={17} /></button>
                     </div>
                   </div>
                 </div>
@@ -1972,7 +1964,7 @@ export default function App() {
             </section>
           ) : (
             <div className={`workspace-content${isRightPanelOpen ? '' : ' panel-collapsed'}`}>
-              <section className="conversation-column">
+              <section className={`conversation-column${messages.length === 0 ? ' conversation-column-empty' : ''}`}>
                 {approval && <section className="approval-card" aria-labelledby="approval-title">
                   <div className="approval-card-heading"><span className="approval-icon"><Icon name="lock" size={16} /></span><div><p className="eyebrow">ACTION NEEDS YOUR APPROVAL{approvals.length > 1 ? ` · ${approvals.length} PENDING` : ''}</p><h2 id="approval-title">{approval.toolName}</h2></div></div>
                   <p className="approval-summary">{approval.summary}</p>
@@ -1980,17 +1972,7 @@ export default function App() {
                   {approval.unsandboxed && <p className="approval-warning"><Icon name="warning" size={14} />This action reaches outside the selected project or runs a host command. Review its path and command before allowing it.</p>}
                   <div className="approval-actions"><button className="secondary-button" onClick={() => void decideApproval('deny')}>Deny</button><button className="primary-button" onClick={() => void decideApproval('allow')}>Allow once<Icon name="arrow" size={15} /></button></div>
                 </section>}
-                {messages.length === 0 ? (
-                  <div className="project-welcome">
-                    <div className="project-welcome-icon"><Logo /></div>
-                    <p className="eyebrow">PROJECT WORKSPACE</p>
-                    <h1>What are we working on?</h1>
-                    <p>Ask a question, outline a change, or start with one of these.</p>
-                    <div className="prompt-suggestions">
-                      {starterPrompts.map((item) => <button key={item.label} onClick={() => void sendPrompt(item.prompt)}><span>{item.label}</span><Icon name="arrow" size={15} /></button>)}
-                    </div>
-                  </div>
-                ) : (
+                {messages.length === 0 ? <div className="empty-conversation-space" aria-hidden="true" /> : (
                   <div className="message-list">
                     {messages.map((message) => (
                       <article key={message.id} className={`message message-${message.role}`}>
@@ -2041,6 +2023,7 @@ export default function App() {
                   </div>
                   <p className="privacy-caption"><Icon name="lock" size={12} />{isTemporaryChat ? 'This temporary chat is not saved in local task history.' : 'Only the context needed for your request is sent to Codeva.'}</p>
                 </div>
+                {messages.length === 0 && <div className="empty-conversation-space" aria-hidden="true" />}
               </section>
 
               {isRightPanelOpen && <aside className="detail-panel">

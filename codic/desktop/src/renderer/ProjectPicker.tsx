@@ -114,8 +114,7 @@ export default function ProjectPicker({ projects, value, disabled = false, onSel
     >
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2 2h9v9.1a1.9 1.9 0 0 1-1.9 1.9H5.4a1.9 1.9 0 0 1-1.9-1.9z" /><path d="M3.5 7.5V5.9A1.9 1.9 0 0 1 5.4 4h4.1l2 2h7.1" /></svg>
       <span className="project-picker-trigger-label">{selected?.name || 'Choose project'}</span>
-      <span className="project-picker-local">Local</span>
-      <svg className="project-picker-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+      {selected && <><span className="project-picker-local">Local</span><svg className="project-picker-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></>}
     </button>
     {open && position && createPortal(
       <div ref={popupRef} className="project-picker-popover" role="dialog" aria-label="Choose a project" style={position}>
