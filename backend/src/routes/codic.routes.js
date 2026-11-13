@@ -116,7 +116,9 @@ const deviceSchema = z.object({
 
 const handoffIssueSchema = z.object({
   challenge: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
-  refreshToken: z.string().min(20).max(8_192),
+  // Supabase owns the refresh-token format and does not promise a fixed
+  // minimum length. Require a nonblank bounded string; redemption validates it.
+  refreshToken: z.string().trim().min(1).max(8_192),
 }).strict()
 
 const handoffRedeemSchema = z.object({
@@ -206,7 +208,14 @@ router.use(requireAuth)
 
 router.post('/auth-handoffs', async (req, res, next) => {
   const parsed = handoffIssueSchema.safeParse(req.body)
-  if (!parsed.success) return res.status(400).json({ error: 'Provide the Codic sign-in challenge and a valid session.' })
+  if (!parsed.success) {
+    const invalidChallenge = parsed.error.issues.some(issue => issue.path[0] === 'challenge')
+    return res.status(400).json({
+      error: invalidChallenge
+        ? 'The Codic sign-in challenge is invalid. Start sign-in again from Codic.'
+        : 'The Codeva sign-in session is incomplete. Sign in to Codeva again, then return to Codic.',
+    })
+  }
   if (req.user?.viaApiKey) return res.status(403).json({ error: 'Sign in through the Codeva website to connect Codic.' })
   const accessToken = /^Bearer\s+(.+)$/i.exec(req.headers.authorization || '')?.[1]
   if (!accessToken || accessToken.length > 8_192) return res.status(401).json({ error: 'A valid Codeva website session is required.' })
