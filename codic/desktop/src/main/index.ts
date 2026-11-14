@@ -12,12 +12,45 @@ import { listThreadSummaries, loadThreadHistory } from './history.js'
 import { toCodicApiPlatform } from './device-platform.js'
 import { fetchCodicUpdateFeedReadiness } from './updateFeed.js'
 import { readWorkspaceDiff, runWorkspaceCommand } from './workspace-tools.js'
+import { formatContextFiles, MAX_CONTEXT_FILES, MAX_CONTEXT_TOTAL_BYTES, readSelectedContextFiles, readSelectedContextFolder } from './contextFiles.js'
 import { SecretScanner } from '../../../../cybercoder/packages/codic-runtime/src/shared-bridge.js'
 import type { CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicRuntimeEventEnvelope, CodicUpdateCheck, EditAction } from '../shared/contracts.js'
 
 declare const __CODIC_LOCAL_PREVIEW_ENABLED__: boolean
 
 const { autoUpdater } = electronUpdater
+
+function registerContextFiles(owner: WebContents, files: Array<{ name: string; content: string; size: number }>) {
+  const existing = pendingContextAttachments.get(owner) ?? new Map<string, PendingContextAttachment>()
+  const existingBytes = [...existing.values()].reduce((total, attachment) => total + attachment.size, 0)
+  const incomingBytes = files.reduce((total, file) => total + file.size, 0)
+  if (existing.size + files.length > MAX_CONTEXT_FILES || existingBytes + incomingBytes > MAX_CONTEXT_TOTAL_BYTES) {
+    throw new Error(`A prompt can include up to ${MAX_CONTEXT_FILES} text files and ${Math.round(MAX_CONTEXT_TOTAL_BYTES / 1024)} KB of context. Remove an attachment or choose fewer files.`)
+  }
+  const added = files.map((file) => {
+    const attachment = { id: randomUUID(), ...file }
+    existing.set(attachment.id, attachment)
+    return { id: attachment.id, name: attachment.name, size: attachment.size }
+  })
+  if (existing.size) pendingContextAttachments.set(owner, existing)
+  return added
+}
+
+function getPendingContextFiles(owner: WebContents, requestedIds: unknown): PendingContextAttachment[] {
+  if (requestedIds === undefined) return []
+  if (!Array.isArray(requestedIds) || requestedIds.length > MAX_CONTEXT_FILES || requestedIds.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id))) {
+    throw new Error('The attached prompt context is invalid. Remove the files and attach them again.')
+  }
+  const uniqueIds = new Set(requestedIds as string[])
+  if (uniqueIds.size !== requestedIds.length) throw new Error('The same context file cannot be attached more than once.')
+  const available = pendingContextAttachments.get(owner)
+  const files = [...uniqueIds].map((id) => available?.get(id))
+  if (files.some((file) => !file)) throw new Error('An attached context file expired. Attach it again before sending.')
+  const resolved = files as PendingContextAttachment[]
+  const bytes = resolved.reduce((total, file) => total + file.size, 0)
+  if (bytes > MAX_CONTEXT_TOTAL_BYTES) throw new Error('The attached prompt context is larger than allowed. Remove some files and retry.')
+  return resolved
+}
 
 const isDevelopment = !app.isPackaged
 const devRendererUrl = process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173'
@@ -27,6 +60,8 @@ const authStoragePath = () => path.join(app.getPath('userData'), 'auth-store.bin
 const handoffVerifierPath = () => path.join(app.getPath('userData'), 'auth-handoff.bin')
 const deviceIdPath = () => path.join(app.getPath('userData'), 'device-id')
 const terminalSessions = new Map<string, { terminal: pty.IPty; owner: WebContents; projectPath: string }>()
+type PendingContextAttachment = { id: string; name: string; content: string; size: number }
+const pendingContextAttachments = new WeakMap<WebContents, Map<string, PendingContextAttachment>>()
 let mainWindow: BrowserWindow | null = null
 const taskWindowOwners = new Map<string, BrowserWindow>()
 let pendingAuthCallback: string | null = null
@@ -730,6 +765,38 @@ if (!protocolLock) {
       }
       return { path: chosenPath, name }
     })
+    ipcMain.handle('codic:choose-context-files', async (event) => {
+      assertSignedInSender(event)
+      const result = await dialog.showOpenDialog({
+        title: 'Add files to prompt context',
+        buttonLabel: 'Attach files',
+        properties: ['openFile', 'multiSelections'],
+      })
+      if (result.canceled || result.filePaths.length === 0) return { attachments: [], skippedFiles: 0 }
+      const selection = readSelectedContextFiles(result.filePaths)
+      if (selection.files.length === 0) throw new Error('No supported text files were selected. Credentials, binary files, and files over 64 KB are excluded.')
+      return { attachments: registerContextFiles(event.sender, selection.files), skippedFiles: selection.skipped }
+    })
+    ipcMain.handle('codic:choose-context-folder', async (event) => {
+      assertSignedInSender(event)
+      const result = await dialog.showOpenDialog({
+        title: 'Add a project folder to prompt context',
+        buttonLabel: 'Attach folder',
+        properties: ['openDirectory'],
+      })
+      if (result.canceled || !result.filePaths[0]) return { attachments: [], skippedFiles: 0 }
+      const selection = readSelectedContextFolder(result.filePaths[0])
+      if (selection.files.length === 0) throw new Error('No supported text files were found in that folder. Generated folders, credentials, binary files, and files over 64 KB are excluded.')
+      return { attachments: registerContextFiles(event.sender, selection.files), skippedFiles: selection.skipped }
+    })
+    ipcMain.handle('codic:remove-context-attachment', (event, attachmentId: unknown) => {
+      assertSignedInSender(event)
+      if (typeof attachmentId !== 'string') return false
+      const attachments = pendingContextAttachments.get(event.sender)
+      if (!attachments?.delete(attachmentId)) return false
+      if (attachments.size === 0) pendingContextAttachments.delete(event.sender)
+      return true
+    })
     ipcMain.handle('codic:list-projects', (event) => {
       assertSignedInSender(event)
       return (localStore?.listProjects() ?? [])
@@ -1005,6 +1072,18 @@ if (!protocolLock) {
           return { role: item.role, content: item.content }
         })
       }
+      const attachmentIds = value.contextAttachmentIds
+      const attachedFiles = getPendingContextFiles(event.sender, attachmentIds)
+      const contextSuffix = formatContextFiles(attachedFiles)
+      const effectivePrompt = `${value.prompt}${contextSuffix}`
+      if (messages && contextSuffix) {
+        const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user')
+        if (!lastUserMessage) throw new Error('Add a user message before attaching context.')
+        lastUserMessage.content += contextSuffix
+        const totalCharacters = messages.reduce((total, message) => total + message.content.length, 0)
+        if (totalCharacters > 220_000) throw new Error('This conversation and its attachments are too large to send. Remove some files or start a new task.')
+      }
+      if (effectivePrompt.length > 220_000) throw new Error('The prompt and attached context are too large to send. Remove some files or shorten the prompt.')
       if (!runtimeBridge) throw new Error('The local runtime is not ready yet.')
       const workspacePath = realpathSync(path.resolve(value.workspacePath))
       if (!existsSync(workspacePath) || !statSync(workspacePath).isDirectory()) throw new Error('That project folder is no longer available.')
@@ -1035,18 +1114,22 @@ if (!protocolLock) {
       const taskWindow = BrowserWindow.fromWebContents(event.sender)
       if (taskWindow) taskWindowOwners.set(taskId, taskWindow)
       try {
-        return runtimeBridge.startTask({
-        workspacePath: value.workspacePath,
-        prompt: value.prompt,
-        model: value.model,
+        const started = runtimeBridge.startTask({
+          workspacePath: value.workspacePath,
+          prompt: effectivePrompt,
+          model: value.model,
           reasoningEffort,
           approvalPolicy,
-        subagentsEnabled,
-        maxParallelSubagents,
-        conversationId: threadId,
-        ...(messages ? { messages } : {}),
-        taskId,
+          subagentsEnabled,
+          maxParallelSubagents,
+          conversationId: threadId,
+          ...(messages ? { messages } : {}),
+          taskId,
         })
+        const ownedAttachments = pendingContextAttachments.get(event.sender)
+        for (const attachment of attachedFiles) ownedAttachments?.delete(attachment.id)
+        if (ownedAttachments?.size === 0) pendingContextAttachments.delete(event.sender)
+        return started
       } catch (error) {
         taskWindowOwners.delete(taskId)
         ephemeralTaskIds.delete(taskId)

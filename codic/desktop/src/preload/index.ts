@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { CodicBridge, CodicCheckpointSummary, CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicTerminalEvent, CodicUpdateCheck, ReviewComment, ScheduledTask, TerminalCommandResult, ThreadHistory, ThreadSummary, WorkspaceDiff, WorkspaceInfo } from '../shared/contracts.js'
+import type { CodicBridge, CodicCheckpointSummary, CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicTerminalEvent, CodicUpdateCheck, ReviewComment, ScheduledTask, TerminalCommandResult, ThreadHistory, ThreadSummary, WorkspaceDiff, WorkspaceInfo, ContextAttachmentSelection } from '../shared/contracts.js'
 
 const authCallbacks = new Set<(url: string) => void>()
 const signedOutCallbacks = new Set<() => void>()
@@ -42,6 +42,9 @@ const bridge: CodicBridge = {
   workspace: {
     choose: () => ipcRenderer.invoke('codic:choose-workspace') as Promise<WorkspaceInfo | null>,
     chooseNewProject: () => ipcRenderer.invoke('codic:choose-new-project') as Promise<WorkspaceInfo | null>,
+    chooseContextFiles: () => ipcRenderer.invoke('codic:choose-context-files') as Promise<ContextAttachmentSelection>,
+    chooseContextFolder: () => ipcRenderer.invoke('codic:choose-context-folder') as Promise<ContextAttachmentSelection>,
+    removeContextAttachment: async (attachmentId) => { await ipcRenderer.invoke('codic:remove-context-attachment', attachmentId) },
     listProjects: () => ipcRenderer.invoke('codic:list-projects') as Promise<WorkspaceInfo[]>,
     selectSaved: (workspacePath) => ipcRenderer.invoke('codic:select-saved-project', workspacePath) as Promise<WorkspaceInfo>,
     getDiff: (workspacePath) => ipcRenderer.invoke('codic:workspace-diff', workspacePath) as Promise<WorkspaceDiff>,

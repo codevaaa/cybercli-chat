@@ -110,6 +110,17 @@ export interface WorkspaceInfo {
   name: string
 }
 
+export interface ContextAttachmentSummary {
+  id: string
+  name: string
+  size: number
+}
+
+export interface ContextAttachmentSelection {
+  attachments: ContextAttachmentSummary[]
+  skippedFiles: number
+}
+
 export interface ThreadSummary {
   id: string
   title: string
@@ -161,6 +172,9 @@ export interface CodicBridge {
   workspace: {
     choose(): Promise<WorkspaceInfo | null>
     chooseNewProject(): Promise<WorkspaceInfo | null>
+    chooseContextFiles(): Promise<ContextAttachmentSelection>
+    chooseContextFolder(): Promise<ContextAttachmentSelection>
+    removeContextAttachment(attachmentId: string): Promise<void>
     listProjects(): Promise<WorkspaceInfo[]>
     selectSaved(workspacePath: string): Promise<WorkspaceInfo>
     getDiff(workspacePath: string): Promise<WorkspaceDiff>
@@ -224,6 +238,7 @@ export interface CodicBridge {
       temporary?: boolean
       conversationId?: string
       messages?: Array<{ role: 'user' | 'assistant'; content: string }>
+      contextAttachmentIds?: string[]
     }): Promise<{ taskId: string }>
     cancelTask(taskId: string): void
     cancelSubagent(taskId: string, agentId: string): Promise<boolean>

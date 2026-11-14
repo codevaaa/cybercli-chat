@@ -1,18 +1,19 @@
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js'
 import { KeyboardEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { CodicLimits, CodicRuntimeEvent, CodicUpdateCheck, ModelOption, ScheduledTask, ThreadSummary, WorkspaceInfo } from '../shared/contracts'
+import type { CodicLimits, CodicRuntimeEvent, CodicUpdateCheck, ContextAttachmentSummary, ModelOption, ScheduledTask, ThreadSummary, WorkspaceInfo } from '../shared/contracts'
 import DiffReviewPanel from './DiffReviewPanel'
 import TerminalPanel from './TerminalPanel'
 import ModelPicker from './ModelPicker'
 import ProjectPicker from './ProjectPicker'
+import ComposerAddMenu from './ComposerAddMenu'
 import { getInitialAppZoom, placeComposerPopover } from './appPreferences'
 import { getWorkspaceRestoreIntent } from './workspaceRestore'
 
 type View = 'assistant' | 'review' | 'activity'
 type NavigableView = View | 'terminal'
 type SettingsSection = 'general' | 'profile' | 'appearance' | 'models' | 'agents' | 'permissions' | 'shortcuts' | 'updates' | 'troubleshooting' | 'about'
-type Message = { id: string; role: 'user' | 'assistant'; content: string; runId?: string }
+type Message = { id: string; role: 'user' | 'assistant'; content: string; runId?: string; attachments?: string[] }
 type Activity = { id: string; title: string; detail: string; status: 'done' | 'running' | 'waiting' | 'error' | 'cancelled'; kind?: 'subagent'; model?: string; toolCalls?: number; inputTokens?: number; outputTokens?: number }
 type ApprovalRequest = Extract<CodicRuntimeEvent, { type: 'approval_required' }> & { taskId: string }
 type NavigationEntry = { threadId: string | null; conversationId: string; view: View; temporary?: boolean; messages?: Message[] }
@@ -165,6 +166,8 @@ export default function App() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [view, setView] = useState<View>('assistant')
   const [composer, setComposer] = useState('')
+  const [contextAttachments, setContextAttachments] = useState<ContextAttachmentSummary[]>([])
+  const [contextNotice, setContextNotice] = useState('')
   const [models, setModels] = useState<ModelOption[]>([{ id: 'auto', name: 'Codeva Auto' }])
   const [limits, setLimits] = useState<CodicLimits | null>(null)
   const [modelId, setModelId] = useState('auto')
@@ -263,6 +266,15 @@ export default function App() {
 
   activeTaskIdRef.current = activeTaskId
 
+  const clearContextAttachments = () => {
+    const selected = contextAttachments
+    setContextAttachments([])
+    setContextNotice('')
+    for (const attachment of selected) {
+      void window.codic.workspace.removeContextAttachment(attachment.id).catch(() => undefined)
+    }
+  }
+
   useEffect(() => {
     let active = true
     void window.codic.app.getVersion().then((version) => { if (active) setAppVersion(version) }).catch(() => undefined)
@@ -337,6 +349,8 @@ export default function App() {
 
   const startNewTask = (temporary = false) => {
     if (isStreaming) return
+    clearContextAttachments()
+    setComposer('')
     const nextId = crypto.randomUUID()
     setConversationId(nextId)
     setIsTemporaryChat(temporary)
@@ -1097,6 +1111,7 @@ export default function App() {
   }
 
   const handleSignOut = async () => {
+    clearContextAttachments()
     let revokeError = ''
     try {
       if (registeredDeviceRef.current) await window.codic.api.revokeDevice()
@@ -1121,6 +1136,7 @@ export default function App() {
   }
 
   const activateProject = async (selected: WorkspaceInfo) => {
+    clearContextAttachments()
     if (activeTaskIdRef.current) window.codic.runtime.cancelTask(activeTaskIdRef.current)
     activeTaskIdRef.current = null
     setActiveTaskId(null)
@@ -1178,6 +1194,29 @@ export default function App() {
     }
   }
 
+  const chooseContext = async (kind: 'files' | 'folder') => {
+    try {
+      const selection = kind === 'files'
+        ? await window.codic.workspace.chooseContextFiles()
+        : await window.codic.workspace.chooseContextFolder()
+      if (selection.attachments.length) {
+        setContextAttachments((current) => [...current, ...selection.attachments])
+        setContextNotice(selection.skippedFiles ? `${selection.skippedFiles} unsupported, binary, credential, or oversized ${selection.skippedFiles === 1 ? 'file was' : 'files were'} skipped.` : '')
+      } else if (selection.skippedFiles) {
+        setContextNotice('No supported text files were attached. Credentials, binary files, generated folders, and oversized files are skipped.')
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not add prompt context.')
+    }
+  }
+
+  const removeContextAttachment = (attachmentId: string) => {
+    setContextAttachments((current) => current.filter((attachment) => attachment.id !== attachmentId))
+    void window.codic.workspace.removeContextAttachment(attachmentId).catch((caught) => {
+      setError(caught instanceof Error ? caught.message : 'Could not remove that context file.')
+    })
+  }
+
   const openTerminal = async () => {
     if (workspaceRef.current) {
       finishOpeningTerminal()
@@ -1216,6 +1255,8 @@ export default function App() {
 
   const openThreadForProject = async (project: WorkspaceInfo, thread: ThreadSummary) => {
     if (isStreaming) return
+    clearContextAttachments()
+    setComposer('')
     try {
       const selected = workspace?.path === project.path ? workspace : await window.codic.workspace.selectSaved(project.path)
       const [savedProjects, active, archived, schedules, restored] = await Promise.all([
@@ -1266,6 +1307,8 @@ export default function App() {
   }
 
   const applyNavigationEntry = async (entry: NavigationEntry) => {
+    clearContextAttachments()
+    setComposer('')
     if (entry.threadId && workspace) {
       const restored = await window.codic.history.loadThread(workspace.path, entry.threadId)
       setConversationId(restored.thread.id)
@@ -1450,9 +1493,9 @@ export default function App() {
       return
     }
     setError('')
-    const nextMessages = [...messages, { id: crypto.randomUUID(), role: 'user' as const, content: prompt }]
+    const attachmentsForPrompt = contextAttachments
+    const nextMessages = [...messages, { id: crypto.randomUUID(), role: 'user' as const, content: prompt, ...(attachmentsForPrompt.length ? { attachments: attachmentsForPrompt.map((attachment) => attachment.name) } : {}) }]
     setMessages(nextMessages)
-    setComposer('')
     setActivities((current) => [...current, { id: crypto.randomUUID(), title: 'Thinking', detail: `Started at ${timeLabel()}`, status: 'running' }])
     setIsStreaming(true)
     activeRunIsTemporaryRef.current = isTemporaryChat
@@ -1468,8 +1511,12 @@ export default function App() {
         maxParallelSubagents,
         temporary: isTemporaryChat,
         conversationId,
+        contextAttachmentIds: attachmentsForPrompt.map((attachment) => attachment.id),
         messages: nextMessages.map(({ role, content }) => ({ role, content })),
       })
+      setComposer('')
+      setContextAttachments([])
+      setContextNotice('')
       setActiveTaskId(result.taskId)
       activeTaskIdRef.current = result.taskId
       setLastTaskId(result.taskId)
@@ -2032,10 +2079,12 @@ export default function App() {
               <div className="composer-wrap welcome-composer-wrap">
                 <ProjectPicker className="composer-project-selector" projects={projects} onSelect={(project) => void openSavedProject(project.path)} onOpenFolder={() => void openWorkspace()} onNewProject={() => void createProject()} />
                 <div className="composer">
-                  <textarea ref={composerRef} value={composer} onChange={(event) => setComposer(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (composer.trim()) void openWorkspace() } }} placeholder="Ask Codic to explain, plan, or build something…" rows={2} aria-label="Message Codic" />
+                  <textarea ref={composerRef} value={composer} onChange={(event) => setComposer(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void sendPrompt() } }} placeholder="Ask Codic to explain, plan, or build something…" rows={2} aria-label="Message Codic" />
+                  {contextAttachments.length > 0 && <div className="composer-context-list" aria-label="Attached prompt context">{contextAttachments.map((attachment) => <div key={attachment.id} className="composer-context-chip" title={`${attachment.name} · ${Math.max(1, Math.ceil(attachment.size / 1024))} KB`}><Icon name="file" size={13} /><span>{attachment.name}</span><button type="button" onClick={() => removeContextAttachment(attachment.id)} aria-label={`Remove ${attachment.name}`} title="Remove attachment"><Icon name="close" size={12} /></button></div>)}</div>}
+                  {contextNotice && <p className="composer-context-notice" role="status">{contextNotice}</p>}
                   <div className="composer-controls">
                     <div className="composer-left">
-                      <button className="composer-tool composer-add-context" onClick={() => void openWorkspace()} title="Choose a project folder" aria-label="Choose a project folder"><Icon name="plus" size={19} /></button>
+                      <ComposerAddMenu attachmentCount={contextAttachments.length} onChooseFiles={() => void chooseContext('files')} onChooseFolder={() => void chooseContext('folder')} />
                       <div className="approval-picker-anchor">
                         <button ref={approvalTriggerRef} className={`approval-picker-trigger${approvalPolicy === 'safe-reads' ? ' approval-picker-safe' : approvalPolicy === 'full-access' ? ' approval-picker-full' : ''}`} onClick={() => { setEffortMenuOpen(false); setApprovalMenuPosition(null); setApprovalMenuOpen((open) => !open) }} aria-label="Action approval mode" aria-haspopup="menu" aria-expanded={approvalMenuOpen}><Icon name={approvalPolicy === 'ask' ? 'lock' : approvalPolicy === 'full-access' ? 'warning' : 'checkCircle'} size={14} /><span>{approvalPolicy === 'ask' ? 'Ask for approval' : approvalPolicy === 'safe-reads' ? 'Approve for me' : 'Full access'}</span><Icon name="chevron" size={13} /></button>
                         {approvalMenuOpen && approvalMenuPosition ? createPortal(<div ref={approvalMenuRef} className="approval-picker-popover" role="menu" tabIndex={-1} onKeyDown={navigateMenuFocus} aria-label="Action approval mode" style={approvalMenuPosition}>
@@ -2055,7 +2104,7 @@ export default function App() {
                           {(['low', 'medium', 'high'] as const).map((effort) => <button key={effort} role="menuitemradio" aria-checked={reasoningEffort === effort} className={`effort-picker-option${reasoningEffort === effort ? ' selected' : ''}`} onClick={() => { setPreferredEffort(effort); setEffortMenuOpen(false) }}><span className={`effort-status effort-${effort}`} /><span><strong>{effort[0]!.toUpperCase() + effort.slice(1)}</strong><small>{effort === 'low' ? 'Focused budget for quick questions.' : effort === 'medium' ? 'Balanced for everyday coding work.' : 'Larger budget for complex tasks.'}</small></span>{reasoningEffort === effort && <Icon name="check" size={15} />}</button>)}
                         </div>, document.body) : null}
                       </div>
-                      <button className="send-button" onClick={() => void openWorkspace()} disabled={!composer.trim()} aria-label="Choose a project to send this prompt"><Icon name="send" size={17} /></button>
+                      <button className="send-button" onClick={() => void sendPrompt()} disabled={!composer.trim()} aria-label="Send message"><Icon name="send" size={17} /></button>
                     </div>
                   </div>
                 </div>
@@ -2080,6 +2129,7 @@ export default function App() {
                         <div className="message-body">
                           <div className="message-meta"><strong>{message.role === 'assistant' ? 'Codic' : 'You'}</strong>{message.role === 'assistant' && <span className="model-tag">{currentModel}</span>}</div>
                           <p>{message.content || (isStreaming ? 'Thinking through the next step…' : '')}</p>
+                          {message.attachments?.length ? <div className="message-context-list" aria-label="Attached context">{message.attachments.map((name, index) => <span key={`${name}-${index}`}><Icon name="file" size={12} />{name}</span>)}</div> : null}
                         </div>
                       </article>
                     ))}
@@ -2092,9 +2142,11 @@ export default function App() {
                   <ProjectPicker className="composer-project-selector composer-project-selector-active" projects={projects} value={workspace.path} disabled={isStreaming} onSelect={(project) => void openSavedProject(project.path)} onOpenFolder={() => void openWorkspace()} onNewProject={() => void createProject()} />
                   <div className="composer">
                     <textarea ref={composerRef} value={composer} onChange={(event) => setComposer(event.target.value)} onKeyDown={onComposerKeyDown} placeholder="Ask Codic to explain, plan, or change something…" rows={2} aria-label="Message Codic" />
+                    {contextAttachments.length > 0 && <div className="composer-context-list" aria-label="Attached prompt context">{contextAttachments.map((attachment) => <div key={attachment.id} className="composer-context-chip" title={`${attachment.name} · ${Math.max(1, Math.ceil(attachment.size / 1024))} KB`}><Icon name="file" size={13} /><span>{attachment.name}</span><button type="button" onClick={() => removeContextAttachment(attachment.id)} aria-label={`Remove ${attachment.name}`} title="Remove attachment"><Icon name="close" size={12} /></button></div>)}</div>}
+                    {contextNotice && <p className="composer-context-notice" role="status">{contextNotice}</p>}
                     <div className="composer-controls">
                       <div className="composer-left">
-                        <button className="composer-tool" onClick={openWorkspace} title="Open another folder"><Icon name="paperclip" size={16} /><span>Add context</span></button>
+                        <ComposerAddMenu disabled={isStreaming} attachmentCount={contextAttachments.length} onChooseFiles={() => void chooseContext('files')} onChooseFolder={() => void chooseContext('folder')} />
                         <div className="approval-picker-anchor">
                           <button ref={approvalTriggerRef} className={`approval-picker-trigger${approvalPolicy === 'safe-reads' ? ' approval-picker-safe' : approvalPolicy === 'full-access' ? ' approval-picker-full' : ''}`} onClick={() => { setEffortMenuOpen(false); setApprovalMenuPosition(null); setApprovalMenuOpen((open) => !open) }} aria-label="Action approval mode" aria-haspopup="menu" aria-expanded={approvalMenuOpen}>
                             <Icon name={approvalPolicy === 'ask' ? 'lock' : approvalPolicy === 'full-access' ? 'warning' : 'checkCircle'} size={14} /><span>{approvalPolicy === 'ask' ? 'Ask for approval' : approvalPolicy === 'safe-reads' ? 'Approve for me' : 'Full access'}</span><Icon name="chevron" size={13} />

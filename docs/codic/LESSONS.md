@@ -22,6 +22,9 @@
 - Make the Codic mark legible without SVG stroke scaling: a thick original CSS mark can use a one-time entrance animation, with reduced-motion support and an app icon that shares the same silhouette.
 - A local preview switch must be build-flagged off by default, granted explicitly at runtime, cleared on sign-out/app exit, and must never synthesize an account token or unlock server model requests.
 - New Window must carry an explicit blank-window route. Listing saved projects is fine, but the new renderer must not select one unless its URL names a project.
+- Prompt attachments should be user-selected, main-process-owned, per-window memory records. Never accept arbitrary renderer paths for filesystem reads; reveal only opaque attachment IDs and send bounded text content only when its prompt is submitted.
+- A composer `+` action must not double as project selection. Keep workspace selection explicit, show removable context chips before send, and preserve the draft when project selection is required.
+- Folder context needs limits and exclusions before reading: skip symlinks, generated trees, binary files, credential-like names, and oversized files; cap file count and aggregate bytes so a broad folder cannot become an unbounded model request.
 ### 2026-11-13 — Browser-to-desktop sign-in and Windows chrome
 - Custom URL callbacks must be tested at both ends. A successful website session is not proof that the desktop callback route exists on the production API.
 - Never broadcast a one-use auth callback to every open renderer. Deliver it to one primary window and make the browser page provide a user-click retry when external-protocol navigation is blocked.
