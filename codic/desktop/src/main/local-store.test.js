@@ -99,19 +99,62 @@ it('persists schedules and claims each due occurrence once', () => {
       prompt: 'Review changed files', model: 'auto', reasoningEffort: 'medium', recurrence: 'daily', nextRunAt: due.toISOString(),
     })
     expect(store.listScheduledTasks(project.id)).toMatchObject([{ id: schedule.id, enabled: true, recurrence: 'daily' }])
-    const claimed = store.claimScheduledTask(project.id, schedule.id, new Date())
+    const threadId = randomUUID()
+    const taskId = randomUUID()
+    const claimed = store.claimScheduledTask(project.id, schedule.id, { threadId, taskId, prompt: 'Review changed files' }, new Date())
     expect(claimed?.lastRunAt).toBeTruthy()
     expect(claimed && Date.parse(claimed.nextRunAt)).toBeGreaterThan(Date.now())
-    expect(store.claimScheduledTask(project.id, schedule.id, new Date())).toBeNull()
+    expect(store.getThread(project.id, threadId)?.title).toBe('Daily review')
+    expect(store.listTasks(threadId)).toMatchObject([{ id: taskId, prompt: 'Review changed files', state: 'running' }])
+    expect(store.claimScheduledTask(project.id, schedule.id, { threadId: randomUUID(), taskId: randomUUID(), prompt: 'Retry' }, new Date())).toBeNull()
     expect(store.listDueScheduledTasks()).toEqual([])
 
     const once = store.createScheduledTask({
       id: randomUUID(), projectId: project.id, sourceThreadId: null, title: 'One time',
       prompt: 'Summarize the project', model: 'auto', reasoningEffort: 'low', recurrence: 'once', nextRunAt: due.toISOString(),
     })
-    expect(store.claimScheduledTask(project.id, once.id, new Date())?.enabled).toBe(false)
-    expect(store.claimScheduledTask(project.id, once.id, new Date())).toBeNull()
+    expect(store.claimScheduledTask(project.id, once.id, { threadId: randomUUID(), taskId: randomUUID(), prompt: 'Summarize the project' }, new Date())?.enabled).toBe(false)
+    expect(store.claimScheduledTask(project.id, once.id, { threadId: randomUUID(), taskId: randomUUID(), prompt: 'Retry' }, new Date())).toBeNull()
     expect(() => store.setScheduledTaskEnabled(project.id, once.id, true)).toThrow(/already run/i)
+    store.close()
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+it('rolls back a claimed occurrence and partial history when scheduled task persistence fails', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'codic-store-schedule-rollback-'))
+  const databasePath = path.join(directory, 'codic.sqlite')
+  try {
+    const store = CodicLocalStore.open(databasePath)
+    const project = store.addProject({ id: randomUUID(), path: directory, name: 'Rollback project' })
+    const existingThread = store.createThread({ id: randomUUID(), projectId: project.id, title: 'Existing task' })
+    const collidingTaskId = randomUUID()
+    store.createTask({ id: collidingTaskId, threadId: existingThread.id, model: 'auto', prompt: 'Existing task' })
+    const due = new Date(Date.now() - 60_000)
+    const schedule = store.createScheduledTask({
+      id: randomUUID(), projectId: project.id, sourceThreadId: existingThread.id, title: 'Atomic scheduled task',
+      prompt: 'Run on schedule', model: 'auto', reasoningEffort: 'medium', recurrence: 'once', nextRunAt: due.toISOString(),
+    })
+    const preparedThreadId = randomUUID()
+
+    expect(() => store.claimScheduledTask(project.id, schedule.id, {
+      threadId: preparedThreadId,
+      taskId: collidingTaskId,
+      prompt: 'Run on schedule',
+    }, new Date())).toThrow()
+
+    expect(store.getScheduledTask(project.id, schedule.id)).toMatchObject({ enabled: true, lastRunAt: null })
+    expect(store.listDueScheduledTasks().map((task) => task.id)).toContain(schedule.id)
+    expect(store.getThread(project.id, preparedThreadId)).toBeNull()
+    expect(store.listTasks(existingThread.id)).toHaveLength(1)
+
+    expect(store.claimScheduledTask(project.id, schedule.id, {
+      threadId: preparedThreadId,
+      taskId: randomUUID(),
+      prompt: 'Run on schedule',
+    }, new Date())?.enabled).toBe(false)
+    expect(store.getThread(project.id, preparedThreadId)?.title).toBe('Atomic scheduled task')
     store.close()
   } finally {
     rmSync(directory, { recursive: true, force: true })

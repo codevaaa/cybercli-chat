@@ -5,7 +5,7 @@ import {
   X, User, Shield, CreditCard, Zap, Plug, Settings2,
   Moon, Sun, Monitor, ChevronLeft, Check, Bell, Volume2,
   Type, Palette, Save, Camera, AlertCircle, Code2, Copy, Activity,
-  Gift, Users
+  Gift, Users, Terminal
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'

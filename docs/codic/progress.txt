@@ -1,9 +1,17 @@
 Codic implementation progress — 2026-11-12
 
+Prompt composer and context attachments — 2026-11-14
+- Replaced the misleading “Add context” project-picker action with a `+` menu that opens above the composer, clamps to the visible window, and follows its trigger on resize/scroll.
+- Added native file and folder pickers for source/text context. The main process keeps pending file contents in memory behind per-window opaque IDs; selecting files does not send them to Codeva by itself. They are sent only with the next submitted prompt.
+- Added text-only extension checks, binary and credential filename exclusions, generated-directory skipping, symlink skipping, and per-file/count/total-size limits. File labels are escaped and model context explicitly marks attached content as reference data.
+- Added removable attachment chips, skipped-file feedback, attached-file labels on the sent user message, and a project-required message instead of unexpectedly opening the folder picker when Enter/Send is used before choosing a project.
+- Added tests for file/folder filtering and limits, context formatting, popover bounds, keyboard navigation, Escape behavior, and picker actions.
+- Desktop Vitest: 14 files / 42 tests passed. TypeScript typecheck and Electron/Vite production build passed. The unsigned Windows x64 preview installer is recorded below; packaged visual interaction remains unchecked.
+
 UI alignment pass — 2026-11-13
 - Set new profiles to 130% application zoom while retaining a valid saved zoom preference.
 - Tightened the Codic navigation rail and project/task pane proportions for the enlarged default. The right project panel now starts closed so the conversation has the width shown in the reference layout.
-- Replaced the no-project promotional hero with a prompt-first empty workspace: centered Codic heading, a Choose project control, a prompt box, permission selector, model picker, reasoning effort, and send action. Enter or Send opens folder selection and keeps the draft available for the project.
+- Replaced the no-project promotional hero with a prompt-first empty workspace: centered Codic heading, a Choose project control, a prompt box, permission selector, model picker, reasoning effort, and send action. Project selection remains separate from sending the draft.
 - Added container-based wrapping to the composer so its controls respond to the actual conversation width, including when the project panel is open or the window is zoomed.
 - Added composer-level action approval and reasoning effort menus. Both stay within the visible window, open above the composer when there is room, support keyboard navigation and dismissal, and persist selections through existing settings. Full access remains visibly unavailable.
 - Refined the model menu to match the compact Codic styling, keep its search field, clamp to narrow viewports, and use the mouse wheel to move through long lists without wrapping from the last model to the first.
@@ -91,3 +99,21 @@ Release blockers
 - Prevented unpublished Codic builds from requesting the missing `latest.yml` updater manifest. The Windows updater now checks the public release catalog first and only contacts electron-updater when a versioned installer with SHA-512 is available.
 - Fixed the gateway's missing-primary-key early exit so an unavailable selected model still reaches configured backups. Added a secondary Cloudflare Workers AI recovery model after the configured fallback chain for text requests, while retaining route policy and tool-capability checks.
 - Added container-based layout breakpoints for app shell, workspace, and composer so reduced CSS viewport widths from window sizing or zoom compact the navigation and wrap controls; wide displays can use more of the composer width.
+
+2026-11-14 — Codic 0.1.11 composer context picker
+- Replaced the misleading “Add context” action with a plus menu that opens above the composer, remains inside the window, repositions on resize/scroll, and supports keyboard navigation and dismissal.
+- Added native file and folder selection. The main process reads supported text files only; the renderer receives opaque attachment IDs and names, while contents are added to the request only when sent. Selection is bounded by file count, file size, and aggregate size; secret-like filenames, symlinks, binaries, and generated folders are skipped. Users can remove attachments before sending.
+- Kept project selection as its own composer control. Draft context is cleared on project/thread changes and sign-out, and sending without a project now gives a clear next step instead of opening a folder picker.
+- Verification: desktop typecheck passed; 14 test files / 41 tests passed; production build passed; Windows x64 unsigned NSIS package built and its update manifest size/SHA-512 verified. No packaged visual interaction check was performed.
+- Local preview: `codic/desktop/release-0.1.11-preview/Codic Setup 0.1.11.exe`, 127,018,629 bytes, SHA-256 `54b5d424283f47ca355e9527955be3e928e0e8aba5c06b55ec922cf96e014e39`. This preview remains local and unpublished.
+
+2026-11-17 — Codic 0.1.12 companion reliability and status accuracy
+- Added an original procedural Three.js Codi companion in a separate transparent desktop window. Its motion reflects real local runtime activity, respects reduced-motion and hidden-window states, and provides a CSS illustration when WebGL is unavailable. The companion prompt only places an unsent draft into Codic for review.
+- Made the companion window resizable and display-clamped, with saved bounds. Added a recovery screen with a Hide Codi action if its lazy UI chunk fails, and prevented a delayed initial activity snapshot from replacing newer runtime events.
+- Public system status now distinguishes a reachable provider model catalog from a successful Codic completion. Removed synthetic provider uptime, SLA, Council health, and empty incident history claims; key-pool inspection now requires a website-authenticated admin listed in `ADMIN_USER_IDS` and rejects API-key sessions.
+- Verification: desktop tests 19 files / 57 tests, build and TypeScript check passed; backend tests 136/136; frontend tests 281/281, lint and production build passed; desktop/backend/frontend production dependency audits each report zero vulnerabilities. `git diff --check` passed.
+- Built Windows x64 NSIS installer `C:\Users\pc\AppData\Local\Temp\codic-0.1.12-preview-build2\Codic Setup 0.1.12.exe` (128,947,873 bytes; SHA-256 `61456ad051ecc7ebef3b47c4dc5dc0a7bac866be4e1cae45ab4c3ed631080357`). Generated `latest.yml` SHA-512 and size match the exact installer. Installed it to `C:\Users\pc\AppData\Local\Programs\Codic\Codic.exe` and launched it; process reported window title `Codic` and version `0.1.12.0`.
+- This is a private unsigned preview; no public artifact was uploaded and the update catalog remains closed. Automatic updates require a signed Windows installer with configured trusted publisher and matching release metadata. The old 0.1.9 client can still show a raw `latest.yml` 404 until manually updated.
+- Live model-service behavior, account-backed Google/email sign-in and model turn, production deployment, macOS/Linux native packaging, signed installer update/recovery, and packaged pixel-level companion review remain open launch gates. The frontend build continues to warn about pre-existing large chunks.
+- Extended the public Codic release catalog to return explicit Windows, macOS universal DMG, and Linux x64 AppImage states with per-platform version, configured SHA-256 metadata, safe HTTPS redirect-chain and reachability checks, and Content-Length comparison when available. Added exact `/codic/macos` and `/codic/linux` redirect routes; the production publication gate remains disabled. The endpoint does not independently verify artifact bytes against configured hashes.
+- Follow-up verification: backend tests 138/138; frontend tests 282/282; frontend lint and production build passed; `git diff --check` passed. The production bundle still reports existing >500 kB chunks.

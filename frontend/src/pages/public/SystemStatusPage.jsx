@@ -51,7 +51,7 @@ function HeartbeatLine({ status, latency }) {
       } else if (status === 'degraded') {
         y = 20 + Math.sin(i * 0.5) * 8
       } else {
-        y = 20 + (Math.random() * 4 - 2) // flat with noise for down
+        y = 20
       }
       pts.push(`${x},${y}`)
     }
@@ -90,11 +90,12 @@ function HeartbeatLine({ status, latency }) {
 
 // ── Animated Radial Latency Gauge ───────────────────────────────────────────
 function LatencyGauge({ latency, status }) {
+  const hasLatency = Number.isFinite(latency)
   const maxLatency = 3000
-  const ratio = Math.min(latency / maxLatency, 1)
+  const ratio = hasLatency ? Math.min(latency / maxLatency, 1) : 0
   const circumference = 2 * Math.PI * 28
   const offset = circumference * (1 - ratio)
-  const color = latency < 500 ? '#10B981' : latency < 1500 ? '#F59E0B' : '#EF4444'
+  const color = hasLatency ? (latency < 500 ? '#10B981' : latency < 1500 ? '#F59E0B' : '#EF4444') : getStatusConfig(status).color
 
   return (
     <div className="relative w-16 h-16 flex-shrink-0">
@@ -112,8 +113,8 @@ function LatencyGauge({ latency, status }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[10px] font-bold font-mono" style={{ color }}>{latency}</span>
-        <span className="text-[7px] text-gray-500 uppercase tracking-wider">ms</span>
+        <span className="text-[10px] font-bold font-mono" style={{ color }}>{hasLatency ? latency : '—'}</span>
+        <span className="text-[7px] text-gray-500 uppercase tracking-wider">{hasLatency ? 'ms' : 'n/a'}</span>
       </div>
     </div>
   )
@@ -135,32 +136,15 @@ function PulseDot({ status }) {
   )
 }
 
-// ── 45-Day Uptime Bars ──────────────────────────────────────────────────────
-function UptimeBars({ uptime, status }) {
+// ── Historical uptime placeholder ───────────────────────────────────────────
+function UptimeHistory({ uptime, tracked = false }) {
+  if (tracked && typeof uptime === 'number' && Number.isFinite(uptime)) {
+    return <div className="text-[10px] text-gray-500">Recorded uptime: {uptime.toFixed(2)}%</div>
+  }
+
   return (
-    <div className="flex items-center gap-[1.5px] h-5">
-      {Array.from({ length: 45 }).map((_, i) => {
-        const dayUptime = status === 'operational'
-          ? (Math.random() > 0.02 ? 100 : 98 + Math.random() * 2)
-          : status === 'degraded'
-            ? (Math.random() > 0.1 ? 100 : 95 + Math.random() * 5)
-            : (Math.random() > 0.3 ? 100 : 80 + Math.random() * 20)
-
-        const barColor = dayUptime >= 99.5 ? '#10B981'
-          : dayUptime >= 97 ? '#F59E0B'
-          : '#EF4444'
-
-        return (
-          <motion.div
-            key={i}
-            className="flex-1 rounded-sm"
-            style={{ backgroundColor: barColor, opacity: 0.75 }}
-            initial={{ height: 0 }}
-            animate={{ height: '100%' }}
-            transition={{ delay: i * 0.015, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          />
-        )
-      })}
+    <div className="text-[10px] text-gray-600">
+      Historical uptime data is not available.
     </div>
   )
 }
@@ -176,7 +160,7 @@ function NetworkTopology({ clusters }) {
       x: 420 + (i % 2) * 140,
       y: 20 + Math.floor(i / 2) * 75,
       label: c.name,
-      status: c.status,
+      status: c.verified === true ? c.status : 'unknown',
       icon: '🔮',
     })),
   ]
@@ -206,7 +190,8 @@ function NetworkTopology({ clusters }) {
       {displayClusters.map((c, i) => {
         const tx = 420 + (i % 2) * 140
         const ty = 20 + Math.floor(i / 2) * 75
-        const color = c.status === 'operational' ? '#10B981' : c.status === 'degraded' ? '#F59E0B' : '#EF4444'
+        const status = c.verified === true ? c.status : 'unknown'
+        const color = getStatusConfig(status).color
         return (
           <g key={c.name}>
             <line x1="280" y1="120" x2={tx - 20} y2={ty} stroke={color} strokeWidth="1" opacity="0.3" strokeDasharray="4 3">
@@ -236,16 +221,17 @@ function NetworkTopology({ clusters }) {
       {displayClusters.map((c, i) => {
         const tx = 420 + (i % 2) * 140
         const ty = 20 + Math.floor(i / 2) * 75
-        const sc = getStatusConfig(c.status)
+        const nodeStatus = c.verified === true ? c.status : 'unknown'
+        const sc = getStatusConfig(nodeStatus)
         return (
           <g key={c.name}>
             <circle cx={tx} cy={ty} r="16" fill={sc.bg} stroke={sc.border} strokeWidth="1.5">
-              {c.status === 'operational' && (
+              {nodeStatus === 'operational' && (
                 <animate attributeName="stroke-opacity" values="0.3;0.8;0.3" dur="2.5s" repeatCount="indefinite" />
               )}
             </circle>
             <circle cx={tx} cy={ty} r="3" fill={sc.color}>
-              {c.status === 'operational' && (
+              {nodeStatus === 'operational' && (
                 <animate attributeName="r" values="3;4;3" dur="1.5s" repeatCount="indefinite" />
               )}
             </circle>
@@ -310,13 +296,16 @@ export default function SystemStatusPage() {
     return () => clearInterval(intervalRef.current)
   }, [])
 
-  const overallConfig = data ? getStatusConfig(data.overall) : getStatusConfig('unknown')
+  const completionVerified = data?.verification?.codicCompletion === 'verified'
+  const effectiveOverall = data?.overall === 'operational' && !completionVerified ? 'unknown' : data?.overall
+  const overallConfig = data ? getStatusConfig(effectiveOverall) : getStatusConfig('unknown')
   const OverallIcon = overallConfig.icon
 
-  const overallLabel = data?.overall === 'operational' ? 'All Systems Operational'
-    : data?.overall === 'degraded' ? 'Some Systems Degraded'
-    : data?.overall === 'partial_outage' ? 'Partial Outage Detected'
-    : data?.overall === 'major_outage' ? 'Major Outage in Progress'
+  const overallLabel = effectiveOverall === 'operational' ? 'All Systems Operational'
+    : effectiveOverall === 'degraded' ? 'Some Infrastructure Checks Degraded'
+    : effectiveOverall === 'partial_outage' ? 'Infrastructure Partial Outage'
+    : effectiveOverall === 'major_outage' ? 'Infrastructure Major Outage'
+    : effectiveOverall === 'unknown' ? 'Completion Availability Unverified'
     : 'Checking Systems…'
 
   return (
@@ -325,7 +314,7 @@ export default function SystemStatusPage() {
     >
       <SEOHead
         title="System Status — Codeva"
-        description="Real-time health monitoring for all Codeva AI clusters, providers, and infrastructure."
+        description="Infrastructure checks and provider catalog probe results for Codeva."
       />
 
       {/* ── Background effects ── */}
@@ -387,7 +376,7 @@ export default function SystemStatusPage() {
                     {overallLabel}
                   </h1>
                   <p className="text-xs text-gray-450 leading-relaxed mt-1.5 font-medium">
-                    Real-time health monitoring across {data.clusters.length} compute clusters and {Object.keys(data.infrastructure).length} infrastructure services.
+                    Infrastructure checks and provider catalog probes. Codic completion availability is not currently verified.
                   </p>
                 </div>
               </div>
@@ -396,7 +385,9 @@ export default function SystemStatusPage() {
                 <div className="flex flex-col items-start md:items-end px-4 py-2.5 rounded-xl" style={{ background: overallConfig.bg, border: `1px solid ${overallConfig.border}` }}>
                   <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">90-Day SLA</span>
                   <span className="text-lg font-bold font-mono" style={{ color: overallConfig.color }}>
-                    {data.sla90Day?.toFixed(2)}%
+                    {data.verification?.historicalUptime === 'tracked' && typeof data.sla90Day === 'number'
+                      ? `${data.sla90Day.toFixed(2)}%`
+                      : 'Not measured'}
                   </span>
                 </div>
                 <Tooltip content="Manually refresh system status">
@@ -440,7 +431,8 @@ export default function SystemStatusPage() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 {data.clusters.map((cluster, idx) => {
-                  const sc = getStatusConfig(cluster.status)
+                  const displayStatus = cluster.verified === true ? cluster.status : 'unknown'
+                  const sc = getStatusConfig(displayStatus)
                   return (
                     <ScrollReveal key={cluster.name} delay={idx * 0.04}>
                       <motion.div
@@ -454,7 +446,7 @@ export default function SystemStatusPage() {
                       >
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex items-center gap-3">
-                            <LatencyGauge latency={cluster.latency} status={cluster.status} />
+                            <LatencyGauge latency={cluster.verified === true ? cluster.latency : null} status={displayStatus} />
                             <div>
                               <h3 className="text-xs font-bold text-white mb-0.5">{cluster.name}</h3>
                               <p className="text-[10px] text-gray-550 font-medium">{cluster.type}</p>
@@ -464,34 +456,34 @@ export default function SystemStatusPage() {
                             className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider"
                             style={{ background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}
                           >
-                            <PulseDot status={cluster.status} />
+                            <PulseDot status={displayStatus} />
                             {sc.label}
                           </span>
                         </div>
 
                         {/* Heartbeat line */}
                         <div className="mb-3 opacity-60 group-hover:opacity-100 transition-opacity">
-                          <HeartbeatLine status={cluster.status} latency={cluster.latency} />
+                          <HeartbeatLine status={displayStatus} latency={cluster.verified === true ? cluster.latency : null} />
                         </div>
 
-                        {/* 45-Day Uptime Bars */}
+                        {/* Historical uptime is shown only when backed by recorded data. */}
                         <div className="mb-3">
-                          <UptimeBars uptime={cluster.uptime} status={cluster.status} />
+                          <UptimeHistory uptime={cluster.uptime} tracked={data.verification?.historicalUptime === 'tracked'} />
                         </div>
 
                         {/* Metrics */}
                         <div className="flex justify-between text-[10px] text-gray-500 pt-2 border-t border-white/[0.03] font-mono">
                           <span className="flex items-center gap-1">
                             <Timer className="w-3.5 h-3.5 text-gray-600" />
-                            Latency: <span className="text-gray-300 font-bold">{cluster.latency}ms</span>
+                            Catalog probe: <span className="text-gray-300 font-bold">{Number.isFinite(cluster.latency) ? `${cluster.latency}ms` : 'not run'}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <Server className="w-3.5 h-3.5 text-gray-600" />
-                            Load: <span className="text-gray-300 font-bold capitalize">{cluster.load}</span>
+                            Probe: <span className="text-gray-300 font-bold capitalize">{cluster.probe?.replaceAll('_', ' ') || 'unknown'}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <Activity className="w-3.5 h-3.5 text-gray-600" />
-                            Uptime: <span className="text-gray-300 font-bold">{cluster.uptime?.toFixed(2)}%</span>
+                            Availability: <span className="text-gray-300 font-bold capitalize">{cluster.availability?.replaceAll('_', ' ') || 'unknown'}</span>
                           </span>
                         </div>
                       </motion.div>
@@ -511,7 +503,13 @@ export default function SystemStatusPage() {
                 </h2>
               </ScrollReveal>
 
-              {data.incidents && data.incidents.length > 0 ? (
+              {!(Array.isArray(data.incidents) && data.incidents.length > 0) && data.incidentsAvailable !== true ? (
+                <div className="p-8 rounded-2xl border border-white/[0.06] text-center bg-white/[0.01]">
+                  <Clock className="w-8 h-8 text-gray-600 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-gray-400">Incident history is not available</p>
+                  <p className="text-xs text-gray-600 mt-1">This service does not yet publish a verified incident log.</p>
+                </div>
+              ) : data.incidents && data.incidents.length > 0 ? (
                 <div className="space-y-4">
                   {data.incidents.map((inc, i) => (
                     <ScrollReveal key={inc.title || i} delay={i * 0.08}>
@@ -547,7 +545,7 @@ export default function SystemStatusPage() {
                 >
                   <CheckCircle2 className="w-8 h-8 text-emerald-500/40 mx-auto mb-3" />
                   <p className="text-sm font-semibold text-emerald-400/80">No incidents in the last 30 days</p>
-                  <p className="text-xs text-gray-550 mt-1">All systems have been running smoothly.</p>
+                  <p className="text-xs text-gray-550 mt-1">No incidents have been recorded for this period.</p>
                 </motion.div>
               )}
             </section>

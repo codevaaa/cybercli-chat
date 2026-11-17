@@ -1,5 +1,5 @@
-import { app, BrowserWindow, clipboard, contentTracing, dialog, ipcMain, safeStorage, shell, type WebContents } from 'electron'
-import electronUpdater, { type NsisUpdater } from 'electron-updater'
+import { app, BrowserWindow, clipboard, contentTracing, dialog, ipcMain, safeStorage, screen, shell, type WebContents } from 'electron'
+import electronUpdater from 'electron-updater'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import * as pty from '@homebridge/node-pty-prebuilt-multiarch'
 import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
@@ -10,14 +10,51 @@ import { CodicLocalStore } from './local-store.js'
 import { findCodicAuthCallback, parseCodicAuthCallback } from '../shared/authHandoff.js'
 import { listThreadSummaries, loadThreadHistory } from './history.js'
 import { toCodicApiPlatform } from './device-platform.js'
-import { fetchCodicUpdateFeedReadiness } from './updateFeed.js'
+import { fetchCodicUpdateFeedReadiness, hasTrustedUpdatePublisher } from './updateFeed.js'
 import { readWorkspaceDiff, runWorkspaceCommand } from './workspace-tools.js'
+import { formatContextFiles, MAX_CONTEXT_FILES, MAX_CONTEXT_TOTAL_BYTES, readSelectedContextFiles, readSelectedContextFolder } from './contextFiles.js'
 import { SecretScanner } from '../../../../cybercoder/packages/codic-runtime/src/shared-bridge.js'
-import type { CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicRuntimeEventEnvelope, CodicUpdateCheck, EditAction } from '../shared/contracts.js'
+import { clampCompanionBounds, getInitialCompanionBounds, type CompanionBounds } from './companionWindow.js'
+import { activityFromRuntimeEvent } from './companionActivity.js'
+import { requireSavedProject as resolveSavedProject } from './project-access.js'
+import { cancelTasksForOwner } from './task-ownership.js'
+import type { CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicRuntimeEventEnvelope, CodicUpdateCheck, CompanionActivity, EditAction } from '../shared/contracts.js'
 
 declare const __CODIC_LOCAL_PREVIEW_ENABLED__: boolean
 
 const { autoUpdater } = electronUpdater
+
+function registerContextFiles(owner: WebContents, files: Array<{ name: string; content: string; size: number }>) {
+  const existing = pendingContextAttachments.get(owner) ?? new Map<string, PendingContextAttachment>()
+  const existingBytes = [...existing.values()].reduce((total, attachment) => total + attachment.size, 0)
+  const incomingBytes = files.reduce((total, file) => total + file.size, 0)
+  if (existing.size + files.length > MAX_CONTEXT_FILES || existingBytes + incomingBytes > MAX_CONTEXT_TOTAL_BYTES) {
+    throw new Error(`A prompt can include up to ${MAX_CONTEXT_FILES} text files and ${Math.round(MAX_CONTEXT_TOTAL_BYTES / 1024)} KB of context. Remove an attachment or choose fewer files.`)
+  }
+  const added = files.map((file) => {
+    const attachment = { id: randomUUID(), ...file }
+    existing.set(attachment.id, attachment)
+    return { id: attachment.id, name: attachment.name, size: attachment.size }
+  })
+  if (existing.size) pendingContextAttachments.set(owner, existing)
+  return added
+}
+
+function getPendingContextFiles(owner: WebContents, requestedIds: unknown): PendingContextAttachment[] {
+  if (requestedIds === undefined) return []
+  if (!Array.isArray(requestedIds) || requestedIds.length > MAX_CONTEXT_FILES || requestedIds.some((id) => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id))) {
+    throw new Error('The attached prompt context is invalid. Remove the files and attach them again.')
+  }
+  const uniqueIds = new Set(requestedIds as string[])
+  if (uniqueIds.size !== requestedIds.length) throw new Error('The same context file cannot be attached more than once.')
+  const available = pendingContextAttachments.get(owner)
+  const files = [...uniqueIds].map((id) => available?.get(id))
+  if (files.some((file) => !file)) throw new Error('An attached context file expired. Attach it again before sending.')
+  const resolved = files as PendingContextAttachment[]
+  const bytes = resolved.reduce((total, file) => total + file.size, 0)
+  if (bytes > MAX_CONTEXT_TOTAL_BYTES) throw new Error('The attached prompt context is larger than allowed. Remove some files and retry.')
+  return resolved
+}
 
 const isDevelopment = !app.isPackaged
 const devRendererUrl = process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173'
@@ -25,8 +62,11 @@ const apiRoot = (process.env.CODEVA_API_BASE_URL || 'https://cybercli-api.onrend
 const apiBase = apiRoot.endsWith('/api/v1') ? apiRoot : `${apiRoot}/api/v1`
 const authStoragePath = () => path.join(app.getPath('userData'), 'auth-store.bin')
 const handoffVerifierPath = () => path.join(app.getPath('userData'), 'auth-handoff.bin')
+const companionPreferencesPath = () => path.join(app.getPath('userData'), 'companion-window.json')
 const deviceIdPath = () => path.join(app.getPath('userData'), 'device-id')
 const terminalSessions = new Map<string, { terminal: pty.IPty; owner: WebContents; projectPath: string }>()
+type PendingContextAttachment = { id: string; name: string; content: string; size: number }
+const pendingContextAttachments = new WeakMap<WebContents, Map<string, PendingContextAttachment>>()
 let mainWindow: BrowserWindow | null = null
 const taskWindowOwners = new Map<string, BrowserWindow>()
 let pendingAuthCallback: string | null = null
@@ -34,9 +74,18 @@ let runtimeBridge: CodicRuntimeBridge | null = null
 let localStore: CodicLocalStore | null = null
 let schedulePollTimer: NodeJS.Timeout | null = null
 let browserWindow: BrowserWindow | null = null
+let companionWindow: BrowserWindow | null = null
+let companionEnabled = false
+let companionBounds: CompanionBounds | null = null
+let companionMoveTimer: NodeJS.Timeout | null = null
+let companionActivity: CompanionActivity = 'idle'
+let companionActivityTimer: NodeJS.Timeout | null = null
+const companionTaskActivities = new Map<string, CompanionActivity>()
+let appIsQuitting = false
 let performanceTraceRunning = false
 let localPreviewAccessGranted = false
 const ephemeralTaskIds = new Set<string>()
+const scheduledStartStates = new Map<string, { finished: boolean }>()
 const UPDATE_RETRY_DELAYS_MS = [30_000, 60_000, 120_000]
 let updateRetryAttempt = 0
 let updateRetryTimer: NodeJS.Timeout | null = null
@@ -117,9 +166,8 @@ const configureAutoUpdater = () => {
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = false
   autoUpdater.allowDowngrade = false
-  // Preview installers are unsigned. HTTPS and the release manifest checksum
-  // are verified by electron-updater; publisher-signature verification is not available yet.
-  if (process.platform === 'win32') (autoUpdater as NsisUpdater).verifyUpdateCodeSignature = async () => null
+  // Keep electron-updater's built-in Authenticode verification enabled. A
+  // packaged build without a configured publisher is blocked before download.
   autoUpdater.setFeedURL({ provider: 'generic', url: `${apiBase}/downloads/codic/updates/` })
 
   autoUpdater.on('checking-for-update', () => emitUpdateState({
@@ -162,6 +210,18 @@ const checkForCodicUpdates = async (isRetry = false) => {
   if (!app.isPackaged) return emitUpdateState({
     phase: 'unsupported', available: false, latestVersion: null, message: 'Package Codic for Windows to check its release update feed.',
   })
+  let publisherConfigured = false
+  try {
+    publisherConfigured = hasTrustedUpdatePublisher(readFileSync(path.join(process.resourcesPath, 'app-update.yml'), 'utf8'))
+  } catch {
+    // Unsigned preview packages have no trusted publisher and must not download
+    // an installer through the automatic update channel.
+  }
+  if (!publisherConfigured) return emitUpdateState({
+    phase: 'unsupported', available: false, latestVersion: null, percent: null, transferredBytes: null, totalBytes: null,
+    bytesPerSecond: null,
+    message: 'Automatic updates are disabled for this unsigned preview. Install Codic from the official downloads page.',
+  })
   if (updateCheckInFlight || codicUpdateState.phase === 'downloading') return codicUpdateState
   updateCheckInFlight = true
   emitUpdateState({ phase: 'checking', available: false, message: 'Checking the Codeva release catalog…' })
@@ -189,13 +249,7 @@ const checkForCodicUpdates = async (isRetry = false) => {
 
 const getExpectedRendererPath = () => path.resolve(app.getAppPath(), 'dist/renderer/index.html')
 
-const requireSavedProject = (workspacePath: unknown) => {
-  if (typeof workspacePath !== 'string' || !workspacePath.trim() || workspacePath.includes('\0')) throw new Error('Choose a saved project folder first.')
-  const canonicalPath = realpathSync(path.resolve(workspacePath))
-  const project = localStore?.findProjectByPath(canonicalPath)
-  if (!project) throw new Error('Open this project in Codic before using workspace tools.')
-  return project
-}
+const requireSavedProject = (workspacePath: unknown) => resolveSavedProject(localStore, workspacePath)
 
 const requireSafeProjectFile = (projectRoot: string, filePath: string) => {
   if (!filePath.trim() || filePath.includes('\0') || path.isAbsolute(filePath)) throw new Error('Choose a valid project-relative file path.')
@@ -526,8 +580,16 @@ if (!protocolLock) {
     // `closed` callback can throw “Object has been destroyed” on Windows.
     const ownerContents = window.webContents
     window.on('closed', () => {
-      if (mainWindow === window) mainWindow = null
-      for (const [taskId, owner] of taskWindowOwners) if (owner === window) taskWindowOwners.delete(taskId)
+      if (mainWindow === window) {
+        mainWindow = null
+        if (companionWindow && !companionWindow.isDestroyed()) companionWindow.close()
+        companionWindow = null
+        if (!appIsQuitting && companionEnabled) {
+          companionEnabled = false
+          saveCompanionPreferences()
+        }
+      }
+      cancelTasksForOwner(taskWindowOwners, window, (taskId) => runtimeBridge?.cancelTask(taskId))
       for (const [sessionId, session] of terminalSessions) {
         if (session.owner !== ownerContents) continue
         terminalSessions.delete(sessionId)
@@ -551,24 +613,209 @@ if (!protocolLock) {
     return window
   }
 
+  const publishCompanionState = () => {
+    const state = { enabled: companionEnabled, activity: companionActivity }
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.send('codic:companion-state', state)
+    }
+    if (companionWindow && !companionWindow.isDestroyed() && !companionWindow.webContents.isDestroyed()) {
+      companionWindow.webContents.send('codic:companion-activity', companionActivity)
+    }
+    return state
+  }
+
+  const setCompanionActivity = (activity: CompanionActivity, taskId: string, event: CodicRuntimeEvent) => {
+    if (companionActivityTimer) clearTimeout(companionActivityTimer)
+    companionActivityTimer = null
+    if (event.type === 'run_finished') companionTaskActivities.delete(taskId)
+    else companionTaskActivities.set(taskId, activity)
+
+    const activeStatuses = [...companionTaskActivities.values()]
+    const activeActivity = (['approval', 'error', 'working', 'thinking'] as const).find((status) => activeStatuses.includes(status))
+    if (activeActivity) {
+      companionActivity = activeActivity
+      publishCompanionState()
+      return
+    }
+
+    companionActivity = event.type === 'run_finished' ? activity : 'idle'
+    publishCompanionState()
+    if (event.type === 'run_finished' && (activity === 'completed' || activity === 'error' || activity === 'cancelled')) {
+      companionActivityTimer = setTimeout(() => {
+        companionActivityTimer = null
+        companionActivity = 'idle'
+        publishCompanionState()
+      }, 5_000)
+      companionActivityTimer.unref()
+    }
+  }
+
+  const saveCompanionPreferences = () => {
+    const file = companionPreferencesPath()
+    const temporary = `${file}.tmp`
+    try {
+      mkdirSync(path.dirname(file), { recursive: true })
+      writeFileSync(temporary, JSON.stringify({ enabled: companionEnabled, bounds: companionBounds }), { encoding: 'utf8', mode: 0o600 })
+      renameSync(temporary, file)
+    } catch {
+      try { unlinkSync(temporary) } catch { /* A failed optional position save should not interrupt Codic. */ }
+    }
+  }
+
+  const readCompanionPreferences = () => {
+    try {
+      const value: unknown = JSON.parse(readFileSync(companionPreferencesPath(), 'utf8'))
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return
+      const candidate = value as Record<string, unknown>
+      companionEnabled = candidate.enabled === true
+      const bounds = candidate.bounds
+      if (bounds && typeof bounds === 'object' && !Array.isArray(bounds)) {
+        const saved = bounds as Record<string, unknown>
+        if (['x', 'y', 'width', 'height'].every((key) => typeof saved[key] === 'number' && Number.isSafeInteger(saved[key]))) {
+          const x = Number(saved.x)
+          const y = Number(saved.y)
+          const width = Number(saved.width)
+          const height = Number(saved.height)
+          if (Math.abs(x) <= 10_000_000 && Math.abs(y) <= 10_000_000 && width > 0 && width <= 10_000 && height > 0 && height <= 10_000) {
+            companionBounds = { x, y, width, height }
+          }
+        }
+      }
+    } catch {
+      companionEnabled = false
+      companionBounds = null
+    }
+  }
+
+  const createCompanionWindow = async () => {
+    if (companionWindow && !companionWindow.isDestroyed()) {
+      companionWindow.showInactive()
+      return companionWindow
+    }
+    const cursorDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
+    const savedCenter = companionBounds
+      ? { x: companionBounds.x + Math.round(companionBounds.width / 2), y: companionBounds.y + Math.round(companionBounds.height / 2) }
+      : null
+    const savedDisplay = savedCenter ? screen.getDisplayNearestPoint(savedCenter) : cursorDisplay
+    const area = savedDisplay.workArea
+    const bounds = companionBounds
+      ? clampCompanionBounds(companionBounds, area)
+      : getInitialCompanionBounds(area)
+    companionBounds = bounds
+    const window = new BrowserWindow({
+      ...bounds,
+      show: false,
+      frame: false,
+      transparent: true,
+      backgroundColor: '#00000000',
+      hasShadow: false,
+      resizable: true,
+      movable: true,
+      minWidth: 240,
+      minHeight: 350,
+      maxWidth: 420,
+      maxHeight: 600,
+      minimizable: false,
+      maximizable: false,
+      fullscreenable: false,
+      skipTaskbar: true,
+      title: 'Codic companion',
+      webPreferences: {
+        preload: path.join(app.getAppPath(), 'dist/preload/index.cjs'),
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
+        webSecurity: true,
+        allowRunningInsecureContent: false,
+      },
+    })
+    companionWindow = window
+    window.setAlwaysOnTop(true, 'floating')
+    window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false })
+    window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+    window.webContents.on('will-navigate', (event, navigationUrl) => {
+      try {
+        const nextUrl = new URL(navigationUrl)
+        const allowed = isDevelopment
+          ? nextUrl.origin === new URL(devRendererUrl).origin
+          : nextUrl.protocol === 'file:' && path.resolve(fileURLToPath(nextUrl)) === getExpectedRendererPath()
+        if (!allowed) event.preventDefault()
+      } catch {
+        event.preventDefault()
+      }
+    })
+    window.webContents.on('will-attach-webview', (event) => event.preventDefault())
+    window.once('ready-to-show', () => {
+      if (!window.isDestroyed() && companionEnabled) window.showInactive()
+    })
+    const persistBounds = () => {
+      if (window.isDestroyed()) return
+      const current = window.getBounds()
+      const workArea = screen.getDisplayMatching(current).workArea
+      const clamped = clampCompanionBounds(current, workArea)
+      if (current.x !== clamped.x || current.y !== clamped.y || current.width !== clamped.width || current.height !== clamped.height) {
+        window.setBounds(clamped)
+      }
+      companionBounds = clamped
+      if (companionMoveTimer) clearTimeout(companionMoveTimer)
+      companionMoveTimer = setTimeout(() => { companionMoveTimer = null; saveCompanionPreferences() }, 140)
+      companionMoveTimer.unref()
+    }
+    window.on('move', persistBounds)
+    window.on('resize', persistBounds)
+    window.on('closed', () => {
+      if (companionWindow === window) {
+        companionWindow = null
+        if (!appIsQuitting && companionEnabled) {
+          companionEnabled = false
+          saveCompanionPreferences()
+          publishCompanionState()
+        }
+      }
+    })
+    if (isDevelopment) {
+      const rendererUrl = new URL(devRendererUrl)
+      rendererUrl.searchParams.set('companion', '1')
+      await window.loadURL(rendererUrl.toString())
+    } else {
+      await window.loadFile(getExpectedRendererPath(), { query: { companion: '1' } })
+    }
+    return window
+  }
+
+  const disableCompanion = () => {
+    companionEnabled = false
+    if (companionMoveTimer) clearTimeout(companionMoveTimer)
+    companionMoveTimer = null
+    saveCompanionPreferences()
+    if (companionWindow && !companionWindow.isDestroyed()) companionWindow.hide()
+    publishCompanionState()
+  }
+
   app.whenReady().then(async () => {
     if (isDevelopment && process.argv[1]) {
       app.setAsDefaultProtocolClient('codic', process.execPath, [path.resolve(process.argv[1])])
     } else {
       app.setAsDefaultProtocolClient('codic')
     }
+    readCompanionPreferences()
     configureAutoUpdater()
     localStore = CodicLocalStore.open(path.join(app.getPath('userData'), 'codic.sqlite'))
     runtimeBridge = new CodicRuntimeBridge({
       apiBaseUrl: apiBase,
       getAccessToken: async () => readAccessToken(),
       onEvent: (event, taskId) => {
+        const scheduledStartState = scheduledStartStates.get(taskId)
+        if (event.type === 'run_finished' && scheduledStartState) scheduledStartState.finished = true
+        const activity = activityFromRuntimeEvent(event)
+        if (activity) setCompanionActivity(activity, taskId, event)
         if (!ephemeralTaskIds.has(taskId)) {
           try {
             localStore?.appendTaskEvent({ id: randomUUID(), taskId, type: event.type, payload: redactHistoryValue(event) })
             if (event.type === 'run_finished') {
-              const state = event.reason === 'cancelled' ? 'cancelled' : event.reason === 'error' ? 'failed' : 'completed'
-              localStore?.finishTask(taskId, state, event.error ? String(redactHistoryValue(event.error)) : undefined)
+              const state = event.reason === 'cancelled' ? 'cancelled' : event.reason === 'end_turn' ? 'completed' : 'failed'
+              const error = event.error || (event.reason === 'max_iterations' ? 'The run reached its step limit before completing.' : undefined)
+              localStore?.finishTask(taskId, state, error ? String(redactHistoryValue(error)) : undefined)
             }
           } catch {
             // A local history write failure must not interrupt the user's agent run.
@@ -729,6 +976,38 @@ if (!protocolLock) {
         localStore.addProject({ id: existing?.id || randomUUID(), path: chosenPath, name })
       }
       return { path: chosenPath, name }
+    })
+    ipcMain.handle('codic:choose-context-files', async (event) => {
+      assertSignedInSender(event)
+      const result = await dialog.showOpenDialog({
+        title: 'Add files to prompt context',
+        buttonLabel: 'Attach files',
+        properties: ['openFile', 'multiSelections'],
+      })
+      if (result.canceled || result.filePaths.length === 0) return { attachments: [], skippedFiles: 0 }
+      const selection = readSelectedContextFiles(result.filePaths)
+      if (selection.files.length === 0) throw new Error('No supported text files were selected. Credentials, binary files, and files over 64 KB are excluded.')
+      return { attachments: registerContextFiles(event.sender, selection.files), skippedFiles: selection.skipped }
+    })
+    ipcMain.handle('codic:choose-context-folder', async (event) => {
+      assertSignedInSender(event)
+      const result = await dialog.showOpenDialog({
+        title: 'Add a project folder to prompt context',
+        buttonLabel: 'Attach folder',
+        properties: ['openDirectory'],
+      })
+      if (result.canceled || !result.filePaths[0]) return { attachments: [], skippedFiles: 0 }
+      const selection = readSelectedContextFolder(result.filePaths[0])
+      if (selection.files.length === 0) throw new Error('No supported text files were found in that folder. Generated folders, credentials, binary files, and files over 64 KB are excluded.')
+      return { attachments: registerContextFiles(event.sender, selection.files), skippedFiles: selection.skipped }
+    })
+    ipcMain.handle('codic:remove-context-attachment', (event, attachmentId: unknown) => {
+      assertSignedInSender(event)
+      if (typeof attachmentId !== 'string') return false
+      const attachments = pendingContextAttachments.get(event.sender)
+      if (!attachments?.delete(attachmentId)) return false
+      if (attachments.size === 0) pendingContextAttachments.delete(event.sender)
+      return true
     })
     ipcMain.handle('codic:list-projects', (event) => {
       assertSignedInSender(event)
@@ -1005,13 +1284,23 @@ if (!protocolLock) {
           return { role: item.role, content: item.content }
         })
       }
+      const attachmentIds = value.contextAttachmentIds
+      const attachedFiles = getPendingContextFiles(event.sender, attachmentIds)
+      const contextSuffix = formatContextFiles(attachedFiles)
+      const effectivePrompt = `${value.prompt}${contextSuffix}`
+      if (messages && contextSuffix) {
+        const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user')
+        if (!lastUserMessage) throw new Error('Add a user message before attaching context.')
+        lastUserMessage.content += contextSuffix
+        const totalCharacters = messages.reduce((total, message) => total + message.content.length, 0)
+        if (totalCharacters > 220_000) throw new Error('This conversation and its attachments are too large to send. Remove some files or start a new task.')
+      }
+      if (effectivePrompt.length > 220_000) throw new Error('The prompt and attached context are too large to send. Remove some files or shorten the prompt.')
       if (!runtimeBridge) throw new Error('The local runtime is not ready yet.')
-      const workspacePath = realpathSync(path.resolve(value.workspacePath))
+      if (!localStore) throw new Error('Local task history is not available yet.')
+      const project = requireSavedProject(value.workspacePath)
+      const workspacePath = project.path
       if (!existsSync(workspacePath) || !statSync(workspacePath).isDirectory()) throw new Error('That project folder is no longer available.')
-      const projectName = path.basename(workspacePath) || workspacePath
-      let project = localStore?.findProjectByPath(workspacePath) ?? null
-      if (localStore && !project) project = localStore.addProject({ id: randomUUID(), path: workspacePath, name: projectName })
-      if (!project || !localStore) throw new Error('Local task history is not available yet.')
       const requestedThreadId = typeof value.conversationId === 'string' && /^[0-9a-f-]{36}$/i.test(value.conversationId)
         ? value.conversationId
         : randomUUID()
@@ -1035,18 +1324,22 @@ if (!protocolLock) {
       const taskWindow = BrowserWindow.fromWebContents(event.sender)
       if (taskWindow) taskWindowOwners.set(taskId, taskWindow)
       try {
-        return runtimeBridge.startTask({
-        workspacePath: value.workspacePath,
-        prompt: value.prompt,
-        model: value.model,
+        const started = runtimeBridge.startTask({
+          workspacePath: value.workspacePath,
+          prompt: effectivePrompt,
+          model: value.model,
           reasoningEffort,
           approvalPolicy,
-        subagentsEnabled,
-        maxParallelSubagents,
-        conversationId: threadId,
-        ...(messages ? { messages } : {}),
-        taskId,
+          subagentsEnabled,
+          maxParallelSubagents,
+          conversationId: threadId,
+          ...(messages ? { messages } : {}),
+          taskId,
         })
+        const ownedAttachments = pendingContextAttachments.get(event.sender)
+        for (const attachment of attachedFiles) ownedAttachments?.delete(attachment.id)
+        if (ownedAttachments?.size === 0) pendingContextAttachments.delete(event.sender)
+        return started
       } catch (error) {
         taskWindowOwners.delete(taskId)
         ephemeralTaskIds.delete(taskId)
@@ -1200,6 +1493,61 @@ if (!protocolLock) {
       const window = BrowserWindow.fromWebContents(event.sender)
       return { maximized: Boolean(window?.isMaximized()) }
     })
+    ipcMain.handle('codic:companion-get-state', (event) => {
+      assertTrustedSender(event)
+      if (event.sender !== mainWindow?.webContents) throw new Error('Only the Codic main window can manage the companion.')
+      return { enabled: companionEnabled, activity: companionActivity }
+    })
+    ipcMain.handle('codic:companion-get-activity', (event) => {
+      assertTrustedSender(event)
+      if (event.sender !== companionWindow?.webContents) throw new Error('Only the Codic companion can read its activity state.')
+      return companionActivity
+    })
+    ipcMain.handle('codic:companion-toggle', async (event) => {
+      assertTrustedSender(event)
+      if (event.sender !== mainWindow?.webContents) throw new Error('Only the Codic main window can manage the companion.')
+      if (companionEnabled) {
+        disableCompanion()
+      } else {
+        companionEnabled = true
+        saveCompanionPreferences()
+        try {
+          await createCompanionWindow()
+          publishCompanionState()
+        } catch (error) {
+          companionEnabled = false
+          saveCompanionPreferences()
+          publishCompanionState()
+          throw error
+        }
+      }
+      return { enabled: companionEnabled }
+    })
+    ipcMain.handle('codic:companion-focus', async (event) => {
+      assertTrustedSender(event)
+      if (event.sender !== companionWindow?.webContents) throw new Error('Only the Codic companion can focus the main app.')
+      const target = mainWindow && !mainWindow.isDestroyed() ? mainWindow : await createWindow()
+      if (target.isMinimized()) target.restore()
+      target.show()
+      target.focus()
+    })
+    ipcMain.handle('codic:companion-hide', (event) => {
+      assertTrustedSender(event)
+      if (event.sender !== companionWindow?.webContents) throw new Error('Only the Codic companion can hide itself.')
+      disableCompanion()
+    })
+    ipcMain.handle('codic:companion-prompt', async (event, prompt: unknown) => {
+      assertTrustedSender(event)
+      if (event.sender !== companionWindow?.webContents) throw new Error('Only the Codic companion can draft a prompt.')
+      if (typeof prompt !== 'string' || prompt.length > 4000 || prompt.includes('\u0000') || !prompt.trim()) {
+        throw new Error('Enter a prompt of up to 4,000 characters.')
+      }
+      const target = mainWindow && !mainWindow.isDestroyed() ? mainWindow : await createWindow()
+      if (target.isMinimized()) target.restore()
+      target.show()
+      target.focus()
+      target.webContents.send('codic:companion-prompt', prompt.trim())
+    })
     ipcMain.handle('codic:open-blank-window', async (event) => {
       assertTrustedSender(event)
       await createWindow(undefined, { makeMain: false, empty: true })
@@ -1253,22 +1601,28 @@ if (!protocolLock) {
             localStore.setScheduledTaskEnabled(due.projectId, due.id, false)
             continue
           }
-          const claimed = localStore.claimScheduledTask(due.projectId, due.id)
-          if (!claimed) continue
+          const reservationId = runtimeBridge.reservePrimaryRun()
+          if (!reservationId) break
+          let claimed: ReturnType<CodicLocalStore['claimScheduledTask']> = null
           let taskId: string | null = null
+          let scheduledStartState: { finished: boolean } | null = null
           try {
             const project = localStore.getProject(due.projectId)
             if (!project) throw new Error('The scheduled project is no longer available.')
-            const thread = localStore.createThread({
-              id: randomUUID(),
-              projectId: project.id,
-              title: claimed.title,
-              parentThreadId: claimed.sourceThreadId,
-            })
+            const threadId = randomUUID()
             taskId = randomUUID()
-            localStore.createTask({ id: taskId, threadId: thread.id, model: claimed.model, prompt: String(redactHistoryValue(claimed.prompt)) })
+            claimed = localStore.claimScheduledTask(due.projectId, due.id, {
+              threadId,
+              taskId,
+              prompt: String(redactHistoryValue(due.prompt)),
+            })
+            if (!claimed) continue
+            const thread = localStore.getThread(project.id, threadId)
+            if (!thread) throw new Error('The scheduled task history could not be loaded.')
             const owner = await createWindow({ workspacePath: projectPath, threadId: thread.id })
             taskWindowOwners.set(taskId, owner)
+            scheduledStartState = { finished: false }
+            scheduledStartStates.set(taskId, scheduledStartState)
             runtimeBridge.startTask({
               workspacePath: projectPath,
               prompt: claimed.prompt,
@@ -1278,13 +1632,19 @@ if (!protocolLock) {
               conversationId: thread.id,
               messages: [{ role: 'user', content: claimed.prompt }],
               taskId,
-            })
+            }, reservationId)
           } catch (error) {
+            if (!claimed) continue
             const message = error instanceof Error ? String(redactHistoryValue(error.message)) : 'The scheduled task could not be started.'
             if (taskId) {
               localStore.finishTask(taskId, 'failed', message)
-              emitRuntimeEvent({ type: 'run_finished', runId: `schedule-${claimed.id}`, reason: 'error', error: message }, taskId)
+              if (!scheduledStartState?.finished) {
+                emitRuntimeEvent({ type: 'run_finished', runId: `schedule-${claimed.id}`, reason: 'error', error: message }, taskId)
+              }
             }
+          } finally {
+            if (taskId) scheduledStartStates.delete(taskId)
+            runtimeBridge.releasePrimaryRunReservation(reservationId)
           }
         }
       } finally {
@@ -1297,6 +1657,8 @@ if (!protocolLock) {
     const initialUrl = findCodicAuthCallback(process.argv)
     if (initialUrl) handleDeepLink(initialUrl)
     await createWindow()
+    if (companionEnabled) await createCompanionWindow()
+    publishCompanionState()
     if (process.platform === 'win32' && app.isPackaged) {
       const startupUpdateTimer = setTimeout(() => { void checkForCodicUpdates() }, 4_000)
       startupUpdateTimer.unref()
@@ -1308,7 +1670,12 @@ if (!protocolLock) {
   })
 
   app.on('before-quit', () => {
+    appIsQuitting = true
     clearUpdateRetry()
+    if (companionMoveTimer) clearTimeout(companionMoveTimer)
+    companionMoveTimer = null
+    if (companionActivityTimer) clearTimeout(companionActivityTimer)
+    companionActivityTimer = null
     if (schedulePollTimer) clearInterval(schedulePollTimer)
     schedulePollTimer = null
     runtimeBridge?.cancelAll()

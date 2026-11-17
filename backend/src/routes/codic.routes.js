@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { z } from 'zod'
+import rateLimit from 'express-rate-limit'
 import CodicDevice from '../models/CodicDevice.js'
 import CodicAuthHandoff from '../models/CodicAuthHandoff.js'
 import UsageAnalytics from '../models/UsageAnalytics.js'
@@ -8,11 +9,57 @@ import { requireAuth } from '../middleware/auth.js'
 import { llmGateway } from '../services/llm/gateway.js'
 import { streamLifetime } from '../services/llm/streamLifetime.js'
 import { getPlan } from '../config/plans.js'
+import { CodicRateLimitStore } from '../services/CodicRateLimitStore.js'
+import { APINEX_MODELS, APINEX_SUBSCRIPTION_MODELS, apinexId } from '../services/llm/apinex.js'
+import { publicBrowserModels, providerModelTier } from '../services/llm/browserProviders.js'
+import { hasKeys } from '../services/llm/keyPool.js'
 
 const router = Router()
 const MAX_MESSAGE_CHARS = 240_000
 const MAX_TOOL_COUNT = 64
 const MAX_TOOL_SCHEMA_CHARS = 96_000
+
+// The API-wide limiter is intentionally generous for ordinary metadata and
+// UI traffic. Model turns can incur provider cost, so enforce the plan's
+// documented hourly budget at the authenticated user boundary as well.
+const codicTurnLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: req => getPlan(req.user?.plan).requestsPerHour,
+  keyGenerator: req => String(req.user.id),
+  store: new CodicRateLimitStore({ prefix: 'codic-turns' }),
+  passOnStoreError: false,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Codic hourly request limit reached. Please try again later.',
+    code: 'CODIC_RATE_LIMITED',
+  },
+})
+const codicHandoffIssueLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  keyGenerator: req => String(req.user.id),
+  store: new CodicRateLimitStore({ prefix: 'codic-handoff-issue' }),
+  passOnStoreError: false,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Too many Codic sign-in attempts. Please wait before trying again.',
+    code: 'CODIC_HANDOFF_RATE_LIMITED',
+  },
+})
+const codicHandoffRedeemLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  store: new CodicRateLimitStore({ prefix: 'codic-handoff-redeem' }),
+  passOnStoreError: false,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Too many Codic sign-in handoff attempts. Please wait before trying again.',
+    code: 'CODIC_HANDOFF_RATE_LIMITED',
+  },
+})
 
 const toolCallSchema = z.object({
   id: z.string().min(1).max(200),
@@ -64,17 +111,38 @@ const modelCatalog = [
   { id: 'codeva/shiv', name: 'Shiv', description: 'Codeva security review route.', tier: 'reasoning' },
 ]
 
+const getModelCatalog = () => [
+  ...modelCatalog,
+  ...publicBrowserModels().map(model => {
+    const configured = model.id === 'apinex/default'
+      ? process.env.APINEX_MODEL || 'free/gpt-6-luna'
+      : model.name.slice(model.name.indexOf(' · ') + 3)
+    return {
+      id: model.id,
+      name: model.name,
+      description: model.description,
+      tier: providerModelTier(configured),
+    }
+  }),
+  ...(hasKeys('apinex') ? APINEX_MODELS.map(id => ({
+    id: apinexId(id),
+    name: `APINex · ${id.slice(5)}`,
+    description: 'APINex server-side model route',
+    tier: APINEX_SUBSCRIPTION_MODELS.has(id) ? 'reasoning' : 'balanced',
+  })) : []),
+]
+
 const modelAliases = {
-  ravan: 'codeva-ravan-v1',
-  abhimanyu: 'cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast',
-  madhav: 'llm7/deepseek-v3.1:671b-terminus',
-  yudhishthir: 'nvidia/llama-3.1-nemotron-70b',
-  bheem: 'llm7/qwen3-235b',
-  arjun: 'llm7/codestral-latest',
-  nakul: 'llm7/GLM-4.6V-Flash',
-  sahadeva: 'gemini/gemini-2.5-pro',
-  chanakya: 'groq/deepseek-r1-distill-70b',
-  shiv: 'llm7/kimi-k2.6',
+  ravan: 'opencode/default',
+  abhimanyu: 'seek100/default',
+  madhav: 'freemodel/default',
+  yudhishthir: 'aihubmix/default',
+  bheem: 'unorouter/default',
+  arjun: 'llm7/default',
+  nakul: 'radox/default',
+  sahadeva: 'gemini/default',
+  chanakya: 'apinex/default',
+  shiv: 'openrouter/default',
   auto: 'auto',
 }
 
@@ -171,7 +239,7 @@ const resolveModel = model => {
   return modelAliases[normalized] || model
 }
 
-const isCatalogModel = model => modelCatalog.some(item => item.id === model)
+const isCatalogModel = model => getModelCatalog().some(item => item.id === model)
 
 const emitEvent = (res, event) => {
   if (res.writableEnded || res.destroyed) return false
@@ -183,7 +251,7 @@ const messageTokensEstimate = messages => Math.max(1, Math.ceil(messages.reduce(
 // Public only to the extent that the opaque, one-use ticket is. The desktop
 // proves possession of its verifier before these encrypted session tokens are
 // released; raw Supabase credentials never travel in the deep-link URL.
-router.post('/auth-handoffs/redeem', async (req, res, next) => {
+router.post('/auth-handoffs/redeem', codicHandoffRedeemLimiter, async (req, res, next) => {
   const parsed = handoffRedeemSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: 'Start sign-in again from Codic. The secure handoff is invalid.' })
   try {
@@ -209,7 +277,7 @@ router.post('/auth-handoffs/redeem', async (req, res, next) => {
 
 router.use(requireAuth)
 
-router.post('/auth-handoffs', async (req, res, next) => {
+router.post('/auth-handoffs', codicHandoffIssueLimiter, async (req, res, next) => {
   const parsed = handoffIssueSchema.safeParse(req.body)
   if (!parsed.success) {
     const invalidChallenge = parsed.error.issues.some(issue => issue.path[0] === 'challenge')
@@ -277,7 +345,7 @@ router.delete('/devices/:deviceId', async (req, res, next) => {
 
 router.get('/models', async (req, res, next) => {
   const plan = getPlan(req.user?.plan)
-  const models = modelCatalog.map(model => ({
+  const models = getModelCatalog().map(model => ({
     ...model,
     locked: model.id !== 'auto' && !plan.allowedTiers.includes(model.tier),
   }))
@@ -304,12 +372,12 @@ router.get('/models', async (req, res, next) => {
   }
 })
 
-router.post('/turns', async (req, res, next) => {
+router.post('/turns', codicTurnLimiter, async (req, res, next) => {
   const parsed = turnSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Invalid Codic turn.' })
 
   const body = parsed.data
-  const catalogModel = modelCatalog.find(model => model.id === body.model)
+  const catalogModel = getModelCatalog().find(model => model.id === body.model)
   if (!catalogModel || !isCatalogModel(body.model)) return res.status(400).json({ error: 'Choose a model from the Codic model list.' })
   const planConfig = getPlan(req.user?.plan)
   if (catalogModel.id !== 'auto' && !planConfig.allowedTiers.includes(catalogModel.tier)) {

@@ -305,9 +305,17 @@ export class CodicLocalStore {
     return rows.map((row) => ({ ...mapScheduledTask(row), workspacePath: row.workspace_path }))
   }
 
-  claimScheduledTask(projectId: string, taskId: string, now = new Date()): LocalScheduledTask | null {
+  claimScheduledTask(
+    projectId: string,
+    taskId: string,
+    run: { threadId: string; taskId: string; prompt: string },
+    now = new Date(),
+  ): LocalScheduledTask | null {
     const row = this.database.prepare('SELECT * FROM scheduled_tasks WHERE project_id = ? AND id = ? AND enabled = 1 AND next_run_at <= ?').get(projectId, taskId, now.toISOString()) as ScheduledTaskRow | undefined
     if (!row) return null
+    if (!run.threadId.trim() || !run.taskId.trim() || !run.prompt.trim() || run.prompt.length > 20_000) {
+      throw new Error('The scheduled task could not be prepared safely.')
+    }
     let nextRunAt: string | null = null
     if (row.recurrence !== 'once') {
       const candidate = new Date(row.next_run_at)
@@ -326,8 +334,22 @@ export class CodicLocalStore {
         UPDATE scheduled_tasks SET enabled = ?, next_run_at = COALESCE(?, next_run_at), last_run_at = ?
         WHERE project_id = ? AND id = ? AND enabled = 1 AND next_run_at <= ?
       `).run(nextRunAt ? 1 : 0, nextRunAt, now.toISOString(), projectId, taskId, now.toISOString())
+      if (!result.changes) {
+        this.database.exec('COMMIT')
+        return null
+      }
+      // Advancing the occurrence and creating its durable history are one
+      // transaction. A disk/database failure rolls both sides back, so the
+      // scheduler can safely retry the same due occurrence later.
+      this.createThread({
+        id: run.threadId,
+        projectId: row.project_id,
+        title: row.title,
+        parentThreadId: row.source_thread_id,
+      })
+      this.createTask({ id: run.taskId, threadId: run.threadId, model: row.model, prompt: run.prompt })
       this.database.exec('COMMIT')
-      return result.changes ? this.getScheduledTask(projectId, taskId) : null
+      return this.getScheduledTask(projectId, taskId)
     } catch (error) {
       this.database.exec('ROLLBACK')
       throw error

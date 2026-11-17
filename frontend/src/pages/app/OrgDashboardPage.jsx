@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Users, Settings, CreditCard, Building, LogOut, Check, Mail, ShieldAlert } from 'lucide-react'
@@ -11,6 +11,9 @@ import SEOHead from '@components/seo/SEOHead'
 export default function OrgDashboardPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState('member')
+  const [inviteMessage, setInviteMessage] = useState(null)
   const queryClient = useQueryClient()
 
   const { data: orgs = [], isLoading: orgsLoading } = useQuery({
@@ -22,7 +25,7 @@ export default function OrgDashboardPage() {
   })
 
   const defaultOrgId = orgs[0]?._id
-  const currentOrgId = activeOrg?._id || defaultOrgId
+  const currentOrgId = defaultOrgId
 
   const { data: orgDetails, isLoading: detailsLoading } = useQuery({
     queryKey: ['orgDetails', currentOrgId],
@@ -34,12 +37,8 @@ export default function OrgDashboardPage() {
     enabled: !!currentOrgId
   })
 
-  useEffect(() => {
-    if (orgDetails?.organization) {
-      setActiveOrg(orgDetails.organization)
-      setMembers(orgDetails.members || [])
-    }
-  }, [orgDetails])
+  const activeOrg = orgDetails?.organization || orgs[0] || null
+  const members = orgDetails?.members || []
 
   const inviteMutation = useMutation({
     mutationFn: async (payload) => await api.post(`/orgs/${currentOrgId}/members/invite`, payload),

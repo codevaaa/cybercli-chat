@@ -48,8 +48,10 @@ backend/src/services/dossier/sandbox/__pycache__/
 .temp/
 
 # Sub-repos (managed separately)
-cybercoder/
 mobile/
+
+# The Chrome extension lockfile is required for reproducible installs.
+!chrome-extension/package-lock.json
 
 # Noise files
 *.mp3

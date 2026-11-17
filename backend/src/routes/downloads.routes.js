@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { Readable } from 'node:stream'
 import { r2FileExists, getR2PublicUrl, isR2Available } from '../services/downloads/r2Service.js'
 import { editorArtifact, editorCatalog } from '../services/downloads/editorRelease.js'
-import { codicWindowsArtifact } from '../services/downloads/codicRelease.js'
+import { codicPlatformArtifact, codicReleaseCatalog, codicWindowsArtifact } from '../services/downloads/codicRelease.js'
 
 const router = Router()
 
@@ -25,6 +25,12 @@ const DOWNLOAD_META = {
   'Codeva-linux-x64.deb': { platform: 'linux', name: 'Codeva for Linux (.deb)', size: '~70 MB', arch: 'amd64' },
 }
 
+function codicWindowsReleaseDate() {
+  const configured = process.env.CODEVA_CODIC_WINDOWS_RELEASE_DATE
+  const date = configured ? new Date(configured) : new Date()
+  return Number.isFinite(date.getTime()) ? date.toISOString() : new Date().toISOString()
+}
+
 // Editor installers are distinct from the existing chat desktop releases.
 // Only complete artifacts in the release manifest are downloadable, logged out.
 router.get('/editor', async (_req, res, next) => {
@@ -42,19 +48,19 @@ router.get('/editor/:filename', async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
-// Codic public preview release. Only advertise a Windows installer when its
-// immutable SHA-256 is configured and the HTTPS asset can be reached.
+// Codic installers are opt-in and only advertised after their configured
+// SHA-256 metadata and reachable safe HTTPS artifacts are configured per platform.
 router.get('/codic', async (_req, res, next) => {
   try {
-    const release = await codicWindowsArtifact()
     res.setHeader('Cache-Control', 'no-store')
-    res.json({ windows: release ? { ...release, available: true, url: '/api/v1/downloads/codic/windows' } : { platform: 'windows', available: false, signed: false } })
+    res.json(await codicReleaseCatalog())
   } catch (error) { next(error) }
 })
-router.get('/codic/windows', async (_req, res, next) => {
+router.get('/codic/:platform', async (req, res, next) => {
   try {
-    const release = await codicWindowsArtifact()
-    if (!release) return res.status(404).json({ error: 'The Codic Windows preview installer has not been published.' })
+    const platform = req.params.platform
+    const release = await codicPlatformArtifact(platform)
+    if (!release) return res.status(404).json({ error: 'The Codic ' + platform + ' installer has not been published.' })
     res.setHeader('Cache-Control', 'no-cache')
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.setHeader('X-Checksum-SHA256', release.sha256)
@@ -77,7 +83,7 @@ router.get('/codic/updates/latest.yml', async (_req, res, next) => {
       ...(release.size ? [`    size: ${release.size}`] : []),
       `path: ${quote(release.filename)}`,
       `sha512: ${quote(release.sha512)}`,
-      `releaseDate: ${quote(process.env.CODEVA_CODIC_WINDOWS_RELEASE_DATE || new Date().toISOString())}`,
+      `releaseDate: ${quote(codicWindowsReleaseDate())}`,
       '',
     ].join('\n')
     res.setHeader('Cache-Control', 'no-store')

@@ -20,19 +20,220 @@ services:
         sync: false
       - key: REDIS_URL
         sync: false
+      # Keep Codic downloads disabled until platform artifacts and matching
+      # checksums are configured in the Render service environment.
+      - key: CODEVA_CODIC_PUBLIC_RELEASE
+        value: false
       - key: ENCRYPTION_KEY
         generateValue: true
-      - key: OPENROUTER_API_KEY
+      # Cross-provider retries are disabled to prevent hidden provider charges.
+      - key: LLM_AUTOMATIC_FAILOVER
+        value: false
+      - key: LLM_PAID_FALLBACKS
+        value: false
+      - key: SEEK100_API_KEY
         sync: false
-      - key: GROQ_API_KEY
+      - key: SEEK100_API_KEY1
+        sync: false
+      - key: SEEK100_API_KEY2
+        sync: false
+      - key: SEEK100_API_KEY3
+        sync: false
+      - key: SEEK100_API_KEY4
+        sync: false
+      - key: SEEK100_API_KEY5
+        sync: false
+      - key: SEEK100_MODEL
+        sync: false
+      - key: SEEK100_TIER
+        sync: false
+      - key: SEEK100_AUTOMATIC
+        sync: false
+      - key: FREEMODEL_API_KEY
+        sync: false
+      - key: FREEMODEL_API_KEY1
+        sync: false
+      - key: FREEMODEL_API_KEY2
+        sync: false
+      - key: FREEMODEL_API_KEY3
+        sync: false
+      - key: FREEMODEL_API_KEY4
+        sync: false
+      - key: FREEMODEL_API_KEY5
+        sync: false
+      - key: FREEMODEL_MODEL
+        sync: false
+      - key: FREEMODEL_TIER
+        sync: false
+      - key: FREEMODEL_AUTOMATIC
+        sync: false
+      - key: FREEMODEL_SUPPORTS_TOOLS
+        sync: false
+      - key: UNOROUTER_API_KEY
+        sync: false
+      - key: UNOROUTER_API_KEY1
+        sync: false
+      - key: UNOROUTER_API_KEY2
+        sync: false
+      - key: UNOROUTER_API_KEY3
+        sync: false
+      - key: UNOROUTER_API_KEY4
+        sync: false
+      - key: UNOROUTER_API_KEY5
+        sync: false
+      - key: UNOROUTER_MODEL
+        sync: false
+      - key: UNOROUTER_TIER
+        sync: false
+      - key: UNOROUTER_AUTOMATIC
+        sync: false
+      - key: UNOROUTER_SUPPORTS_TOOLS
+        sync: false
+      - key: APINEX_API_KEY
+        sync: false
+      - key: APINEX_API_KEY1
+        sync: false
+      - key: APINEX_API_KEY2
+        sync: false
+      - key: APINEX_API_KEY3
+        sync: false
+      - key: APINEX_API_KEY4
+        sync: false
+      - key: APINEX_API_KEY5
+        sync: false
+      - key: APINEX_MODEL
+        sync: false
+      - key: APINEX_TIER
+        sync: false
+      - key: APINEX_AUTOMATIC
+        sync: false
+      - key: RADOX_API_KEY
+        sync: false
+      - key: RADOX_API_KEY1
+        sync: false
+      - key: RADOX_API_KEY2
+        sync: false
+      - key: RADOX_API_KEY3
+        sync: false
+      - key: RADOX_API_KEY4
+        sync: false
+      - key: RADOX_API_KEY5
+        sync: false
+      - key: RADOX_MODEL
+        sync: false
+      - key: RADOX_TIER
+        sync: false
+      - key: RADOX_AUTOMATIC
+        sync: false
+      - key: AIHUBMIX_API_KEY
+        sync: false
+      - key: AIHUBMIX_API_KEY1
+        sync: false
+      - key: AIHUBMIX_API_KEY2
+        sync: false
+      - key: AIHUBMIX_API_KEY3
+        sync: false
+      - key: AIHUBMIX_API_KEY4
+        sync: false
+      - key: AIHUBMIX_API_KEY5
+        sync: false
+      - key: AIHUBMIX_MODEL
+        sync: false
+      - key: AIHUBMIX_TIER
+        sync: false
+      - key: AIHUBMIX_AUTOMATIC
+        sync: false
+      - key: AIHUBMIX_SUPPORTS_TOOLS
+        sync: false
+      - key: LLM7_API_KEY
+        sync: false
+      - key: LLM7_API_KEY1
+        sync: false
+      - key: LLM7_API_KEY2
+        sync: false
+      - key: LLM7_API_KEY3
+        sync: false
+      - key: LLM7_API_KEY4
+        sync: false
+      - key: LLM7_API_KEY5
+        sync: false
+      - key: LLM7_MODEL
+        sync: false
+      - key: LLM7_TIER
+        sync: false
+      - key: LLM7_AUTOMATIC
+        sync: false
+      - key: OPENCODE_API_KEY
+        sync: false
+      - key: OPENCODE_API_KEY1
+        sync: false
+      - key: OPENCODE_API_KEY2
+        sync: false
+      - key: OPENCODE_API_KEY3
+        sync: false
+      - key: OPENCODE_API_KEY4
+        sync: false
+      - key: OPENCODE_API_KEY5
+        sync: false
+      - key: OPENCODE_MODEL
+        sync: false
+      - key: OPENCODE_TIER
+        sync: false
+      - key: OPENCODE_AUTOMATIC
         sync: false
       - key: GEMINI_API_KEY
         sync: false
-      - key: NVIDIA_API_KEY
+      - key: GEMINI_API_KEY1
         sync: false
-      - key: HUGGINGFACE_API_KEY
+      - key: GEMINI_API_KEY2
         sync: false
-      - key: MISTRAL_API_KEY
+      - key: GEMINI_API_KEY3
+        sync: false
+      - key: GEMINI_API_KEY4
+        sync: false
+      - key: GEMINI_API_KEY5
+        sync: false
+      - key: GEMINI_MODEL
+        sync: false
+      - key: GEMINI_TIER
+        sync: false
+      - key: GEMINI_AUTOMATIC
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY1
+        sync: false
+      - key: OPENROUTER_API_KEY2
+        sync: false
+      - key: OPENROUTER_API_KEY3
+        sync: false
+      - key: OPENROUTER_API_KEY4
+        sync: false
+      - key: OPENROUTER_API_KEY5
+        sync: false
+      - key: OPENROUTER_MODEL
+        sync: false
+      - key: OPENROUTER_TIER
+        sync: false
+      - key: OPENROUTER_AUTOMATIC
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_API_KEY1
+        sync: false
+      - key: GROQ_API_KEY2
+        sync: false
+      - key: GROQ_API_KEY3
+        sync: false
+      - key: GROQ_API_KEY4
+        sync: false
+      - key: GROQ_API_KEY5
+        sync: false
+      - key: GROQ_MODEL
+        sync: false
+      - key: GROQ_TIER
+        sync: false
+      - key: GROQ_AUTOMATIC
         sync: false
       - key: STRIPE_SECRET_KEY
         sync: false

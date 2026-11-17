@@ -22,8 +22,18 @@
 - Make the Codic mark legible without SVG stroke scaling: a thick original CSS mark can use a one-time entrance animation, with reduced-motion support and an app icon that shares the same silhouette.
 - A local preview switch must be build-flagged off by default, granted explicitly at runtime, cleared on sign-out/app exit, and must never synthesize an account token or unlock server model requests.
 - New Window must carry an explicit blank-window route. Listing saved projects is fine, but the new renderer must not select one unless its URL names a project.
+- Prompt attachments should be user-selected, main-process-owned, per-window memory records. Never accept arbitrary renderer paths for filesystem reads; reveal only opaque attachment IDs and send bounded text content only when its prompt is submitted.
+- A composer `+` action must not double as project selection. Keep workspace selection explicit, show removable context chips before send, and preserve the draft when project selection is required.
+- Folder context needs limits and exclusions before reading: skip symlinks, generated trees, binary files, credential-like names, and oversized files; cap file count and aggregate bytes so a broad folder cannot become an unbounded model request.
+- A transparent companion window must keep a recovery control if its lazy UI chunk fails; a render failure otherwise traps the user in an empty always-on-top window. When subscribing to live activity plus fetching an initial snapshot, let any newer event win over a delayed snapshot.
 ### 2026-11-13 — Browser-to-desktop sign-in and Windows chrome
 - Custom URL callbacks must be tested at both ends. A successful website session is not proof that the desktop callback route exists on the production API.
 - Never broadcast a one-use auth callback to every open renderer. Deliver it to one primary window and make the browser page provide a user-click retry when external-protocol navigation is blocked.
 - A frameless-window auth gate hides the normal app titlebar. Put minimize/maximize/close controls in the gate itself and expose maximize state through a sender-validated IPC event.
 - For Windows branding, align the installer executable icon, BrowserWindow `icon`, and AppUserModelID. If an installed taskbar pin still uses an old cached icon, users need the updated installer/shortcut before that cached shell entry changes.
+
+- For public release catalogs, check every artifact URL redirect before following it and reject non-public host forms. Display a configured checksum as a user-verifiable value, but require the release pipeline to compute and compare it with the exact uploaded bytes before publication.
+- A recoverable conversation is not a resumable runtime. Continue from saved history under a new task ID, inspect the current workspace before acting, and reset approvals to Ask; never replay a tool call or pending approval from text history alone.
+- Enforce primary-run capacity in the main-process supervisor across all windows. A due schedule must reserve capacity before it is claimed and retain that reservation across async window setup, or a user task can race it and consume the schedule without starting.
+- Accept workspace paths from a renderer only after resolving them to a project the user has already opened through the trusted folder flow. A renderer-supplied path is not evidence of user selection.
+- A task that is awaiting approval must always have a live control surface. If the owning window closes, cancel its task and release its window ownership instead of leaving an unresolvable run paused in memory.

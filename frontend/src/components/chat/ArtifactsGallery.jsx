@@ -76,7 +76,6 @@ function CodeCard({ artifact }) {
     const origLog = console.log
     console.log = (...args) => logs.push(args.map(String).join(' '))
     try {
-      // eslint-disable-next-line no-new-func
       new Function(artifact.content)()
       setOutput({ success: true, result: logs.join('\n') || '(no output)' })
     } catch (e) {

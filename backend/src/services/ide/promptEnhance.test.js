@@ -40,9 +40,20 @@ describe('buildToolParams', () => {
     }
   })
 
-  test('omits tools for non-capable providers', () => {
-    const params = buildToolParams(sampleTools, 'auto', 'gemini')
+  test('omits tools for providers whose selected model capability is not verified', () => {
+    const params = buildToolParams(sampleTools, 'auto', 'freemodel')
     assert.deepEqual(params, {})
+  })
+
+  test('forwards tools to a configurable provider only after capability is verified', () => {
+    const original = process.env.FREEMODEL_SUPPORTS_TOOLS
+    try {
+      process.env.FREEMODEL_SUPPORTS_TOOLS = 'true'
+      assert.deepEqual(buildToolParams(sampleTools, 'auto', 'freemodel').tools, sampleTools)
+    } finally {
+      if (original === undefined) delete process.env.FREEMODEL_SUPPORTS_TOOLS
+      else process.env.FREEMODEL_SUPPORTS_TOOLS = original
+    }
   })
 
   test('omits tools when tools array empty or missing', () => {

@@ -14,8 +14,7 @@
  * - Automatic cooldown on rate-limited/failed keys (60s cooldown)
  * - Health tracking per key (success/failure counts)
  * - Never exposes keys to clients — all rotation is server-side
- * - Supports: groq, gemini, openrouter, cerebras, mistral, nvidia, bytez,
- *   huggingface, opencode, apifreellm, cloudflare
+ * - Supports the configured provider set plus retained non-chat integrations.
  */
 
 // Cooldown duration for a key that hit a rate limit or auth error
@@ -71,6 +70,10 @@ function ensurePool(provider) {
 
   const prefixMap = {
     apinex: 'APINEX',
+    seek100: 'SEEK100',
+    freemodel: 'FREEMODEL',
+    unorouter: 'UNOROUTER',
+    aihubmix: 'AIHUBMIX',
     groq: 'GROQ',
     gemini: 'GEMINI',
     openrouter: 'OPENROUTER',

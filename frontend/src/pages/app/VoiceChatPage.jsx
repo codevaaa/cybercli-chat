@@ -204,7 +204,7 @@ export default function VoiceChatPage() {
       updateProvider('gemini')
       updateVoice(selectedVoice.id)
     }
-  }, [step, voiceIndex]) // eslint-disable-line
+  }, [step, voiceIndex])
 
   // ── Core: send text to AI and stream back sentence-by-sentence ───────────
   const sendToAI = useCallback(async (text) => {
@@ -436,7 +436,7 @@ export default function VoiceChatPage() {
     } catch (err) {
       console.warn('Recognition start error:', err)
     }
-  }, [sendToAI, stop]) // eslint-disable-line
+  }, [sendToAI, stop])
 
   // Safe wrapper that doesn't create a new instance if already running
   const startRecognitionSafe = useCallback(() => {
@@ -463,7 +463,7 @@ export default function VoiceChatPage() {
       abortControllerRef.current?.abort()
       stop()
     }
-  }, []) // eslint-disable-line
+  }, [])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handlePrev = () => {

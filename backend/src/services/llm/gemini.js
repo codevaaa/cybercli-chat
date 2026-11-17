@@ -1,11 +1,11 @@
 import { GoogleGenAI } from '@google/genai'
 import { toGeminiParts } from './multimodal.js'
+import { getKey } from './keyPool.js'
 
-const apiKey = process.env.GEMINI_API_KEY
-const genAI = apiKey ? new GoogleGenAI({ apiKey }) : null
-
-export async function* streamCompletion({ messages, model = 'gemini-2.5-flash', temperature = 0.7 }) {
-  if (!genAI) throw new Error('Gemini API key not configured')
+export async function* streamCompletion({ messages, model = 'gemini-2.5-flash', temperature = 0.7, apiKey: suppliedApiKey }) {
+  const apiKey = suppliedApiKey || getKey('gemini')
+  if (!apiKey) throw new Error('Gemini API key not configured')
+  const genAI = new GoogleGenAI({ apiKey })
 
   // Gemini SDK does not accept 'system' role in contents[].
   // Extract all system messages and merge into systemInstruction config.

@@ -1,5 +1,7 @@
 export type ApiMethod = 'GET' | 'POST'
 
+export type CompanionActivity = 'idle' | 'thinking' | 'working' | 'approval' | 'completed' | 'error' | 'cancelled'
+
 export interface ModelOption {
   id: string
   name: string
@@ -110,6 +112,17 @@ export interface WorkspaceInfo {
   name: string
 }
 
+export interface ContextAttachmentSummary {
+  id: string
+  name: string
+  size: number
+}
+
+export interface ContextAttachmentSelection {
+  attachments: ContextAttachmentSummary[]
+  skippedFiles: number
+}
+
 export interface ThreadSummary {
   id: string
   title: string
@@ -140,10 +153,22 @@ export interface ThreadHistory {
   thread: { id: string; projectId: string; title: string; createdAt: string; updatedAt: string }
   messages: Array<{ id: string; role: 'user' | 'assistant'; content: string }>
   lastTaskId: string | null
+  lastTaskState: 'running' | 'completed' | 'cancelled' | 'failed' | 'interrupted' | null
   truncated: boolean
 }
 
 export interface CodicBridge {
+  companion: {
+    getState(): Promise<{ enabled: boolean; activity: CompanionActivity }>
+    getActivity(): Promise<CompanionActivity>
+    toggle(): Promise<{ enabled: boolean }>
+    focusApp(): Promise<void>
+    hide(): Promise<void>
+    submitPrompt(prompt: string): Promise<void>
+    onStateChange(callback: (state: { enabled: boolean; activity: CompanionActivity }) => void): () => void
+    onActivityChange(callback: (activity: CompanionActivity) => void): () => void
+    onPrompt(callback: (prompt: string) => void): () => void
+  }
   app: {
     getVersion(): Promise<string>
     getPlatform(): string
@@ -161,6 +186,9 @@ export interface CodicBridge {
   workspace: {
     choose(): Promise<WorkspaceInfo | null>
     chooseNewProject(): Promise<WorkspaceInfo | null>
+    chooseContextFiles(): Promise<ContextAttachmentSelection>
+    chooseContextFolder(): Promise<ContextAttachmentSelection>
+    removeContextAttachment(attachmentId: string): Promise<void>
     listProjects(): Promise<WorkspaceInfo[]>
     selectSaved(workspacePath: string): Promise<WorkspaceInfo>
     getDiff(workspacePath: string): Promise<WorkspaceDiff>
@@ -224,6 +252,7 @@ export interface CodicBridge {
       temporary?: boolean
       conversationId?: string
       messages?: Array<{ role: 'user' | 'assistant'; content: string }>
+      contextAttachmentIds?: string[]
     }): Promise<{ taskId: string }>
     cancelTask(taskId: string): void
     cancelSubagent(taskId: string, agentId: string): Promise<boolean>

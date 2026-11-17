@@ -1,5 +1,5 @@
 import OpenAI from 'openai'
-import { browserProviders, browserProviderMap, browserProvider, automaticBrowserModels } from './browserProviders.js'
+import { browserProviders, browserProviderMap, browserProvider, automaticBrowserModels, providerModelTier } from './browserProviders.js'
 import { APINEX_BASE_URL, APINEX_MODELS, apinexId, apinexPreferred } from './apinex.js'
 import { normalizeMultimodalContent, contentText, hasImageContent, toGeminiParts } from './multimodal.js'
 import { getPlan, pickModelForPlan, planAllowsModel, tierOf } from '../../config/plans.js'
@@ -83,6 +83,7 @@ const PROVIDER_KEYS = {
 
 const BASE_URLS = {
   apinex: APINEX_BASE_URL,
+  gemini: 'https://generativelanguage.googleapis.com/v1beta/openai',
   openrouter: 'https://openrouter.ai/api/v1',
   groq: 'https://api.groq.com/openai/v1',
   mistral: 'https://api.mistral.ai/v1',
@@ -107,8 +108,8 @@ const MODEL_MAP = {
   'groq/llama-3.1-70b': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
   'groq/llama-3.3-70b': { provider: 'groq', model: 'llama-3.3-70b-versatile', purpose: 'reasoning' },
   // Gemini via OpenRouter (direct SDK rate-limited — use OpenRouter proxy)
-  'gemini/gemini-2.5-flash': { provider: 'openrouter', model: 'google/gemini-2.5-flash',           purpose: 'creative'  },
-  'gemini/gemini-2.5-pro':   { provider: 'openrouter', model: 'google/gemini-2.5-flash',           purpose: 'reasoning' },
+  'gemini/gemini-2.5-flash': { provider: 'gemini', model: 'gemini-2.5-flash', purpose: 'creative' },
+  'gemini/gemini-2.5-pro':   { provider: 'gemini', model: 'gemini-2.5-pro', purpose: 'reasoning' },
   'cerebras/llama-3.1-8b': { provider: 'groq', model: 'llama-3.1-8b-instant', purpose: 'speed' },
 
   // Cloudflare Models (no key configured — redirect to groq)
@@ -368,20 +369,24 @@ const OPENROUTER_FALLBACK_MAP = {
   'llm7/devstral-small-2:24b': 'mistralai/mistral-small-24b-instruct-2501'
 }
 
+// Cross-provider failover can incur an additional provider charge even when
+// the selected model is free or quota-limited. Keep it opt-in at the server
+// level so a transient failure never silently spends from another account.
+const automaticFailoverEnabled = () => process.env.LLM_AUTOMATIC_FAILOVER?.trim().toLowerCase() === 'true'
+const paidFallbackEnabled = () => process.env.LLM_PAID_FALLBACKS?.trim().toLowerCase() === 'true'
+
 const FALLBACK_CHAIN = [
   'openrouter/gpt-4o-mini',
-  'groq/llama-3.1-8b',
   'gemini/gemini-2.5-flash',
 ]
 
-// Keep a distinct Cloudflare model after the usual public-provider fallbacks.
-// It gives automatic Codeva requests another configured route when OpenRouter
-// and Groq are rate-limited, while still honoring per-route restrictions.
+// Keep Workers AI available as a text-only recovery route. The same
+// Cloudflare credentials also power image generation elsewhere in the API.
 const CLOUDFLARE_RECOVERY_MODELS = ['cloudflare/@cf/qwen/qwq-32b']
 
 const KALI_FALLBACK_CHAIN = [
-  'groq/llama-3.3-70b',
-  'groq/llama-3.1-8b',
+  'openrouter/gpt-4o-mini',
+  'gemini/gemini-2.5-flash',
 ]
 
 const FALLBACK_CHAINS = {
@@ -472,32 +477,48 @@ export function classifyTier(text = '') {
 export function resolveModelForPlan(requestedId, planName, lastUserText = '', { preferApinex = true } = {}) {
   if (requestedId === 'brahma/v1') requestedId = 'brahma-v1'
   const plan = getPlan(planName)
+  const modelTier = id => {
+    const external = browserProvider(id)
+    return external?.configured ? providerModelTier(external.model) : tierOf(id)
+  }
+  const allowed = id => plan.allowedTiers.includes(modelTier(id))
+  const hasConfiguredRoute = id => {
+    const external = browserProvider(id)
+    // Only providers explicitly marked automatic by server configuration are
+    // eligible for model auto-selection. Legacy aliases remain manually
+    // selectable but must not become hidden billing routes.
+    return Boolean(external?.configured && external.automatic)
+  }
   const candidates = Object.keys(MODEL_MAP).filter(id => {
     const external = browserProvider(id)
-    if (external) return external.configured && external.automatic
-    return !id.startsWith('apinex/') || preferApinex && hasKeys('apinex')
+    if (external) return external.configured && external.automatic &&
+      (preferApinex || external.provider !== 'apinex') && allowed(id)
+    return hasConfiguredRoute(id) && allowed(id)
   })
   if (!requestedId || requestedId === 'auto') {
-    const preferred = automaticBrowserModels()[0]
-    if (preferApinex && preferred) return preferred
+    const preferred = automaticBrowserModels().find(id =>
+      (preferApinex || browserProvider(id)?.provider !== 'apinex') && allowed(id))
+    if (preferred) return preferred
     const tier = classifyTier(lastUserText)
-    if (preferApinex && hasKeys('apinex')) return apinexPreferred(tier)
-    return pickModelForPlan(plan.id, tier, candidates)
+    return candidates.length ? pickModelForPlan(plan.id, tier, candidates) : 'codeva/unavailable'
   }
-  if (MODEL_MAP[requestedId] && planAllowsModel(plan.id, requestedId)) {
+  if (MODEL_MAP[requestedId] && allowed(requestedId)) {
     return requestedId
   }
   // Requested model not allowed for this plan → downgrade gracefully.
   const desiredTier = MODEL_MAP[requestedId] ? tierOf(requestedId) : 'balanced'
-  return pickModelForPlan(plan.id, desiredTier, candidates)
+  return candidates.length ? pickModelForPlan(plan.id, desiredTier, candidates) : 'codeva/unavailable'
 }
 
 function getClient(provider) {
   const external = browserProviders().find(item => item.provider === provider)
-  if (external) {
+  if (external?.configured) {
     const key = getKey(provider)
-    return external.configured && key ? { client: new OpenAI({ apiKey: key, baseURL: external.baseURL, maxRetries: 0, timeout: 60000 }), key } : { client: null, key: null }
+    return key ? { client: new OpenAI({ apiKey: key, baseURL: external.baseURL, maxRetries: 0, timeout: 60000 }), key } : { client: null, key: null }
   }
+  // Providers with no legacy/static route must stay unavailable until an
+  // explicit server-side model and a key are configured.
+  if (external && !BASE_URLS[provider]) return { client: null, key: null }
   if (provider === 'brahma') {
     const key = process.env.BRAHMA_API_KEY
     if (!key) return { client: null, key: null }
@@ -523,7 +544,7 @@ function getClient(provider) {
     return { client: new OpenAI({ apiKey: key, baseURL: `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1` }), key }
   }
 
-  if (provider === 'apinex' || provider === 'openrouter' || provider === 'groq' || provider === 'mistral' || provider === 'opencode' || provider === 'apifreellm' || provider === 'cerebras' || provider === 'llm7') {
+  if (provider === 'apinex' || provider === 'openrouter' || provider === 'gemini' || provider === 'groq' || provider === 'mistral' || provider === 'opencode' || provider === 'apifreellm' || provider === 'cerebras' || provider === 'llm7') {
     return { client: new OpenAI({ apiKey: key, baseURL: BASE_URLS[provider], ...(provider === 'apinex' ? { maxRetries: 0, timeout: 60000 } : {}) }), key }
   }
 
@@ -548,10 +569,11 @@ function getRawKey(provider) {
  * are requested we prefer a tool-capable route (often OpenRouter).
  */
 export const TOOL_CAPABLE_PROVIDERS = new Set([
-  'radox', 'logfare', 'antseed',
+  'seek100', 'radox',
   'brahma',
   'apinex',
   'openrouter',
+  'gemini',
   'groq',
   'mistral',
   'cerebras',
@@ -562,6 +584,9 @@ export const TOOL_CAPABLE_PROVIDERS = new Set([
   'apifreellm',
   'cloudflare',
 ])
+
+const providerSupportsTools = provider => TOOL_CAPABLE_PROVIDERS.has(provider) ||
+  browserProvider(`${provider}/default`)?.supportsTools === true
 
 /** Sanitize a chat message while preserving OpenAI tool-calling fields. */
 export function sanitizeChatMessage(m) {
@@ -582,7 +607,7 @@ export function sanitizeChatMessage(m) {
  * Exported for unit tests.
  */
 export function buildToolParams(tools, tool_choice, provider) {
-  if (!tools?.length || !TOOL_CAPABLE_PROVIDERS.has(provider)) return {}
+  if (!tools?.length || !providerSupportsTools(provider)) return {}
   const params = { tools }
   if (tool_choice != null) params.tool_choice = tool_choice
   return params
@@ -748,67 +773,76 @@ export const llmGateway = {
 
     const totalChars = workingMessages.reduce((sum, m) => sum + messageCharCount(m), 0)
 
-    // Auto-route to Gemini when images are present (Gemini 2.5 Flash supports vision natively)
     const hasImages = workingMessages.some(m => hasImageContent(m.content))
-    if (!routePolicy && hasImages && !activeModelId.startsWith('gemini/') && !activeModelId.startsWith('apinex/')) {
-      activeModelId = 'gemini/gemini-2.5-flash'
-      yield { type: 'info', content: '🖼️ Image detected — routing to Gemini Vision for analysis' }
-    }
-
-    // Auto-route extremely large contexts to Gemini if desired, though pruning handles most
-    // (skip when tools are required — Gemini direct path does not forward tools)
-    if (!routePolicy && !hasTools && totalChars > 35000 && !activeModelId.startsWith('gemini/') && !activeModelId.startsWith('apinex/') && activeModelId !== 'codeva-ravan-v1') {
-      activeModelId = 'gemini/gemini-2.5-flash'
-    }
 
     let enriched = injectIdentity(workingMessages, isKaliKal, activeModelId === 'codeva-ravan-v1')
     if (dossierFormat.response_format) enriched.splice(1, 0, { role: 'system', content: 'Structured response required. Return one valid JSON object only. Do not use Markdown, fences or commentary. Follow the supplied response schema and role contract.' })
     // Prune context to prevent provider token crashes (Groq fails hard > 8K tokens)
     enriched = pruneContextWindow(enriched, 24000)
 
-    const targetModel = !isKaliKal && !routePolicy && /^codeva-(?!kali)/.test(activeModelId) && hasKeys('apinex')
+    const targetModel = !isKaliKal && !routePolicy && /^codeva-(?!kali)/.test(activeModelId) && browserProvider('apinex/default')?.automatic
       ? MODEL_MAP[apinexPreferred(tierOf(activeModelId))]
-      : MODEL_MAP[activeModelId] || (isKaliKal ? MODEL_MAP[KALI_FALLBACK_CHAIN[0]] : MODEL_MAP[FALLBACK_CHAIN[0]])
+      : MODEL_MAP[activeModelId]
+
+    if (!targetModel) {
+      yield { type: 'error', content: 'No automatically enabled model is configured. Choose a model or enable a verified provider in server settings.' }
+      return
+    }
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
     // Skip when tools are requested — Gemini direct path has no tools forwarding yet.
     let directGeminiFailed = false
-    if (!routePolicy && !hasTools && targetModel.provider === 'gemini' && getRawKey('gemini')) {
+    const directGeminiKey = targetModel.provider === 'gemini' ? getRawKey('gemini') : null
+    if (!routePolicy && !hasTools && targetModel.provider === 'gemini' && directGeminiKey) {
       try {
         const { streamCompletion } = await import('./gemini.js')
         const stream = streamCompletion({
           messages: enriched,
           model: targetModel.model,
           temperature,
+          apiKey: directGeminiKey,
         })
+        let directOutputStarted = false
         for await (const chunk of stream) {
+          if (chunk.type === 'token' && chunk.content) directOutputStarted = true
           yield chunk
         }
-        reportSuccess('gemini', getRawKey('gemini'))
+        if (!directOutputStarted) throw Object.assign(new Error('Gemini returned an empty stream'), { status: 502 })
+        reportSuccess('gemini', directGeminiKey)
         return
       } catch (err) {
-        console.error('Direct Gemini SDK stream completion failed, falling back to proxy:', safeProviderStatus(err))
-        reportFailure('gemini', getRawKey('gemini'), err.status || 403)
+        console.error('Direct Gemini SDK stream completion failed:', safeProviderStatus(err))
+        reportFailure('gemini', directGeminiKey, err.status || 403)
         directGeminiFailed = true
       }
+    }
+
+    if (directGeminiFailed && !automaticFailoverEnabled()) {
+      yield { type: 'error', content: 'Gemini could not complete this request. Retry is disabled to avoid a second charge.' }
+      return
     }
 
     let { client, key: activeKey } = getClient(targetModel.provider)
     let activeModelName = targetModel.model
     let activeProvider = targetModel.provider
 
-    const needsOpenRouterFallback =
-      (hasTools && !TOOL_CAPABLE_PROVIDERS.has(activeProvider)) ||
+    const needsOpenRouterFallback = paidFallbackEnabled() && (
+      (hasTools && !providerSupportsTools(activeProvider)) ||
       (activeProvider === 'gemini' && (hasTools || directGeminiFailed || !getRawKey('gemini'))) ||
-      (!client && activeProvider !== 'openrouter')
+      (!client && activeProvider !== 'openrouter'))
 
     if (needsOpenRouterFallback) {
       const { client: orClient, key: orKey } = getClient('openrouter')
       if (orClient) {
         client = orClient
         activeKey = orKey
-        activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
+        activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId]
         activeProvider = 'openrouter'
+        if (!activeModelName) {
+          ({ client, key: activeKey } = getClient(targetModel.provider))
+          activeModelName = targetModel.model
+          activeProvider = targetModel.provider
+        }
       }
     }
 
@@ -818,6 +852,7 @@ export const llmGateway = {
     try {
       if (routePolicy && !routePolicy(activeProvider, activeModelName)) throw Object.assign(new Error('Route excluded by dossier policy'), { routeExcluded: true })
       if (!client) throw Object.assign(new Error('Provider key unavailable'), { status: 503, keyUnavailable: true })
+      if (hasTools && !providerSupportsTools(activeProvider)) throw Object.assign(new Error('Selected provider does not support tool calls'), { status: 400 })
       if (auditRoutes) yield { type: 'route', phase: 'attempt', provider: activeProvider, model: activeModelName, reason: 'primary' }
       const stream = await client.chat.completions.create({
         model: activeModelName,
@@ -850,7 +885,7 @@ export const llmGateway = {
         }
       }
 
-      if (['apinex', 'radox', 'logfare', 'antseed'].includes(activeProvider) && !primaryOutputStarted) throw Object.assign(new Error('Provider returned an empty stream'), { status: 502 })
+      if (browserProvider(`${activeProvider}/default`) && !primaryOutputStarted) throw Object.assign(new Error('Provider returned an empty stream'), { status: 502 })
       reportSuccess(activeProvider, activeKey)
       if (auditRoutes) yield { type: 'route', phase: 'success', provider: activeProvider, model: activeModelName, reason: 'primary' }
       yield { type: 'done' }
@@ -865,6 +900,11 @@ export const llmGateway = {
       // provider's answer to a partially streamed APINEX response.
       if (primaryOutputStarted) {
         yield { type: 'error', content: 'The response was interrupted. Please retry.' }
+        return
+      }
+
+      if (!automaticFailoverEnabled()) {
+        yield { type: 'error', content: 'The selected provider could not complete this request. Automatic provider failover is disabled to avoid unexpected charges.' }
         return
       }
 
@@ -910,26 +950,27 @@ export const llmGateway = {
         }
       }
 
-      let activeFallbackChain = FALLBACK_CHAINS[activeModelId] || (totalChars > 25000
-        ? ['gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini']
-        : FALLBACK_CHAIN)
-      if (targetModel.provider === 'apinex') activeFallbackChain = ['openrouter/gpt-4o-mini', ...APINEX_MODELS.slice(0, 3).map(apinexId), ...FALLBACK_CHAIN.filter(id => id !== 'openrouter/gpt-4o-mini')]
-      if (!isKaliKal) activeFallbackChain = [...automaticBrowserModels(), ...activeFallbackChain]
-
-      if (isKaliKal && !FALLBACK_CHAINS[activeModelId]) {
-        activeFallbackChain = KALI_FALLBACK_CHAIN
-      }
-
-      // Workers AI does not accept image inputs in this chat route. For text
-      // requests, offer one separate Workers AI model after the configured
-      // chain so Cloudflare remains usable as a recovery provider too.
-      if (!hasImages) {
-        activeFallbackChain = [...new Set([...activeFallbackChain, ...CLOUDFLARE_RECOVERY_MODELS])]
+      let activeFallbackChain = automaticBrowserModels()
+      if (paidFallbackEnabled()) {
+        const configuredFallbacks = FALLBACK_CHAINS[activeModelId] || (totalChars > 25000
+          ? ['gemini/gemini-2.5-flash', 'openrouter/gpt-4o-mini']
+          : FALLBACK_CHAIN)
+        activeFallbackChain = [...new Set([...activeFallbackChain, ...configuredFallbacks])]
+        if (targetModel.provider === 'apinex') {
+          activeFallbackChain = [...new Set([...activeFallbackChain, 'openrouter/gpt-4o-mini', ...APINEX_MODELS.slice(0, 3).map(apinexId)])]
+        }
+        if (isKaliKal && !FALLBACK_CHAINS[activeModelId]) {
+          activeFallbackChain = [...new Set([...automaticBrowserModels(), ...KALI_FALLBACK_CHAIN])]
+        }
+        if (!hasImages) activeFallbackChain = [...new Set([...activeFallbackChain, ...CLOUDFLARE_RECOVERY_MODELS])]
       }
 
       // Try fallback chain
       for (const fallbackId of activeFallbackChain) {
         if (fallbackId === activeModelId) continue
+        if (!getPlan(plan).allowedTiers.includes(browserProvider(fallbackId)?.configured
+          ? providerModelTier(browserProvider(fallbackId).model)
+          : tierOf(fallbackId))) continue
         const fallback = MODEL_MAP[fallbackId]
         if (!fallback) continue
         if (fallback.provider === activeProvider && fallback.model === activeModelName) continue
@@ -959,16 +1000,18 @@ export const llmGateway = {
         let fbProvider = fallback.provider
         let fbModel = fallback.model
         let { client: fallbackClient, key: fallbackKey } = getClient(fbProvider)
-        if (hasTools && (!TOOL_CAPABLE_PROVIDERS.has(fbProvider) || !fallbackClient) || routePolicy && (!fallbackClient || !routePolicy(fbProvider, fbModel))) {
+        if (paidFallbackEnabled() && (hasTools && (!providerSupportsTools(fbProvider) || !fallbackClient) || routePolicy && (!fallbackClient || !routePolicy(fbProvider, fbModel)))) {
           const or = getClient('openrouter')
-          if (or.client && (!routePolicy || routePolicy('openrouter', OPENROUTER_FALLBACK_MAP[fallbackId] || fallback.model))) {
+          const openrouterModel = OPENROUTER_FALLBACK_MAP[fallbackId]
+          if (or.client && openrouterModel && (!routePolicy || routePolicy('openrouter', openrouterModel))) {
             fallbackClient = or.client
             fallbackKey = or.key
             fbProvider = 'openrouter'
-            fbModel = OPENROUTER_FALLBACK_MAP[fallbackId] || fallback.model
+            fbModel = openrouterModel
           }
         }
         if (!fallbackClient) continue
+        if (hasTools && !providerSupportsTools(fbProvider)) continue
         if (routePolicy && !routePolicy(fbProvider, fbModel)) continue
 
         let fallbackOutputStarted = false
@@ -1004,7 +1047,7 @@ export const llmGateway = {
             }
           }
 
-          if (['apinex', 'radox', 'antseed'].includes(fbProvider) && !fallbackOutputStarted) throw Object.assign(new Error('Provider returned an empty stream'), { status: 502 })
+          if (browserProvider(`${fbProvider}/default`) && !fallbackOutputStarted) throw Object.assign(new Error('Provider returned an empty stream'), { status: 502 })
           reportSuccess(fbProvider, fallbackKey)
           if (auditRoutes) yield { type: 'route', phase: 'success', provider: fbProvider, model: fbModel, reason: 'provider_failover' }
           yield { type: 'done' }
@@ -1021,37 +1064,6 @@ export const llmGateway = {
         }
       }
 
-      // EMERGENCY LAST RESORT — always try groq llama as final fallback
-      try {
-        const { client: emergencyClient, key: emergencyKey } = getClient('groq')
-        if (emergencyClient && (!routePolicy || routePolicy('groq', 'llama-3.1-8b-instant'))) {
-          yield { type: 'info', content: 'Switching to emergency backup...' }
-          const emToolParams = buildToolParams(tools, tool_choice, 'groq')
-          const emergencyStream = await emergencyClient.chat.completions.create({
-            model: 'llama-3.1-8b-instant',
-            messages: enriched,
-            temperature,
-            stream: true,
-            max_tokens: tokenLimit,
-            ...dossierFormat,
-            ...emToolParams,
-          }, { signal })
-          yield { type: 'info', content: 'Connected to the emergency Codeva model.', provider: 'groq', model: 'llama-3.1-8b-instant' }
-          for await (const chunk of emergencyStream) {
-            const choice = chunk.choices?.[0]
-            const delta = choice?.delta
-            if (delta?.content) yield { type: 'token', content: delta.content }
-            if (delta?.tool_calls?.length) yield { type: 'tool_calls_delta', tool_calls: delta.tool_calls }
-            if (choice?.finish_reason) yield { type: 'finish', finish_reason: choice.finish_reason }
-          }
-          reportSuccess('groq', emergencyKey)
-          yield { type: 'done' }
-          return
-        }
-      } catch (emergencyErr) {
-        if (signal?.aborted) return
-        console.error('Emergency groq fallback failed:', safeProviderStatus(emergencyErr))
-      }
       yield { type: 'error', content: 'All providers are temporarily unavailable. Please try again in a moment.' }
     }
   },
@@ -1094,25 +1106,20 @@ export const llmGateway = {
 
     const lastUserText = contentText([...workingMessages].reverse().find((m) => m.role === 'user')?.content || '')
     activeModelId = resolveModelForPlan(activeModelId === 'council' ? 'auto' : activeModelId, plan, lastUserText, { preferApinex: !isKaliKal })
-    if (!hasTools && workingMessages.some(m => hasImageContent(m.content))) activeModelId = 'gemini/gemini-2.5-flash'
-    const totalChars = workingMessages.reduce((sum, m) => sum + messageCharCount(m), 0)
-
-    if (!hasTools && totalChars > 35000 && !activeModelId.startsWith('gemini/') && activeModelId !== 'codeva-ravan-v1') {
-      activeModelId = 'gemini/gemini-2.5-flash'
-    }
-
     let enriched = injectIdentity(workingMessages, isKaliKal, activeModelId === 'codeva-ravan-v1')
     // Prune context to prevent provider token crashes
     enriched = pruneContextWindow(enriched, 24000)
 
-    const targetModel = MODEL_MAP[activeModelId] || (isKaliKal && !FALLBACK_CHAINS[activeModelId] ? MODEL_MAP[KALI_FALLBACK_CHAIN[0]] : MODEL_MAP[FALLBACK_CHAIN[0]])
+    const targetModel = MODEL_MAP[activeModelId]
+    if (!targetModel) return { error: 'No automatically enabled model is configured. Choose a model or enable a verified provider in server settings.' }
 
     // Try direct Gemini Google SDK call first if provider is Gemini and API key is present
     let directGeminiFailed = false
-    if (!hasTools && targetModel.provider === 'gemini' && getRawKey('gemini')) {
+    const directGeminiKey = targetModel.provider === 'gemini' ? getRawKey('gemini') : null
+    if (!hasTools && targetModel.provider === 'gemini' && directGeminiKey) {
       try {
         const { GoogleGenAI } = await import('@google/genai')
-        const genAI = new GoogleGenAI({ apiKey: getRawKey('gemini') })
+        const genAI = new GoogleGenAI({ apiKey: directGeminiKey })
 
         // Extract system messages for systemInstruction
         const systemParts = enriched
@@ -1139,9 +1146,11 @@ export const llmGateway = {
             ...(systemInstruction ? { systemInstruction } : {}),
           },
         })
-        reportSuccess('gemini', getRawKey('gemini'))
+        const responseText = typeof response.text === 'string' ? response.text : ''
+        if (!responseText.trim()) throw Object.assign(new Error('Gemini returned an empty response'), { status: 502 })
+        reportSuccess('gemini', directGeminiKey)
         return {
-          content: response.text,
+          content: responseText,
           model: targetModel.model,
           provider: 'gemini',
           tokens_in: 0,
@@ -1149,33 +1158,45 @@ export const llmGateway = {
           finish_reason: 'stop',
         }
       } catch (err) {
-        console.error('Direct Gemini SDK non-stream completion failed, falling back to proxy:', safeProviderStatus(err))
-        reportFailure('gemini', getRawKey('gemini'), err.status || 403)
+        console.error('Direct Gemini SDK non-stream completion failed:', safeProviderStatus(err))
+        reportFailure('gemini', directGeminiKey, err.status || 403)
         directGeminiFailed = true
       }
+    }
+
+    if (directGeminiFailed && !automaticFailoverEnabled()) {
+      return { error: 'Gemini could not complete this request. Retry is disabled to avoid a second charge.' }
     }
 
     let { client, key: activeKey } = getClient(targetModel.provider)
     let activeModelName = targetModel.model
     let activeProvider = targetModel.provider
 
-    const needsOpenRouterFallback =
-      (hasTools && !TOOL_CAPABLE_PROVIDERS.has(activeProvider)) ||
+    const needsOpenRouterFallback = paidFallbackEnabled() && (
+      (hasTools && !providerSupportsTools(activeProvider)) ||
       (activeProvider === 'gemini' && (hasTools || directGeminiFailed || !getRawKey('gemini'))) ||
-      (!client && activeProvider !== 'openrouter')
+      (!client && activeProvider !== 'openrouter'))
 
     if (needsOpenRouterFallback) {
       const { client: orClient, key: orKey } = getClient('openrouter')
       if (orClient) {
         client = orClient
         activeKey = orKey
-        activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
+        activeModelName = OPENROUTER_FALLBACK_MAP[activeModelId]
         activeProvider = 'openrouter'
+        if (!activeModelName) {
+          ({ client, key: activeKey } = getClient(targetModel.provider))
+          activeModelName = targetModel.model
+          activeProvider = targetModel.provider
+        }
       }
     }
 
     if (!client) {
       return { error: 'No API key configured for any provider' }
+    }
+    if (hasTools && !providerSupportsTools(activeProvider)) {
+      return { error: 'The selected provider does not support tool calls. Choose a tool-capable model.' }
     }
 
     const toolParams = buildToolParams(tools, tool_choice, activeProvider)
@@ -1193,6 +1214,9 @@ export const llmGateway = {
 
       const choice = response.choices?.[0]
       const message = choice?.message || {}
+      if (!(typeof message.content === 'string' && message.content.trim()) && !message.tool_calls?.length) {
+        throw Object.assign(new Error('Provider returned an empty response'), { status: 502 })
+      }
       return {
         content: message.content ?? '',
         tool_calls: message.tool_calls || undefined,
@@ -1206,11 +1230,15 @@ export const llmGateway = {
       console.error(`Provider ${activeProvider} failed:`, safeProviderStatus(error))
       reportFailure(activeProvider, activeKey, error.status || 500)
 
-      if (activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini', 'llm7', 'cloudflare'].includes(targetModel.provider)) {
+      if (!automaticFailoverEnabled()) {
+        return { error: 'The selected provider could not complete this request. Automatic provider failover is disabled to avoid unexpected charges.' }
+      }
+
+      if (paidFallbackEnabled() && activeProvider !== 'openrouter' && ['huggingface', 'nvidia', 'opencode', 'apifreellm', 'cerebras', 'mistral', 'gemini', 'llm7', 'cloudflare'].includes(targetModel.provider) && OPENROUTER_FALLBACK_MAP[activeModelId]) {
         try {
           const { client: fallbackClient, key: fallbackKey } = getClient('openrouter')
           if (fallbackClient) {
-            const fallbackModelName = OPENROUTER_FALLBACK_MAP[activeModelId] || targetModel.model
+            const fallbackModelName = OPENROUTER_FALLBACK_MAP[activeModelId]
             const orToolParams = buildToolParams(tools, tool_choice, 'openrouter')
             const response = await fallbackClient.chat.completions.create({
               model: fallbackModelName,

@@ -1,9 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { CodicBridge, CodicCheckpointSummary, CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicTerminalEvent, CodicUpdateCheck, ReviewComment, ScheduledTask, TerminalCommandResult, ThreadHistory, ThreadSummary, WorkspaceDiff, WorkspaceInfo } from '../shared/contracts.js'
+import type { CodicBridge, CodicCheckpointSummary, CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicTerminalEvent, CodicUpdateCheck, CompanionActivity, ReviewComment, ScheduledTask, TerminalCommandResult, ThreadHistory, ThreadSummary, WorkspaceDiff, WorkspaceInfo, ContextAttachmentSelection } from '../shared/contracts.js'
 
 const authCallbacks = new Set<(url: string) => void>()
 const signedOutCallbacks = new Set<() => void>()
 const terminalCallbacks = new Set<(event: CodicTerminalEvent) => void>()
+const companionStateCallbacks = new Set<(state: { enabled: boolean; activity: CompanionActivity }) => void>()
+const companionActivityCallbacks = new Set<(activity: CompanionActivity) => void>()
+const companionPromptCallbacks = new Set<(prompt: string) => void>()
 let pendingAuthCallback: string | null = null
 ipcRenderer.on('codic:auth-callback', (_event, url: string) => {
   if (authCallbacks.size === 0) pendingAuthCallback = url
@@ -19,8 +22,29 @@ ipcRenderer.on('codic:window-state', (_event, state: { maximized: boolean }) => 
 ipcRenderer.on('codic:terminal-event', (_event, terminalEvent: CodicTerminalEvent) => {
   for (const callback of terminalCallbacks) callback(terminalEvent)
 })
+ipcRenderer.on('codic:companion-state', (_event, state: { enabled: boolean; activity: CompanionActivity }) => {
+  for (const callback of companionStateCallbacks) callback({ enabled: Boolean(state?.enabled), activity: state?.activity || 'idle' })
+})
+ipcRenderer.on('codic:companion-activity', (_event, activity: CompanionActivity) => {
+  for (const callback of companionActivityCallbacks) callback(activity || 'idle')
+})
+ipcRenderer.on('codic:companion-prompt', (_event, prompt: string) => {
+  if (typeof prompt !== 'string') return
+  for (const callback of companionPromptCallbacks) callback(prompt)
+})
 
 const bridge: CodicBridge = {
+  companion: {
+    getState: () => ipcRenderer.invoke('codic:companion-get-state') as Promise<{ enabled: boolean; activity: CompanionActivity }>,
+    getActivity: () => ipcRenderer.invoke('codic:companion-get-activity') as Promise<CompanionActivity>,
+    toggle: () => ipcRenderer.invoke('codic:companion-toggle') as Promise<{ enabled: boolean }>,
+    focusApp: async () => { await ipcRenderer.invoke('codic:companion-focus') },
+    hide: async () => { await ipcRenderer.invoke('codic:companion-hide') },
+    submitPrompt: async (prompt) => { await ipcRenderer.invoke('codic:companion-prompt', prompt) },
+    onStateChange: (callback) => { companionStateCallbacks.add(callback); return () => { companionStateCallbacks.delete(callback) } },
+    onActivityChange: (callback) => { companionActivityCallbacks.add(callback); return () => { companionActivityCallbacks.delete(callback) } },
+    onPrompt: (callback) => { companionPromptCallbacks.add(callback); return () => { companionPromptCallbacks.delete(callback) } },
+  },
   app: {
     getVersion: async () => (await ipcRenderer.invoke('codic:app-info')).version as string,
     getPlatform: () => process.platform,
@@ -42,6 +66,9 @@ const bridge: CodicBridge = {
   workspace: {
     choose: () => ipcRenderer.invoke('codic:choose-workspace') as Promise<WorkspaceInfo | null>,
     chooseNewProject: () => ipcRenderer.invoke('codic:choose-new-project') as Promise<WorkspaceInfo | null>,
+    chooseContextFiles: () => ipcRenderer.invoke('codic:choose-context-files') as Promise<ContextAttachmentSelection>,
+    chooseContextFolder: () => ipcRenderer.invoke('codic:choose-context-folder') as Promise<ContextAttachmentSelection>,
+    removeContextAttachment: async (attachmentId) => { await ipcRenderer.invoke('codic:remove-context-attachment', attachmentId) },
     listProjects: () => ipcRenderer.invoke('codic:list-projects') as Promise<WorkspaceInfo[]>,
     selectSaved: (workspacePath) => ipcRenderer.invoke('codic:select-saved-project', workspacePath) as Promise<WorkspaceInfo>,
     getDiff: (workspacePath) => ipcRenderer.invoke('codic:workspace-diff', workspacePath) as Promise<WorkspaceDiff>,
