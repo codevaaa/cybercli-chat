@@ -1,4 +1,4 @@
-import { AlertCircle, Apple, ArrowRight, Check, CheckCircle2, Code2, Command, Download, FileCode2, GitBranch, Globe2, Layers3, LoaderCircle, MonitorDown, RefreshCw, ShieldCheck, Sparkles, Terminal, Workflow } from 'lucide-react'
+import { AlertCircle, Apple, ArrowRight, Check, CheckCircle2, Code2, Command, Copy, Download, FileCode2, GitBranch, Globe2, Layers3, LoaderCircle, MonitorDown, RefreshCw, ShieldCheck, Sparkles, Terminal, Workflow } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import SEOHead from '@components/seo/SEOHead'
@@ -95,9 +95,27 @@ function safeArtifactLabel(value, maxLength) {
   return label
 }
 
+async function copyToClipboard(text) {
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text)
+  const field = document.createElement('textarea')
+  field.value = text
+  field.setAttribute('readonly', '')
+  field.style.position = 'fixed'
+  field.style.opacity = '0'
+  document.body.append(field)
+  field.select()
+  const copied = document.execCommand('copy')
+  field.remove()
+  if (!copied) throw new Error('Clipboard is unavailable')
+}
+
 function PlatformDownloadCard({ platform, catalogState, artifact }) {
   const Icon = platform.icon
+  const [checksumCopied, setChecksumCopied] = useState(false)
   const url = safeDownloadUrl(platform.id, artifact)
+  const sha256 = typeof artifact?.sha256 === 'string' && /^[a-f0-9]{64}$/i.test(artifact.sha256)
+    ? artifact.sha256.toLowerCase()
+    : null
   const available = Boolean(url)
   const listedWithoutUrl = catalogState === 'ready' && artifact?.available === true && !url
   const loading = catalogState === 'loading'
@@ -113,6 +131,16 @@ function PlatformDownloadCard({ platform, catalogState, artifact }) {
         : listedWithoutUrl
           ? 'Download link unavailable'
           : 'Coming soon'
+
+  const copyChecksum = async () => {
+    if (!sha256) return
+    try {
+      await copyToClipboard(sha256)
+      setChecksumCopied(true)
+    } catch {
+      setChecksumCopied(false)
+    }
+  }
 
   return (
     <article className={`group relative flex min-h-[242px] flex-col overflow-hidden rounded-2xl border p-5 transition-colors sm:p-6 ${available ? 'border-[#d99575]/35 bg-[#241f1b]' : 'border-white/[0.09] bg-[#1d1e1b]'}`}>
@@ -135,6 +163,7 @@ function PlatformDownloadCard({ platform, catalogState, artifact }) {
             {architecture && <span>{architecture}</span>}
             {formatArtifactSize(artifact.size) && <span>{formatArtifactSize(artifact.size)}</span>}
             {artifact.signed === true ? <span>Signed installer</span> : artifact.signed === false ? <span>Unsigned preview installer</span> : null}
+            {artifact.notarized === true ? <span>Notarized</span> : artifact.notarized === false ? <span>Not notarized</span> : null}
           </p>
         ) : (
           <p className="mt-3 max-w-[34ch] text-xs leading-5 text-[#92948a]">
@@ -142,6 +171,13 @@ function PlatformDownloadCard({ platform, catalogState, artifact }) {
           </p>
         )}
       </div>
+      {available && sha256 && <div className="relative mt-3 flex min-w-0 items-center gap-2 rounded-lg border border-white/[0.07] bg-black/15 px-2.5 py-2">
+        <code className="min-w-0 flex-1 break-all font-mono text-[9px] leading-4 text-[#b5b6ad]" title={sha256}>SHA-256&nbsp; {sha256}</code>
+        <button type="button" onClick={() => void copyChecksum()} className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-[10px] font-medium text-[#d8d7cf] transition-colors hover:bg-white/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#f3c1a7]" aria-label={`Copy SHA-256 checksum for ${platform.label}`} title={checksumCopied ? 'Checksum copied' : 'Copy checksum'}>
+          {checksumCopied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
+          {checksumCopied ? 'Copied' : 'Copy'}
+        </button>
+      </div>}
       <div className="relative mt-auto pt-5">
         {available ? (
           <a href={url} download className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#d99575] px-4 text-sm font-semibold text-[#201814] transition-colors hover:bg-[#e5a184] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f3c1a7]">

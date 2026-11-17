@@ -59,6 +59,24 @@ it('keeps every platform unavailable when the catalog has no published artifacts
   expect(host.textContent).toContain('A Linux installer will appear here after it is published.')
 })
 
+it('shows the full installer checksum and copies it for verification', async () => {
+  const sha256 = 'a'.repeat(64)
+  const writeText = vi.fn().mockResolvedValue(undefined)
+  vi.stubGlobal('navigator', { clipboard: { writeText } })
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ windows: { available: true, url: '/api/v1/downloads/codic/windows', version: '0.1.12', sha256 } }),
+  }))
+  await render()
+
+  expect(host.textContent).toContain(sha256)
+  const copyButton = host.querySelector<HTMLButtonElement>('button[aria-label="Copy SHA-256 checksum for Windows"]')
+  expect(copyButton).not.toBeNull()
+  await act(async () => copyButton?.click())
+  expect(writeText).toHaveBeenCalledWith(sha256)
+  expect(copyButton?.textContent).toContain('Copied')
+})
+
 it('fails closed and offers no download link when availability cannot be checked', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
   await render()
@@ -96,8 +114,10 @@ it('omits structured or oversized artifact metadata without breaking a valid dow
       macos: {
         available: true,
         url: '/api/v1/downloads/codic/macos',
-        version: 'x'.repeat(49),
+        version: '0.1.12',
         arch: 'universal',
+        signed: true,
+        notarized: true,
       },
     }),
   }))
@@ -106,7 +126,8 @@ it('omits structured or oversized artifact metadata without breaking a valid dow
   expect(host.querySelectorAll('a[href*="/downloads/codic/"]')).toHaveLength(2)
   expect(host.textContent).not.toContain('[object Object]')
   expect(host.textContent).not.toContain('x64,arm64')
-  expect(host.textContent).not.toContain(`Version ${'x'.repeat(49)}`)
   expect(host.textContent).toContain('universal')
+  expect(host.textContent).toContain('Signed installer')
+  expect(host.textContent).toContain('Notarized')
   expect(host.textContent).toContain('10.0 MB')
 })

@@ -31,3 +31,5 @@
 - Never broadcast a one-use auth callback to every open renderer. Deliver it to one primary window and make the browser page provide a user-click retry when external-protocol navigation is blocked.
 - A frameless-window auth gate hides the normal app titlebar. Put minimize/maximize/close controls in the gate itself and expose maximize state through a sender-validated IPC event.
 - For Windows branding, align the installer executable icon, BrowserWindow `icon`, and AppUserModelID. If an installed taskbar pin still uses an old cached icon, users need the updated installer/shortcut before that cached shell entry changes.
+
+- For public release catalogs, check every artifact URL redirect before following it and reject non-public host forms. Display a configured checksum as a user-verifiable value, but require the release pipeline to compute and compare it with the exact uploaded bytes before publication.

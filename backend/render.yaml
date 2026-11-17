@@ -20,6 +20,10 @@ services:
         sync: false
       - key: REDIS_URL
         sync: false
+      # Keep Codic downloads disabled until platform artifacts and matching
+      # checksums are configured in the Render service environment.
+      - key: CODEVA_CODIC_PUBLIC_RELEASE
+        value: false
       - key: ENCRYPTION_KEY
         generateValue: true
       - key: OPENROUTER_API_KEY
