@@ -153,6 +153,7 @@ export interface ThreadHistory {
   thread: { id: string; projectId: string; title: string; createdAt: string; updatedAt: string }
   messages: Array<{ id: string; role: 'user' | 'assistant'; content: string }>
   lastTaskId: string | null
+  lastTaskState: 'running' | 'completed' | 'cancelled' | 'failed' | 'interrupted' | null
   truncated: boolean
 }
 

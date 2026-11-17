@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai'
+import { getKey } from '../llm/keyPool.js'
 
 // Gemini TTS returns raw 16-bit linear PCM at 24kHz mono.
 // Wraps in a WAV RIFF container.
@@ -73,7 +74,7 @@ const VOICE_MAP = {
 }
 
 export async function generateGeminiTTS(text, voiceId = 'gemini_flash', speed = 1.0, clientApiKey = null) {
-  const activeKey = clientApiKey || process.env.GEMINI_API_KEY
+  const activeKey = clientApiKey || getKey('gemini')
   if (!activeKey) {
     throw new Error('Gemini API key not configured')
   }

@@ -10,6 +10,9 @@ import { llmGateway } from '../services/llm/gateway.js'
 import { streamLifetime } from '../services/llm/streamLifetime.js'
 import { getPlan } from '../config/plans.js'
 import { CodicRateLimitStore } from '../services/CodicRateLimitStore.js'
+import { APINEX_MODELS, APINEX_SUBSCRIPTION_MODELS, apinexId } from '../services/llm/apinex.js'
+import { publicBrowserModels, providerModelTier } from '../services/llm/browserProviders.js'
+import { hasKeys } from '../services/llm/keyPool.js'
 
 const router = Router()
 const MAX_MESSAGE_CHARS = 240_000
@@ -108,17 +111,38 @@ const modelCatalog = [
   { id: 'codeva/shiv', name: 'Shiv', description: 'Codeva security review route.', tier: 'reasoning' },
 ]
 
+const getModelCatalog = () => [
+  ...modelCatalog,
+  ...publicBrowserModels().map(model => {
+    const configured = model.id === 'apinex/default'
+      ? process.env.APINEX_MODEL || 'free/gpt-6-luna'
+      : model.name.slice(model.name.indexOf(' · ') + 3)
+    return {
+      id: model.id,
+      name: model.name,
+      description: model.description,
+      tier: providerModelTier(configured),
+    }
+  }),
+  ...(hasKeys('apinex') ? APINEX_MODELS.map(id => ({
+    id: apinexId(id),
+    name: `APINex · ${id.slice(5)}`,
+    description: 'APINex server-side model route',
+    tier: APINEX_SUBSCRIPTION_MODELS.has(id) ? 'reasoning' : 'balanced',
+  })) : []),
+]
+
 const modelAliases = {
-  ravan: 'codeva-ravan-v1',
-  abhimanyu: 'cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast',
-  madhav: 'llm7/deepseek-v3.1:671b-terminus',
-  yudhishthir: 'nvidia/llama-3.1-nemotron-70b',
-  bheem: 'llm7/qwen3-235b',
-  arjun: 'llm7/codestral-latest',
-  nakul: 'llm7/GLM-4.6V-Flash',
-  sahadeva: 'gemini/gemini-2.5-pro',
-  chanakya: 'groq/deepseek-r1-distill-70b',
-  shiv: 'llm7/kimi-k2.6',
+  ravan: 'opencode/default',
+  abhimanyu: 'seek100/default',
+  madhav: 'freemodel/default',
+  yudhishthir: 'aihubmix/default',
+  bheem: 'unorouter/default',
+  arjun: 'llm7/default',
+  nakul: 'radox/default',
+  sahadeva: 'gemini/default',
+  chanakya: 'apinex/default',
+  shiv: 'openrouter/default',
   auto: 'auto',
 }
 
@@ -215,7 +239,7 @@ const resolveModel = model => {
   return modelAliases[normalized] || model
 }
 
-const isCatalogModel = model => modelCatalog.some(item => item.id === model)
+const isCatalogModel = model => getModelCatalog().some(item => item.id === model)
 
 const emitEvent = (res, event) => {
   if (res.writableEnded || res.destroyed) return false
@@ -321,7 +345,7 @@ router.delete('/devices/:deviceId', async (req, res, next) => {
 
 router.get('/models', async (req, res, next) => {
   const plan = getPlan(req.user?.plan)
-  const models = modelCatalog.map(model => ({
+  const models = getModelCatalog().map(model => ({
     ...model,
     locked: model.id !== 'auto' && !plan.allowedTiers.includes(model.tier),
   }))
@@ -353,7 +377,7 @@ router.post('/turns', codicTurnLimiter, async (req, res, next) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Invalid Codic turn.' })
 
   const body = parsed.data
-  const catalogModel = modelCatalog.find(model => model.id === body.model)
+  const catalogModel = getModelCatalog().find(model => model.id === body.model)
   if (!catalogModel || !isCatalogModel(body.model)) return res.status(400).json({ error: 'Choose a model from the Codic model list.' })
   const planConfig = getPlan(req.user?.plan)
   if (catalogModel.id !== 'auto' && !planConfig.allowedTiers.includes(catalogModel.tier)) {

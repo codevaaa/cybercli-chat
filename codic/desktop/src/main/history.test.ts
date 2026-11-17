@@ -30,10 +30,45 @@ describe('local thread history', () => {
         'assistant: It uses Codeva sign-in.',
       ])
       expect(restored.lastTaskId).toBe(secondTaskId)
+      expect(restored.lastTaskState).toBe('completed')
       expect(listThreadSummaries(store, project.id)[0]?.lastTaskState).toBe('completed')
       expect(() => loadThreadHistory(store, randomUUID(), thread.id)).toThrow('does not belong')
     } finally {
       store.close()
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  it('preserves interrupted state while restoring the saved text conversation', () => {
+    const directory = mkdtempSync(path.join(tmpdir(), 'codic-history-interrupted-'))
+    const store = CodicLocalStore.open(path.join(directory, 'codic.sqlite'))
+    try {
+      const project = store.addProject({ id: randomUUID(), path: directory, name: 'Interrupted project' })
+      const thread = store.createThread({ id: randomUUID(), projectId: project.id, title: 'Interrupted work' })
+      const taskId = randomUUID()
+      store.createTask({ id: taskId, threadId: thread.id, model: 'auto', prompt: 'Update the project safely.' })
+      store.appendTaskEvent({
+        id: randomUUID(),
+        taskId,
+        type: 'agent_event',
+        payload: { type: 'agent_event', runId: 'run-interrupted', event: { type: 'text', text: 'I found the configuration and was reviewing it.' } },
+      })
+      store.close()
+
+      const restartedStore = CodicLocalStore.open(path.join(directory, 'codic.sqlite'))
+      try {
+        const restored = loadThreadHistory(restartedStore, project.id, thread.id)
+        expect(restored.lastTaskId).toBe(taskId)
+        expect(restored.lastTaskState).toBe('interrupted')
+        expect(restored.messages.map((message) => message.content)).toEqual([
+          'Update the project safely.',
+          'I found the configuration and was reviewing it.',
+        ])
+      } finally {
+        restartedStore.close()
+      }
+    } finally {
+      try { store.close() } catch { /* The simulated app restart closed it above. */ }
       rmSync(directory, { recursive: true, force: true })
     }
   })

@@ -16,6 +16,8 @@ import { formatContextFiles, MAX_CONTEXT_FILES, MAX_CONTEXT_TOTAL_BYTES, readSel
 import { SecretScanner } from '../../../../cybercoder/packages/codic-runtime/src/shared-bridge.js'
 import { clampCompanionBounds, getInitialCompanionBounds, type CompanionBounds } from './companionWindow.js'
 import { activityFromRuntimeEvent } from './companionActivity.js'
+import { requireSavedProject as resolveSavedProject } from './project-access.js'
+import { cancelTasksForOwner } from './task-ownership.js'
 import type { CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicRuntimeEventEnvelope, CodicUpdateCheck, CompanionActivity, EditAction } from '../shared/contracts.js'
 
 declare const __CODIC_LOCAL_PREVIEW_ENABLED__: boolean
@@ -83,6 +85,7 @@ let appIsQuitting = false
 let performanceTraceRunning = false
 let localPreviewAccessGranted = false
 const ephemeralTaskIds = new Set<string>()
+const scheduledStartStates = new Map<string, { finished: boolean }>()
 const UPDATE_RETRY_DELAYS_MS = [30_000, 60_000, 120_000]
 let updateRetryAttempt = 0
 let updateRetryTimer: NodeJS.Timeout | null = null
@@ -246,13 +249,7 @@ const checkForCodicUpdates = async (isRetry = false) => {
 
 const getExpectedRendererPath = () => path.resolve(app.getAppPath(), 'dist/renderer/index.html')
 
-const requireSavedProject = (workspacePath: unknown) => {
-  if (typeof workspacePath !== 'string' || !workspacePath.trim() || workspacePath.includes('\0')) throw new Error('Choose a saved project folder first.')
-  const canonicalPath = realpathSync(path.resolve(workspacePath))
-  const project = localStore?.findProjectByPath(canonicalPath)
-  if (!project) throw new Error('Open this project in Codic before using workspace tools.')
-  return project
-}
+const requireSavedProject = (workspacePath: unknown) => resolveSavedProject(localStore, workspacePath)
 
 const requireSafeProjectFile = (projectRoot: string, filePath: string) => {
   if (!filePath.trim() || filePath.includes('\0') || path.isAbsolute(filePath)) throw new Error('Choose a valid project-relative file path.')
@@ -592,7 +589,7 @@ if (!protocolLock) {
           saveCompanionPreferences()
         }
       }
-      for (const [taskId, owner] of taskWindowOwners) if (owner === window) taskWindowOwners.delete(taskId)
+      cancelTasksForOwner(taskWindowOwners, window, (taskId) => runtimeBridge?.cancelTask(taskId))
       for (const [sessionId, session] of terminalSessions) {
         if (session.owner !== ownerContents) continue
         terminalSessions.delete(sessionId)
@@ -808,14 +805,17 @@ if (!protocolLock) {
       apiBaseUrl: apiBase,
       getAccessToken: async () => readAccessToken(),
       onEvent: (event, taskId) => {
+        const scheduledStartState = scheduledStartStates.get(taskId)
+        if (event.type === 'run_finished' && scheduledStartState) scheduledStartState.finished = true
         const activity = activityFromRuntimeEvent(event)
         if (activity) setCompanionActivity(activity, taskId, event)
         if (!ephemeralTaskIds.has(taskId)) {
           try {
             localStore?.appendTaskEvent({ id: randomUUID(), taskId, type: event.type, payload: redactHistoryValue(event) })
             if (event.type === 'run_finished') {
-              const state = event.reason === 'cancelled' ? 'cancelled' : event.reason === 'error' ? 'failed' : 'completed'
-              localStore?.finishTask(taskId, state, event.error ? String(redactHistoryValue(event.error)) : undefined)
+              const state = event.reason === 'cancelled' ? 'cancelled' : event.reason === 'end_turn' ? 'completed' : 'failed'
+              const error = event.error || (event.reason === 'max_iterations' ? 'The run reached its step limit before completing.' : undefined)
+              localStore?.finishTask(taskId, state, error ? String(redactHistoryValue(error)) : undefined)
             }
           } catch {
             // A local history write failure must not interrupt the user's agent run.
@@ -1297,12 +1297,10 @@ if (!protocolLock) {
       }
       if (effectivePrompt.length > 220_000) throw new Error('The prompt and attached context are too large to send. Remove some files or shorten the prompt.')
       if (!runtimeBridge) throw new Error('The local runtime is not ready yet.')
-      const workspacePath = realpathSync(path.resolve(value.workspacePath))
+      if (!localStore) throw new Error('Local task history is not available yet.')
+      const project = requireSavedProject(value.workspacePath)
+      const workspacePath = project.path
       if (!existsSync(workspacePath) || !statSync(workspacePath).isDirectory()) throw new Error('That project folder is no longer available.')
-      const projectName = path.basename(workspacePath) || workspacePath
-      let project = localStore?.findProjectByPath(workspacePath) ?? null
-      if (localStore && !project) project = localStore.addProject({ id: randomUUID(), path: workspacePath, name: projectName })
-      if (!project || !localStore) throw new Error('Local task history is not available yet.')
       const requestedThreadId = typeof value.conversationId === 'string' && /^[0-9a-f-]{36}$/i.test(value.conversationId)
         ? value.conversationId
         : randomUUID()
@@ -1603,22 +1601,28 @@ if (!protocolLock) {
             localStore.setScheduledTaskEnabled(due.projectId, due.id, false)
             continue
           }
-          const claimed = localStore.claimScheduledTask(due.projectId, due.id)
-          if (!claimed) continue
+          const reservationId = runtimeBridge.reservePrimaryRun()
+          if (!reservationId) break
+          let claimed: ReturnType<CodicLocalStore['claimScheduledTask']> = null
           let taskId: string | null = null
+          let scheduledStartState: { finished: boolean } | null = null
           try {
             const project = localStore.getProject(due.projectId)
             if (!project) throw new Error('The scheduled project is no longer available.')
-            const thread = localStore.createThread({
-              id: randomUUID(),
-              projectId: project.id,
-              title: claimed.title,
-              parentThreadId: claimed.sourceThreadId,
-            })
+            const threadId = randomUUID()
             taskId = randomUUID()
-            localStore.createTask({ id: taskId, threadId: thread.id, model: claimed.model, prompt: String(redactHistoryValue(claimed.prompt)) })
+            claimed = localStore.claimScheduledTask(due.projectId, due.id, {
+              threadId,
+              taskId,
+              prompt: String(redactHistoryValue(due.prompt)),
+            })
+            if (!claimed) continue
+            const thread = localStore.getThread(project.id, threadId)
+            if (!thread) throw new Error('The scheduled task history could not be loaded.')
             const owner = await createWindow({ workspacePath: projectPath, threadId: thread.id })
             taskWindowOwners.set(taskId, owner)
+            scheduledStartState = { finished: false }
+            scheduledStartStates.set(taskId, scheduledStartState)
             runtimeBridge.startTask({
               workspacePath: projectPath,
               prompt: claimed.prompt,
@@ -1628,13 +1632,19 @@ if (!protocolLock) {
               conversationId: thread.id,
               messages: [{ role: 'user', content: claimed.prompt }],
               taskId,
-            })
+            }, reservationId)
           } catch (error) {
+            if (!claimed) continue
             const message = error instanceof Error ? String(redactHistoryValue(error.message)) : 'The scheduled task could not be started.'
             if (taskId) {
               localStore.finishTask(taskId, 'failed', message)
-              emitRuntimeEvent({ type: 'run_finished', runId: `schedule-${claimed.id}`, reason: 'error', error: message }, taskId)
+              if (!scheduledStartState?.finished) {
+                emitRuntimeEvent({ type: 'run_finished', runId: `schedule-${claimed.id}`, reason: 'error', error: message }, taskId)
+              }
             }
+          } finally {
+            if (taskId) scheduledStartStates.delete(taskId)
+            runtimeBridge.releasePrimaryRunReservation(reservationId)
           }
         }
       } finally {

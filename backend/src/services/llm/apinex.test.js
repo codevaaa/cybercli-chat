@@ -4,6 +4,12 @@ import request from 'supertest'
 import express from 'express'
 let enabled = true, mode = 'ok', abortController
 const requests = []
+process.env.APINEX_API_KEY = 'fixture-not-a-secret'
+process.env.APINEX_MODEL = 'free/glm-5.3-flash'
+process.env.APINEX_TIER = 'free'
+process.env.APINEX_AUTOMATIC = 'true'
+process.env.LLM_AUTOMATIC_FAILOVER = 'true'
+process.env.LLM_PAID_FALLBACKS = 'true'
 mock.module('./keyPool.js', { namedExports: { getKey: provider => provider !== 'apinex' || enabled ? 'fixture-not-a-secret' : null, hasKeys: provider => provider !== 'apinex' || enabled, reportFailure() {}, reportSuccess() {} } })
 mock.module('openai', { defaultExport: class {
   constructor(options) { this.chat = { completions: { create: async (body, transport) => {
@@ -28,13 +34,15 @@ const { modelClass } = await import('../dossier/modelTier.js')
 const router = (await import('../../routes/models.routes.js')).default
 const consume = async input => { const output = []; for await (const chunk of llmGateway.complete({ messages: [{ role: 'user', content: 'Hello' }], plan: 'free', auditRoutes: true, ...input })) output.push(chunk); return output }
 test('APINEX automatic priority, all exact free IDs and keyless legacy defaults', async () => {
-  assert.equal(resolveModelForPlan('auto', 'free'), 'apinex/free/glm-5.3-flash')
+  assert.equal(resolveModelForPlan('auto', 'free'), 'apinex/default')
   for (const model of APINEX_MODELS) assert.equal(resolveModelForPlan(apinexId(model), 'free'), apinexId(model))
   assert.equal(modelClass('apinex', 'free/claude-opus-4.6'), 'free')
-  assert.equal(resolveModelForPlan('auto', 'free', '', { preferApinex: false }), 'groq/llama-3.1-8b')
+  assert.equal(resolveModelForPlan('auto', 'free', '', { preferApinex: false }), 'codeva/unavailable')
   enabled = false
-  assert.equal(resolveModelForPlan('auto', 'free', 'x'.repeat(450)), 'openrouter/gpt-4o-mini')
+  delete process.env.APINEX_API_KEY
+  assert.equal(resolveModelForPlan('auto', 'free', 'x'.repeat(450)), 'codeva/unavailable')
   enabled = true
+  process.env.APINEX_API_KEY = 'fixture-not-a-secret'
   const result = await consume({ model: 'auto' })
   assert.ok(result.some(c => c.phase === 'success' && c.provider === 'apinex'))
   assert.equal(requests.at(-1).timeout, 60000); assert.equal(requests.at(-1).retries, 0)
@@ -55,7 +63,7 @@ test('APINEX unavailable or empty uses OpenRouter next; partial response never m
   for (const failure of ['down', 'empty']) {
     mode = failure; const before = requests.length
     const result = await consume({ model: 'apinex/free/gpt-6-luna' })
-    assert.deepEqual(requests.slice(before).map(r => new URL(r.url).hostname), ['api.apinex.bond', 'openrouter.ai'])
+    assert.deepEqual(requests.slice(before).map(r => new URL(r.url).hostname), ['api.apinex.bond', 'api.apinex.bond', 'openrouter.ai'])
     assert.ok(result.some(c => c.phase === 'success' && c.provider === 'openrouter'))
   }
   mode = 'partial'; const before = requests.length

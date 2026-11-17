@@ -21,6 +21,7 @@ export interface ThreadHistory {
   thread: LocalThread
   messages: ThreadMessage[]
   lastTaskId: string | null
+  lastTaskState: LocalTask['state'] | null
   truncated: boolean
 }
 
@@ -57,9 +58,14 @@ export function loadThreadHistory(store: CodicLocalStore, projectId: string, thr
 
   const messages: ThreadMessage[] = []
   let lastTaskId: string | null = null
+  let lastTaskState: LocalTask['state'] | null = null
   for (const ancestor of ancestry) {
     const tasks = store.listTasks(ancestor.id).reverse()
-    if (ancestor.id === thread.id) lastTaskId = tasks.at(-1)?.id ?? null
+    if (ancestor.id === thread.id) {
+      const latestTask = tasks.at(-1) ?? null
+      lastTaskId = latestTask?.id ?? null
+      lastTaskState = latestTask?.state ?? null
+    }
     for (const task of tasks) {
       messages.push({ id: `${task.id}:user`, role: 'user', content: task.prompt })
       let assistant = ''
@@ -73,10 +79,10 @@ export function loadThreadHistory(store: CodicLocalStore, projectId: string, thr
     }
   }
 
-  return boundHistory(thread, messages, lastTaskId)
+  return boundHistory(thread, messages, lastTaskId, lastTaskState)
 }
 
-function boundHistory(thread: LocalThread, messages: ThreadMessage[], lastTaskId: string | null): ThreadHistory {
+function boundHistory(thread: LocalThread, messages: ThreadMessage[], lastTaskId: string | null, lastTaskState: LocalTask['state'] | null): ThreadHistory {
   const maxMessages = 200
   const maxCharacters = 180_000
   let selected = messages.slice(-maxMessages)
@@ -97,6 +103,7 @@ function boundHistory(thread: LocalThread, messages: ThreadMessage[], lastTaskId
     thread,
     messages: selected,
     lastTaskId,
+    lastTaskState,
     truncated,
   }
 }

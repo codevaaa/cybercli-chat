@@ -189,5 +189,5 @@ export function pickModelForPlan(planName, desiredTier = 'balanced', candidates 
     const m = pool.find((id) => tierOf(id) === t)
     if (m) return m
   }
-  return 'groq/llama-3.1-8b' // last-resort always-on fast model
+  return 'openrouter/gpt-4o-mini' // canonical gateway fallback when no configured route matches
 }

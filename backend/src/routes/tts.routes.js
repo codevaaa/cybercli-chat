@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { requireAuth, optionalAuth } from '../middleware/auth.js'
 import { generateGeminiTTS } from '../services/tts/gemini-tts.js'
+import { getKey } from '../services/llm/keyPool.js'
 
 const router = Router()
 
@@ -15,14 +16,14 @@ const VALID_VOICES = new Set([
 router.post('/', optionalAuth, async (req, res) => {
   const { text, voice_id = 'gemini_female', speed = 1.0 } = req.body
   const clientApiKey = req.headers['x-gemini-api-key']
+  const serverApiKey = clientApiKey || getKey('gemini')
 
   if (!text || !text.trim()) {
     return res.status(400).json({ error: 'text is required' })
   }
 
   // Check if Gemini key is available at all (server or client)
-  const hasKey = !!(clientApiKey || process.env.GEMINI_API_KEY)
-  if (!hasKey) {
+  if (!serverApiKey) {
     // Return 503 with a clear code so frontend can fall back to browser TTS
     return res.status(503).json({
       error: 'TTS_KEY_UNAVAILABLE',
@@ -35,7 +36,7 @@ router.post('/', optionalAuth, async (req, res) => {
     const voiceLower = voice_id.toLowerCase()
     const resolvedVoice = VALID_VOICES.has(voiceLower) ? voiceLower : 'gemini_female'
 
-    const audioBuffer = await generateGeminiTTS(text.trim(), resolvedVoice, speed, clientApiKey)
+    const audioBuffer = await generateGeminiTTS(text.trim(), resolvedVoice, speed, serverApiKey)
 
     // Send WAV — browsers can decode WAV natively without any codec
     res.setHeader('Content-Type', 'audio/wav')
@@ -62,7 +63,7 @@ router.post('/stt', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'audio_base64 is required' })
     }
 
-    const apiKey = process.env.GEMINI_API_KEY
+    const apiKey = getKey('gemini')
     if (!apiKey) {
       return res.status(503).json({ error: 'Gemini API key not configured for STT' })
     }

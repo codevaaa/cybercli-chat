@@ -2,6 +2,8 @@ import { test, mock } from 'node:test'
 import assert from 'node:assert/strict'
 
 process.env.CLOUDFLARE_ACCOUNT_ID = 'fixture-account'
+process.env.LLM_AUTOMATIC_FAILOVER = 'true'
+process.env.LLM_PAID_FALLBACKS = 'true'
 const calls = []
 let configuredProviders = new Set(['cloudflare'])
 

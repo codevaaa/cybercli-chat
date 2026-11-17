@@ -5,7 +5,8 @@ import request from 'supertest'
 
 const providerKeys = new Map([
   ['openrouter', 'test-openrouter-key'],
-  ['groq', 'test-groq-key'],
+  ['seek100', 'test-seek100-key'],
+  ['freemodel', 'test-freemodel-key'],
   ['gemini', 'test-gemini-key'],
 ])
 const poolStats = {
@@ -53,7 +54,8 @@ test('public status distinguishes provider configuration from completion availab
   globalThis.fetch = async input => {
     const url = String(input)
     if (url.includes('openrouter.ai')) return new Response('{}', { status: 200 })
-    if (url.includes('api.groq.com')) return new Response('{}', { status: 429 })
+    if (url.includes('100milionseek.top')) return new Response('{}', { status: 200 })
+    if (url.includes('freemodel.in')) return new Response('{}', { status: 429 })
     if (url.includes('generativelanguage.googleapis.com')) return new Response('{}', { status: 401 })
     if (url.includes('supabase.example.test')) return new Response('{}', { status: 200 })
     throw new Error('Unexpected test URL')
@@ -92,11 +94,15 @@ test('public status distinguishes provider configuration from completion availab
     assert.equal('uptime' in openrouter, false)
     assert.equal('load' in openrouter, false)
 
-    const groq = response.body.clusters.find(cluster => cluster.provider === 'groq')
-    assert.equal(groq.availability, 'unknown')
-    assert.equal(groq.probe, 'rate_limited')
+    const seek = response.body.clusters.find(cluster => cluster.provider === 'seek100')
+    assert.equal(seek.availability, 'unverified')
+    assert.equal(seek.probe, 'model_catalog_reachable')
 
-    const unconfigured = response.body.clusters.find(cluster => cluster.provider === 'apifreellm')
+    const freemodel = response.body.clusters.find(cluster => cluster.provider === 'freemodel')
+    assert.equal(freemodel.availability, 'unknown')
+    assert.equal(freemodel.probe, 'rate_limited')
+
+    const unconfigured = response.body.clusters.find(cluster => cluster.provider === 'unorouter')
     assert.equal(unconfigured.status, 'unknown')
     assert.equal(unconfigured.availability, 'not_configured')
     assert.equal(unconfigured.configured, false)

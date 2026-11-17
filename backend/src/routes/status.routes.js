@@ -2,6 +2,7 @@ import { Router } from 'express'
 import mongoose from 'mongoose'
 import { getPoolStats, getKey } from '../services/llm/keyPool.js'
 import { requireAuth } from '../middleware/auth.js'
+import { providerDefinitions } from '../services/llm/browserProviders.js'
 
 const router = Router()
 
@@ -11,86 +12,20 @@ let cacheTimestamp = 0
 const CACHE_TTL_MS = 60_000
 
 const PROVIDER_CONFIGS = [
-  {
-    name: 'Madhav',
-    type: 'OpenCode DeepSeek-v4-Pro',
-    provider: 'opencode',
-    pingUrl: 'https://opencode.ai/zen/v1/models',
-    keyEnv: 'OPENCODE_API_KEY',
+  ...providerDefinitions().map(({ provider, name, baseURL }) => ({
+    name,
+    type: 'OpenAI-compatible chat API',
+    provider,
+    pingUrl: `${baseURL.replace(/\/$/, '')}/models`,
     method: 'GET',
-    headers: (key) => ({ Authorization: `Bearer ${key}` }),
-  },
+    headers: key => ({ Authorization: `Bearer ${key}` }),
+  })),
   {
-    name: 'Bheem',
-    type: 'ApiFree GPT-4o Core',
-    provider: 'apifreellm',
-    pingUrl: 'https://apifreellm.com/api/v1/models',
-    keyEnv: 'APIFREELLM_API_KEY',
-    method: 'GET',
-    headers: (key) => ({ Authorization: `Bearer ${key}` }),
-  },
-  {
-    name: 'Nakul',
-    type: 'OpenRouter GPT-4o Mini',
-    provider: 'openrouter',
-    pingUrl: 'https://openrouter.ai/api/v1/models',
-    keyEnv: 'OPENROUTER_API_KEY',
-    method: 'GET',
-    headers: (key) => ({ Authorization: `Bearer ${key}` }),
-  },
-  {
-    name: 'Arjun',
-    type: 'Groq Llama-3.1-8B',
-    provider: 'groq',
-    pingUrl: 'https://api.groq.com/openai/v1/models',
-    keyEnv: 'GROQ_API_KEY',
-    method: 'GET',
-    headers: (key) => ({ Authorization: `Bearer ${key}` }),
-  },
-  {
-    name: 'Sahadeva',
-    type: 'Gemini 2.5 Flash Core',
-    provider: 'gemini',
-    pingUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
-    keyEnv: 'GEMINI_API_KEY',
-    buildUrl: (key) => `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
-    method: 'GET',
-  },
-  {
-    name: 'Vishwakarma',
-    type: 'Qwen 2.5 Coder 32B',
-    provider: 'huggingface',
-    pingUrl: 'https://router.huggingface.co/v1/models',
-    keyEnv: 'HUGGINGFACE_API_KEY',
-    method: 'GET',
-    headers: (key) => ({ Authorization: `Bearer ${key}` }),
-  },
-  {
-    name: 'Abhimanyu',
-    type: 'Cerebras Llama-3.1-8B',
-    provider: 'cerebras',
-    pingUrl: 'https://api.cerebras.ai/v1/models',
-    keyEnv: 'CEREBRAS_API_KEY',
-    method: 'GET',
-    headers: (key) => ({ Authorization: `Bearer ${key}` }),
-  },
-  {
-    name: 'Panchayat',
-    type: 'Consensus API Synthesis Layer',
+    name: 'Council',
+    type: 'Multi-provider synthesis layer',
     provider: 'council',
-    // Council is an internal layer — it's "up" if at least 2 of the providers above are up.
     pingUrl: null,
-    keyEnv: null,
     method: null,
-  },
-  {
-    name: 'Voice Streaming Sync',
-    type: 'Gemini Flash TTS Bridge',
-    provider: 'gemini-tts',
-    pingUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
-    keyEnv: 'GEMINI_API_KEY',
-    buildUrl: (key) => `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
-    method: 'GET',
   },
 ]
 
@@ -98,7 +33,7 @@ const PROVIDER_CONFIGS = [
 // do not prove that a Codic completion can be generated.
 async function pingProvider(config) {
   // Use the key pool to get the current active key for this provider
-  const key = config.keyEnv ? getKey(config.provider === 'gemini-tts' ? 'gemini' : config.provider) : null
+  const key = config.provider === 'council' ? null : getKey(config.keyProvider || config.provider)
 
   // Council is a virtual layer
   if (config.provider === 'council') {
@@ -109,7 +44,7 @@ async function pingProvider(config) {
     return { status: 'unknown', availability: 'not_configured', configured: false, verified: false, probe: 'not_run', latency: null, reason: 'no_api_key' }
   }
 
-  const url = config.buildUrl ? config.buildUrl(key) : config.pingUrl
+  const url = config.pingUrl
   const headers = config.headers ? config.headers(key) : {}
 
   const start = performance.now()

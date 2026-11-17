@@ -1,12 +1,13 @@
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js'
 import { KeyboardEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { CodicLimits, CodicRuntimeEvent, CodicUpdateCheck, ContextAttachmentSummary, ModelOption, ScheduledTask, ThreadSummary, WorkspaceInfo } from '../shared/contracts'
+import type { CodicLimits, CodicRuntimeEvent, CodicUpdateCheck, ContextAttachmentSummary, ModelOption, ScheduledTask, ThreadHistory, ThreadSummary, WorkspaceInfo } from '../shared/contracts'
 import DiffReviewPanel from './DiffReviewPanel'
 import TerminalPanel from './TerminalPanel'
 import ModelPicker from './ModelPicker'
 import ProjectPicker from './ProjectPicker'
 import ComposerAddMenu from './ComposerAddMenu'
+import TaskRecoveryNotice from './TaskRecoveryNotice'
 import { getInitialAppZoom, placeComposerPopover } from './appPreferences'
 import { getWorkspaceRestoreIntent } from './workspaceRestore'
 
@@ -175,6 +176,7 @@ export default function App() {
   const [activeRunId, setActiveRunId] = useState<string | null>(null)
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const [lastTaskId, setLastTaskId] = useState<string | null>(null)
+  const [recoveryTaskState, setRecoveryTaskState] = useState<ThreadHistory['lastTaskState']>(null)
   const [checkpointRevision, setCheckpointRevision] = useState(0)
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([])
   const approval = approvals[0] ?? null
@@ -357,6 +359,7 @@ export default function App() {
     setIsTemporaryChat(temporary)
     activeRunIsTemporaryRef.current = temporary
     setLastTaskId(null)
+    setRecoveryTaskState(null)
     setMessages([])
     setActivities([])
     setHistoryNotice('')
@@ -1001,6 +1004,9 @@ export default function App() {
         if (intent.kind === 'new-project') {
           const nextId = crypto.randomUUID()
           setConversationId(nextId)
+          setLastTaskId(null)
+          setRecoveryTaskState(null)
+          setMessages([])
           resetNavigation({ threadId: null, conversationId: nextId, view: 'assistant' })
           return
         }
@@ -1008,6 +1014,9 @@ export default function App() {
         if (!initialThread) {
           const nextId = crypto.randomUUID()
           setConversationId(nextId)
+          setLastTaskId(null)
+          setRecoveryTaskState(null)
+          setMessages([])
           resetNavigation({ threadId: null, conversationId: nextId, view: 'assistant' })
           return
         }
@@ -1016,6 +1025,7 @@ export default function App() {
         setConversationId(restored.thread.id)
         setMessages(restored.messages.map((message) => ({ ...message })))
         setLastTaskId(restored.lastTaskId)
+        setRecoveryTaskState(restored.lastTaskState)
         resetNavigation({ threadId: restored.thread.id, conversationId: restored.thread.id, view: 'assistant' })
         setHistoryNotice(restored.truncated ? 'Showing the newest part of this task. Earlier messages were left out to keep the model context within its limit.' : '')
       } catch (caught) {
@@ -1172,6 +1182,7 @@ export default function App() {
     const nextId = crypto.randomUUID()
     setConversationId(nextId)
     setLastTaskId(null)
+    setRecoveryTaskState(null)
     setMessages([])
     setActivities([])
     setHistoryNotice('')
@@ -1300,6 +1311,7 @@ export default function App() {
       setIsTemporaryChat(false)
       setMessages(restored.messages.map((message) => ({ ...message })))
       setLastTaskId(restored.lastTaskId)
+      setRecoveryTaskState(restored.lastTaskState)
       setActivities([])
       setHistoryNotice(restored.truncated ? 'Showing the newest part of this task. Earlier messages were left out to keep the model context within its limit.' : '')
       setError('')
@@ -1319,6 +1331,7 @@ export default function App() {
       setIsTemporaryChat(false)
       setMessages(restored.messages.map((message) => ({ ...message })))
       setLastTaskId(restored.lastTaskId)
+      setRecoveryTaskState(restored.lastTaskState)
       setActivities([])
       setHistoryNotice(restored.truncated ? 'Showing the newest part of this task. Earlier messages were left out to keep the model context within its limit.' : '')
       setError('')
@@ -1338,18 +1351,21 @@ export default function App() {
       setConversationId(restored.thread.id)
       setMessages(restored.messages.map((message) => ({ ...message })))
       setLastTaskId(restored.lastTaskId)
+      setRecoveryTaskState(restored.lastTaskState)
       setHistoryNotice(restored.truncated ? 'Showing the newest part of this task. Earlier messages were left out to keep the model context within its limit.' : '')
       setIsTemporaryChat(false)
     } else if (entry.temporary) {
       setConversationId(entry.conversationId)
       setMessages(entry.messages || [])
       setLastTaskId(null)
+      setRecoveryTaskState(null)
       setHistoryNotice('This temporary chat is not saved to task history.')
       setIsTemporaryChat(true)
     } else {
       setConversationId(entry.conversationId)
       setMessages([])
       setLastTaskId(null)
+      setRecoveryTaskState(null)
       setHistoryNotice('')
       setIsTemporaryChat(false)
     }
@@ -1378,6 +1394,7 @@ export default function App() {
       setActiveRunId(event.runId)
       activeTaskIdRef.current = taskId
       setActiveTaskId(taskId)
+      setRecoveryTaskState(null)
       setIsStreaming(true)
       return
     }
@@ -1486,7 +1503,10 @@ export default function App() {
       return
     }
     if (event.type === 'run_finished') {
-      if (activeTaskIdRef.current === taskId) setLastTaskId(taskId)
+      if (activeTaskIdRef.current === taskId) {
+        setLastTaskId(taskId)
+        setRecoveryTaskState(event.reason === 'end_turn' ? 'completed' : event.reason === 'cancelled' ? 'cancelled' : 'failed')
+      }
       if (!activeRunIsTemporaryRef.current && workspaceRef.current) void window.codic.history.listThreads(workspaceRef.current.path).then(setThreads).catch(() => undefined)
       activeRunIsTemporaryRef.current = false
       setCheckpointRevision((current) => current + 1)
@@ -1496,13 +1516,14 @@ export default function App() {
       activeTaskIdRef.current = null
       setApprovals([])
       if (event.error && event.reason === 'error') setError(event.error)
+      else if (event.reason === 'max_iterations') setError('This run reached its step limit before completing. Continue from saved history to resume safely.')
       setActivities((current) => current.map((activity) => activity.status === 'running'
-        ? { ...activity, status: event.reason === 'error' ? 'error' : 'done', ...(event.error ? { detail: event.error } : event.reason === 'cancelled' ? { detail: 'Stopped by you.' } : {}) }
+        ? { ...activity, status: event.reason === 'error' || event.reason === 'max_iterations' ? 'error' : 'done', ...(event.error ? { detail: event.error } : event.reason === 'max_iterations' ? { detail: 'The run reached its step limit before completing.' } : event.reason === 'cancelled' ? { detail: 'Stopped by you.' } : {}) }
         : activity))
     }
   }, [])
 
-  const sendPrompt = async (value = composer) => {
+  const sendPrompt = async (value = composer, approvalPolicyOverride?: 'ask' | 'safe-reads' | 'full-access', includeAttachments = true) => {
     const prompt = value.trim()
     if (!prompt || isStreaming) return
     if (!hasSession) {
@@ -1517,7 +1538,7 @@ export default function App() {
       return
     }
     setError('')
-    const attachmentsForPrompt = contextAttachments
+    const attachmentsForPrompt = includeAttachments ? contextAttachments : []
     const nextMessages = [...messages, { id: crypto.randomUUID(), role: 'user' as const, content: prompt, ...(attachmentsForPrompt.length ? { attachments: attachmentsForPrompt.map((attachment) => attachment.name) } : {}) }]
     setMessages(nextMessages)
     setActivities((current) => [...current, { id: crypto.randomUUID(), title: 'Thinking', detail: `Started at ${timeLabel()}`, status: 'running' }])
@@ -1530,7 +1551,7 @@ export default function App() {
         prompt,
         model: modelId,
         reasoningEffort,
-        approvalPolicy,
+        approvalPolicy: approvalPolicyOverride ?? approvalPolicy,
         subagentsEnabled,
         maxParallelSubagents,
         temporary: isTemporaryChat,
@@ -1547,9 +1568,21 @@ export default function App() {
       if (!isTemporaryChat) setThreads(await window.codic.history.listThreads(workspace.path))
     } catch (caught) {
       setIsStreaming(false)
+      setActiveRunId(null)
+      setActiveTaskId(null)
+      activeTaskIdRef.current = null
       setError(caught instanceof Error ? caught.message : 'The task could not be started.')
       setActivities((current) => current.map((activity) => activity.status === 'running' ? { ...activity, status: 'error' } : activity))
     }
+  }
+
+  const continuePreviousTask = () => {
+    if (!workspace || isTemporaryChat || isStreaming) return
+    void sendPrompt(
+      'Continue the task from this saved conversation. First inspect the current project and compare its files and existing changes with the requested outcome. The previous run may have stopped during a tool action, so verify what already happened and do not repeat side effects unless needed. Continue only the unfinished work.',
+      'ask',
+      false,
+    )
   }
 
   const decideApproval = async (decision: 'allow' | 'deny') => {
@@ -2167,6 +2200,7 @@ export default function App() {
                 )}
 
                 <div className="composer-wrap">
+                  {!isTemporaryChat && conversationId && <TaskRecoveryNotice state={recoveryTaskState} disabled={isStreaming} onContinue={continuePreviousTask} />}
                   <ProjectPicker className="composer-project-selector composer-project-selector-active" projects={projects} value={workspace.path} disabled={isStreaming} onSelect={(project) => void openSavedProject(project.path)} onOpenFolder={() => void openWorkspace()} onNewProject={() => void createProject()} />
                   <div className="composer">
                     <textarea ref={composerRef} value={composer} onChange={(event) => setComposer(event.target.value)} onKeyDown={onComposerKeyDown} placeholder="Ask Codic to explain, plan, or change something…" rows={2} aria-label="Message Codic" />

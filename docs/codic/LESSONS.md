@@ -33,3 +33,7 @@
 - For Windows branding, align the installer executable icon, BrowserWindow `icon`, and AppUserModelID. If an installed taskbar pin still uses an old cached icon, users need the updated installer/shortcut before that cached shell entry changes.
 
 - For public release catalogs, check every artifact URL redirect before following it and reject non-public host forms. Display a configured checksum as a user-verifiable value, but require the release pipeline to compute and compare it with the exact uploaded bytes before publication.
+- A recoverable conversation is not a resumable runtime. Continue from saved history under a new task ID, inspect the current workspace before acting, and reset approvals to Ask; never replay a tool call or pending approval from text history alone.
+- Enforce primary-run capacity in the main-process supervisor across all windows. A due schedule must reserve capacity before it is claimed and retain that reservation across async window setup, or a user task can race it and consume the schedule without starting.
+- Accept workspace paths from a renderer only after resolving them to a project the user has already opened through the trusted folder flow. A renderer-supplied path is not evidence of user selection.
+- A task that is awaiting approval must always have a live control surface. If the owning window closes, cancel its task and release its window ownership instead of leaving an unresolvable run paused in memory.

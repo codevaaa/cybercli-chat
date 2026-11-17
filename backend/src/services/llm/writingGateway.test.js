@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { grammarInput, grammarMessages, rewriteMessages, parseGrammar } from '../writing/grammar.js'
 const calls = []
 let unavailable = false
+process.env.LLM_AUTOMATIC_FAILOVER = 'true'
+process.env.LLM_PAID_FALLBACKS = 'true'
 mock.module('./keyPool.js', { namedExports: { getKey: provider => ['groq', 'openrouter'].includes(provider) ? 'fixture' : null,
   hasKeys: provider => ['groq', 'openrouter'].includes(provider), reportSuccess() {}, reportFailure() {} } })
 mock.module('openai', { defaultExport: class {

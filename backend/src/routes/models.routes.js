@@ -11,14 +11,27 @@ const ALL_MODELS = [
   { id: 'brahma-v1', name: 'Brahma V1', provider: 'CodeVaa Local', free: true, localOnly: true, description: 'Local vision and coding model fine-tuned by the CodeVaa team' }
 ]
 
+const catalog = () => [
+  ...ALL_MODELS,
+  ...publicBrowserModels(),
+  ...(hasKeys('apinex') ? APINEX_MODELS.map(id => ({
+    id: apinexId(id),
+    name: id.slice(5),
+    provider: 'APINEX',
+    free: !APINEX_SUBSCRIPTION_MODELS.has(id),
+    requiresSubscription: APINEX_SUBSCRIPTION_MODELS.has(id),
+    description: 'APINex server-side model route',
+  })) : []),
+]
+
 router.get('/', (req, res) => {
-  res.json({ models: [...ALL_MODELS, ...publicBrowserModels(), ...(hasKeys('apinex') ? APINEX_MODELS.map(id => ({ id: apinexId(id), name: id.slice(5), provider: 'APINEX', free: !APINEX_SUBSCRIPTION_MODELS.has(id), requiresSubscription: APINEX_SUBSCRIPTION_MODELS.has(id), description: 'APINEX service catalog route' })) : [])] })
+  res.json({ models: catalog() })
 })
 
 router.get('/:id', (req, res) => {
   const requested = req.params.id
   const apinex = APINEX_MODELS.find(id => apinexId(id) === requested)
-  const model = ALL_MODELS.find(m => m.id === requested) || publicBrowserModels().find(m => m.id === requested) || (apinex && hasKeys('apinex') ? { id: requested, name: apinex.slice(5), provider: 'APINEX', free: !APINEX_SUBSCRIPTION_MODELS.has(apinex), requiresSubscription: APINEX_SUBSCRIPTION_MODELS.has(apinex), description: 'APINEX service catalog route' } : null)
+  const model = catalog().find(m => m.id === requested) || (apinex && hasKeys('apinex') ? { id: requested, name: apinex.slice(5), provider: 'APINEX', free: !APINEX_SUBSCRIPTION_MODELS.has(apinex), requiresSubscription: APINEX_SUBSCRIPTION_MODELS.has(apinex), description: 'APINex server-side model route' } : null)
   if (!model) return res.status(404).json({ error: 'Model not found' })
   res.json(model)
 })

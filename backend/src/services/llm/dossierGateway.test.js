@@ -2,6 +2,8 @@ import { test, mock } from 'node:test'
 import assert from 'node:assert/strict'
 
 for (const provider of ['OPENROUTER', 'MISTRAL', 'GROQ', 'GEMINI']) process.env[`${provider}_API_KEY`] = 'fixture-key-not-a-real-credential'
+process.env.LLM_AUTOMATIC_FAILOVER = 'true'
+process.env.LLM_PAID_FALLBACKS = 'true'
 const calls = []
 let failFirst = true
 let missingPrimary = false
@@ -63,7 +65,7 @@ test('a missing primary key still permits the approved existing fallback and emi
 })
 
 test('private dossier aliases never become normal chat, CLI or plan-downgrade defaults', () => {
-  assert.equal(resolveModelForPlan('auto', 'free', 'x'.repeat(450)), 'openrouter/gpt-4o-mini')
+  assert.equal(resolveModelForPlan('auto', 'free', 'x'.repeat(450)), 'codeva/unavailable')
   assert.equal(resolveModelForPlan('dossier/builder', 'free', 'notes'), 'dossier/builder')
   for (const plan of ['free', 'pro', 'max']) for (const tier of ['fast', 'balanced', 'reasoning', 'premium']) assert.ok(!pickModelForPlan(plan, tier).startsWith('dossier/'))
   assert.ok(!resolveModelForPlan('dossier/frontier', 'free', 'notes').startsWith('dossier/'))
