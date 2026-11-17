@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   Plus, Search, MessageSquare, FolderOpen, Layers, Code2, Sliders,
@@ -15,27 +15,25 @@ import remarkMath from 'remark-math'
 import remarkGfm from 'remark-gfm'
 import ResponseActivity from '../../components/chat/ResponseActivity.jsx'
 import rehypeKatex from 'rehype-katex'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import api, { smartStream, createThread, getThreads, getMessages, isLoggedIn, API_BASE, getFreshToken, truncateThread, checkBackendHealth } from '../../lib/api.js'
 import { useTTS } from '../../hooks/useTTS.js'
-import VoiceChatModal from '../../components/chat/VoiceChatModal.jsx'
-import ArtifactsGallery from '../../components/chat/ArtifactsGallery.jsx'
 import { useAuthStore } from '@stores/authStore.js'
 import { useProjectStore } from '@stores/projectStore.js'
 import { useStyleStore } from '@stores/styleStore.js'
 import useSettingsStore from '@stores/settingsStore.js'
 import CodevaMark, { CodevaWordmark } from '../../components/ui/CodevaLogo.jsx'
 import InviteFriendsModal from '../../components/invite/InviteFriendsModal.jsx'
-import HelpCenterPanel from '../../components/chat/HelpCenterPanel.jsx'
-import KaliKalView from '../../components/chat/KaliKalView.jsx'
-import MatrixRain from '../../components/chat/MatrixRain.jsx'
-import KaliKalBanner from '../../components/chat/KaliKalBanner.jsx'
-import DocumentArtifact from '../../components/chat/DocumentArtifact.jsx'
-import CompareView from '../../components/chat/CompareView.jsx'
 import { Skeleton } from '../../components/ui/Skeleton.jsx'
 import { Tooltip } from '../../components/ui/Tooltip.jsx'
-import { ImageGeneratorWidget, MidnightCountdown } from '../../components/chat/ImageGeneratorWidget.jsx'
+
+const VoiceChatModal = lazy(() => import('../../components/chat/VoiceChatModal.jsx'))
+const HelpCenterPanel = lazy(() => import('../../components/chat/HelpCenterPanel.jsx'))
+const KaliKalView = lazy(() => import('../../components/chat/KaliKalView.jsx'))
+const MatrixRain = lazy(() => import('../../components/chat/MatrixRain.jsx'))
+const DocumentArtifact = lazy(() => import('../../components/chat/DocumentArtifact.jsx'))
+const CompareView = lazy(() => import('../../components/chat/CompareView.jsx'))
+const CodeSyntaxHighlight = lazy(() => import('../../components/chat/CodeSyntaxHighlight.jsx'))
+const ImageGeneratorWidget = lazy(() => import('../../components/chat/ImageGeneratorWidget.jsx').then(module => ({ default: module.ImageGeneratorWidget })))
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -249,14 +247,9 @@ function CodeBlock({ language, value, codeExecutionEnabled }) {
           </button>
         </div>
       </div>
-      <SyntaxHighlighter
-        language={language || 'text'}
-        style={oneDark}
-        customStyle={{ margin: 0, borderRadius: 0, background: '#1a1a1a', fontSize: '0.8125rem' }}
-        showLineNumbers={value.split('\n').length > 3}
-      >
-        {value}
-      </SyntaxHighlighter>
+      <Suspense fallback={<pre className="m-0 overflow-x-auto bg-[#1a1a1a] p-4 font-mono text-[0.8125rem] text-foreground-primary">{value}</pre>}>
+        <CodeSyntaxHighlight language={language || 'text'} value={value} showLineNumbers={value.split('\n').length > 3} />
+      </Suspense>
 
       {/* Console output display */}
       {runResult && (
@@ -328,7 +321,11 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex]}
                 components={{
-                  img: ({ src, alt }) => <ImageGeneratorWidget src={src} alt={alt} />,
+                  img: ({ src, alt }) => (
+                    <Suspense fallback={<img src={src} alt={alt || ''} className="max-w-full rounded-xl" />}>
+                      <ImageGeneratorWidget src={src} alt={alt} />
+                    </Suspense>
+                  ),
                   pre: ({ children }) => <div className="min-w-0">{children}</div>,
                   table: ({ children }) => <div className="w-full overflow-x-auto my-4"><table>{children}</table></div>,
                   code({ node, inline, className, children, ...props }) {
@@ -336,7 +333,12 @@ function MessageBubble({ msg, index, isStreaming, onCopy, onRevert, onSpeak, onF
                     if (match || String(children).endsWith('\n')) {
                       const lang = match?.[1]?.toLowerCase() || 'text'
                       if (lang === 'pdf' || lang === 'docx' || lang === 'pptx') {
-                        return <DocumentArtifact format={lang} content={String(children).replace(/\n$/, '')} />
+                        const content = String(children).replace(/\n$/, '')
+                        return (
+                          <Suspense fallback={<pre className="max-w-full overflow-auto rounded-xl border border-border-subtle bg-background-tertiary p-4">{content}</pre>}>
+                            <DocumentArtifact format={lang} content={content} />
+                          </Suspense>
+                        )
                       }
                       return (
                         <CodeBlock
@@ -871,8 +873,10 @@ function InputArea({
   setActiveStyle,
   userPlan,
   imageUsage,
+  textareaRef: forwardedTextareaRef,
 }) {
-  const textareaRef = useRef(null)
+  const internalTextareaRef = useRef(null)
+  const textareaRef = forwardedTextareaRef || internalTextareaRef
   const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
   const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false)
   const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false)
@@ -2524,20 +2528,20 @@ function ArtifactsView({ messages }) {
                   )
                 ) : (
                   // Raw code tab
-                  <SyntaxHighlighter
-                    language={selectedArt.language || 'javascript'}
-                    style={oneDark}
-                    customStyle={{
-                      margin: 0,
-                      padding: '20px',
-                      background: 'transparent',
-                      fontSize: '11px',
-                      fontFamily: 'var(--font-mono, monospace)',
-                      lineHeight: '1.6',
-                    }}
-                  >
-                    {selectedArt.content}
-                  </SyntaxHighlighter>
+                  <Suspense fallback={<pre className="max-w-full overflow-auto whitespace-pre-wrap p-5 font-mono text-[11px] text-foreground-secondary">{selectedArt.content}</pre>}>
+                    <CodeSyntaxHighlight
+                      language={selectedArt.language || 'javascript'}
+                      value={selectedArt.content}
+                      customStyle={{
+                        margin: 0,
+                        padding: '20px',
+                        background: 'transparent',
+                        fontSize: '11px',
+                        fontFamily: 'var(--font-mono, monospace)',
+                        lineHeight: '1.6',
+                      }}
+                    />
+                  </Suspense>
                 )}
               </div>
             </motion.div>
@@ -3384,6 +3388,7 @@ export default function ChatPage() {
   const [activeNav, setActiveNav] = useState('chats')
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
   const [input, setInput] = useState('')
+  const inputRef = useRef(null)
   const [messages, setMessages] = useState([])
   const [threads, setThreads] = useState([])
   const [threadsLoading, setThreadsLoading] = useState(true)
@@ -3850,6 +3855,12 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingIndex])
 
+  const handleNewChat = useCallback(() => {
+    navigate('/chat')
+    setMessages([])
+    setActiveNav('chats')
+  }, [navigate])
+
   // Desktop shortcuts via Electron IPC
   useEffect(() => {
     if (!window.electronAPI) return
@@ -3865,7 +3876,7 @@ export default function ChatPage() {
       removeNewChat?.()
       removeFocusInput?.()
     }
-  }, [])
+  }, [handleNewChat])
 
   const loadThreads = async () => {
     try {
@@ -5512,7 +5523,7 @@ export default function ChatPage() {
             <div className="flex-1 overflow-y-auto flex flex-col min-h-0 relative">
               {threads.find(t => t._id === threadId)?.mode === 'kali_kal' && (
                 <div className="absolute inset-0 z-0 opacity-15 pointer-events-none">
-                  <MatrixRain color="#D91624" />
+                  <Suspense fallback={null}><MatrixRain color="#D91624" /></Suspense>
                 </div>
               )}
               {activeNav === 'chats' ? (
@@ -5521,6 +5532,7 @@ export default function ChatPage() {
                     <HeroState userName={userName} />
                     <div className="w-full mt-4">
                       <InputArea
+                        textareaRef={inputRef}
                         userPlan={userPlan}
                         onRequirePro={() => setShowProModal(true)}
                         activeProject={activeProject}
@@ -5567,7 +5579,7 @@ export default function ChatPage() {
                       {chatSuggestions.map((item, idx) => (
                         <button
                           key={idx}
-                          onClick={() => { setInput(item.query); textareaRef.current?.focus(); }}
+                          onClick={() => { setInput(item.query); inputRef.current?.focus(); }}
                           className="flex items-center gap-2 px-3.5 py-2.5 rounded-[12px] bg-[#32302D] hover:bg-[#3A3835] border border-white/5 text-[#d4d4d4] hover:text-white transition-colors text-[13px] font-medium shadow-sm"
                         >
                           <span className="text-[#a3a3a3]">{item.icon}</span>
@@ -5613,6 +5625,7 @@ export default function ChatPage() {
                     <div className="px-3 py-3 sm:px-4 sm:py-4 border-t border-border-subtle bg-background-primary flex-shrink-0 chat-input-safe">
                       {loading && chatRequestRef.current && <button onClick={() => chatRequestRef.current?.controller.abort()} className="block mx-auto mb-2 px-3 py-1.5 rounded-lg border border-white/15 text-xs text-text-secondary hover:text-white">Stop response</button>}
                       <InputArea
+                        textareaRef={inputRef}
                         userPlan={userPlan}
                         onRequirePro={() => setShowProModal(true)}
                         activeProject={activeProject}
@@ -5669,23 +5682,25 @@ export default function ChatPage() {
                   messages={messages}
                 />
               ) : activeNav === 'kali_kal' ? (
-                <KaliKalView 
-                  threads={threads}
-                  messages={messages}
-                  input={input}
-                  setInput={setInput}
-                  handleSend={handleSend}
-                  loading={loading}
-                  handleCreateThread={handleCreateThread}
-                  navigate={navigate}
-                  userPlan={userPlan}
-                  activeThreadId={activeThreadId || activeThreadIdRef.current || creatingThreadRef.current}
-                  handleDeleteThread={handleDeleteThread}
-                  startNewChat={() => { navigate('/kali-kal'); setMessages([]); }}
-                  kaliUsageFromBackend={kaliUsage}
-                  kaliLimitFromBackend={kaliLimit}
-                  onUsageRefresh={fetchUsageData}
-                />
+                <Suspense fallback={<div className="flex min-h-48 items-center justify-center text-sm text-foreground-muted" role="status">Loading Kali Kal…</div>}>
+                  <KaliKalView
+                    threads={threads}
+                    messages={messages}
+                    input={input}
+                    setInput={setInput}
+                    handleSend={handleSend}
+                    loading={loading}
+                    handleCreateThread={handleCreateThread}
+                    navigate={navigate}
+                    userPlan={userPlan}
+                    activeThreadId={activeThreadId || activeThreadIdRef.current || creatingThreadRef.current}
+                    handleDeleteThread={handleDeleteThread}
+                    startNewChat={() => { navigate('/kali-kal'); setMessages([]); }}
+                    kaliUsageFromBackend={kaliUsage}
+                    kaliLimitFromBackend={kaliLimit}
+                    onUsageRefresh={fetchUsageData}
+                  />
+                </Suspense>
               ) : activeNav === 'cowork' || activeNav === 'code' ? (
                 <ComingSoonView 
                   title={activeNav === 'cowork' ? "Cowork Tasks" : "Code Editor"} 
@@ -5719,24 +5734,28 @@ export default function ChatPage() {
       />
 
       {/* Voice Chat overlay modal */}
-      <VoiceChatModal
-        isOpen={voiceChatOpen}
-        onClose={() => {
-          setVoiceChatOpen(false)
-          stop()
-        }}
-        onSendMessage={(text) => {
-          handleSend(text)
-        }}
-        isPlaying={isPlaying}
-        isProcessing={loading}
-        ttsLoading={ttsLoading}
-        speak={speak}
-        stop={stop}
-        updateProvider={updateProvider}
-        updateVoice={updateVoice}
-        assistantReply={streamingIndex !== null ? messages[streamingIndex]?.content : null}
-      />
+      {voiceChatOpen && (
+        <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 text-sm text-white" role="status">Opening voice chat…</div>}>
+          <VoiceChatModal
+            isOpen={voiceChatOpen}
+            onClose={() => {
+              setVoiceChatOpen(false)
+              stop()
+            }}
+            onSendMessage={(text) => {
+              handleSend(text)
+            }}
+            isPlaying={isPlaying}
+            isProcessing={loading}
+            ttsLoading={ttsLoading}
+            speak={speak}
+            stop={stop}
+            updateProvider={updateProvider}
+            updateVoice={updateVoice}
+            assistantReply={streamingIndex !== null ? messages[streamingIndex]?.content : null}
+          />
+        </Suspense>
+      )}
 
       {/* Keyboard Shortcuts Modal */}
       <AnimatePresence>
@@ -5822,19 +5841,27 @@ export default function ChatPage() {
       <InviteFriendsModal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} />
 
       {/* Multi-Model Comparison */}
-      <CompareView
-        isOpen={compareOpen}
-        onClose={() => setCompareOpen(false)}
-        prompt={comparePrompt}
-        models={compareModels}
-        onSelectBest={(modelId, content) => {
-          setCompareOpen(false)
-          // Optionally set the winning response into chat
-        }}
-      />
+      {compareOpen && (
+        <Suspense fallback={null}>
+          <CompareView
+            isOpen={compareOpen}
+            onClose={() => setCompareOpen(false)}
+            prompt={comparePrompt}
+            models={compareModels}
+            onSelectBest={(modelId, content) => {
+              setCompareOpen(false)
+              // Optionally set the winning response into chat
+            }}
+          />
+        </Suspense>
+      )}
 
       {/* Help Center panel */}
-      <HelpCenterPanel isOpen={helpPanelOpen} onClose={() => setHelpPanelOpen(false)} />
+      {helpPanelOpen && (
+        <Suspense fallback={null}>
+          <HelpCenterPanel isOpen={helpPanelOpen} onClose={() => setHelpPanelOpen(false)} />
+        </Suspense>
+      )}
 
       {showProModal && (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">

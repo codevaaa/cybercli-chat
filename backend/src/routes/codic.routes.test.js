@@ -14,7 +14,11 @@ let providerMode = 'success'
 let providerClosed = false
 
 const auth = (req, res, next) => {
-  const users = { 'Bearer codic-test': 'user-codic-test', 'Bearer other-user': 'user-other' }
+  const users = {
+    'Bearer codic-test': 'user-codic-test',
+    'Bearer other-user': 'user-other',
+    'Bearer codic-rate-test': 'user-codic-rate-test',
+  }
   const id = users[req.headers.authorization]
   if (!id) return res.status(401).json({ error: 'Unauthorized' })
   req.user = { id, plan }
@@ -82,6 +86,33 @@ mock.module('../models/CodicAuthHandoff.js', {
     }),
   },
 })
+const sharedRateLimitRows = new Map()
+mock.module('../services/CodicRateLimitStore.js', {
+  namedExports: {
+    CodicRateLimitStore: class {
+      constructor({ prefix }) { this.prefix = prefix; this.windowMs = 60_000 }
+      init(options) { this.windowMs = options.windowMs }
+      async increment(key) {
+        const id = `${this.prefix}:${key}`
+        const now = Date.now()
+        const bucket = sharedRateLimitRows.get(id)
+        const next = !bucket || bucket.resetTime <= now
+          ? { totalHits: 1, resetTime: now + this.windowMs }
+          : { totalHits: bucket.totalHits + 1, resetTime: bucket.resetTime }
+        sharedRateLimitRows.set(id, next)
+        return { totalHits: next.totalHits, resetTime: new Date(next.resetTime) }
+      }
+      async decrement(key) {
+        const id = `${this.prefix}:${key}`
+        const bucket = sharedRateLimitRows.get(id)
+        if (bucket) bucket.totalHits = Math.max(0, bucket.totalHits - 1)
+      }
+      async resetKey(key) { sharedRateLimitRows.delete(`${this.prefix}:${key}`) }
+      async resetAll() {}
+      shutdown() {}
+    },
+  },
+})
 mock.module('../services/llm/gateway.js', {
   namedExports: {
     llmGateway: {
@@ -127,6 +158,7 @@ app.use('/codic', codicRouter)
 
 const authorized = request => request.set('Authorization', 'Bearer codic-test')
 const authorizedAsOtherUser = request => request.set('Authorization', 'Bearer other-user')
+const authorizedForRateTest = request => request.set('Authorization', 'Bearer codic-rate-test')
 const validTurn = {
   model: 'auto',
   messages: [{ role: 'user', content: 'Inspect this project.' }],
@@ -252,6 +284,24 @@ test('Codic quota exhaustion prevents provider calls', async () => {
   assert.equal(response.body.quota.remaining, 0)
   assert.equal(providerCalls.length, before)
   quota = { monthly_token_limit: 500_000, tokens_used_this_month: 0, resets_at: null }
+})
+
+test('Codic turns enforce the authenticated user plan hourly request limit', async () => {
+  providerMode = 'success'
+  plan = 'free'
+  quota = { monthly_token_limit: 500_000, tokens_used_this_month: 0, resets_at: null }
+  const before = providerCalls.length
+
+  const responses = await Promise.all(Array.from({ length: 51 }, () =>
+    authorizedForRateTest(request(app).post('/codic/turns').send(validTurn)),
+  ))
+
+  assert.equal(responses.filter(response => response.status === 200).length, 50)
+  const limited = responses.filter(response => response.status === 429)
+  assert.equal(limited.length, 1)
+  assert.equal(limited[0].body.code, 'CODIC_RATE_LIMITED')
+  assert.equal(providerCalls.length - before, 50)
+  plan = 'pro'
 })
 
 test('Codic provider failures are sanitized and disconnect cancels the gateway stream', async () => {

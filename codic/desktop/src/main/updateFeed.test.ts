@@ -1,9 +1,18 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fetchCodicUpdateFeedReadiness, inspectCodicUpdateCatalog } from './updateFeed.js'
+import { fetchCodicUpdateFeedReadiness, hasTrustedUpdatePublisher, inspectCodicUpdateCatalog } from './updateFeed.js'
 
 const sha512 = Buffer.alloc(64, 7).toString('base64')
 
 describe('Codic update feed readiness', () => {
+  it('requires a configured publisher before enabling Windows auto-updates', () => {
+    expect(hasTrustedUpdatePublisher('provider: generic\nurl: https://example.test/updates')).toBe(false)
+    expect(hasTrustedUpdatePublisher('publisherName: null')).toBe(false)
+    expect(hasTrustedUpdatePublisher('publisherName: false')).toBe(false)
+    expect(hasTrustedUpdatePublisher('publisherName: ""')).toBe(false)
+    expect(hasTrustedUpdatePublisher('publisherName: "Codeva Ltd."')).toBe(true)
+    expect(hasTrustedUpdatePublisher('publisherName:\n  - "Codeva Ltd."\n  - "Codeva LLC"')).toBe(true)
+  })
+
   it('requires an available Windows release with a version and electron-updater checksum', () => {
     expect(inspectCodicUpdateCatalog({ windows: { available: true, version: '0.2.0', sha512 } }))
       .toEqual({ ready: true, version: '0.2.0' })

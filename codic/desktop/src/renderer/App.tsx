@@ -192,6 +192,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [companionEnabled, setCompanionEnabled] = useState(false)
   const [railMoreOpen, setRailMoreOpen] = useState(false)
   const [threadActionMenuId, setThreadActionMenuId] = useState<string | null>(null)
   const [threadMenuAnchor, setThreadMenuAnchor] = useState<{ left: number; top: number } | null>(null)
@@ -851,6 +852,29 @@ export default function App() {
     window.addEventListener('keydown', escape)
     return () => { document.removeEventListener('mousedown', dismiss); window.removeEventListener('keydown', escape) }
   }, [profileMenuOpen])
+
+  useEffect(() => {
+    let active = true
+    const unsubscribeState = window.codic.companion.onStateChange((state) => {
+      if (active) setCompanionEnabled(state.enabled)
+    })
+    void window.codic.companion.getState().then((state) => {
+      if (active) setCompanionEnabled(state.enabled)
+    }).catch(() => undefined)
+    const unsubscribePrompt = window.codic.companion.onPrompt((prompt) => {
+      setComposer(prompt)
+      setError('')
+      setShowSettings(false)
+      setIsRightPanelOpen(false)
+      setView('assistant')
+      window.requestAnimationFrame(() => composerRef.current?.focus())
+    })
+    return () => {
+      active = false
+      unsubscribeState()
+      unsubscribePrompt()
+    }
+  }, [])
 
   useEffect(() => {
     if (!railMoreOpen) return
@@ -2006,6 +2030,10 @@ export default function App() {
               <button role="menuitem" onClick={() => openSettings('profile')}><Icon name="user" size={16} />Profile and account<Icon name="chevron" size={14} /></button>
               <button role="menuitem" onClick={() => openSettings('profile')}><Icon name="activity" size={16} />Usage and limits<Icon name="chevron" size={14} /></button>
               <button role="menuitem" onClick={() => openSettings('appearance')}><Icon name="sun" size={16} />Personalization<Icon name="chevron" size={14} /></button>
+              <button role="menuitemcheckbox" aria-checked={companionEnabled} onClick={() => {
+                setProfileMenuOpen(false)
+                void window.codic.companion.toggle().then((state) => setCompanionEnabled(state.enabled)).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'The desktop companion could not be opened.'))
+              }}><Icon name="spark" size={16} />Show Pet<span className="profile-menu-toggle-value">{companionEnabled ? 'On' : 'Off'}</span></button>
               <button role="menuitem" onClick={() => openSettings('general')}><Icon name="settings" size={16} />Settings<kbd>Ctrl+,</kbd></button>
               <div className="profile-menu-divider" />
               {hasSession ? <button className="profile-menu-danger" role="menuitem" onClick={() => { setProfileMenuOpen(false); void handleSignOut() }}><Icon name="close" size={16} />Sign out</button> : <button role="menuitem" onClick={() => { setProfileMenuOpen(false); openAuth() }}><Icon name="lock" size={16} />Connect Codeva account</button>}

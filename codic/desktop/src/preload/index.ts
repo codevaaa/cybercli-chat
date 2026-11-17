@@ -4,6 +4,8 @@ import type { CodicBridge, CodicCheckpointSummary, CodicDiagnostics, CodicModelC
 const authCallbacks = new Set<(url: string) => void>()
 const signedOutCallbacks = new Set<() => void>()
 const terminalCallbacks = new Set<(event: CodicTerminalEvent) => void>()
+const companionStateCallbacks = new Set<(state: { enabled: boolean }) => void>()
+const companionPromptCallbacks = new Set<(prompt: string) => void>()
 let pendingAuthCallback: string | null = null
 ipcRenderer.on('codic:auth-callback', (_event, url: string) => {
   if (authCallbacks.size === 0) pendingAuthCallback = url
@@ -19,8 +21,24 @@ ipcRenderer.on('codic:window-state', (_event, state: { maximized: boolean }) => 
 ipcRenderer.on('codic:terminal-event', (_event, terminalEvent: CodicTerminalEvent) => {
   for (const callback of terminalCallbacks) callback(terminalEvent)
 })
+ipcRenderer.on('codic:companion-state', (_event, state: { enabled: boolean }) => {
+  for (const callback of companionStateCallbacks) callback({ enabled: Boolean(state?.enabled) })
+})
+ipcRenderer.on('codic:companion-prompt', (_event, prompt: string) => {
+  if (typeof prompt !== 'string') return
+  for (const callback of companionPromptCallbacks) callback(prompt)
+})
 
 const bridge: CodicBridge = {
+  companion: {
+    getState: () => ipcRenderer.invoke('codic:companion-get-state') as Promise<{ enabled: boolean }>,
+    toggle: () => ipcRenderer.invoke('codic:companion-toggle') as Promise<{ enabled: boolean }>,
+    focusApp: async () => { await ipcRenderer.invoke('codic:companion-focus') },
+    hide: async () => { await ipcRenderer.invoke('codic:companion-hide') },
+    submitPrompt: async (prompt) => { await ipcRenderer.invoke('codic:companion-prompt', prompt) },
+    onStateChange: (callback) => { companionStateCallbacks.add(callback); return () => { companionStateCallbacks.delete(callback) } },
+    onPrompt: (callback) => { companionPromptCallbacks.add(callback); return () => { companionPromptCallbacks.delete(callback) } },
+  },
   app: {
     getVersion: async () => (await ipcRenderer.invoke('codic:app-info')).version as string,
     getPlatform: () => process.platform,

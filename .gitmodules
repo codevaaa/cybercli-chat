@@ -1,0 +1,9 @@
+[submodule "cybercoder"]
+	path = cybercoder
+	url = https://github.com/codevaaa/cybercoder.git
+[submodule "scratch/Scrapling"]
+	path = scratch/Scrapling
+	url = https://github.com/D4Vinci/Scrapling.git
+[submodule "scratch/Understand-Anything"]
+	path = scratch/Understand-Anything
+	url = https://github.com/codevaaa/Understand-Anything.git

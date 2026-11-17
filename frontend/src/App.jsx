@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import Navbar from '@components/layout/Navbar'
 import Footer from '@components/layout/Footer'
 import PublicLayout from '@components/layout/PublicLayout'
@@ -11,79 +11,79 @@ import { useAuthStore } from '@stores/authStore.js'
 import useSettingsStore from '@stores/settingsStore.js'
 import { applyAppearanceTheme } from '@lib/theme.js'
 
-import HomePage from '@pages/public/HomePage'
-import FeaturesPage from '@pages/public/FeaturesPage'
-import FeatureDetailPage from '@pages/public/FeatureDetailPage'
-import ModelsPage from '@pages/public/ModelsPage'
-import ModelDetailPage from '@pages/public/ModelDetailPage'
-import PricingPage from '@pages/public/PricingPage'
-import ContactPage from '@pages/public/ContactPage'
-import AboutPage from '@pages/public/AboutPage'
-import CareersPage from '@pages/public/CareersPage'
-import AffiliatePage from '@pages/public/AffiliatePage'
-import BlogPage from '@pages/public/BlogPage'
-import BlogPostPage from '@pages/public/BlogPostPage'
-import DocsPage from '@pages/public/DocsPage'
-import DocsArticlePage from '@pages/public/DocsArticlePage'
-import PrivacyPolicyPage from '@pages/public/PrivacyPolicyPage'
-import TermsPage from '@pages/public/TermsPage'
-import CookiePolicyPage from '@pages/public/CookiePolicyPage'
-import AcceptableUsePage from '@pages/public/AcceptableUsePage'
-import ConsumerTermsPage from '@pages/public/ConsumerTermsPage'
-import CommercialTermsPage from '@pages/public/CommercialTermsPage'
-import ResponsibleDisclosurePage from '@pages/public/ResponsibleDisclosurePage'
-import TrustCenterPage from '@pages/public/TrustCenterPage'
-import ResearchPage from '@pages/public/ResearchPage'
-import UsageLimitBestPracticesPage from '@pages/public/UsageLimitBestPracticesPage'
-import GDPRPage from '@pages/public/GDPRPage'
-import ChangelogPage from '@pages/public/ChangelogPage'
-import ApiReferencePage from '@pages/public/ApiReferencePage'
-import DevelopersPage from '@pages/public/DevelopersPage'
-import ClaudeCodePage from '@pages/public/ClaudeCodePage'
-import SystemStatusPage from '@pages/public/SystemStatusPage'
-import DownloadsPage from '@pages/public/DownloadsPage'
-import DownloadWindowsPage from '@pages/public/DownloadWindowsPage'
-import DownloadCodicPage from '@pages/public/DownloadCodicPage'
-import DownloadMacPage from '@pages/public/DownloadMacPage'
-import DownloadLinuxPage from '@pages/public/DownloadLinuxPage'
-import CouncilModePage from '@pages/public/CouncilModePage'
-import UpgradePage from '@pages/public/UpgradePage'
-import ApiKeysPage from '@pages/public/ApiKeysPage'
-import HelpPage from '@pages/public/HelpPage'
-import ProvidersPage from '@pages/public/ProvidersPage'
-import ChromeExtensionPage from '@pages/public/ChromeExtensionPage'
-import ExtensionDocsPage from '@pages/public/ExtensionDocsPage'
-import CliLoginPage from '@pages/public/CliLoginPage'
-import CliSubscribePage from '@pages/public/CliSubscribePage'
-import KaliKalPage from '@pages/public/KaliKalPage'
-import MadhavPage from '@pages/public/MadhavPage'
-import RavanPage from '@pages/public/RavanPage'
+const HomePage = lazy(() => import('@pages/public/HomePage'))
+const FeaturesPage = lazy(() => import('@pages/public/FeaturesPage'))
+const FeatureDetailPage = lazy(() => import('@pages/public/FeatureDetailPage'))
+const ModelsPage = lazy(() => import('@pages/public/ModelsPage'))
+const ModelDetailPage = lazy(() => import('@pages/public/ModelDetailPage'))
+const PricingPage = lazy(() => import('@pages/public/PricingPage'))
+const ContactPage = lazy(() => import('@pages/public/ContactPage'))
+const AboutPage = lazy(() => import('@pages/public/AboutPage'))
+const CareersPage = lazy(() => import('@pages/public/CareersPage'))
+const AffiliatePage = lazy(() => import('@pages/public/AffiliatePage'))
+const BlogPage = lazy(() => import('@pages/public/BlogPage'))
+const BlogPostPage = lazy(() => import('@pages/public/BlogPostPage'))
+const DocsPage = lazy(() => import('@pages/public/DocsPage'))
+const DocsArticlePage = lazy(() => import('@pages/public/DocsArticlePage'))
+const PrivacyPolicyPage = lazy(() => import('@pages/public/PrivacyPolicyPage'))
+const TermsPage = lazy(() => import('@pages/public/TermsPage'))
+const CookiePolicyPage = lazy(() => import('@pages/public/CookiePolicyPage'))
+const AcceptableUsePage = lazy(() => import('@pages/public/AcceptableUsePage'))
+const ConsumerTermsPage = lazy(() => import('@pages/public/ConsumerTermsPage'))
+const CommercialTermsPage = lazy(() => import('@pages/public/CommercialTermsPage'))
+const ResponsibleDisclosurePage = lazy(() => import('@pages/public/ResponsibleDisclosurePage'))
+const TrustCenterPage = lazy(() => import('@pages/public/TrustCenterPage'))
+const ResearchPage = lazy(() => import('@pages/public/ResearchPage'))
+const UsageLimitBestPracticesPage = lazy(() => import('@pages/public/UsageLimitBestPracticesPage'))
+const GDPRPage = lazy(() => import('@pages/public/GDPRPage'))
+const ChangelogPage = lazy(() => import('@pages/public/ChangelogPage'))
+const ApiReferencePage = lazy(() => import('@pages/public/ApiReferencePage'))
+const DevelopersPage = lazy(() => import('@pages/public/DevelopersPage'))
+const ClaudeCodePage = lazy(() => import('@pages/public/ClaudeCodePage'))
+const SystemStatusPage = lazy(() => import('@pages/public/SystemStatusPage'))
+const DownloadsPage = lazy(() => import('@pages/public/DownloadsPage'))
+const DownloadWindowsPage = lazy(() => import('@pages/public/DownloadWindowsPage'))
+const DownloadCodicPage = lazy(() => import('@pages/public/DownloadCodicPage'))
+const DownloadMacPage = lazy(() => import('@pages/public/DownloadMacPage'))
+const DownloadLinuxPage = lazy(() => import('@pages/public/DownloadLinuxPage'))
+const CouncilModePage = lazy(() => import('@pages/public/CouncilModePage'))
+const UpgradePage = lazy(() => import('@pages/public/UpgradePage'))
+const ApiKeysPage = lazy(() => import('@pages/public/ApiKeysPage'))
+const HelpPage = lazy(() => import('@pages/public/HelpPage'))
+const ProvidersPage = lazy(() => import('@pages/public/ProvidersPage'))
+const ChromeExtensionPage = lazy(() => import('@pages/public/ChromeExtensionPage'))
+const ExtensionDocsPage = lazy(() => import('@pages/public/ExtensionDocsPage'))
+const CliLoginPage = lazy(() => import('@pages/public/CliLoginPage'))
+const CliSubscribePage = lazy(() => import('@pages/public/CliSubscribePage'))
+const KaliKalPage = lazy(() => import('@pages/public/KaliKalPage'))
+const MadhavPage = lazy(() => import('@pages/public/MadhavPage'))
+const RavanPage = lazy(() => import('@pages/public/RavanPage'))
 
-import SignupPage from '@pages/auth/SignupPage'
-import LoginPage from '@pages/auth/LoginPage'
-import ForgotPasswordPage from '@pages/auth/ForgotPasswordPage'
-import ResetPasswordPage from '@pages/auth/ResetPasswordPage'
-import MagicLinkPage from '@pages/auth/MagicLinkPage'
-import VerifyEmailPage from '@pages/auth/VerifyEmailPage'
-import AuthCallbackPage from '@pages/auth/AuthCallbackPage'
-import ExtensionConnectPage from '@pages/auth/ExtensionConnectPage'
+const SignupPage = lazy(() => import('@pages/auth/SignupPage'))
+const LoginPage = lazy(() => import('@pages/auth/LoginPage'))
+const ForgotPasswordPage = lazy(() => import('@pages/auth/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('@pages/auth/ResetPasswordPage'))
+const MagicLinkPage = lazy(() => import('@pages/auth/MagicLinkPage'))
+const VerifyEmailPage = lazy(() => import('@pages/auth/VerifyEmailPage'))
+const AuthCallbackPage = lazy(() => import('@pages/auth/AuthCallbackPage'))
+const ExtensionConnectPage = lazy(() => import('@pages/auth/ExtensionConnectPage'))
 
-import ChatPage from '@pages/app/ChatPage'
-import AnonymousChatPage from '@pages/app/AnonymousChatPage'
-import SettingsPage from '@pages/app/SettingsPage'
-import OrgDashboardPage from '@pages/app/OrgDashboardPage'
-import ProfilePage from '@pages/app/ProfilePage'
-import LibraryPage from '@pages/app/LibraryPage'
-import AgentsPage from '@pages/app/AgentsPage'
-import VoicePage from '@pages/app/VoicePage'
-import VoiceChatPage from '@pages/app/VoiceChatPage'
-import VoiceSettingsPage from '@pages/app/VoiceSettingsPage'
-import ProjectsPage from '@pages/app/ProjectsPage'
-import DossierStudio from '@pages/app/DossierStudio'
-import UsagePage from '@pages/app/UsagePage'
-import WorkflowsPage from '@pages/app/WorkflowsPage'
-import DiscoverPage from '@pages/app/DiscoverPage'
-import PlaygroundPage from '@pages/app/PlaygroundPage'
+const ChatPage = lazy(() => import('@pages/app/ChatPage'))
+const AnonymousChatPage = lazy(() => import('@pages/app/AnonymousChatPage'))
+const SettingsPage = lazy(() => import('@pages/app/SettingsPage'))
+const OrgDashboardPage = lazy(() => import('@pages/app/OrgDashboardPage'))
+const ProfilePage = lazy(() => import('@pages/app/ProfilePage'))
+const LibraryPage = lazy(() => import('@pages/app/LibraryPage'))
+const AgentsPage = lazy(() => import('@pages/app/AgentsPage'))
+const VoicePage = lazy(() => import('@pages/app/VoicePage'))
+const VoiceChatPage = lazy(() => import('@pages/app/VoiceChatPage'))
+const VoiceSettingsPage = lazy(() => import('@pages/app/VoiceSettingsPage'))
+const ProjectsPage = lazy(() => import('@pages/app/ProjectsPage'))
+const DossierStudio = lazy(() => import('@pages/app/DossierStudio'))
+const UsagePage = lazy(() => import('@pages/app/UsagePage'))
+const WorkflowsPage = lazy(() => import('@pages/app/WorkflowsPage'))
+const DiscoverPage = lazy(() => import('@pages/app/DiscoverPage'))
+const PlaygroundPage = lazy(() => import('@pages/app/PlaygroundPage'))
 
 const PUBLIC_PATHS = [
   '/', '/features', '/models', '/pricing', '/contact', '/about',
@@ -186,6 +186,7 @@ function App() {
       {isPublicRoute() && !location.pathname.startsWith('/auth') && <Navbar />}
       <main>
         <ErrorBoundary>
+        <Suspense fallback={<div className="min-h-[45vh] flex items-center justify-center gap-3 p-6 text-foreground-muted" role="status" aria-live="polite"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none" aria-hidden="true" /><span>Loading page…</span></div>}>
         <Routes>
           {/* ── Public Marketing Routes (with Lenis smooth scroll) ── */}
           <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
@@ -279,6 +280,7 @@ function App() {
           <Route path="/playground" element={<ProtectedRoute><PlaygroundPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to={session ? '/chat' : '/'} replace />} />
         </Routes>
+        </Suspense>
         </ErrorBoundary>
       </main>
       {isPublicRoute() && !window.location.pathname.startsWith('/auth') && <Footer />}

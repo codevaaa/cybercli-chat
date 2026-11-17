@@ -27,8 +27,8 @@
     "helmet": "^8.0.0",
     "ioredis": "^5.4.2",
     "mongoose": "^8.9.0",
-    "nodemailer": "^8.0.9",
-    "openai": "^4.77.0",
+    "nodemailer": "^10.6.0",
+    "openai": "^7.57.0",
     "pdfjs-dist": "5.4.624",
     "playwright": "1.63.0",
     "pngjs": "7.0.0",
@@ -36,7 +36,7 @@
     "winston": "^3.17.0",
     "ws": "^8.20.1",
     "xss-clean": "^0.1.4",
-    "zod": "^3.24.0"
+    "zod": "^4.6.7"
   },
   "engines": {
     "node": ">=22.0.0"

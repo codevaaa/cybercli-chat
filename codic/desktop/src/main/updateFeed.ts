@@ -11,6 +11,27 @@ export type CodicUpdateFeedReadiness = {
   version: string | null
 }
 
+/**
+ * Auto-updates must fail closed when electron-builder did not record an
+ * expected Windows publisher. HTTPS and a sha512 manifest hash authenticate
+ * transport and bytes, but cannot authenticate who published the installer.
+ */
+export function hasTrustedUpdatePublisher(configText: string): boolean {
+  const lines = configText.split(/\r?\n/)
+  const publisherLine = lines.findIndex((line) => /^\s*publisherName\s*:/i.test(line))
+  if (publisherLine < 0) return false
+
+  const inlineValue = lines[publisherLine].replace(/^\s*publisherName\s*:\s*/i, '').trim()
+  const publisherValue = inlineValue.replace(/^(["'])(.*)\1$/, '$2').trim().toLowerCase()
+  if (publisherValue && !publisherValue.startsWith('#') && !['null', 'false', '[]'].includes(publisherValue)) return true
+
+  for (const line of lines.slice(publisherLine + 1)) {
+    if (line.trim() && !/^\s/.test(line)) break
+    if (/^\s+-\s*(?:"[^"\r\n]+"|'[^'\r\n]+'|[^#\s][^\r\n]*)\s*$/.test(line)) return true
+  }
+  return false
+}
+
 const isVersion = (value: unknown): value is string =>
   typeof value === 'string' && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(value)
 

@@ -96,6 +96,7 @@
     },
     "win": {
       "icon": "assets/brand/codic-icon.ico",
+      "verifyUpdateCodeSignature": true,
       "target": [
         {
           "target": "nsis",

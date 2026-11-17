@@ -155,6 +155,15 @@ export interface ThreadHistory {
 }
 
 export interface CodicBridge {
+  companion: {
+    getState(): Promise<{ enabled: boolean }>
+    toggle(): Promise<{ enabled: boolean }>
+    focusApp(): Promise<void>
+    hide(): Promise<void>
+    submitPrompt(prompt: string): Promise<void>
+    onStateChange(callback: (state: { enabled: boolean }) => void): () => void
+    onPrompt(callback: (prompt: string) => void): () => void
+  }
   app: {
     getVersion(): Promise<string>
     getPlatform(): string

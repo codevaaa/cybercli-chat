@@ -1,5 +1,5 @@
-import { app, BrowserWindow, clipboard, contentTracing, dialog, ipcMain, safeStorage, shell, type WebContents } from 'electron'
-import electronUpdater, { type NsisUpdater } from 'electron-updater'
+import { app, BrowserWindow, clipboard, contentTracing, dialog, ipcMain, safeStorage, screen, shell, type WebContents } from 'electron'
+import electronUpdater from 'electron-updater'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import * as pty from '@homebridge/node-pty-prebuilt-multiarch'
 import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
@@ -10,10 +10,11 @@ import { CodicLocalStore } from './local-store.js'
 import { findCodicAuthCallback, parseCodicAuthCallback } from '../shared/authHandoff.js'
 import { listThreadSummaries, loadThreadHistory } from './history.js'
 import { toCodicApiPlatform } from './device-platform.js'
-import { fetchCodicUpdateFeedReadiness } from './updateFeed.js'
+import { fetchCodicUpdateFeedReadiness, hasTrustedUpdatePublisher } from './updateFeed.js'
 import { readWorkspaceDiff, runWorkspaceCommand } from './workspace-tools.js'
 import { formatContextFiles, MAX_CONTEXT_FILES, MAX_CONTEXT_TOTAL_BYTES, readSelectedContextFiles, readSelectedContextFolder } from './contextFiles.js'
 import { SecretScanner } from '../../../../cybercoder/packages/codic-runtime/src/shared-bridge.js'
+import { clampCompanionBounds, getInitialCompanionBounds, type CompanionBounds } from './companionWindow.js'
 import type { CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicRuntimeEventEnvelope, CodicUpdateCheck, EditAction } from '../shared/contracts.js'
 
 declare const __CODIC_LOCAL_PREVIEW_ENABLED__: boolean
@@ -58,6 +59,7 @@ const apiRoot = (process.env.CODEVA_API_BASE_URL || 'https://cybercli-api.onrend
 const apiBase = apiRoot.endsWith('/api/v1') ? apiRoot : `${apiRoot}/api/v1`
 const authStoragePath = () => path.join(app.getPath('userData'), 'auth-store.bin')
 const handoffVerifierPath = () => path.join(app.getPath('userData'), 'auth-handoff.bin')
+const companionPreferencesPath = () => path.join(app.getPath('userData'), 'companion-window.json')
 const deviceIdPath = () => path.join(app.getPath('userData'), 'device-id')
 const terminalSessions = new Map<string, { terminal: pty.IPty; owner: WebContents; projectPath: string }>()
 type PendingContextAttachment = { id: string; name: string; content: string; size: number }
@@ -69,6 +71,11 @@ let runtimeBridge: CodicRuntimeBridge | null = null
 let localStore: CodicLocalStore | null = null
 let schedulePollTimer: NodeJS.Timeout | null = null
 let browserWindow: BrowserWindow | null = null
+let companionWindow: BrowserWindow | null = null
+let companionEnabled = false
+let companionBounds: CompanionBounds | null = null
+let companionMoveTimer: NodeJS.Timeout | null = null
+let appIsQuitting = false
 let performanceTraceRunning = false
 let localPreviewAccessGranted = false
 const ephemeralTaskIds = new Set<string>()
@@ -152,9 +159,8 @@ const configureAutoUpdater = () => {
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = false
   autoUpdater.allowDowngrade = false
-  // Preview installers are unsigned. HTTPS and the release manifest checksum
-  // are verified by electron-updater; publisher-signature verification is not available yet.
-  if (process.platform === 'win32') (autoUpdater as NsisUpdater).verifyUpdateCodeSignature = async () => null
+  // Keep electron-updater's built-in Authenticode verification enabled. A
+  // packaged build without a configured publisher is blocked before download.
   autoUpdater.setFeedURL({ provider: 'generic', url: `${apiBase}/downloads/codic/updates/` })
 
   autoUpdater.on('checking-for-update', () => emitUpdateState({
@@ -196,6 +202,18 @@ const checkForCodicUpdates = async (isRetry = false) => {
   })
   if (!app.isPackaged) return emitUpdateState({
     phase: 'unsupported', available: false, latestVersion: null, message: 'Package Codic for Windows to check its release update feed.',
+  })
+  let publisherConfigured = false
+  try {
+    publisherConfigured = hasTrustedUpdatePublisher(readFileSync(path.join(process.resourcesPath, 'app-update.yml'), 'utf8'))
+  } catch {
+    // Unsigned preview packages have no trusted publisher and must not download
+    // an installer through the automatic update channel.
+  }
+  if (!publisherConfigured) return emitUpdateState({
+    phase: 'unsupported', available: false, latestVersion: null, percent: null, transferredBytes: null, totalBytes: null,
+    bytesPerSecond: null,
+    message: 'Automatic updates are disabled for this unsigned preview. Install Codic from the official downloads page.',
   })
   if (updateCheckInFlight || codicUpdateState.phase === 'downloading') return codicUpdateState
   updateCheckInFlight = true
@@ -561,7 +579,15 @@ if (!protocolLock) {
     // `closed` callback can throw “Object has been destroyed” on Windows.
     const ownerContents = window.webContents
     window.on('closed', () => {
-      if (mainWindow === window) mainWindow = null
+      if (mainWindow === window) {
+        mainWindow = null
+        if (companionWindow && !companionWindow.isDestroyed()) companionWindow.close()
+        companionWindow = null
+        if (!appIsQuitting && companionEnabled) {
+          companionEnabled = false
+          saveCompanionPreferences()
+        }
+      }
       for (const [taskId, owner] of taskWindowOwners) if (owner === window) taskWindowOwners.delete(taskId)
       for (const [sessionId, session] of terminalSessions) {
         if (session.owner !== ownerContents) continue
@@ -586,12 +612,158 @@ if (!protocolLock) {
     return window
   }
 
+  const publishCompanionState = () => {
+    const state = { enabled: companionEnabled }
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.send('codic:companion-state', state)
+    }
+    return state
+  }
+
+  const saveCompanionPreferences = () => {
+    const file = companionPreferencesPath()
+    const temporary = `${file}.tmp`
+    try {
+      mkdirSync(path.dirname(file), { recursive: true })
+      writeFileSync(temporary, JSON.stringify({ enabled: companionEnabled, bounds: companionBounds }), { encoding: 'utf8', mode: 0o600 })
+      renameSync(temporary, file)
+    } catch {
+      try { unlinkSync(temporary) } catch { /* A failed optional position save should not interrupt Codic. */ }
+    }
+  }
+
+  const readCompanionPreferences = () => {
+    try {
+      const value: unknown = JSON.parse(readFileSync(companionPreferencesPath(), 'utf8'))
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return
+      const candidate = value as Record<string, unknown>
+      companionEnabled = candidate.enabled === true
+      const bounds = candidate.bounds
+      if (bounds && typeof bounds === 'object' && !Array.isArray(bounds)) {
+        const saved = bounds as Record<string, unknown>
+        if (['x', 'y', 'width', 'height'].every((key) => typeof saved[key] === 'number' && Number.isSafeInteger(saved[key]))) {
+          const x = Number(saved.x)
+          const y = Number(saved.y)
+          const width = Number(saved.width)
+          const height = Number(saved.height)
+          if (Math.abs(x) <= 10_000_000 && Math.abs(y) <= 10_000_000 && width > 0 && width <= 10_000 && height > 0 && height <= 10_000) {
+            companionBounds = { x, y, width, height }
+          }
+        }
+      }
+    } catch {
+      companionEnabled = false
+      companionBounds = null
+    }
+  }
+
+  const createCompanionWindow = async () => {
+    if (companionWindow && !companionWindow.isDestroyed()) {
+      companionWindow.showInactive()
+      return companionWindow
+    }
+    const cursorDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
+    const savedCenter = companionBounds
+      ? { x: companionBounds.x + Math.round(companionBounds.width / 2), y: companionBounds.y + Math.round(companionBounds.height / 2) }
+      : null
+    const savedDisplay = savedCenter ? screen.getDisplayNearestPoint(savedCenter) : cursorDisplay
+    const area = savedDisplay.workArea
+    const bounds = companionBounds
+      ? clampCompanionBounds(companionBounds, area)
+      : getInitialCompanionBounds(area)
+    companionBounds = bounds
+    const window = new BrowserWindow({
+      ...bounds,
+      show: false,
+      frame: false,
+      transparent: true,
+      backgroundColor: '#00000000',
+      hasShadow: false,
+      resizable: false,
+      movable: true,
+      minimizable: false,
+      maximizable: false,
+      fullscreenable: false,
+      skipTaskbar: true,
+      title: 'Codic companion',
+      webPreferences: {
+        preload: path.join(app.getAppPath(), 'dist/preload/index.cjs'),
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
+        webSecurity: true,
+        allowRunningInsecureContent: false,
+      },
+    })
+    companionWindow = window
+    window.setAlwaysOnTop(true, 'floating')
+    window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false })
+    window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+    window.webContents.on('will-navigate', (event, navigationUrl) => {
+      try {
+        const nextUrl = new URL(navigationUrl)
+        const allowed = isDevelopment
+          ? nextUrl.origin === new URL(devRendererUrl).origin
+          : nextUrl.protocol === 'file:' && path.resolve(fileURLToPath(nextUrl)) === getExpectedRendererPath()
+        if (!allowed) event.preventDefault()
+      } catch {
+        event.preventDefault()
+      }
+    })
+    window.webContents.on('will-attach-webview', (event) => event.preventDefault())
+    window.once('ready-to-show', () => {
+      if (!window.isDestroyed() && companionEnabled) window.showInactive()
+    })
+    const persistBounds = () => {
+      if (window.isDestroyed()) return
+      const current = window.getBounds()
+      const workArea = screen.getDisplayMatching(current).workArea
+      const clamped = clampCompanionBounds(current, workArea)
+      if (current.x !== clamped.x || current.y !== clamped.y || current.width !== clamped.width || current.height !== clamped.height) {
+        window.setBounds(clamped)
+      }
+      companionBounds = clamped
+      if (companionMoveTimer) clearTimeout(companionMoveTimer)
+      companionMoveTimer = setTimeout(() => { companionMoveTimer = null; saveCompanionPreferences() }, 140)
+      companionMoveTimer.unref()
+    }
+    window.on('move', persistBounds)
+    window.on('closed', () => {
+      if (companionWindow === window) {
+        companionWindow = null
+        if (!appIsQuitting && companionEnabled) {
+          companionEnabled = false
+          saveCompanionPreferences()
+          publishCompanionState()
+        }
+      }
+    })
+    if (isDevelopment) {
+      const rendererUrl = new URL(devRendererUrl)
+      rendererUrl.searchParams.set('companion', '1')
+      await window.loadURL(rendererUrl.toString())
+    } else {
+      await window.loadFile(getExpectedRendererPath(), { query: { companion: '1' } })
+    }
+    return window
+  }
+
+  const disableCompanion = () => {
+    companionEnabled = false
+    if (companionMoveTimer) clearTimeout(companionMoveTimer)
+    companionMoveTimer = null
+    saveCompanionPreferences()
+    if (companionWindow && !companionWindow.isDestroyed()) companionWindow.hide()
+    publishCompanionState()
+  }
+
   app.whenReady().then(async () => {
     if (isDevelopment && process.argv[1]) {
       app.setAsDefaultProtocolClient('codic', process.execPath, [path.resolve(process.argv[1])])
     } else {
       app.setAsDefaultProtocolClient('codic')
     }
+    readCompanionPreferences()
     configureAutoUpdater()
     localStore = CodicLocalStore.open(path.join(app.getPath('userData'), 'codic.sqlite'))
     runtimeBridge = new CodicRuntimeBridge({
@@ -1283,6 +1455,56 @@ if (!protocolLock) {
       const window = BrowserWindow.fromWebContents(event.sender)
       return { maximized: Boolean(window?.isMaximized()) }
     })
+    ipcMain.handle('codic:companion-get-state', (event) => {
+      assertTrustedSender(event)
+      if (event.sender !== mainWindow?.webContents) throw new Error('Only the Codic main window can manage the companion.')
+      return { enabled: companionEnabled }
+    })
+    ipcMain.handle('codic:companion-toggle', async (event) => {
+      assertTrustedSender(event)
+      if (event.sender !== mainWindow?.webContents) throw new Error('Only the Codic main window can manage the companion.')
+      if (companionEnabled) {
+        disableCompanion()
+      } else {
+        companionEnabled = true
+        saveCompanionPreferences()
+        try {
+          await createCompanionWindow()
+          publishCompanionState()
+        } catch (error) {
+          companionEnabled = false
+          saveCompanionPreferences()
+          publishCompanionState()
+          throw error
+        }
+      }
+      return { enabled: companionEnabled }
+    })
+    ipcMain.handle('codic:companion-focus', async (event) => {
+      assertTrustedSender(event)
+      if (event.sender !== companionWindow?.webContents) throw new Error('Only the Codic companion can focus the main app.')
+      const target = mainWindow && !mainWindow.isDestroyed() ? mainWindow : await createWindow()
+      if (target.isMinimized()) target.restore()
+      target.show()
+      target.focus()
+    })
+    ipcMain.handle('codic:companion-hide', (event) => {
+      assertTrustedSender(event)
+      if (event.sender !== companionWindow?.webContents) throw new Error('Only the Codic companion can hide itself.')
+      disableCompanion()
+    })
+    ipcMain.handle('codic:companion-prompt', async (event, prompt: unknown) => {
+      assertTrustedSender(event)
+      if (event.sender !== companionWindow?.webContents) throw new Error('Only the Codic companion can draft a prompt.')
+      if (typeof prompt !== 'string' || prompt.length > 4000 || prompt.includes('\u0000') || !prompt.trim()) {
+        throw new Error('Enter a prompt of up to 4,000 characters.')
+      }
+      const target = mainWindow && !mainWindow.isDestroyed() ? mainWindow : await createWindow()
+      if (target.isMinimized()) target.restore()
+      target.show()
+      target.focus()
+      target.webContents.send('codic:companion-prompt', prompt.trim())
+    })
     ipcMain.handle('codic:open-blank-window', async (event) => {
       assertTrustedSender(event)
       await createWindow(undefined, { makeMain: false, empty: true })
@@ -1380,6 +1602,8 @@ if (!protocolLock) {
     const initialUrl = findCodicAuthCallback(process.argv)
     if (initialUrl) handleDeepLink(initialUrl)
     await createWindow()
+    if (companionEnabled) await createCompanionWindow()
+    publishCompanionState()
     if (process.platform === 'win32' && app.isPackaged) {
       const startupUpdateTimer = setTimeout(() => { void checkForCodicUpdates() }, 4_000)
       startupUpdateTimer.unref()
@@ -1391,7 +1615,10 @@ if (!protocolLock) {
   })
 
   app.on('before-quit', () => {
+    appIsQuitting = true
     clearUpdateRetry()
+    if (companionMoveTimer) clearTimeout(companionMoveTimer)
+    companionMoveTimer = null
     if (schedulePollTimer) clearInterval(schedulePollTimer)
     schedulePollTimer = null
     runtimeBridge?.cancelAll()

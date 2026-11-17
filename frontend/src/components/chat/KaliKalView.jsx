@@ -13,6 +13,7 @@ import { CodevaMark } from '@components/ui/CodevaLogo'
 import { useNavigate } from 'react-router-dom'
 import mermaid from 'mermaid'
 import { ImageGeneratorWidget } from './ImageGeneratorWidget'
+import api from '../../lib/api.js'
 
 // ─── Kali-compatible models (kali: true in EXTRA_MODELS) ────────────────────
 const KALI_MODELS = [
@@ -624,10 +625,10 @@ export default function KaliKalView({
     const prevUserMsg = kaliMessages[idx - 1]
     if (prevUserMsg && prevUserMsg.role === 'user') {
       handleSend(prevUserMsg.content, selectedKaliModel).then(success => {
-        if (success) setKaliUsage(prev => prev + 1)
+        if (success) onUsageRefresh?.()
       })
     }
-  }, [kaliMessages, loading, handleSend, selectedKaliModel])
+  }, [kaliMessages, loading, handleSend, selectedKaliModel, onUsageRefresh])
 
   // ── Send message (handles thread creation for kali_kal mode) ──
   const handleKaliSend = useCallback(async (textOverride) => {
