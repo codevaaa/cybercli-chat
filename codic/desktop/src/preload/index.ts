@@ -1,10 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { CodicBridge, CodicCheckpointSummary, CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicTerminalEvent, CodicUpdateCheck, ReviewComment, ScheduledTask, TerminalCommandResult, ThreadHistory, ThreadSummary, WorkspaceDiff, WorkspaceInfo, ContextAttachmentSelection } from '../shared/contracts.js'
+import type { CodicBridge, CodicCheckpointSummary, CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicTerminalEvent, CodicUpdateCheck, CompanionActivity, ReviewComment, ScheduledTask, TerminalCommandResult, ThreadHistory, ThreadSummary, WorkspaceDiff, WorkspaceInfo, ContextAttachmentSelection } from '../shared/contracts.js'
 
 const authCallbacks = new Set<(url: string) => void>()
 const signedOutCallbacks = new Set<() => void>()
 const terminalCallbacks = new Set<(event: CodicTerminalEvent) => void>()
-const companionStateCallbacks = new Set<(state: { enabled: boolean }) => void>()
+const companionStateCallbacks = new Set<(state: { enabled: boolean; activity: CompanionActivity }) => void>()
+const companionActivityCallbacks = new Set<(activity: CompanionActivity) => void>()
 const companionPromptCallbacks = new Set<(prompt: string) => void>()
 let pendingAuthCallback: string | null = null
 ipcRenderer.on('codic:auth-callback', (_event, url: string) => {
@@ -21,8 +22,11 @@ ipcRenderer.on('codic:window-state', (_event, state: { maximized: boolean }) => 
 ipcRenderer.on('codic:terminal-event', (_event, terminalEvent: CodicTerminalEvent) => {
   for (const callback of terminalCallbacks) callback(terminalEvent)
 })
-ipcRenderer.on('codic:companion-state', (_event, state: { enabled: boolean }) => {
-  for (const callback of companionStateCallbacks) callback({ enabled: Boolean(state?.enabled) })
+ipcRenderer.on('codic:companion-state', (_event, state: { enabled: boolean; activity: CompanionActivity }) => {
+  for (const callback of companionStateCallbacks) callback({ enabled: Boolean(state?.enabled), activity: state?.activity || 'idle' })
+})
+ipcRenderer.on('codic:companion-activity', (_event, activity: CompanionActivity) => {
+  for (const callback of companionActivityCallbacks) callback(activity || 'idle')
 })
 ipcRenderer.on('codic:companion-prompt', (_event, prompt: string) => {
   if (typeof prompt !== 'string') return
@@ -31,12 +35,14 @@ ipcRenderer.on('codic:companion-prompt', (_event, prompt: string) => {
 
 const bridge: CodicBridge = {
   companion: {
-    getState: () => ipcRenderer.invoke('codic:companion-get-state') as Promise<{ enabled: boolean }>,
+    getState: () => ipcRenderer.invoke('codic:companion-get-state') as Promise<{ enabled: boolean; activity: CompanionActivity }>,
+    getActivity: () => ipcRenderer.invoke('codic:companion-get-activity') as Promise<CompanionActivity>,
     toggle: () => ipcRenderer.invoke('codic:companion-toggle') as Promise<{ enabled: boolean }>,
     focusApp: async () => { await ipcRenderer.invoke('codic:companion-focus') },
     hide: async () => { await ipcRenderer.invoke('codic:companion-hide') },
     submitPrompt: async (prompt) => { await ipcRenderer.invoke('codic:companion-prompt', prompt) },
     onStateChange: (callback) => { companionStateCallbacks.add(callback); return () => { companionStateCallbacks.delete(callback) } },
+    onActivityChange: (callback) => { companionActivityCallbacks.add(callback); return () => { companionActivityCallbacks.delete(callback) } },
     onPrompt: (callback) => { companionPromptCallbacks.add(callback); return () => { companionPromptCallbacks.delete(callback) } },
   },
   app: {

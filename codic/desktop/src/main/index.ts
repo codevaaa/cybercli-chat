@@ -15,7 +15,8 @@ import { readWorkspaceDiff, runWorkspaceCommand } from './workspace-tools.js'
 import { formatContextFiles, MAX_CONTEXT_FILES, MAX_CONTEXT_TOTAL_BYTES, readSelectedContextFiles, readSelectedContextFolder } from './contextFiles.js'
 import { SecretScanner } from '../../../../cybercoder/packages/codic-runtime/src/shared-bridge.js'
 import { clampCompanionBounds, getInitialCompanionBounds, type CompanionBounds } from './companionWindow.js'
-import type { CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicRuntimeEventEnvelope, CodicUpdateCheck, EditAction } from '../shared/contracts.js'
+import { activityFromRuntimeEvent } from './companionActivity.js'
+import type { CodicDiagnostics, CodicModelCatalog, CodicRuntimeEvent, CodicRuntimeEventEnvelope, CodicUpdateCheck, CompanionActivity, EditAction } from '../shared/contracts.js'
 
 declare const __CODIC_LOCAL_PREVIEW_ENABLED__: boolean
 
@@ -75,6 +76,9 @@ let companionWindow: BrowserWindow | null = null
 let companionEnabled = false
 let companionBounds: CompanionBounds | null = null
 let companionMoveTimer: NodeJS.Timeout | null = null
+let companionActivity: CompanionActivity = 'idle'
+let companionActivityTimer: NodeJS.Timeout | null = null
+const companionTaskActivities = new Map<string, CompanionActivity>()
 let appIsQuitting = false
 let performanceTraceRunning = false
 let localPreviewAccessGranted = false
@@ -613,11 +617,40 @@ if (!protocolLock) {
   }
 
   const publishCompanionState = () => {
-    const state = { enabled: companionEnabled }
+    const state = { enabled: companionEnabled, activity: companionActivity }
     if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
       mainWindow.webContents.send('codic:companion-state', state)
     }
+    if (companionWindow && !companionWindow.isDestroyed() && !companionWindow.webContents.isDestroyed()) {
+      companionWindow.webContents.send('codic:companion-activity', companionActivity)
+    }
     return state
+  }
+
+  const setCompanionActivity = (activity: CompanionActivity, taskId: string, event: CodicRuntimeEvent) => {
+    if (companionActivityTimer) clearTimeout(companionActivityTimer)
+    companionActivityTimer = null
+    if (event.type === 'run_finished') companionTaskActivities.delete(taskId)
+    else companionTaskActivities.set(taskId, activity)
+
+    const activeStatuses = [...companionTaskActivities.values()]
+    const activeActivity = (['approval', 'error', 'working', 'thinking'] as const).find((status) => activeStatuses.includes(status))
+    if (activeActivity) {
+      companionActivity = activeActivity
+      publishCompanionState()
+      return
+    }
+
+    companionActivity = event.type === 'run_finished' ? activity : 'idle'
+    publishCompanionState()
+    if (event.type === 'run_finished' && (activity === 'completed' || activity === 'error' || activity === 'cancelled')) {
+      companionActivityTimer = setTimeout(() => {
+        companionActivityTimer = null
+        companionActivity = 'idle'
+        publishCompanionState()
+      }, 5_000)
+      companionActivityTimer.unref()
+    }
   }
 
   const saveCompanionPreferences = () => {
@@ -679,8 +712,12 @@ if (!protocolLock) {
       transparent: true,
       backgroundColor: '#00000000',
       hasShadow: false,
-      resizable: false,
+      resizable: true,
       movable: true,
+      minWidth: 240,
+      minHeight: 350,
+      maxWidth: 420,
+      maxHeight: 600,
       minimizable: false,
       maximizable: false,
       fullscreenable: false,
@@ -728,6 +765,7 @@ if (!protocolLock) {
       companionMoveTimer.unref()
     }
     window.on('move', persistBounds)
+    window.on('resize', persistBounds)
     window.on('closed', () => {
       if (companionWindow === window) {
         companionWindow = null
@@ -770,6 +808,8 @@ if (!protocolLock) {
       apiBaseUrl: apiBase,
       getAccessToken: async () => readAccessToken(),
       onEvent: (event, taskId) => {
+        const activity = activityFromRuntimeEvent(event)
+        if (activity) setCompanionActivity(activity, taskId, event)
         if (!ephemeralTaskIds.has(taskId)) {
           try {
             localStore?.appendTaskEvent({ id: randomUUID(), taskId, type: event.type, payload: redactHistoryValue(event) })
@@ -1458,7 +1498,12 @@ if (!protocolLock) {
     ipcMain.handle('codic:companion-get-state', (event) => {
       assertTrustedSender(event)
       if (event.sender !== mainWindow?.webContents) throw new Error('Only the Codic main window can manage the companion.')
-      return { enabled: companionEnabled }
+      return { enabled: companionEnabled, activity: companionActivity }
+    })
+    ipcMain.handle('codic:companion-get-activity', (event) => {
+      assertTrustedSender(event)
+      if (event.sender !== companionWindow?.webContents) throw new Error('Only the Codic companion can read its activity state.')
+      return companionActivity
     })
     ipcMain.handle('codic:companion-toggle', async (event) => {
       assertTrustedSender(event)
@@ -1619,6 +1664,8 @@ if (!protocolLock) {
     clearUpdateRetry()
     if (companionMoveTimer) clearTimeout(companionMoveTimer)
     companionMoveTimer = null
+    if (companionActivityTimer) clearTimeout(companionActivityTimer)
+    companionActivityTimer = null
     if (schedulePollTimer) clearInterval(schedulePollTimer)
     schedulePollTimer = null
     runtimeBridge?.cancelAll()

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import mongoose from 'mongoose'
 import { getPoolStats, getKey } from '../services/llm/keyPool.js'
+import { requireAuth } from '../middleware/auth.js'
 
 const router = Router()
 
@@ -93,18 +94,19 @@ const PROVIDER_CONFIGS = [
   },
 ]
 
-// ── Ping a single provider ─────────────────────────────────────────────────────
+// Provider model-list endpoints only prove that the endpoint is reachable. They
+// do not prove that a Codic completion can be generated.
 async function pingProvider(config) {
   // Use the key pool to get the current active key for this provider
   const key = config.keyEnv ? getKey(config.provider === 'gemini-tts' ? 'gemini' : config.provider) : null
 
   // Council is a virtual layer
   if (config.provider === 'council') {
-    return { status: 'pending', latency: 0, load: 'light' }
+    return { status: 'unknown', availability: 'unverified', configured: null, verified: false, probe: 'not_run', latency: null, reason: 'completion_probe_not_implemented' }
   }
 
   if (!key) {
-    return { status: 'down', latency: 0, load: 'unknown', reason: 'no_api_key' }
+    return { status: 'unknown', availability: 'not_configured', configured: false, verified: false, probe: 'not_run', latency: null, reason: 'no_api_key' }
   }
 
   const url = config.buildUrl ? config.buildUrl(key) : config.pingUrl
@@ -124,22 +126,22 @@ async function pingProvider(config) {
     const latency = Math.round(performance.now() - start)
 
     if (res.ok || res.status === 200) {
-      const load = latency < 500 ? 'light' : latency < 1500 ? 'medium' : 'heavy'
-      return { status: 'operational', latency, load }
-    } else if (res.status === 429) {
-      return { status: 'degraded', latency, load: 'heavy', reason: 'rate_limited' }
-    } else if (res.status === 401 || res.status === 403) {
-      return { status: 'degraded', latency, load: 'light', reason: 'auth_issue' }
-    } else {
-      return { status: 'degraded', latency, load: 'medium', reason: `http_${res.status}` }
+      return { status: 'unknown', availability: 'unverified', configured: true, verified: false, probe: 'model_catalog_reachable', latency, reason: 'completion_not_tested' }
     }
+    if (res.status === 429) {
+      return { status: 'degraded', availability: 'unknown', configured: true, verified: false, probe: 'rate_limited', latency, reason: 'rate_limited' }
+    }
+    if (res.status === 401 || res.status === 403) {
+      return { status: 'degraded', availability: 'unknown', configured: true, verified: false, probe: 'authentication_failed', latency, reason: 'auth_issue' }
+    }
+    return { status: 'unknown', availability: 'unknown', configured: true, verified: false, probe: 'http_error', latency, reason: `http_${res.status}` }
   } catch (err) {
     clearTimeout(timeout)
     const latency = Math.round(performance.now() - start)
     if (err.name === 'AbortError') {
-      return { status: 'down', latency, load: 'heavy', reason: 'timeout' }
+      return { status: 'unknown', availability: 'unknown', configured: true, verified: false, probe: 'timeout', latency, reason: 'timeout' }
     }
-    return { status: 'down', latency, load: 'unknown', reason: err.message?.substring(0, 80) }
+    return { status: 'unknown', availability: 'unknown', configured: true, verified: false, probe: 'network_error', latency, reason: 'network_error' }
   }
 }
 
@@ -156,7 +158,7 @@ async function checkMongo() {
     }
     return { status: 'down', latency: 0, reason: `state_${state}` }
   } catch (err) {
-    return { status: 'down', latency: Math.round(performance.now() - start), reason: err.message?.substring(0, 60) }
+    return { status: 'down', latency: Math.round(performance.now() - start), reason: 'ping_failed' }
   }
 }
 
@@ -180,24 +182,23 @@ async function checkSupabase() {
     const latency = Math.round(performance.now() - start)
     return { status: res.ok || res.status === 200 ? 'operational' : 'degraded', latency }
   } catch (err) {
-    return { status: 'down', latency: Math.round(performance.now() - start), reason: err.message?.substring(0, 60) }
+    return { status: 'down', latency: Math.round(performance.now() - start), reason: err.name === 'AbortError' ? 'timeout' : 'network_error' }
   }
 }
 
 // ── Compute overall status ─────────────────────────────────────────────────────
-function computeOverall(clusters, infra) {
-  const allStatuses = [
-    ...clusters.map(c => c.status),
-    infra.mongodb.status,
-    infra.supabase.status,
-  ]
+function computeOverall(infra) {
+  // Provider probes only fetch model catalogs; without a completion probe,
+  // provider health cannot make the overall AI service "operational".
+  const allStatuses = [infra.mongodb.status, infra.supabase.status]
   const downCount = allStatuses.filter(s => s === 'down').length
   const degradedCount = allStatuses.filter(s => s === 'degraded').length
 
-  if (downCount >= 3) return 'major_outage'
+  if (downCount >= 2) return 'major_outage'
   if (downCount >= 1) return 'partial_outage'
   if (degradedCount >= 2) return 'degraded'
-  return 'operational'
+  if (degradedCount === 1) return 'degraded'
+  return 'unknown'
 }
 
 // ── Main status endpoint ────────────────────────────────────────────────────────
@@ -227,28 +228,15 @@ router.get('/', async (req, res) => {
         name: 'Unknown',
         type: 'Unknown',
         provider: 'unknown',
-        status: 'down',
-        latency: 0,
-        load: 'unknown',
+        status: 'unknown',
+        availability: 'unknown',
+        configured: null,
+        verified: false,
+        probe: 'error',
+        latency: null,
         reason: 'promise_rejected',
       }
     })
-
-    // Resolve Council status (operational if >= 2 providers are up)
-    const councilIdx = clusters.findIndex(c => c.provider === 'council')
-    if (councilIdx !== -1) {
-      const operationalCount = clusters.filter(
-        c => c.provider !== 'council' && c.status === 'operational'
-      ).length
-      clusters[councilIdx].status = operationalCount >= 2 ? 'operational' : operationalCount >= 1 ? 'degraded' : 'down'
-      clusters[councilIdx].latency = Math.round(
-        clusters
-          .filter(c => c.provider !== 'council' && c.status === 'operational')
-          .reduce((sum, c) => sum + c.latency, 0) /
-          Math.max(1, operationalCount)
-      )
-      clusters[councilIdx].load = operationalCount >= 4 ? 'light' : operationalCount >= 2 ? 'medium' : 'heavy'
-    }
 
     // Infrastructure checks in parallel
     const [mongoResult, supabaseResult] = await Promise.all([
@@ -262,27 +250,24 @@ router.get('/', async (req, res) => {
       api: { status: 'operational', uptime: process.uptime() },
     }
 
-    const overall = computeOverall(clusters, infrastructure)
-
-    // Compute uptime percentages based on status
-    const clustersWithUptime = clusters.map(c => ({
-      ...c,
-      uptime: c.status === 'operational' ? 99.90 + Math.random() * 0.09
-            : c.status === 'degraded' ? 98.0 + Math.random() * 1.5
-            : 95.0 + Math.random() * 3.0,
-    }))
-
-    // Compute 90-day SLA
-    const avgUptime = clustersWithUptime.reduce((s, c) => s + c.uptime, 0) / clustersWithUptime.length
-    const sla90Day = Math.round(avgUptime * 100) / 100
+    const overall = computeOverall(infrastructure)
 
     const result = {
       overall,
-      sla90Day,
+      // Keep this legacy field for clients, but do not claim a synthetic SLA.
+      sla90Day: null,
       timestamp: new Date().toISOString(),
-      clusters: clustersWithUptime,
+      availability: 'unverified',
+      verification: {
+        codicCompletion: 'not_checked',
+        providerProbe: 'model_catalog_only',
+        historicalUptime: 'not_available',
+        incidentHistory: 'not_tracked',
+      },
+      clusters,
       infrastructure,
-      incidents: [], // No real incident tracking yet — empty = "No incidents in last 30 days"
+      incidents: null,
+      incidentsAvailable: false,
     }
 
     // Cache the result
@@ -300,8 +285,17 @@ router.get('/', async (req, res) => {
   }
 })
 
-// Key pool health — shows how many keys per provider, availability, success/failure counts
-router.get('/keys', (req, res) => {
+const requireStatusAdmin = (req, res, next) => {
+  const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map(value => value.trim()).filter(Boolean)
+  if (req.user?.viaApiKey || !req.user?.id || !adminIds.includes(req.user.id)) {
+    return res.status(403).json({ error: 'Admin access required' })
+  }
+  return next()
+}
+
+// Retain the legacy operator route while keeping provider key counts and
+// activity data out of the public status API.
+router.get('/keys', requireAuth, requireStatusAdmin, (req, res) => {
   res.json({ pool: getPoolStats(), timestamp: new Date().toISOString() })
 })
 

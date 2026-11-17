@@ -1,5 +1,7 @@
 export type ApiMethod = 'GET' | 'POST'
 
+export type CompanionActivity = 'idle' | 'thinking' | 'working' | 'approval' | 'completed' | 'error' | 'cancelled'
+
 export interface ModelOption {
   id: string
   name: string
@@ -156,12 +158,14 @@ export interface ThreadHistory {
 
 export interface CodicBridge {
   companion: {
-    getState(): Promise<{ enabled: boolean }>
+    getState(): Promise<{ enabled: boolean; activity: CompanionActivity }>
+    getActivity(): Promise<CompanionActivity>
     toggle(): Promise<{ enabled: boolean }>
     focusApp(): Promise<void>
     hide(): Promise<void>
     submitPrompt(prompt: string): Promise<void>
-    onStateChange(callback: (state: { enabled: boolean }) => void): () => void
+    onStateChange(callback: (state: { enabled: boolean; activity: CompanionActivity }) => void): () => void
+    onActivityChange(callback: (activity: CompanionActivity) => void): () => void
     onPrompt(callback: (prompt: string) => void): () => void
   }
   app: {

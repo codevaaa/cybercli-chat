@@ -25,6 +25,7 @@
 - Prompt attachments should be user-selected, main-process-owned, per-window memory records. Never accept arbitrary renderer paths for filesystem reads; reveal only opaque attachment IDs and send bounded text content only when its prompt is submitted.
 - A composer `+` action must not double as project selection. Keep workspace selection explicit, show removable context chips before send, and preserve the draft when project selection is required.
 - Folder context needs limits and exclusions before reading: skip symlinks, generated trees, binary files, credential-like names, and oversized files; cap file count and aggregate bytes so a broad folder cannot become an unbounded model request.
+- A transparent companion window must keep a recovery control if its lazy UI chunk fails; a render failure otherwise traps the user in an empty always-on-top window. When subscribing to live activity plus fetching an initial snapshot, let any newer event win over a delayed snapshot.
 ### 2026-11-13 — Browser-to-desktop sign-in and Windows chrome
 - Custom URL callbacks must be tested at both ends. A successful website session is not proof that the desktop callback route exists on the production API.
 - Never broadcast a one-use auth callback to every open renderer. Deliver it to one primary window and make the browser page provide a user-click retry when external-protocol navigation is blocked.

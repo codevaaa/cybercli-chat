@@ -4,7 +4,7 @@ import { clampCompanionBounds, getInitialCompanionBounds } from './companionWind
 describe('companion window bounds', () => {
   it('places the first window in the work area lower-right with a margin', () => {
     expect(getInitialCompanionBounds({ x: 0, y: 0, width: 1920, height: 1080 })).toEqual({
-      x: 1678, y: 736, width: 224, height: 326,
+      x: 1618, y: 642, width: 284, height: 420,
     })
   })
 
@@ -12,7 +12,7 @@ describe('companion window bounds', () => {
     expect(clampCompanionBounds(
       { x: -2400, y: 3000, width: 224, height: 326 },
       { x: -1920, y: 0, width: 1920, height: 1080 },
-    )).toEqual({ x: -1920, y: 754, width: 224, height: 326 })
+    )).toEqual({ x: -1920, y: 730, width: 240, height: 350 })
   })
 
   it('shrinks to fit unusually small work areas and rejects non-finite positions', () => {
